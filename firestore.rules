@@ -1,0 +1,105 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // --- Helper functions ---
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function isStudent() {
+      return isAuthenticated() && getUserData().role == 'student';
+    }
+    
+    function isUniversityAdmin() {
+      return isAuthenticated() && getUserData().role == 'university_admin';
+    }
+    
+    function isSuperAdmin() {
+      return isAuthenticated() && getUserData().role == 'super_admin';
+    }
+    
+    function belongsToSameUniversity(universityId) {
+      return getUserData().universityId == universityId;
+    }
+    
+    // --- Users collection ---
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isSuperAdmin());
+      allow read: if isUniversityAdmin() && belongsToSameUniversity(resource.data.universityId);
+      
+      allow create: if isAuthenticated() && request.auth.uid == userId; // Allow initial profile creation
+      
+      // FIX: Allow users to update their own fields EXCEPT sensitive ones like 'role' and 'universityId'
+      allow update: if isAuthenticated() && request.auth.uid == userId && 
+                    !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'universityId']);
+      
+      allow update, delete: if isSuperAdmin();
+    }
+
+    // --- Events collection ---
+    match /events/{eventId} {
+      allow read: if isAuthenticated();
+      
+      allow create: if isSuperAdmin() || (
+        isUniversityAdmin() && 
+        request.resource.data.universityId == getUserData().universityId
+      );
+
+      // Allows Admins full updates and Students to ONLY update the 'attendees' field for RSVPing.
+      allow update: if isSuperAdmin() || 
+                    (isUniversityAdmin() && belongsToSameUniversity(resource.data.universityId)) ||
+                    (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendees']));
+
+      allow delete: if isUniversityAdmin() && belongsToSameUniversity(resource.data.universityId);
+    }
+
+    // --- Other Collections ---
+    match /pdf_uploads/{uploadId} {
+      allow read: if (isUniversityAdmin() || isSuperAdmin()) && 
+                   belongsToSameUniversity(resource.data.universityId);
+      allow write: if false; 
+    }
+
+    match /generated_tests/{testId} {
+      allow read, update: if (isUniversityAdmin() || isSuperAdmin()) && 
+                            belongsToSameUniversity(resource.data.universityId);
+      allow delete: if isSuperAdmin();
+    }
+
+    match /mock_tests/{testId} {
+      allow read: if isSuperAdmin() || isAuthenticated();
+      allow write: if isUniversityAdmin() || isSuperAdmin();
+    }
+    
+    match /mock_proctoring_logs/{logId} {
+      allow read: if isUniversityAdmin() || isSuperAdmin();
+      allow write: if isSuperAdmin();
+    }
+    
+    match /testResults/{resultId} {
+      allow read, create: if isStudent() && request.auth.uid == (resource == null ? request.resource.data.userId : resource.data.userId);
+      allow read: if isUniversityAdmin() || isSuperAdmin();
+      allow update, delete: if false;
+    }
+    
+    match /universities/{universityId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isSuperAdmin();
+    }
+    
+    match /analytics/{analyticsId} {
+      allow read: if isUniversityAdmin() || isSuperAdmin();
+      allow write: if false;
+    }
+    
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
