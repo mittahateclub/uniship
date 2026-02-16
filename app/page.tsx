@@ -2,20 +2,50 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firestore';
 
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    if (!loading) {
-      if (user) {
-        router.push('/dashboard');
-      } else {
-        router.push('/login');
+    async function checkUserRole() {
+      if (!loading) {
+        if (!user) {
+          router.push('/login');
+        } else {
+          // Get user role from Firestore
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          
+          if (userDoc.exists()) {
+            const role = userDoc.data().role;
+            
+            switch(role) {
+              case 'superadmin':
+                router.push('/superadmin/dashboard');
+                break;
+              case 'uniadmin':
+                router.push('/uniadmin/dashboard');
+                break;
+              case 'user':
+                router.push('/user/dashboard');
+                break;
+              default:
+                router.push('/user/dashboard');
+            }
+          } else {
+            // Default to user dashboard if no role set
+            router.push('/user/dashboard');
+          }
+        }
+        setChecking(false);
       }
     }
+
+    checkUserRole();
   }, [user, loading, router]);
 
   return (
