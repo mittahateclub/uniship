@@ -32,7 +32,7 @@ export default function ManageUniadminsPage() {
   useEffect(() => {
     async function fetchUniadmins() {
       try {
-        const q = query(collection(db, 'users'), where('role', '==', 'uniadmin'));
+        const q = query(collection(db, 'users'), where('role', '==', 'university_admin'));
         const querySnapshot = await getDocs(q);
         
         const admins: UniadminData[] = [];
@@ -71,7 +71,6 @@ export default function ManageUniadminsPage() {
   return (
     <div className="min-h-screen bg-white p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="mb-8 flex justify-between items-center">
           <div>
             <Link 
@@ -91,7 +90,6 @@ export default function ManageUniadminsPage() {
           </Link>
         </div>
 
-        {/* Content */}
         {loadingData ? (
           <div className="text-center py-12">
             <p className="text-gray-600">Loading administrators...</p>

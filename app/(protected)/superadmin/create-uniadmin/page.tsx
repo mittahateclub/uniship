@@ -45,18 +45,16 @@ export default function CreateUniadminPage() {
     setSubmitting(true);
 
     try {
-      // Create auth user
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         formData.email,
         formData.password
       );
 
-      // Add user data to Firestore
       await setDoc(doc(db, 'users', userCredential.user.uid), {
         name: formData.name,
         email: formData.email,
-        role: 'uniadmin',
+        role: 'university_admin',
         universityName: formData.universityName,
         universityId: formData.universityId,
         phone: formData.phone,
@@ -66,7 +64,6 @@ export default function CreateUniadminPage() {
 
       setSuccess(`University Admin account created successfully for ${formData.email}`);
       
-      // Reset form
       setFormData({
         name: '',
         email: '',
@@ -105,7 +102,6 @@ export default function CreateUniadminPage() {
   return (
     <div className="min-h-screen bg-white p-8">
       <div className="max-w-3xl mx-auto">
-        {/* Header */}
         <div className="mb-8">
           <Link 
             href="/superadmin/dashboard" 
@@ -117,7 +113,6 @@ export default function CreateUniadminPage() {
           <p className="text-gray-600">Add a new university administrator account</p>
         </div>
 
-        {/* Form */}
         <div className="bg-black text-white p-8 rounded-lg shadow-2xl">
           {error && (
             <div className="mb-6 p-4 bg-red-500 text-white rounded-lg">
@@ -132,7 +127,6 @@ export default function CreateUniadminPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name */}
             <div>
               <label htmlFor="name" className="block text-sm font-medium mb-2">
                 Full Name *
@@ -150,7 +144,6 @@ export default function CreateUniadminPage() {
               />
             </div>
 
-            {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium mb-2">
                 Email Address *
@@ -168,7 +161,6 @@ export default function CreateUniadminPage() {
               />
             </div>
 
-            {/* Password */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium mb-2">
                 Password *
@@ -187,7 +179,6 @@ export default function CreateUniadminPage() {
               />
             </div>
 
-            {/* University Name */}
             <div>
               <label htmlFor="universityName" className="block text-sm font-medium mb-2">
                 University Name *
@@ -205,7 +196,6 @@ export default function CreateUniadminPage() {
               />
             </div>
 
-            {/* University ID */}
             <div>
               <label htmlFor="universityId" className="block text-sm font-medium mb-2">
                 University ID *
@@ -223,7 +213,6 @@ export default function CreateUniadminPage() {
               />
             </div>
 
-            {/* Phone */}
             <div>
               <label htmlFor="phone" className="block text-sm font-medium mb-2">
                 Phone Number
@@ -240,7 +229,6 @@ export default function CreateUniadminPage() {
               />
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={submitting}

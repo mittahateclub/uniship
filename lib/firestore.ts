@@ -5,8 +5,8 @@ export const db = getFirestore(app);
 
 export interface UserProfile {
   email: string;
-  role: 'superadmin' | 'uniadmin' | 'user';
+  role: 'super_admin' | 'university_admin' | 'student'; // Match firestore.rules
   createdAt: Date;
-  universityId?: string; // For uniadmin
+  universityId?: string;
   name?: string;
 }

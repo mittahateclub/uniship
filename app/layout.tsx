@@ -1,14 +1,23 @@
-import Navbar from "@/components/Navbar";
+import "./globals.css";
+import { AuthProvider } from "@/contexts/AuthContext";
 
-export default function ProtectedLayout({
+export const metadata = {
+  title: "Uniship",
+  description: "University Shipping Portal",
+};
+
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <>
-      <Navbar />
-      {children}
-    </>
+    <html lang="en">
+      <body>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+      </body>
+    </html>
   );
 }

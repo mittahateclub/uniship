@@ -10,8 +10,12 @@ export default function Navbar() {
   const router = useRouter();
 
   const handleLogout = async () => {
-    await logout();
-    router.push('/login');
+    try {
+      await logout();
+      router.push('/login');
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   return (
@@ -22,15 +26,16 @@ export default function Navbar() {
             Uniship
           </Link>
           <div className="flex items-center space-x-4">
-            {user && <span className="text-sm">{user.email}</span>}
             {user && (
-              <button onClick={handleLogout} className="bg-white text-black px-4 py-2 rounded-lg font-semibold">
-                x-4">
-            {user && <span className="text-sm">{user.email}</span>}
-            {user && (
-              <button onClick={handleLogout} className="bg-white text-black px-4 py-2 rounded-lg font-semibold">
-                Logout
-              </button>
+              <>
+                <span className="text-sm">{user.email}</span>
+                <button 
+                  onClick={handleLogout} 
+                  className="bg-white text-black px-4 py-2 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+                >
+                  Logout
+                </button>
+              </>
             )}
           </div>
         </div>
