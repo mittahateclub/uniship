@@ -24,9 +24,19 @@ export default function CreateTestPage() {
   useEffect(() => {
     async function fetchAdminProfile() {
       if (user) {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists()) {
-          setUniversityId(userDoc.data().universityId);
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            if (data.universityId) {
+              setUniversityId(data.universityId);
+            } else {
+              setStatus({ type: 'error', message: 'No University ID found for this admin.' });
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching admin profile:", error);
+          setStatus({ type: 'error', message: 'Failed to load admin profile.' });
         }
       }
     }
@@ -71,8 +81,10 @@ export default function CreateTestPage() {
   return (
     <div className="min-h-screen bg-white p-8 text-black">
       <div className="max-w-4xl mx-auto">
-        <Link href="/uniadmin/dashboard" className="text-gray-500 mb-8 inline-block">← Back</Link>
-        <div className="bg-black text-white p-8 rounded-2xl shadow-2xl">
+        <Link href="/uniadmin/dashboard" className="text-gray-500 mb-8 inline-block relative z-10 hover:text-black">
+          ← Back
+        </Link>
+        <div className="bg-black text-white p-8 rounded-2xl shadow-2xl relative z-10">
           <h1 className="text-3xl font-bold mb-6">AI Test Generator</h1>
           {status.message && (
             <div className={`mb-6 p-4 rounded-lg ${status.type === 'error' ? 'bg-red-500' : 'bg-blue-600'}`}>
@@ -80,14 +92,23 @@ export default function CreateTestPage() {
             </div>
           )}
           <form onSubmit={handleGenerate} className="space-y-6">
-            <div className="border-2 border-dashed border-gray-700 rounded-xl p-10 text-center bg-[#111]">
-              <input type="file" accept=".pdf" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-              <p className="text-gray-400">{file ? file.name : "Select study PDF"}</p>
+            {/* FIX: Added 'relative' and 'overflow-hidden' to contain the absolute input */}
+            <div className="relative overflow-hidden border-2 border-dashed border-gray-700 rounded-xl p-10 text-center bg-[#111] hover:bg-gray-900 transition-colors">
+              <input 
+                type="file" 
+                accept=".pdf" 
+                onChange={handleFileChange} 
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" 
+              />
+              <p className="text-gray-400 relative z-10 pointer-events-none">
+                {file ? file.name : "Select study PDF"}
+              </p>
             </div>
+            
             <button 
               type="submit" 
               disabled={isParsing || !file || !universityId}
-              className="w-full bg-white text-black py-4 rounded-xl font-bold hover:bg-gray-200 disabled:opacity-50"
+              className="w-full bg-white text-black py-4 rounded-xl font-bold hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed relative z-20"
             >
               {isParsing ? 'Processing...' : 'Generate & Save Test'}
             </button>
