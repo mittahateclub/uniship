@@ -4,53 +4,69 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, deleteDoc } from 'firebase/firestore';
 import Link from 'next/link';
 
-// Mandatory default export to fix Next.js Runtime Errors
 export default function StudentDatabasePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [students, setStudents] = useState<any[]>([]);
   const [fetching, setFetching] = useState(true);
   const [adminUnivId, setAdminUnivId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) router.push('/login');
   }, [user, loading, router]);
 
-  useEffect(() => {
-    async function fetchStudents() {
-      if (!user) return;
-      try {
-        // 1. Get the Admin's university ID first
-        const adminDoc = await getDoc(doc(db, 'users', user.uid));
-        const univId = adminDoc.data()?.universityId;
-        setAdminUnivId(univId);
+  async function fetchStudents() {
+    if (!user) return;
+    try {
+      const adminDoc = await getDoc(doc(db, 'users', user.uid));
+      const univId = adminDoc.data()?.universityId;
+      setAdminUnivId(univId);
 
-        if (univId) {
-          // 2. Query only students belonging to this university
-          const q = query(
-            collection(db, 'users'),
-            where('role', '==', 'student'),
-            where('universityId', '==', univId)
-          );
-          
-          const querySnapshot = await getDocs(q);
-          const studentList = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          setStudents(studentList);
-        }
-      } catch (error) {
-        console.error("Error fetching students:", error);
-      } finally {
-        setFetching(false);
+      if (univId) {
+        const q = query(
+          collection(db, 'users'),
+          where('role', '==', 'student'),
+          where('universityId', '==', univId)
+        );
+        
+        const querySnapshot = await getDocs(q);
+        const studentList = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setStudents(studentList);
       }
+    } catch (error) {
+      console.error("Error fetching students:", error);
+    } finally {
+      setFetching(false);
     }
+  }
+
+  useEffect(() => {
     fetchStudents();
   }, [user]);
+
+  const handleDeleteStudent = async (studentId: string, studentName: string) => {
+    if (!window.confirm(`Are you sure you want to delete ${studentName}? This will remove their profile from the database.`)) {
+      return;
+    }
+
+    setDeletingId(studentId);
+    try {
+      await deleteDoc(doc(db, 'users', studentId));
+      setStudents(prev => prev.filter(s => s.id !== studentId));
+    } catch (error) {
+      console.error("Error deleting student:", error);
+      alert("Failed to delete student. Check your permissions.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   if (loading || fetching) return <div className="p-10 text-black">Loading student records...</div>;
 
@@ -89,6 +105,7 @@ export default function StudentDatabasePage() {
                   <th className="p-5 text-xs font-black uppercase tracking-widest text-gray-400">Student ID</th>
                   <th className="p-5 text-xs font-black uppercase tracking-widest text-gray-400">Email</th>
                   <th className="p-5 text-xs font-black uppercase tracking-widest text-gray-400">Status</th>
+                  <th className="p-5 text-xs font-black uppercase tracking-widest text-gray-400 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -99,6 +116,21 @@ export default function StudentDatabasePage() {
                     <td className="p-5 text-gray-600">{student.email}</td>
                     <td className="p-5">
                       <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-black uppercase">Active</span>
+                    </td>
+                    <td className="p-5 text-right space-x-3">
+                      <Link 
+                        href={`/uniadmin/students/view/${student.id}`}
+                        className="text-xs font-bold text-black hover:underline"
+                      >
+                        VIEW DATA
+                      </Link>
+                      <button 
+                        onClick={() => handleDeleteStudent(student.id, student.name)}
+                        disabled={deletingId === student.id}
+                        className="text-xs font-bold text-red-600 hover:text-red-800 disabled:opacity-50"
+                      >
+                        {deletingId === student.id ? 'DELETING...' : 'DELETE'}
+                      </button>
                     </td>
                   </tr>
                 ))}
