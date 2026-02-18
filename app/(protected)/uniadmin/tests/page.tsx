@@ -1,3 +1,4 @@
+// app/(protected)/uniadmin/tests/page.tsx
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,13 +22,18 @@ export default function ReviewTestsPage() {
   async function loadTests() {
     if (!user) return;
     try {
-      const adminDoc = await getDoc(doc(db, 'users', user.uid));
-      const univId = adminDoc.data()?.universityId;
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const univId = userDoc.data()?.universityId;
 
       if (univId) {
-        const q = query(collection(db, 'pdf_uploads'), where('universityId', '==', univId));
+        // Updated to fetch from 'tests' collection where process-test.ts saves data
+        const q = query(collection(db, 'tests'), where('universityId', '==', univId));
         const snapshot = await getDocs(q);
-        setTestUploads(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+        setTestUploads(snapshot.docs.map(d => ({ 
+          id: d.id, 
+          ...d.data(),
+          title: d.data().sourceFileName || 'Untitled Test' 
+        })));
       }
     } catch (err) {
       console.error("Failed to load tests:", err);
@@ -41,34 +47,28 @@ export default function ReviewTestsPage() {
   }, [user]);
 
   const handleDelete = async (testId: string) => {
-    if (!window.confirm("Are you sure you want to delete this test? This action cannot be undone.")) {
-      return;
-    }
-
+    if (!window.confirm("Are you sure you want to delete this test?")) return;
     setDeletingId(testId);
     try {
-      await deleteDoc(doc(db, 'pdf_uploads', testId));
+      await deleteDoc(doc(db, 'tests', testId));
       setTestUploads(prev => prev.filter(test => test.id !== testId));
-      alert("Test deleted successfully.");
     } catch (error) {
       console.error("Error deleting test:", error);
-      alert("Failed to delete test. Check your permissions.");
     } finally {
       setDeletingId(null);
     }
   };
 
-  if (loading || fetching) return <div className="p-10">Loading test records...</div>;
+  if (loading || fetching) return <div className="p-10">Loading tests...</div>;
 
   return (
     <div className="min-h-screen bg-white p-8">
       <div className="max-w-6xl mx-auto">
         <Link href="/uniadmin/dashboard" className="text-gray-500 mb-4 inline-block">← Back</Link>
-        <h1 className="text-4xl font-bold mb-8 text-black">Review Generated Tests</h1>
-
+        <h1 className="text-4xl font-bold mb-8 text-black">Manage Tests</h1>
         {testUploads.length === 0 ? (
-          <div className="p-20 text-center border-2 border-dashed rounded-xl">
-            <p className="text-gray-500">No tests found. Try uploading a PDF first.</p>
+          <div className="p-20 text-center border-2 border-dashed rounded-xl text-gray-500">
+            No tests found.
           </div>
         ) : (
           <div className="grid gap-4">
@@ -76,26 +76,14 @@ export default function ReviewTestsPage() {
               <div key={test.id} className="border p-6 rounded-xl flex justify-between items-center bg-gray-50">
                 <div>
                   <h3 className="text-xl font-bold text-black">{test.title}</h3>
-                  <p className="text-sm text-gray-500 italic">{test.fileName}</p>
-                  <span className={`mt-2 inline-block px-3 py-1 rounded-full text-xs font-bold ${
-                    test.status === 'generated' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'
-                  }`}>
-                    {test.status}
-                  </span>
+                  <p className="text-sm text-gray-500">{test.problems?.length || 0} Problems</p>
                 </div>
                 <div className="flex gap-3">
-                  <Link 
-                    href={`/uniadmin/tests/review/${test.id}`}
-                    className="bg-black text-white px-6 py-2 rounded-lg font-bold hover:bg-gray-800 transition-colors"
-                  >
-                    Review Questions
+                  <Link href={`/uniadmin/tests/review/${test.id}`} className="bg-black text-white px-6 py-2 rounded-lg font-bold">
+                    Review
                   </Link>
-                  <button
-                    onClick={() => handleDelete(test.id)}
-                    disabled={deletingId === test.id}
-                    className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700 transition-colors disabled:opacity-50"
-                  >
-                    {deletingId === test.id ? 'Deleting...' : 'Delete'}
+                  <button onClick={() => handleDelete(test.id)} disabled={deletingId === test.id} className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold">
+                    {deletingId === test.id ? '...' : 'Delete'}
                   </button>
                 </div>
               </div>
