@@ -18,30 +18,30 @@ export default function UserDashboard() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-black text-xl">Loading...</div>
+        <div className="text-black text-xl font-bold italic">Loading Dashboard...</div>
       </div>
     );
   }
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
+  // Added 'Applications' to this list
   const menuItems = [
     { title: 'Test Portal', href: '/user/test-portal', icon: '📝' },
-    { title: 'Calendar', href: '/user/calendar', icon: '📅' },
     { title: 'Internships', href: '/user/internships', icon: '💼' },
+    { title: 'My Applications', href: '/user/applications', icon: '📁' }, // NEW LINK
     { title: 'Resume Builder', href: '/user/resume', icon: '📄' },
     { title: 'My Results', href: '/user/results', icon: '📊' },
-    { title: 'Profile', href: '/user/profile', icon: '⚙️' },
+    { title: 'Calendar', href: '/user/calendar', icon: '📅' },
+    { title: 'Profile', href: '/user/profile', icon: '👤' },
   ];
 
   return (
     <div className="min-h-screen bg-white p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-black mb-2">Student Dashboard</h1>
-          <p className="text-gray-600">Welcome back, {user.email}</p>
+        <div className="mb-8 border-b-4 border-black pb-4">
+          <h1 className="text-4xl font-black text-black mb-2 uppercase tracking-tighter">Student Dashboard</h1>
+          <p className="text-gray-600 font-bold">Welcome back, {user.email}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -49,27 +49,27 @@ export default function UserDashboard() {
             <Link
               key={item.href}
               href={item.href}
-              className="bg-black text-white p-6 rounded-lg shadow-lg hover:bg-gray-800 transition-colors"
+              className="group border-4 border-black p-6 hover:bg-black hover:text-white transition-all shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-none"
             >
-              <div className="text-4xl mb-4">{item.icon}</div>
-              <h3 className="text-xl font-semibold">{item.title}</h3>
+              <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">{item.icon}</div>
+              <h3 className="text-xl font-black uppercase tracking-tight">{item.title}</h3>
             </Link>
           ))}
         </div>
 
         {/* Quick Info */}
         <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-black text-white p-6 rounded-lg">
-            <p className="text-sm text-gray-300">Pending Tests</p>
-            <p className="text-3xl font-bold mt-2">0</p>
+          <div className="border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] bg-white">
+            <p className="text-xs font-black uppercase text-gray-500">Active Applications</p>
+            <p className="text-4xl font-black mt-2">0</p>
           </div>
-          <div className="bg-black text-white p-6 rounded-lg">
-            <p className="text-sm text-gray-300">Upcoming Events</p>
-            <p className="text-3xl font-bold mt-2">0</p>
+          <div className="border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] bg-white">
+            <p className="text-xs font-black uppercase text-gray-500">Upcoming Tests</p>
+            <p className="text-4xl font-black mt-2">0</p>
           </div>
-          <div className="bg-black text-white p-6 rounded-lg">
-            <p className="text-sm text-gray-300">Applications</p>
-            <p className="text-3xl font-bold mt-2">0</p>
+          <div className="border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] bg-white">
+            <p className="text-xs font-black uppercase text-gray-500">Saved Internships</p>
+            <p className="text-4xl font-black mt-2">0</p>
           </div>
         </div>
       </div>
