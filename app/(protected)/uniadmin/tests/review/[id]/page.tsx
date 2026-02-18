@@ -4,7 +4,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
 
@@ -14,6 +14,7 @@ export default function ReviewGeneratedQuestions() {
   const { id } = useParams();
   const [testData, setTestData] = useState<any>(null);
   const [fetching, setFetching] = useState(true);
+  const [publishing, setPublishing] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.push('/login');
@@ -36,6 +37,29 @@ export default function ReviewGeneratedQuestions() {
     fetchTestData();
   }, [id]);
 
+  const handlePublish = async () => {
+    if (!id || !window.confirm("Are you sure you want to publish this test? It will be made available to students.")) {
+      return;
+    }
+
+    setPublishing(true);
+    try {
+      await updateDoc(doc(db, 'tests', id as string), {
+        published: true,
+        publishedAt: new Date().toISOString(),
+        publishedBy: user?.uid
+      });
+
+      alert("Test published successfully!");
+      router.push('/uniadmin/tests');
+    } catch (error) {
+      console.error("Error publishing test:", error);
+      alert("Failed to publish test. Please try again.");
+    } finally {
+      setPublishing(false);
+    }
+  };
+
   if (loading || fetching) return <div className="p-10 text-black">Loading...</div>;
   if (!testData) return <div className="p-10 text-red-500">Test not found.</div>;
 
@@ -47,6 +71,11 @@ export default function ReviewGeneratedQuestions() {
             ← BACK TO TESTS
           </Link>
           <h1 className="text-4xl font-bold">{testData.sourceFileName}</h1>
+          {testData.published && (
+            <span className="inline-block mt-2 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+              ✓ PUBLISHED
+            </span>
+          )}
         </header>
 
         <div className="space-y-6">
@@ -75,8 +104,12 @@ export default function ReviewGeneratedQuestions() {
           ))}
           
           <div className="pt-10 flex justify-center">
-            <button className="bg-black text-white px-10 py-4 rounded-full font-bold hover:scale-105 transition-transform">
-              APPROVE & PUBLISH TEST
+            <button 
+              onClick={handlePublish}
+              disabled={publishing || testData.published}
+              className="bg-black text-white px-10 py-4 rounded-full font-bold hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              {publishing ? 'PUBLISHING...' : testData.published ? 'ALREADY PUBLISHED' : 'APPROVE & PUBLISH TEST'}
             </button>
           </div>
         </div>
