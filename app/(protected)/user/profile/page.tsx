@@ -1,3 +1,4 @@
+// app/(protected)/user/profile/page.tsx
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -11,6 +12,8 @@ import { app } from '@/lib/firebase';
 interface UserProfile {
   photoURL?: string;
   name?: string;
+  phone?: string;      // Added Phone
+  email?: string;      // Added Email
   title?: string;
   bio?: string;
   rollNumber?: string;
@@ -59,9 +62,14 @@ export default function StudentProfile() {
         const docRef = doc(db, 'users', user.uid);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setProfile(docSnap.data() as UserProfile);
+          const data = docSnap.data() as UserProfile;
+          // Pre-fill email with Auth email if it's missing in profile
+          if (!data.email && user.email) {
+            data.email = user.email;
+          }
+          setProfile(data);
         } else {
-          setProfile({});
+          setProfile({ email: user.email || '' });
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -265,6 +273,29 @@ export default function StudentProfile() {
                       className="w-full border-2 border-black p-3 font-bold focus:bg-gray-50 outline-none"
                     />
                   </div>
+
+                  {/* Added Phone & Email Fields */}
+                  <div>
+                    <label className="block text-xs font-black uppercase mb-2">Phone Number</label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={profile?.phone || ''}
+                      onChange={handleChange}
+                      className="w-full border-2 border-black p-3 font-bold focus:bg-gray-50 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black uppercase mb-2">Contact Email</label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={profile?.email || ''}
+                      onChange={handleChange}
+                      className="w-full border-2 border-black p-3 font-bold focus:bg-gray-50 outline-none"
+                    />
+                  </div>
+
                   <div className="md:col-span-2">
                     <label className="block text-xs font-black uppercase mb-2">Professional Title</label>
                     <input
