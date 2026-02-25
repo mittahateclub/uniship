@@ -8,27 +8,267 @@ import { db } from '@/lib/firebase';
 import Link from 'next/link';
 import { FileText, ArrowLeft, Download } from 'lucide-react';
 
+// ─── Shared ResumeData type ───────────────────────────────────────────────────
+
 interface ResumeData {
-  id: string;
+  id?: string;
   fullName: string;
   phone: string;
+  email: string;
+  website: string;
   github: string;
   linkedin: string;
   education: string;
   experience: string;
   skills: string;
   projects: string;
+  coursework: string;
+  extracurriculars: string;
+  achievements: string;
   targetCompany?: string;
   updatedAt?: any;
 }
 
+// ─── ResumePreview (identical to page.tsx) ───────────────────────────────────
+
+function ResumePreview({ data }: { data: ResumeData }) {
+  const hasContent = (val: string) => val && val.trim().length > 0;
+
+  const boldMarkdown = (text: string) =>
+    text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+  const renderBullets = (text: string) => {
+    const lines = text.split('\n').filter(l => l.trim().length > 0);
+    return (
+      <ul className="list-none mt-1 space-y-0.5">
+        {lines.map((line, i) => (
+          <li key={i} className="flex gap-2 text-[11px] leading-snug">
+            <span className="mt-[2px] shrink-0">•</span>
+            <span dangerouslySetInnerHTML={{ __html: boldMarkdown(line.replace(/^[-•]\s*/, '')) }} />
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
+  const parseEducation = (raw: string) => {
+    if (!hasContent(raw)) return null;
+    return raw.split(/\n\n+/).map((block, i) => {
+      const lines   = block.split('\n').filter(l => l.trim());
+      const parts   = (lines[0] || '').split('|').map(p => p.trim());
+      const bullets = lines.slice(2);
+      return (
+        <div key={i} className="mb-2">
+          <div className="flex justify-between items-baseline">
+            <span className="font-bold text-[11.5px]"
+              dangerouslySetInnerHTML={{ __html: boldMarkdown(parts[0]) }} />
+            <span className="text-[10.5px]">{parts[1]}</span>
+          </div>
+          <div className="flex justify-between items-baseline">
+            <span className="italic text-[10.5px]"
+              dangerouslySetInnerHTML={{ __html: boldMarkdown(lines[1] || '') }} />
+            <span className="text-[10.5px]">{parts[2]}</span>
+          </div>
+          {bullets.length > 0 && renderBullets(bullets.join('\n'))}
+        </div>
+      );
+    });
+  };
+
+  const parseExperience = (raw: string) => {
+    if (!hasContent(raw)) return null;
+    return raw.split(/\n\n+/).map((block, i) => {
+      const lines     = block.split('\n').filter(l => l.trim());
+      const dateParts = (lines[0] || '').split('|').map(p => p.trim());
+      const orgParts  = (lines[1] || '').split('|').map(p => p.trim());
+      const bullets   = lines.slice(2);
+      return (
+        <div key={i} className="mb-3">
+          <div className="flex justify-between items-baseline">
+            <span className="font-bold text-[11.5px]"
+              dangerouslySetInnerHTML={{ __html: boldMarkdown(dateParts[0]) }} />
+            <span className="text-[10.5px]">{dateParts[1]}</span>
+          </div>
+          <div className="flex justify-between items-baseline">
+            <span className="italic text-[10.5px]"
+              dangerouslySetInnerHTML={{ __html: boldMarkdown(orgParts[0]) }} />
+            {orgParts[1] && <span className="text-[10.5px]">{orgParts[1]}</span>}
+          </div>
+          {bullets.length > 0 && renderBullets(bullets.join('\n'))}
+        </div>
+      );
+    });
+  };
+
+  const parseProjects = (raw: string) => {
+    if (!hasContent(raw)) return null;
+    return raw.split(/\n\n+/).map((block, i) => {
+      const lines   = block.split('\n').filter(l => l.trim());
+      const parts   = (lines[0] || '').split('|').map(p => p.trim());
+      const bullets = lines.slice(1);
+      return (
+        <div key={i} className="mb-3">
+          <div className="flex justify-between items-baseline">
+            <span>
+              <span className="font-bold text-[11.5px]"
+                dangerouslySetInnerHTML={{ __html: boldMarkdown(parts[0]) }} />
+              {parts[1] && (
+                <span className="text-[10.5px] italic"
+                  dangerouslySetInnerHTML={{ __html: ` | ${boldMarkdown(parts[1])}` }} />
+              )}
+            </span>
+            <span className="text-[10.5px]">{parts[2]}</span>
+          </div>
+          {bullets.length > 0 && renderBullets(bullets.join('\n'))}
+        </div>
+      );
+    });
+  };
+
+  const parseExtracurriculars = (raw: string) => {
+    if (!hasContent(raw)) return null;
+    return raw.split(/\n+/).filter(l => l.trim()).map((line, i) => {
+      const parts = line.split('|').map(p => p.trim());
+      return (
+        <div key={i} className="flex justify-between items-baseline mb-1">
+          <span className="font-bold text-[11px]">
+            {parts[0]}{parts[1] ? ` | ${parts[1]}` : ''}
+          </span>
+          <span className="text-[10.5px]">{parts[2]}</span>
+        </div>
+      );
+    });
+  };
+
+  const parseAchievements = (raw: string) => {
+    if (!hasContent(raw)) return null;
+    return raw.split(/\n+/).filter(l => l.trim()).map((line, i) => {
+      const pipeIdx = line.lastIndexOf('|');
+      const desc = pipeIdx > -1 ? line.slice(0, pipeIdx).trim() : line.trim();
+      const date = pipeIdx > -1 ? line.slice(pipeIdx + 1).trim() : '';
+      const dashIdx = desc.indexOf('–');
+      const title = dashIdx > -1 ? desc.slice(0, dashIdx).trim() : desc;
+      const sub   = dashIdx > -1 ? desc.slice(dashIdx + 1).trim() : '';
+      return (
+        <div key={i} className="flex justify-between items-baseline mb-1">
+          <span className="text-[11px]">
+            <span className="font-bold underline">{title}</span>
+            {sub && <span> – {sub}</span>}
+          </span>
+          <span className="text-[10.5px]">{date}</span>
+        </div>
+      );
+    });
+  };
+
+  // Skills: parse bold inline per line
+  const renderSkills = (raw: string) => (
+    <div className="text-[11px] leading-relaxed space-y-0.5">
+      {raw.split('\n').filter(l => l.trim()).map((line, i) => {
+        const parts = line.split(/(\*\*[^*]+\*\*)/g);
+        return (
+          <div key={i}>
+            {parts.map((part, j) =>
+              part.startsWith('**') && part.endsWith('**')
+                ? <strong key={j}>{part.slice(2, -2)}</strong>
+                : <span key={j}>{part}</span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  const SectionHeader = ({ title }: { title: string }) => (
+    <div className="mt-4 mb-1">
+      <h2
+        className="text-[12px] font-bold tracking-widest uppercase"
+        style={{ fontVariant: 'small-caps' }}
+      >
+        {title}
+      </h2>
+      <hr className="border-t border-black mt-0.5" />
+    </div>
+  );
+
+  const contactItems = [
+    data.website,
+    data.email,
+    data.phone,
+    data.linkedin ? data.linkedin.replace('https://', '') : '',
+    data.github   ? data.github.replace('https://', '')   : '',
+  ].filter(Boolean);
+
+  return (
+    <div
+      className="bg-white text-black font-serif"
+      style={{
+        width: '210mm',
+        minHeight: '297mm',
+        padding: '18mm',
+        fontSize: '11px',
+        lineHeight: '1.4',
+        boxSizing: 'border-box',
+      }}
+    >
+      {/* Name */}
+      <div className="text-center mb-1">
+        <h1 className="text-[28px] font-extrabold tracking-tight leading-tight">
+          {data.fullName || 'Your Name'}
+        </h1>
+      </div>
+
+      {/* Contact Row */}
+      {contactItems.length > 0 && (
+        <div className="text-center text-[10.5px] mb-2 flex flex-wrap justify-center gap-x-1">
+          {contactItems.map((item, i) => (
+            <span key={i}>
+              {i > 0 && <span className="mx-1">|</span>}
+              {item}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {hasContent(data.education) && (
+        <><SectionHeader title="Education" />{parseEducation(data.education)}</>
+      )}
+      {hasContent(data.experience) && (
+        <><SectionHeader title="Experience" />{parseExperience(data.experience)}</>
+      )}
+      {hasContent(data.projects) && (
+        <><SectionHeader title="Projects" />{parseProjects(data.projects)}</>
+      )}
+      {hasContent(data.coursework) && (
+        <>
+          <SectionHeader title="Relevant Coursework" />
+          <p className="text-[11px] leading-relaxed">{data.coursework}</p>
+        </>
+      )}
+      {hasContent(data.skills) && (
+        <>
+          <SectionHeader title="Technical Skills" />
+          {renderSkills(data.skills)}
+        </>
+      )}
+      {hasContent(data.extracurriculars) && (
+        <><SectionHeader title="Extracurriculars / Activities" />{parseExtracurriculars(data.extracurriculars)}</>
+      )}
+      {hasContent(data.achievements) && (
+        <><SectionHeader title="Achievements & Certifications" />{parseAchievements(data.achievements)}</>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Download Page ───────────────────────────────────────────────────────
+
 export default function DownloadResume() {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [resumes, setResumes] = useState<ResumeData[]>([]);
+  const [loading, setLoading]               = useState(true);
+  const [isDownloading, setIsDownloading]   = useState(false);
+  const [resumes, setResumes]               = useState<ResumeData[]>([]);
   const [selectedResume, setSelectedResume] = useState<ResumeData | null>(null);
-  const [pdfError, setPdfError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchResumes() {
@@ -40,9 +280,12 @@ export default function DownloadResume() {
         );
         const querySnapshot = await getDocs(q);
 
-        const fetchedResumes = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
+        const fetchedResumes = querySnapshot.docs.map(docSnap => ({
+          id: docSnap.id,
+          fullName: '', phone: '', email: '', website: '',
+          github: '', linkedin: '', education: '', experience: '',
+          skills: '', projects: '', coursework: '', extracurriculars: '', achievements: '',
+          ...docSnap.data(),
         })) as ResumeData[];
 
         fetchedResumes.sort((a, b) => {
@@ -53,7 +296,7 @@ export default function DownloadResume() {
 
         setResumes(fetchedResumes);
       } catch (error) {
-        console.error("Error fetching resumes:", error);
+        console.error('Error fetching resumes:', error);
       } finally {
         setLoading(false);
       }
@@ -63,80 +306,29 @@ export default function DownloadResume() {
 
   const handleDownloadPDF = async () => {
     const element = document.getElementById('resume-pdf-container');
-    if (!element || !selectedResume) {
-      alert('Could not find resume container element.');
-      return;
-    }
+    if (!element || !selectedResume) return;
 
     setIsDownloading(true);
-    setPdfError(null);
-
     try {
-      const html2canvas = (await import('html2canvas')).default;
-      const { jsPDF } = await import('jspdf');
-
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        // onclone: strip modern CSS color functions that html2canvas can't parse
-        onclone: (_doc: Document, el: HTMLElement) => {
-          // Walk every element and replace any unsupported color values
-          const allEls = el.querySelectorAll('*');
-          allEls.forEach((node) => {
-            const htmlNode = node as HTMLElement;
-            const style = window.getComputedStyle(htmlNode);
-            const problematic = ['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderBottomColor', 'borderLeftColor', 'borderRightColor'];
-            problematic.forEach((prop) => {
-              const val: string = (style as any)[prop] || '';
-              if (val.includes('oklch') || val.includes('lab(') || val.includes('oklab') || val.includes('color(')) {
-                (htmlNode.style as any)[prop] = prop.toLowerCase().includes('background') ? '#ffffff' : '#000000';
-              }
-            });
-          });
-        },
-      } as any);
-
-      const imgData = canvas.toDataURL('image/jpeg', 0.98);
-
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
-
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pageWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
+      const html2pdf = (await import('html2pdf.js')).default;
       const fileName = `${selectedResume.fullName?.replace(/\s+/g, '_') || 'My'}_Resume.pdf`;
-      pdf.save(fileName);
-
-    } catch (error: any) {
-      const msg = error?.message || String(error);
-      console.error('PDF generation error:', error);
-      setPdfError(msg);
-      alert(`Failed to generate PDF.\n\nError: ${msg}`);
+      const opt = {
+        margin:      0,
+        filename:    fileName,
+        image:       { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+      };
+      await html2pdf().set(opt).from(element).save();
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
     } finally {
       setIsDownloading(false);
     }
   };
 
+  // ── Loading ──
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f4f4f4] text-black font-black uppercase">
@@ -145,11 +337,14 @@ export default function DownloadResume() {
     );
   }
 
+  // ── Empty state ──
   if (resumes.length === 0) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#f4f4f4] text-black p-8">
         <h1 className="text-3xl font-black uppercase mb-4">No Resumes Found</h1>
-        <p className="font-bold mb-8 text-gray-600">You haven't generated or saved any resumes yet.</p>
+        <p className="font-bold mb-8 text-gray-600">
+          You haven't generated or saved any resumes yet.
+        </p>
         <Link
           href="/user/resume"
           className="bg-black text-white px-8 py-3 font-black uppercase tracking-widest hover:bg-gray-800 transition-all shadow-[4px_4px_0px_0px_rgba(150,150,150,1)] active:translate-y-1 active:shadow-none"
@@ -160,6 +355,7 @@ export default function DownloadResume() {
     );
   }
 
+  // ── Resume list grid ──
   if (!selectedResume) {
     return (
       <div className="min-h-screen bg-[#F9FAFB] p-8 text-black">
@@ -167,7 +363,9 @@ export default function DownloadResume() {
           <div className="flex justify-between items-end mb-10 border-b-8 border-black pb-6">
             <div>
               <h1 className="text-5xl font-black uppercase tracking-tighter">My Resumes</h1>
-              <p className="text-gray-600 font-bold mt-2 uppercase text-sm">Select a tailored resume to view or download as PDF.</p>
+              <p className="text-gray-600 font-bold mt-2 uppercase text-sm">
+                Select a tailored resume to preview or download as PDF.
+              </p>
             </div>
             <Link
               href="/user/resume"
@@ -189,17 +387,22 @@ export default function DownloadResume() {
                       <FileText size={24} />
                     </div>
                     <div>
-                      <h3 className="font-black uppercase text-xl truncate">{resume.targetCompany || `Resume Variant ${resumes.length - idx}`}</h3>
+                      <h3 className="font-black uppercase text-xl truncate">
+                        {resume.targetCompany || `Resume Variant ${resumes.length - idx}`}
+                      </h3>
                       <p className="text-xs font-bold text-gray-500 uppercase">
-                        {resume.updatedAt ? new Date(resume.updatedAt.seconds * 1000).toLocaleDateString() : 'Draft'}
+                        {resume.updatedAt
+                          ? new Date(resume.updatedAt.seconds * 1000).toLocaleDateString()
+                          : 'Draft'}
                       </p>
                     </div>
                   </div>
                   <p className="text-sm font-bold text-gray-700 mb-6 line-clamp-3">
-                    <span className="text-black uppercase text-xs">Skills:</span> {resume.skills || 'Not specified'}
+                    <span className="text-black uppercase text-xs">For: </span>
+                    {resume.targetCompany || 'General Resume'}
+                    {resume.fullName ? ` · ${resume.fullName}` : ''}
                   </p>
                 </div>
-
                 <button
                   onClick={() => setSelectedResume(resume)}
                   className="w-full bg-white border-4 border-black text-black py-3 font-black uppercase tracking-widest hover:bg-black hover:text-white transition-colors"
@@ -214,112 +417,44 @@ export default function DownloadResume() {
     );
   }
 
+  // ── Selected resume view + download ──
   return (
     <div className="min-h-screen bg-[#f4f4f4] py-10 text-black">
 
-      <div className="max-w-4xl mx-auto mb-8 flex justify-between items-center px-8 lg:px-0">
+      {/* Toolbar */}
+      <div className="max-w-[210mm] mx-auto mb-6 flex justify-between items-center px-4 lg:px-0">
         <div>
           <button
             onClick={() => setSelectedResume(null)}
-            className="flex items-center gap-2 text-sm font-black uppercase tracking-wider hover:underline mb-2"
+            className="flex items-center gap-2 text-sm font-black uppercase tracking-wider hover:underline mb-1"
           >
             <ArrowLeft size={16} /> Back to List
           </button>
-          <h1 className="text-3xl font-black uppercase tracking-tighter">Export Resume</h1>
+          <h1 className="text-2xl font-black uppercase tracking-tighter">Export Resume</h1>
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-3">
           <Link
             href="/user/resume"
-            className="border-4 border-black px-6 py-3 font-black uppercase hover:bg-gray-200 transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 bg-white"
+            className="border-4 border-black px-5 py-2.5 font-black uppercase text-sm hover:bg-gray-200 transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 bg-white"
           >
             Edit Content
           </Link>
           <button
             onClick={handleDownloadPDF}
             disabled={isDownloading}
-            className="flex items-center gap-2 bg-black text-white border-4 border-black px-8 py-3 font-black uppercase hover:bg-gray-800 transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 bg-black text-white border-4 border-black px-6 py-2.5 font-black uppercase text-sm hover:bg-gray-800 transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Download size={18} />
-            {isDownloading ? 'Generating...' : 'Download PDF'}
+            <Download size={16} />
+            {isDownloading ? 'Generating…' : 'Download PDF'}
           </button>
         </div>
       </div>
 
-      {/* Show error details if any */}
-      {pdfError && (
-        <div className="max-w-4xl mx-auto mb-4 px-8 lg:px-0">
-          <div className="bg-red-50 border-4 border-red-500 p-4 text-red-800 font-mono text-sm">
-            <strong>PDF Error:</strong> {pdfError}
-          </div>
-        </div>
-      )}
-
-      {/* Target Container for PDF conversion */}
-      <div
-        id="resume-pdf-container"
-        className="max-w-[210mm] min-h-[297mm] mx-auto bg-white p-12 shadow-[16px_16px_0px_0px_rgba(0,0,0,0.1)]"
-      >
-        <header className="text-center border-b-2 border-black pb-6 mb-8">
-          <h1 className="text-4xl font-black uppercase tracking-tight mb-3 text-black">
-            {selectedResume.fullName || 'Your Name'}
-          </h1>
-          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-gray-800 font-bold">
-            {selectedResume.phone && <span>{selectedResume.phone}</span>}
-            {selectedResume.linkedin && (
-              <span>• <a href={selectedResume.linkedin} className="hover:underline text-blue-700">{selectedResume.linkedin.replace(/^https?:\/\/(www\.)?/, '')}</a></span>
-            )}
-            {selectedResume.github && (
-              <span>• <a href={selectedResume.github} className="hover:underline text-black">{selectedResume.github.replace(/^https?:\/\/(www\.)?/, '')}</a></span>
-            )}
-          </div>
-        </header>
-
-        <div className="space-y-8 font-sans text-gray-900">
-          {selectedResume.skills && (
-            <section>
-              <h2 className="text-lg font-black uppercase tracking-widest border-b-2 border-gray-300 mb-3 pb-1 text-black">
-                Technical Skills
-              </h2>
-              <p className="font-medium leading-relaxed whitespace-pre-wrap">
-                {selectedResume.skills}
-              </p>
-            </section>
-          )}
-
-          {selectedResume.experience && (
-            <section>
-              <h2 className="text-lg font-black uppercase tracking-widest border-b-2 border-gray-300 mb-3 pb-1 text-black">
-                Experience
-              </h2>
-              <div className="font-medium leading-relaxed whitespace-pre-wrap">
-                {selectedResume.experience}
-              </div>
-            </section>
-          )}
-
-          {selectedResume.projects && (
-            <section>
-              <h2 className="text-lg font-black uppercase tracking-widest border-b-2 border-gray-300 mb-3 pb-1 text-black">
-                Projects
-              </h2>
-              <div className="font-medium leading-relaxed whitespace-pre-wrap">
-                {selectedResume.projects}
-              </div>
-            </section>
-          )}
-
-          {selectedResume.education && (
-            <section>
-              <h2 className="text-lg font-black uppercase tracking-widest border-b-2 border-gray-300 mb-3 pb-1 text-black">
-                Education
-              </h2>
-              <div className="font-medium leading-relaxed whitespace-pre-wrap">
-                {selectedResume.education}
-              </div>
-            </section>
-          )}
-        </div>
+      {/* PDF Target */}
+      <div id="resume-pdf-container" className="mx-auto w-fit shadow-[16px_16px_0px_0px_rgba(0,0,0,0.08)]">
+        <ResumePreview data={selectedResume} />
       </div>
+
     </div>
   );
 }
