@@ -3,9 +3,10 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, getDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { generateTailoredResume } from './actions';
+import Link from 'next/link';
 
 interface ResumeData {
   fullName: string;
@@ -44,7 +45,7 @@ export default function ResumeBuilder() {
     async function fetchData() {
       if (!user) return;
       try {
-        // Fetch existing resume data
+        // Fetch existing legacy resume data (if any) to pre-fill the form
         const resumeRef = doc(db, 'resumes', user.uid);
         const resumeSnap = await getDoc(resumeRef);
         if (resumeSnap.exists()) {
@@ -78,6 +79,7 @@ export default function ResumeBuilder() {
 
     setGenerating(true);
     try {
+      // Fix for Firebase Timestamps crashing Next.js Server Actions
       const plainProfileData = JSON.parse(JSON.stringify(baseProfileData));
 
       const generatedResume = await generateTailoredResume(
@@ -106,12 +108,14 @@ export default function ResumeBuilder() {
     setSaving(true);
 
     try {
-      await setDoc(doc(db, 'resumes', user.uid), {
+      // Use addDoc to create a new, unique document for each tailored resume
+      await addDoc(collection(db, 'resumes'), {
         ...formData,
+        targetCompany: companyName || 'General Resume', // Tags the resume for the grid
         updatedAt: serverTimestamp(),
         userEmail: user.email
       });
-      alert("Resume data saved successfully!");
+      alert("New Resume Variant saved successfully! You can view it in the Export page.");
     } catch (error) {
       console.error("Error saving resume:", error);
       alert("Failed to save changes.");
@@ -279,7 +283,16 @@ export default function ResumeBuilder() {
           <div className="lg:sticky lg:top-8 border-4 border-black bg-white shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col h-[calc(100vh-4rem)]">
             <div className="bg-black text-white p-4 flex justify-between items-center border-b-4 border-black">
               <h2 className="text-xl font-black uppercase tracking-widest">Live Preview</h2>
-              <span className="text-xs font-bold uppercase bg-white text-black px-2 py-1">A4 Standard</span>
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-bold uppercase bg-white text-black px-2 py-1">A4 Standard</span>
+                {/* Export Button inside Header */}
+                <Link 
+                  href="/user/resume/download"
+                  className="text-[10px] font-black uppercase bg-white text-black px-3 py-1 hover:bg-gray-200 transition-colors shadow-[2px_2px_0px_0px_rgba(255,255,255,0.5)] active:translate-y-[1px] active:shadow-none"
+                >
+                  View Saved Resumes
+                </Link>
+              </div>
             </div>
             
             {/* Scrollable Preview Area */}

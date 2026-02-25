@@ -1,3 +1,4 @@
+// app/(protected)/user/dashboard/page.tsx
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,7 +14,8 @@ import {
   Calendar as CalendarIcon, 
   User,
   ArrowRight,
-  GraduationCap
+  GraduationCap,
+  Download // Added Download icon
 } from 'lucide-react';
 
 export default function UserDashboard() {
@@ -68,6 +70,14 @@ export default function UserDashboard() {
       icon: PenTool, 
       color: 'text-orange-600', 
       bg: 'bg-orange-50' 
+    },
+    { 
+      title: 'Export Resume', 
+      desc: 'Download your tailored A4 PDF',
+      href: '/user/resume/download', 
+      icon: Download, 
+      color: 'text-red-600', 
+      bg: 'bg-red-50' 
     },
     { 
       title: 'My Results', 
