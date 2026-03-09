@@ -25,9 +25,11 @@ Instructions:
 5. For Experience: format as "Role — Title | Date\\nOrg | Location\\n- bullet\\n- bullet" with blank lines between entries.
 6. For Projects: format as "Project Name | Tech Stack | Date\\n- bullet\\n- bullet" with blank lines between entries.
 7. For Extracurriculars: format as "Title | Organization | Date" one per line.
-8. For Achievements: format as "Award Name – Description | Date" one per line.
+8. For Achievements: format as "Award Name – Description | Date" one per line. Include positions of responsibility here too.
 9. Use **double asterisks** around important words/phrases for bold emphasis in bullets.
 10. Keep tone professional and impactful.
+11. IMPORTANT: "Technical Skills" and "Relevant Coursework" are SEPARATE sections. Do NOT repeat coursework items in skills or vice versa. Skills = programming languages, frameworks, tools, technologies. Coursework = academic courses/subjects taken.
+12. Output the "coursework" field as a simple comma-separated list of course names. Do NOT duplicate any coursework content in the "skills" field.
 
 Format the output STRICTLY as a JSON object with NO markdown fences, NO extra text — just raw JSON:
 

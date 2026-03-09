@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { BarChart3, Trophy, CalendarDays } from 'lucide-react';
 
 interface TestResult {
   id: string;
@@ -47,63 +48,77 @@ export default function ResultsPage() {
 
   if (loading || authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white text-black">
-        Loading your results...
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="loading-dots"><span /><span /><span /></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen p-6 md:p-10">
+      <div className="max-w-5xl mx-auto animate-fade-in">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-black mb-2">My Results</h1>
-          <p className="text-gray-600">Track your performance across all assessments.</p>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-pink-500/10 rounded-xl flex items-center justify-center">
+              <BarChart3 size={20} className="text-pink-400" />
+            </div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-zinc-100">My Results</h1>
+          </div>
+          <p className="text-zinc-500">Track your performance across all assessments.</p>
         </div>
 
         {results.length === 0 ? (
-          <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
-            <p className="text-gray-500 text-lg">You haven't completed any tests yet.</p>
+          <div className="text-center py-16 bg-zinc-900 border border-zinc-800 border-dashed rounded-2xl">
+            <Trophy size={40} className="mx-auto text-zinc-600 mb-3" />
+            <p className="text-zinc-400 font-medium">You haven&apos;t completed any tests yet.</p>
+            <p className="text-zinc-600 text-sm mt-1">Take a test and your results will show here.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-black text-white">
-                  <th className="p-4 text-left border border-black">Test Name</th>
-                  <th className="p-4 text-center border border-black">Score</th>
-                  <th className="p-4 text-center border border-black">Percentage</th>
-                  <th className="p-4 text-right border border-black">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((result) => {
-                  const percentage = ((result.score / result.totalQuestions) * 100).toFixed(1);
-                  const date = result.submittedAt?.toDate().toLocaleDateString() || 'N/A';
-                  
-                  return (
-                    <tr key={result.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="p-4 border border-gray-200 font-bold text-black">
-                        {result.testTitle}
-                      </td>
-                      <td className="p-4 border border-gray-200 text-center text-black">
-                        {result.score} / {result.totalQuestions}
-                      </td>
-                      <td className="p-4 border border-gray-200 text-center">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                          Number(percentage) >= 70 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {percentage}%
-                        </span>
-                      </td>
-                      <td className="p-4 border border-gray-200 text-right text-gray-600">
-                        {date}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-zinc-800">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">Test Name</th>
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-zinc-500 uppercase tracking-wider">Score</th>
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-zinc-500 uppercase tracking-wider">Percentage</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-zinc-500 uppercase tracking-wider">Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800/50">
+                  {results.map((result) => {
+                    const percentage = ((result.score / result.totalQuestions) * 100).toFixed(1);
+                    const date = result.submittedAt?.toDate().toLocaleDateString() || 'N/A';
+                    const pct = Number(percentage);
+                    
+                    return (
+                      <tr key={result.id} className="hover:bg-zinc-800/30 transition-colors">
+                        <td className="px-6 py-4 font-semibold text-zinc-100">
+                          {result.testTitle}
+                        </td>
+                        <td className="px-6 py-4 text-center text-zinc-300">
+                          <span className="font-semibold">{result.score}</span>
+                          <span className="text-zinc-600"> / {result.totalQuestions}</span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+                            pct >= 80 ? 'bg-emerald-500/10 text-emerald-400' :
+                            pct >= 60 ? 'bg-amber-500/10 text-amber-400' :
+                            'bg-red-500/10 text-red-400'
+                          }`}>
+                            {percentage}%
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right text-sm text-zinc-500 flex items-center justify-end gap-1.5">
+                          <CalendarDays size={13} />
+                          {date}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>

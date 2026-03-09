@@ -9,7 +9,7 @@ export default function ProtectedLayout({
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-[calc(100vh-56px)] bg-[#09090b]">
         {children}
       </main>
     </>

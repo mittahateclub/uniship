@@ -13,9 +13,10 @@ import {
   BarChart3, 
   Calendar as CalendarIcon, 
   User,
-  ArrowRight,
+  ArrowUpRight,
   GraduationCap,
-  Download // Added Download icon
+  Download,
+  Sparkles,
 } from 'lucide-react';
 
 export default function UserDashboard() {
@@ -30,8 +31,8 @@ export default function UserDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB]">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-black"></div>
+      <div className="min-h-screen flex items-center justify-center bg-[#09090b]">
+        <div className="loading-dots"><span /><span /><span /></div>
       </div>
     );
   }
@@ -41,138 +42,135 @@ export default function UserDashboard() {
   const menuItems = [
     { 
       title: 'Test Portal', 
-      desc: 'Take your assessments and mock tests',
+      desc: 'Assessments & mock tests',
       href: '/user/test-portal', 
       icon: FileText, 
-      color: 'text-blue-600', 
-      bg: 'bg-blue-50' 
+      accent: 'text-blue-400',
+      accentBg: 'bg-blue-500/10',
     },
     { 
       title: 'Internships', 
-      desc: 'Explore new career opportunities',
+      desc: 'Career opportunities',
       href: '/user/internships', 
       icon: Briefcase, 
-      color: 'text-purple-600', 
-      bg: 'bg-purple-50' 
+      accent: 'text-violet-400',
+      accentBg: 'bg-violet-500/10',
     },
     { 
-      title: 'My Applications', 
-      desc: 'Track your submission status',
+      title: 'Applications', 
+      desc: 'Track submissions',
       href: '/user/applications', 
       icon: ClipboardCheck, 
-      color: 'text-green-600', 
-      bg: 'bg-green-50' 
+      accent: 'text-emerald-400',
+      accentBg: 'bg-emerald-500/10',
     },
     { 
       title: 'Resume Builder', 
-      desc: 'Create your AI-powered resume',
+      desc: 'AI-powered resume',
       href: '/user/resume', 
       icon: PenTool, 
-      color: 'text-orange-600', 
-      bg: 'bg-orange-50' 
+      accent: 'text-orange-400',
+      accentBg: 'bg-orange-500/10',
     },
     { 
       title: 'Export Resume', 
-      desc: 'Download your tailored A4 PDF',
+      desc: 'Download A4 PDF',
       href: '/user/resume/download', 
       icon: Download, 
-      color: 'text-red-600', 
-      bg: 'bg-red-50' 
+      accent: 'text-rose-400',
+      accentBg: 'bg-rose-500/10',
     },
     { 
-      title: 'My Results', 
-      desc: 'View performance and analytics',
+      title: 'Results', 
+      desc: 'Performance analytics',
       href: '/user/results', 
       icon: BarChart3, 
-      color: 'text-pink-600', 
-      bg: 'bg-pink-50' 
+      accent: 'text-pink-400',
+      accentBg: 'bg-pink-500/10',
     },
     { 
-      title: 'Profile Settings', 
-      desc: 'Update your academic details',
+      title: 'Profile', 
+      desc: 'Academic details',
       href: '/user/profile', 
       icon: User, 
-      color: 'text-gray-600', 
-      bg: 'bg-gray-100' 
+      accent: 'text-zinc-400',
+      accentBg: 'bg-zinc-500/10',
     },
   ];
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] p-6 md:p-10 text-black">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen p-4 md:p-8">
+      <div className="max-w-[1200px] mx-auto animate-fade-in">
         
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-3">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight">Student Dashboard</h1>
-            <p className="text-gray-500 font-medium">Welcome back, <span className="text-black">{user.email}</span></p>
+            <h1 className="text-2xl font-semibold text-zinc-100">Dashboard</h1>
+            <p className="text-zinc-500 text-sm mt-0.5">Welcome back, <span className="text-zinc-300">{user.email?.split('@')[0]}</span></p>
           </div>
           <Link 
             href="/user/calendar" 
-            className="flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-xl shadow-sm hover:bg-gray-50 transition-colors font-semibold text-sm"
+            className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3.5 py-2 rounded-lg hover:border-zinc-700 transition-all text-sm font-medium text-zinc-400 hover:text-zinc-300"
           >
-            <CalendarIcon size={18} />
+            <CalendarIcon size={15} className="text-violet-400" />
             View Schedule
           </Link>
         </div>
 
-        {/* Quick Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+        {/* Stats bento row */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6 stagger-children">
           {[
-            { label: 'Active Applications', value: '0', icon: ClipboardCheck },
-            { label: 'Pending Tests', value: '0', icon: FileText },
-            { label: 'Upcoming Events', value: '0', icon: CalendarIcon },
-            { label: 'Average Score', value: 'N/A', icon: GraduationCap },
+            { label: 'Applications', value: '0', icon: ClipboardCheck, accent: 'text-emerald-400' },
+            { label: 'Pending Tests', value: '0', icon: FileText, accent: 'text-blue-400' },
+            { label: 'Events', value: '0', icon: CalendarIcon, accent: 'text-violet-400' },
+            { label: 'Avg Score', value: 'N/A', icon: GraduationCap, accent: 'text-orange-400' },
           ].map((stat, i) => (
-            <div key={i} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-              <div className="flex justify-between items-start mb-2">
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{stat.label}</span>
-                <stat.icon size={16} className="text-gray-300" />
+            <div key={i} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 hover:border-zinc-700 transition-colors">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[11px] font-medium text-zinc-600 uppercase tracking-wider">{stat.label}</span>
+                <stat.icon size={14} className={stat.accent} />
               </div>
-              <p className="text-2xl font-bold">{stat.value}</p>
+              <p className="text-xl font-semibold text-zinc-100">{stat.value}</p>
             </div>
           ))}
         </div>
 
-        {/* Main Navigation Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Bento grid navigation */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 stagger-children">
           {menuItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="group bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+              className="group bg-zinc-900 border border-zinc-800 rounded-xl p-5 card-hover"
             >
-              <div className={`w-14 h-14 ${item.bg} ${item.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                <item.icon size={28} />
+              <div className={`w-9 h-9 ${item.accentBg} rounded-lg flex items-center justify-center mb-4`}>
+                <item.icon size={18} className={item.accent} />
               </div>
-              
-              <div className="mb-4">
-                <h3 className="text-xl font-bold mb-1">{item.title}</h3>
-                <p className="text-gray-500 text-sm">{item.desc}</p>
-              </div>
-
-              <div className="flex items-center text-sm font-bold gap-1 group-hover:gap-2 transition-all">
-                <span>Enter Portal</span>
-                <ArrowRight size={16} />
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="text-[15px] font-medium text-zinc-200 mb-0.5">{item.title}</h3>
+                  <p className="text-zinc-600 text-[13px]">{item.desc}</p>
+                </div>
+                <ArrowUpRight size={14} className="text-zinc-700 group-hover:text-zinc-400 transition-colors mt-1 shrink-0" />
               </div>
             </Link>
           ))}
         </div>
 
-        {/* Footer Info / Tip */}
-        <div className="mt-12 p-6 bg-black rounded-3xl text-white flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="bg-gray-800 p-3 rounded-xl">
-              <PenTool className="text-orange-400" />
+        {/* CTA banner */}
+        <div className="mt-8 bg-zinc-900 border border-zinc-800 rounded-xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 animate-slide-up">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-violet-500/10 rounded-lg flex items-center justify-center shrink-0">
+              <Sparkles size={18} className="text-violet-400" />
             </div>
             <div>
-              <p className="font-bold">Complete your Resume Profile</p>
-              <p className="text-gray-400 text-sm">Improve your chances of getting shortlisted by 60%.</p>
+              <p className="text-sm font-medium text-zinc-200">Complete your Resume Profile</p>
+              <p className="text-zinc-600 text-[13px]">Boost shortlisting chances by 60%</p>
             </div>
           </div>
           <Link 
             href="/user/resume" 
-            className="bg-white text-black px-6 py-2 rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors"
+            className="bg-zinc-100 text-zinc-900 px-4 py-2 rounded-lg text-sm font-medium hover:bg-white transition-colors shrink-0"
           >
             Update Now
           </Link>

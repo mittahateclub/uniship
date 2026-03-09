@@ -12,13 +12,14 @@ import { app } from '@/lib/firebase';
 interface UserProfile {
   photoURL?: string;
   name?: string;
-  phone?: string;      // Added Phone
-  email?: string;      // Added Email
+  phone?: string;
+  email?: string;
   title?: string;
   bio?: string;
   rollNumber?: string;
   linkedinUrl?: string;
   githubUrl?: string;
+  // Legacy string fields (kept for resume page compatibility)
   technicalSkills?: string;
   experience?: string;
   education?: string;
@@ -27,6 +28,106 @@ interface UserProfile {
   positions?: string;
   relevantCoursework?: string;
   extracurriculars?: string;
+  // Structured entry arrays
+  educationEntries?: EducationEntry[];
+  experienceEntries?: ExperienceEntry[];
+  projectEntries?: ProjectEntry[];
+  achievementEntries?: AchievementEntry[];
+  positionEntries?: PositionEntry[];
+  extracurricularEntries?: ExtracurricularEntry[];
+}
+
+interface EducationEntry {
+  institution: string;
+  degree: string;
+  fromDate: string;
+  toDate: string;
+  cgpa: string;
+  location: string;
+}
+
+interface ExperienceEntry {
+  company: string;
+  role: string;
+  fromDate: string;
+  toDate: string;
+  description: string;
+  location: string;
+}
+
+interface ProjectEntry {
+  title: string;
+  techStack: string;
+  description: string;
+  link: string;
+  fromDate: string;
+  toDate: string;
+  location: string;
+}
+
+interface AchievementEntry {
+  title: string;
+  issuer: string;
+  fromDate: string;
+  toDate: string;
+  location: string;
+}
+
+interface PositionEntry {
+  title: string;
+  organization: string;
+  fromDate: string;
+  toDate: string;
+  location: string;
+}
+
+interface ExtracurricularEntry {
+  activity: string;
+  role: string;
+  description: string;
+  fromDate: string;
+  toDate: string;
+  location: string;
+}
+
+// Helper to format from/to into a date range string
+function formatDateRange(from: string, to: string): string {
+  if (from && to) return `${from} – ${to}`;
+  if (from) return `${from} – Present`;
+  if (to) return to;
+  return '';
+}
+
+// Serializers — flatten structured entries to strings for resume compatibility
+function serializeEducation(entries: EducationEntry[]): string {
+  return entries.filter(e => e.institution || e.degree).map(e =>
+    [e.institution, e.location, e.degree, formatDateRange(e.fromDate, e.toDate), e.cgpa ? `CGPA: ${e.cgpa}` : ''].filter(Boolean).join(' | ')
+  ).join('\n');
+}
+function serializeExperience(entries: ExperienceEntry[]): string {
+  return entries.filter(e => e.company || e.role).map(e =>
+    [[e.company, e.role, formatDateRange(e.fromDate, e.toDate)].filter(Boolean).join(' | '), e.location, e.description].filter(Boolean).join('\n')
+  ).join('\n\n');
+}
+function serializeProjects(entries: ProjectEntry[]): string {
+  return entries.filter(e => e.title).map(e =>
+    [[e.title, e.techStack, formatDateRange(e.fromDate, e.toDate)].filter(Boolean).join(' | '), e.location, e.description, e.link].filter(Boolean).join('\n')
+  ).join('\n\n');
+}
+function serializeAchievements(entries: AchievementEntry[]): string {
+  return entries.filter(e => e.title).map(e =>
+    [e.title, e.issuer, e.location, formatDateRange(e.fromDate, e.toDate)].filter(Boolean).join(' | ')
+  ).join('\n');
+}
+function serializePositions(entries: PositionEntry[]): string {
+  return entries.filter(e => e.title).map(e =>
+    [e.title, e.organization, e.location, formatDateRange(e.fromDate, e.toDate)].filter(Boolean).join(' | ')
+  ).join('\n');
+}
+function serializeExtracurriculars(entries: ExtracurricularEntry[]): string {
+  return entries.filter(e => e.activity).map(e =>
+    [e.activity, e.role, e.location, formatDateRange(e.fromDate, e.toDate), e.description].filter(Boolean).join(' | ')
+  ).join('\n');
 }
 
 // ✅ LinkedIn SVG logo (official brand color)
@@ -43,6 +144,46 @@ const GitHubIcon = () => (
   </svg>
 );
 
+// Reusable accordion panel wrapper
+function AccordionPanel({
+  label, hint, isOpen, hasContent, onToggle, children,
+}: {
+  label: string; hint?: string; isOpen: boolean; hasContent: boolean;
+  onToggle: () => void; children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-6 sm:px-8 py-4 text-left hover:bg-gray-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-inset"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="text-sm font-bold uppercase tracking-wide text-gray-900 truncate">{label}</span>
+          {hint && (
+            <span className="hidden sm:inline-flex text-[10px] font-semibold uppercase tracking-wider bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{hint}</span>
+          )}
+          {hasContent && (
+            <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" title="Has content" />
+          )}
+        </div>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <div className={`grid transition-all duration-200 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+        <div className="overflow-hidden">
+          <div className="px-6 sm:px-8 pb-5 pt-1">{children}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function StudentProfile() {
   const { user, loading: authLoading } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -51,6 +192,35 @@ export default function StudentProfile() {
   const [message, setMessage] = useState('');
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set());
+
+  // Structured entry states
+  const [educationEntries, setEducationEntries] = useState<EducationEntry[]>([]);
+  const [experienceEntries, setExperienceEntries] = useState<ExperienceEntry[]>([]);
+  const [projectEntries, setProjectEntries] = useState<ProjectEntry[]>([]);
+  const [achievementEntries, setAchievementEntries] = useState<AchievementEntry[]>([]);
+  const [positionEntries, setPositionEntries] = useState<PositionEntry[]>([]);
+  const [extracurricularEntries, setExtracurricularEntries] = useState<ExtracurricularEntry[]>([]);
+
+  const toggleSection = (section: string) => {
+    setOpenSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(section)) {
+        next.delete(section);
+      } else {
+        next.add(section);
+      }
+      return next;
+    });
+  };
+
+  // Generic entry helpers
+  function updateEntry<T>(setter: React.Dispatch<React.SetStateAction<T[]>>, index: number, field: keyof T, value: string) {
+    setter(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
+  }
+  function removeEntry<T>(setter: React.Dispatch<React.SetStateAction<T[]>>, index: number) {
+    setter(prev => prev.filter((_, i) => i !== index));
+  }
 
   useEffect(() => {
     async function fetchProfile() {
@@ -68,6 +238,13 @@ export default function StudentProfile() {
             data.email = user.email;
           }
           setProfile(data);
+          // Hydrate structured entries from Firestore
+          if (data.educationEntries) setEducationEntries(data.educationEntries);
+          if (data.experienceEntries) setExperienceEntries(data.experienceEntries);
+          if (data.projectEntries) setProjectEntries(data.projectEntries);
+          if (data.achievementEntries) setAchievementEntries(data.achievementEntries);
+          if (data.positionEntries) setPositionEntries(data.positionEntries);
+          if (data.extracurricularEntries) setExtracurricularEntries(data.extracurricularEntries);
         } else {
           setProfile({ email: user.email || '' });
         }
@@ -120,6 +297,20 @@ export default function StudentProfile() {
     try {
       await updateDoc(doc(db, 'users', user.uid), {
         ...profile,
+        // Structured arrays
+        educationEntries,
+        experienceEntries,
+        projectEntries,
+        achievementEntries,
+        positionEntries,
+        extracurricularEntries,
+        // Serialized strings for resume compatibility
+        education: serializeEducation(educationEntries),
+        experience: serializeExperience(experienceEntries),
+        projects: serializeProjects(projectEntries),
+        achievements: serializeAchievements(achievementEntries),
+        positions: serializePositions(positionEntries),
+        extracurriculars: serializeExtracurriculars(extracurricularEntries),
         updatedAt: new Date(),
       });
       setMessage('Profile updated successfully!');
@@ -135,6 +326,12 @@ export default function StudentProfile() {
     const { name, value } = e.target;
     setProfile((prev) => (prev ? { ...prev, [name]: value } : { [name]: value }));
   };
+
+  // Shared Tailwind classes for portfolio form
+  const fieldClass = 'w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black outline-none transition-colors';
+  const cardClass = 'rounded-xl border border-gray-200 bg-white p-4 shadow-sm';
+  const addBtnClass = 'w-full rounded-lg border-2 border-dashed border-gray-300 py-2.5 text-sm font-bold text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors';
+  const removeBtnClass = 'text-xs font-bold text-red-500 hover:text-red-700 transition-colors';
 
   if (loading || authLoading) {
     return (
@@ -386,91 +583,218 @@ export default function StudentProfile() {
                 </div>
               </div>
 
-              {/* Portfolio & Experience */}
-              <div className="border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] bg-white">
-                <h3 className="text-2xl font-black uppercase mb-6 underline decoration-4 underline-offset-4">Portfolio & Experience</h3>
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-xs font-black uppercase mb-2">Technical Skills (Comma separated)</label>
-                    <textarea
+              {/* Portfolio & Experience — Accordion */}
+              <div className="rounded-2xl bg-white shadow-lg border border-gray-200 overflow-hidden">
+                <div className="px-8 py-6 border-b border-gray-200">
+                  <h3 className="text-2xl font-black uppercase tracking-tight">Portfolio & Experience</h3>
+                  <p className="text-sm text-gray-500 mt-1">Click a section to expand and fill in your details</p>
+                </div>
+
+                <div className="divide-y divide-gray-200">
+
+                  {/* ── 1. Technical Skills ── */}
+                  <AccordionPanel
+                    label="Technical Skills"
+                    hint="Comma separated"
+                    isOpen={openSections.has('technicalSkills')}
+                    hasContent={!!profile?.technicalSkills}
+                    onToggle={() => toggleSection('technicalSkills')}
+                  >
+                    <input
+                      type="text"
                       name="technicalSkills"
-                      rows={2}
-                      placeholder="e.g. React, Next.js, TypeScript, Python"
+                      placeholder="e.g. React, Next.js, TypeScript, Python, SQL"
                       value={profile?.technicalSkills || ''}
                       onChange={handleChange}
-                      className="w-full border-2 border-black p-3 font-bold focus:bg-gray-50 outline-none resize-y"
+                      className={fieldClass}
                     />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-black uppercase mb-2">Education</label>
-                    <textarea
-                      name="education"
-                      rows={3}
-                      value={profile?.education || ''}
-                      onChange={handleChange}
-                      className="w-full border-2 border-black p-3 font-bold focus:bg-gray-50 outline-none resize-y"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-black uppercase mb-2">Experience</label>
-                    <textarea
-                      name="experience"
-                      rows={4}
-                      value={profile?.experience || ''}
-                      onChange={handleChange}
-                      className="w-full border-2 border-black p-3 font-bold focus:bg-gray-50 outline-none resize-y"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-black uppercase mb-2">Projects</label>
-                    <textarea
-                      name="projects"
-                      rows={4}
-                      value={profile?.projects || ''}
-                      onChange={handleChange}
-                      className="w-full border-2 border-black p-3 font-bold focus:bg-gray-50 outline-none resize-y"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-black uppercase mb-2">Achievements</label>
-                    <textarea
-                      name="achievements"
-                      rows={3}
-                      value={profile?.achievements || ''}
-                      onChange={handleChange}
-                      className="w-full border-2 border-black p-3 font-bold focus:bg-gray-50 outline-none resize-y"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-black uppercase mb-2">Positions of Responsibility</label>
-                    <textarea
-                      name="positions"
-                      rows={2}
-                      value={profile?.positions || ''}
-                      onChange={handleChange}
-                      className="w-full border-2 border-black p-3 font-bold focus:bg-gray-50 outline-none resize-y"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-black uppercase mb-2">Relevant Coursework</label>
-                    <textarea
+                  </AccordionPanel>
+
+                  {/* ── 2. Education ── */}
+                  <AccordionPanel
+                    label="Education"
+                    isOpen={openSections.has('education')}
+                    hasContent={educationEntries.length > 0}
+                    onToggle={() => toggleSection('education')}
+                  >
+                    <div className="space-y-4">
+                      {educationEntries.map((entry, i) => (
+                        <div key={i} className={cardClass}>
+                          <div className="flex justify-between items-center mb-3">
+                            <span className="text-xs font-bold text-gray-500 uppercase">Entry {i + 1}</span>
+                            <button type="button" onClick={() => removeEntry(setEducationEntries, i)} className={removeBtnClass}>Remove</button>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <input placeholder="Institution" value={entry.institution} onChange={e => updateEntry(setEducationEntries, i, 'institution', e.target.value)} className={fieldClass} />
+                            <input placeholder="Degree / Program" value={entry.degree} onChange={e => updateEntry(setEducationEntries, i, 'degree', e.target.value)} className={fieldClass} />
+                            <input placeholder="Location (optional)" value={entry.location} onChange={e => updateEntry(setEducationEntries, i, 'location', e.target.value)} className={fieldClass} />
+                            <input placeholder="CGPA / Percentage (optional)" value={entry.cgpa} onChange={e => updateEntry(setEducationEntries, i, 'cgpa', e.target.value)} className={fieldClass} />
+                            <input placeholder="From (e.g. Aug 2022)" value={entry.fromDate} onChange={e => updateEntry(setEducationEntries, i, 'fromDate', e.target.value)} className={fieldClass} />
+                            <input placeholder="To (e.g. May 2026 or Present)" value={entry.toDate} onChange={e => updateEntry(setEducationEntries, i, 'toDate', e.target.value)} className={fieldClass} />
+                          </div>
+                        </div>
+                      ))}
+                      <button type="button" onClick={() => setEducationEntries(prev => [...prev, { institution: '', degree: '', fromDate: '', toDate: '', cgpa: '', location: '' }])} className={addBtnClass}>+ Add Education</button>
+                    </div>
+                  </AccordionPanel>
+
+                  {/* ── 3. Experience ── */}
+                  <AccordionPanel
+                    label="Experience"
+                    isOpen={openSections.has('experience')}
+                    hasContent={experienceEntries.length > 0}
+                    onToggle={() => toggleSection('experience')}
+                  >
+                    <div className="space-y-4">
+                      {experienceEntries.map((entry, i) => (
+                        <div key={i} className={cardClass}>
+                          <div className="flex justify-between items-center mb-3">
+                            <span className="text-xs font-bold text-gray-500 uppercase">Entry {i + 1}</span>
+                            <button type="button" onClick={() => removeEntry(setExperienceEntries, i)} className={removeBtnClass}>Remove</button>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <input placeholder="Company / Organization" value={entry.company} onChange={e => updateEntry(setExperienceEntries, i, 'company', e.target.value)} className={fieldClass} />
+                            <input placeholder="Role / Title" value={entry.role} onChange={e => updateEntry(setExperienceEntries, i, 'role', e.target.value)} className={fieldClass} />
+                            <input placeholder="Location (optional)" value={entry.location} onChange={e => updateEntry(setExperienceEntries, i, 'location', e.target.value)} className={fieldClass} />
+                            <input placeholder="From (e.g. Jun 2025)" value={entry.fromDate} onChange={e => updateEntry(setExperienceEntries, i, 'fromDate', e.target.value)} className={fieldClass} />
+                            <input placeholder="To (e.g. Aug 2025 or Present)" value={entry.toDate} onChange={e => updateEntry(setExperienceEntries, i, 'toDate', e.target.value)} className={fieldClass} />
+                          </div>
+                          <textarea placeholder="Description / Key responsibilities" rows={3} value={entry.description} onChange={e => updateEntry(setExperienceEntries, i, 'description', e.target.value)} className={`${fieldClass} mt-3 resize-y`} />
+                        </div>
+                      ))}
+                      <button type="button" onClick={() => setExperienceEntries(prev => [...prev, { company: '', role: '', fromDate: '', toDate: '', description: '', location: '' }])} className={addBtnClass}>+ Add Experience</button>
+                    </div>
+                  </AccordionPanel>
+
+                  {/* ── 4. Projects ── */}
+                  <AccordionPanel
+                    label="Projects"
+                    isOpen={openSections.has('projects')}
+                    hasContent={projectEntries.length > 0}
+                    onToggle={() => toggleSection('projects')}
+                  >
+                    <div className="space-y-4">
+                      {projectEntries.map((entry, i) => (
+                        <div key={i} className={cardClass}>
+                          <div className="flex justify-between items-center mb-3">
+                            <span className="text-xs font-bold text-gray-500 uppercase">Entry {i + 1}</span>
+                            <button type="button" onClick={() => removeEntry(setProjectEntries, i)} className={removeBtnClass}>Remove</button>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <input placeholder="Project Title" value={entry.title} onChange={e => updateEntry(setProjectEntries, i, 'title', e.target.value)} className={fieldClass} />
+                            <input placeholder="Tech Stack (e.g. React, Firebase)" value={entry.techStack} onChange={e => updateEntry(setProjectEntries, i, 'techStack', e.target.value)} className={fieldClass} />
+                            <input placeholder="Location (optional)" value={entry.location} onChange={e => updateEntry(setProjectEntries, i, 'location', e.target.value)} className={fieldClass} />
+                            <input placeholder="Link (optional)" value={entry.link} onChange={e => updateEntry(setProjectEntries, i, 'link', e.target.value)} className={fieldClass} />
+                            <input placeholder="From (e.g. Jan 2025) — optional" value={entry.fromDate} onChange={e => updateEntry(setProjectEntries, i, 'fromDate', e.target.value)} className={fieldClass} />
+                            <input placeholder="To (e.g. Mar 2025) — optional" value={entry.toDate} onChange={e => updateEntry(setProjectEntries, i, 'toDate', e.target.value)} className={fieldClass} />
+                          </div>
+                          <textarea placeholder="Description / Key highlights" rows={3} value={entry.description} onChange={e => updateEntry(setProjectEntries, i, 'description', e.target.value)} className={`${fieldClass} mt-3 resize-y`} />
+                        </div>
+                      ))}
+                      <button type="button" onClick={() => setProjectEntries(prev => [...prev, { title: '', techStack: '', description: '', link: '', fromDate: '', toDate: '', location: '' }])} className={addBtnClass}>+ Add Project</button>
+                    </div>
+                  </AccordionPanel>
+
+                  {/* ── 5. Achievements & Certifications ── */}
+                  <AccordionPanel
+                    label="Achievements & Certifications"
+                    isOpen={openSections.has('achievements')}
+                    hasContent={achievementEntries.length > 0}
+                    onToggle={() => toggleSection('achievements')}
+                  >
+                    <div className="space-y-4">
+                      {achievementEntries.map((entry, i) => (
+                        <div key={i} className={cardClass}>
+                          <div className="flex justify-between items-center mb-3">
+                            <span className="text-xs font-bold text-gray-500 uppercase">Entry {i + 1}</span>
+                            <button type="button" onClick={() => removeEntry(setAchievementEntries, i)} className={removeBtnClass}>Remove</button>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <input placeholder="Title / Award" value={entry.title} onChange={e => updateEntry(setAchievementEntries, i, 'title', e.target.value)} className={fieldClass} />
+                            <input placeholder="Issuer / Organization (optional)" value={entry.issuer} onChange={e => updateEntry(setAchievementEntries, i, 'issuer', e.target.value)} className={fieldClass} />
+                            <input placeholder="Location (optional)" value={entry.location} onChange={e => updateEntry(setAchievementEntries, i, 'location', e.target.value)} className={fieldClass} />
+                            <input placeholder="From (optional)" value={entry.fromDate} onChange={e => updateEntry(setAchievementEntries, i, 'fromDate', e.target.value)} className={fieldClass} />
+                            <input placeholder="To (optional)" value={entry.toDate} onChange={e => updateEntry(setAchievementEntries, i, 'toDate', e.target.value)} className={fieldClass} />
+                          </div>
+                        </div>
+                      ))}
+                      <button type="button" onClick={() => setAchievementEntries(prev => [...prev, { title: '', issuer: '', fromDate: '', toDate: '', location: '' }])} className={addBtnClass}>+ Add Achievement</button>
+                    </div>
+                  </AccordionPanel>
+
+                  {/* ── 6. Positions of Responsibility ── */}
+                  <AccordionPanel
+                    label="Positions of Responsibility"
+                    isOpen={openSections.has('positions')}
+                    hasContent={positionEntries.length > 0}
+                    onToggle={() => toggleSection('positions')}
+                  >
+                    <div className="space-y-4">
+                      {positionEntries.map((entry, i) => (
+                        <div key={i} className={cardClass}>
+                          <div className="flex justify-between items-center mb-3">
+                            <span className="text-xs font-bold text-gray-500 uppercase">Entry {i + 1}</span>
+                            <button type="button" onClick={() => removeEntry(setPositionEntries, i)} className={removeBtnClass}>Remove</button>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <input placeholder="Title / Role" value={entry.title} onChange={e => updateEntry(setPositionEntries, i, 'title', e.target.value)} className={fieldClass} />
+                            <input placeholder="Organization / Club" value={entry.organization} onChange={e => updateEntry(setPositionEntries, i, 'organization', e.target.value)} className={fieldClass} />
+                            <input placeholder="Location (optional)" value={entry.location} onChange={e => updateEntry(setPositionEntries, i, 'location', e.target.value)} className={fieldClass} />
+                            <input placeholder="From (optional)" value={entry.fromDate} onChange={e => updateEntry(setPositionEntries, i, 'fromDate', e.target.value)} className={fieldClass} />
+                            <input placeholder="To (optional)" value={entry.toDate} onChange={e => updateEntry(setPositionEntries, i, 'toDate', e.target.value)} className={fieldClass} />
+                          </div>
+                        </div>
+                      ))}
+                      <button type="button" onClick={() => setPositionEntries(prev => [...prev, { title: '', organization: '', fromDate: '', toDate: '', location: '' }])} className={addBtnClass}>+ Add Position</button>
+                    </div>
+                  </AccordionPanel>
+
+                  {/* ── 7. Relevant Coursework ── */}
+                  <AccordionPanel
+                    label="Relevant Coursework"
+                    hint="Comma separated"
+                    isOpen={openSections.has('relevantCoursework')}
+                    hasContent={!!profile?.relevantCoursework}
+                    onToggle={() => toggleSection('relevantCoursework')}
+                  >
+                    <input
+                      type="text"
                       name="relevantCoursework"
-                      rows={2}
+                      placeholder="e.g. Data Structures, Machine Learning, DBMS, Operating Systems"
                       value={profile?.relevantCoursework || ''}
                       onChange={handleChange}
-                      className="w-full border-2 border-black p-3 font-bold focus:bg-gray-50 outline-none resize-y"
+                      className={fieldClass}
                     />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-black uppercase mb-2">Extracurriculars</label>
-                    <textarea
-                      name="extracurriculars"
-                      rows={2}
-                      value={profile?.extracurriculars || ''}
-                      onChange={handleChange}
-                      className="w-full border-2 border-black p-3 font-bold focus:bg-gray-50 outline-none resize-y"
-                    />
-                  </div>
+                  </AccordionPanel>
+
+                  {/* ── 8. Extracurriculars / Activities ── */}
+                  <AccordionPanel
+                    label="Extracurriculars / Activities"
+                    isOpen={openSections.has('extracurriculars')}
+                    hasContent={extracurricularEntries.length > 0}
+                    onToggle={() => toggleSection('extracurriculars')}
+                  >
+                    <div className="space-y-4">
+                      {extracurricularEntries.map((entry, i) => (
+                        <div key={i} className={cardClass}>
+                          <div className="flex justify-between items-center mb-3">
+                            <span className="text-xs font-bold text-gray-500 uppercase">Entry {i + 1}</span>
+                            <button type="button" onClick={() => removeEntry(setExtracurricularEntries, i)} className={removeBtnClass}>Remove</button>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <input placeholder="Activity" value={entry.activity} onChange={e => updateEntry(setExtracurricularEntries, i, 'activity', e.target.value)} className={fieldClass} />
+                            <input placeholder="Role (optional)" value={entry.role} onChange={e => updateEntry(setExtracurricularEntries, i, 'role', e.target.value)} className={fieldClass} />
+                            <input placeholder="Location (optional)" value={entry.location} onChange={e => updateEntry(setExtracurricularEntries, i, 'location', e.target.value)} className={fieldClass} />
+                            <input placeholder="From (optional)" value={entry.fromDate} onChange={e => updateEntry(setExtracurricularEntries, i, 'fromDate', e.target.value)} className={fieldClass} />
+                            <input placeholder="To (optional)" value={entry.toDate} onChange={e => updateEntry(setExtracurricularEntries, i, 'toDate', e.target.value)} className={fieldClass} />
+                            <input placeholder="Description (optional)" value={entry.description} onChange={e => updateEntry(setExtracurricularEntries, i, 'description', e.target.value)} className={`${fieldClass} sm:col-span-2`} />
+                          </div>
+                        </div>
+                      ))}
+                      <button type="button" onClick={() => setExtracurricularEntries(prev => [...prev, { activity: '', role: '', description: '', fromDate: '', toDate: '', location: '' }])} className={addBtnClass}>+ Add Activity</button>
+                    </div>
+                  </AccordionPanel>
+
                 </div>
               </div>
 

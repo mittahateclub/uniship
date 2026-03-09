@@ -40,8 +40,7 @@ function mapProfileToResumeData(profile: any): Partial<ResumeData> {
     projects:         profile.projects           || '',
     coursework:       profile.relevantCoursework || '',
     extracurriculars: profile.extracurriculars   || '',
-    achievements:     [profile.achievements, profile.positions]
-                        .filter(Boolean).join('\n') || '',
+    achievements:     profile.achievements       || '',
   };
 }
 

@@ -49,8 +49,8 @@ export default function Home() {
   }, [user, loading, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white">
-      <div className="text-black text-xl">Loading...</div>
+    <div className="min-h-screen flex items-center justify-center bg-[#09090b]">
+      <div className="loading-dots"><span /><span /><span /></div>
     </div>
   );
 }
