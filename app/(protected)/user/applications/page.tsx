@@ -48,64 +48,56 @@ export default function ApplicationsPage() {
 
   const getStatusStyle = (status: string) => {
     switch (status) {
-      case 'selected': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-      case 'rejected': return 'bg-red-500/10 text-red-400 border-red-500/20';
-      case 'shortlisted': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-      default: return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+      case 'selected': return 'bg-[#4CAF50]/10 text-[#4CAF50] border-[#4CAF50]/20';
+      case 'rejected': return 'bg-[#F54E00]/10 text-[#F54E00] border-[#F54E00]/20';
+      case 'shortlisted': return 'bg-[#5E6AD2]/10 text-[#5E6AD2] border-[#5E6AD2]/20';
+      default: return 'bg-[#F1A82C]/10 text-[#F1A82C] border-[#F1A82C]/20';
     }
   };
 
   if (loading || authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center h-64">
         <div className="loading-dots"><span /><span /><span /></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-6 md:p-10">
-      <div className="max-w-5xl mx-auto animate-fade-in">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
-              <ClipboardCheck size={20} className="text-emerald-400" />
-            </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-zinc-100">My Applications</h1>
-          </div>
-          <p className="text-zinc-500">Track the status of your professional opportunities.</p>
+    <div className="max-w-[1000px] mx-auto animate-fade-in">
+      <div className="mb-6">
+        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">My Applications</h1>
+        <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Track the status of your professional opportunities.</p>
+      </div>
+
+      {applications.length === 0 ? (
+        <div className="text-center py-16 border border-dashed border-[var(--border-active)] rounded">
+          <ClipboardCheck size={28} className="mx-auto text-[var(--text-faint)] mb-3" />
+          <p className="text-[var(--text-primary)] text-[13px] font-medium">No applications found.</p>
+          <p className="text-[var(--text-faint)] text-[12px] mt-1">Apply to internships to see them here.</p>
         </div>
-
-        {applications.length === 0 ? (
-          <div className="text-center py-16 bg-zinc-900 border border-zinc-800 border-dashed rounded-2xl">
-            <ClipboardCheck size={40} className="mx-auto text-zinc-600 mb-3" />
-            <p className="text-zinc-400 font-medium">No applications found.</p>
-            <p className="text-zinc-600 text-sm mt-1">Apply to internships to see them here.</p>
-          </div>
-        ) : (
-          <div className="space-y-3 stagger-children">
-            {applications.map((app) => (
-              <div key={app.id} className="bg-zinc-900 rounded-xl border border-zinc-800 card-hover p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <Building2 size={14} className="text-zinc-500" />
-                    <span className="text-sm font-semibold text-violet-400">{app.companyName}</span>
-                  </div>
-                  <h2 className="text-lg font-bold text-zinc-100 mb-1">{app.internshipRole}</h2>
-                  <div className="flex items-center gap-1.5 text-sm text-zinc-500">
-                    <CalendarDays size={13} />
-                    <span>Applied {app.appliedAt?.toDate().toLocaleDateString()}</span>
-                  </div>
+      ) : (
+        <div className="space-y-2">
+          {applications.map((app) => (
+            <div key={app.id} className="window p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 hover:border-[var(--border-active)] transition-colors duration-150">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <Building2 size={12} className="text-[var(--text-faint)]" />
+                  <span className="text-[12px] font-medium text-[#F54E00]">{app.companyName}</span>
                 </div>
-
-                <div className={`px-4 py-1.5 rounded-full text-xs font-semibold border capitalize ${getStatusStyle(app.status)}`}>
-                  {app.status}
+                <h2 className="text-[14px] font-bold text-[var(--text-primary)] mb-1">{app.internshipRole}</h2>
+                <div className="flex items-center gap-1.5 text-[12px] text-[var(--text-muted)]">
+                  <CalendarDays size={11} />
+                  <span>Applied {app.appliedAt?.toDate().toLocaleDateString()}</span>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+              <div className={`px-2.5 py-1 rounded text-[11px] font-bold border uppercase tracking-wider ${getStatusStyle(app.status)}`}>
+                {app.status}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

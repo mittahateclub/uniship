@@ -261,20 +261,20 @@ function EditorPanel({ draft, saving, onChange, onSave, onClose }: EditorPanelPr
   return (
     <div className="flex flex-col h-full">
       {/* Panel Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b-4 border-black bg-black text-white shrink-0">
-        <span className="font-black uppercase tracking-widest text-sm">Edit Resume</span>
+      <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] shrink-0">
+        <span className="text-xs font-semibold uppercase tracking-widest text-[var(--text-secondary)]">Edit Resume</span>
         <div className="flex items-center gap-2">
           <button
             onClick={onSave}
             disabled={saving}
-            className="flex items-center gap-1.5 bg-white text-black px-4 py-1.5 text-xs font-black uppercase tracking-widest hover:bg-gray-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-primary flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Save size={13} />
             {saving ? 'Saving…' : 'Save'}
           </button>
           <button
             onClick={onClose}
-            className="p-1.5 hover:bg-gray-700 transition rounded"
+            className="p-1.5 hover:bg-[var(--border-subtle)] transition rounded"
             title="Close editor"
           >
             <X size={18} />
@@ -283,10 +283,10 @@ function EditorPanel({ draft, saving, onChange, onSave, onClose }: EditorPanelPr
       </div>
 
       {/* Scrollable fields */}
-      <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4 bg-white">
+      <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4 bg-[var(--bg-surface)]">
         {EDITOR_FIELDS.map(({ key, label, multiline, rows }) => (
           <div key={key}>
-            <label className="block text-[10px] font-black uppercase tracking-widest mb-1 text-gray-500">
+            <label className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5 block">
               {label}
             </label>
             {multiline ? (
@@ -294,14 +294,14 @@ function EditorPanel({ draft, saving, onChange, onSave, onClose }: EditorPanelPr
                 value={(draft as any)[key] || ''}
                 onChange={e => onChange(key, e.target.value)}
                 rows={rows || 4}
-                className="w-full border-2 border-black p-2 text-xs font-mono outline-none resize-y focus:bg-gray-50"
+                className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-2 text-xs text-[var(--text-primary)] font-mono outline-none resize-y focus:border-[#5E6AD2] transition-colors"
               />
             ) : (
               <input
                 type="text"
                 value={(draft as any)[key] || ''}
                 onChange={e => onChange(key, e.target.value)}
-                className="w-full border-2 border-black p-2 text-xs font-mono outline-none focus:bg-gray-50"
+                className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-2 text-xs text-[var(--text-primary)] font-mono outline-none focus:border-[#5E6AD2] transition-colors"
               />
             )}
           </div>
@@ -408,8 +408,8 @@ export default function DownloadResume() {
   // ── Loading ──
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f4f4f4] text-black font-black uppercase">
-        Loading Your Resumes...
+      <div className="flex items-center justify-center py-24">
+        <div className="loading-dots"><span /><span /><span /></div>
       </div>
     );
   }
@@ -417,11 +417,10 @@ export default function DownloadResume() {
   // ── Empty ──
   if (resumes.length === 0) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#f4f4f4] text-black p-8">
-        <h1 className="text-3xl font-black uppercase mb-4">No Resumes Found</h1>
-        <p className="font-bold mb-8 text-gray-600">You haven't generated or saved any resumes yet.</p>
-        <Link href="/user/resume"
-          className="bg-black text-white px-8 py-3 font-black uppercase tracking-widest hover:bg-gray-800 transition-all shadow-[4px_4px_0px_0px_rgba(150,150,150,1)] active:translate-y-1 active:shadow-none">
+      <div className="animate-fade-in flex flex-col items-center justify-center py-24">
+        <h1 className="text-xl font-semibold mb-3">No Resumes Found</h1>
+        <p className="text-[var(--text-tertiary)] text-sm mb-6">You haven&apos;t generated or saved any resumes yet.</p>
+        <Link href="/user/resume" className="btn-primary px-6 py-2.5 text-sm font-semibold">
           Go to Builder
         </Link>
       </div>
@@ -431,47 +430,47 @@ export default function DownloadResume() {
   // ── Resume List ──
   if (!selectedResume) {
     return (
-      <div className="min-h-screen bg-[#F9FAFB] p-8 text-black">
+      <div className="animate-fade-in">
         <div className="max-w-6xl mx-auto">
-          <div className="flex justify-between items-end mb-10 border-b-8 border-black pb-6">
+          <div className="flex justify-between items-end mb-8 border-b border-[var(--border-subtle)] pb-5">
             <div>
-              <h1 className="text-5xl font-black uppercase tracking-tighter">My Resumes</h1>
-              <p className="text-gray-600 font-bold mt-2 uppercase text-sm">
+              <h1 className="text-2xl font-semibold tracking-[-0.02em]">My Resumes</h1>
+              <p className="text-[var(--text-tertiary)] text-sm mt-1">
                 Select a resume to preview, edit, or download as PDF.
               </p>
             </div>
             <Link href="/user/resume"
-              className="bg-black text-white px-6 py-3 font-black uppercase tracking-widest hover:bg-gray-800 transition-all shadow-[4px_4px_0px_0px_rgba(150,150,150,1)] active:translate-y-1 active:shadow-none hidden md:block">
+              className="btn-primary px-5 py-2.5 text-xs font-semibold hidden md:block">
               + Create New
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {resumes.map((resume, idx) => (
               <div key={resume.id}
-                className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-2 hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] transition-all flex flex-col justify-between">
+                className="window p-5 hover:border-[var(--border-active)] transition-colors flex flex-col justify-between">
                 <div>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="bg-orange-100 p-3 rounded-full text-orange-600 border-2 border-black">
-                      <FileText size={24} />
+                    <div className="bg-[#F54E00]/15 p-2.5 rounded text-[#F54E00]">
+                      <FileText size={20} />
                     </div>
-                    <div>
-                      <h3 className="font-black uppercase text-xl truncate">
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-sm truncate">
                         {resume.targetCompany || `Resume Variant ${resumes.length - idx}`}
                       </h3>
-                      <p className="text-xs font-bold text-gray-500 uppercase">
+                      <p className="text-[11px] text-[var(--text-muted)] tabular-nums">
                         {resume.updatedAt ? new Date(resume.updatedAt.seconds * 1000).toLocaleDateString() : 'Draft'}
                       </p>
                     </div>
                   </div>
-                  <p className="text-sm font-bold text-gray-700 mb-6 line-clamp-3">
-                    <span className="text-black uppercase text-xs">For: </span>
+                  <p className="text-xs text-[var(--text-tertiary)] mb-5 line-clamp-3">
+                    <span className="text-[var(--text-muted)] uppercase text-[10px]">For: </span>
                     {resume.targetCompany || 'General Resume'}
                     {resume.fullName ? ` · ${resume.fullName}` : ''}
                   </p>
                 </div>
                 <button onClick={() => handleSelect(resume)}
-                  className="w-full bg-white border-4 border-black text-black py-3 font-black uppercase tracking-widest hover:bg-black hover:text-white transition-colors">
+                  className="btn-secondary w-full py-2.5 text-xs font-semibold">
                   View & Export
                 </button>
               </div>
@@ -484,16 +483,16 @@ export default function DownloadResume() {
 
   // ── Selected Resume: Preview + optional inline editor ──
   return (
-    <div className="min-h-screen bg-[#f4f4f4] text-black">
+    <div className="animate-fade-in">
 
       {/* ── Top Toolbar ── */}
-      <div className="sticky top-0 z-30 bg-[#f4f4f4] border-b-4 border-black px-6 py-3 flex justify-between items-center">
+      <div className="sticky top-0 z-30 bg-[var(--bg-primary)] border-b border-[var(--border-subtle)] px-5 py-3 flex justify-between items-center -mx-6 -mt-6 mb-5">
         <div className="flex items-center gap-4">
           <button onClick={() => { setSelectedResume(null); setEditOpen(false); }}
-            className="flex items-center gap-2 text-sm font-black uppercase tracking-wider hover:underline">
-            <ArrowLeft size={16} /> Back
+            className="flex items-center gap-2 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+            <ArrowLeft size={14} /> Back
           </button>
-          <span className="font-black uppercase tracking-tighter text-lg hidden sm:block">
+          <span className="text-sm font-semibold hidden sm:block">
             {draft?.targetCompany || 'Export Resume'}
           </span>
         </div>
@@ -502,7 +501,7 @@ export default function DownloadResume() {
           {/* Toggle editor */}
           <button
             onClick={() => setEditOpen(o => !o)}
-            className={`flex items-center gap-1.5 border-4 border-black px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[3px] active:translate-y-[3px] ${editOpen ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-100'}`}
+            className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded border transition-colors ${editOpen ? 'bg-[#F54E00] text-black border-[#F54E00]' : 'btn-secondary'}`}
           >
             <Pencil size={13} />
             {editOpen ? 'Close Editor' : 'Edit Content'}
@@ -510,7 +509,7 @@ export default function DownloadResume() {
 
           {/* Download */}
           <button onClick={handleDownloadPDF} disabled={isDownloading}
-            className="flex items-center gap-1.5 bg-black text-white border-4 border-black px-4 py-2 text-xs font-black uppercase tracking-widest hover:bg-gray-800 transition shadow-[3px_3px_0px_0px_rgba(0,0,0,0.3)] active:shadow-none active:translate-x-[3px] active:translate-y-[3px] disabled:opacity-50 disabled:cursor-not-allowed">
+            className="btn-primary flex items-center gap-1.5 px-4 py-2 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
             <Download size={13} />
             {isDownloading ? 'Generating…' : 'Download PDF'}
           </button>
@@ -518,11 +517,11 @@ export default function DownloadResume() {
       </div>
 
       {/* ── Body: side-by-side when editor is open ── */}
-      <div className={`flex ${editOpen ? 'flex-row' : 'flex-col items-center'} gap-0 min-h-[calc(100vh-57px)]`}>
+      <div className={`flex ${editOpen ? 'flex-row' : 'flex-col items-center'} gap-0 min-h-[calc(100vh-160px)]`}>
 
         {/* Editor Panel */}
         {editOpen && draft && (
-          <div className="w-[360px] shrink-0 border-r-4 border-black h-[calc(100vh-57px)] sticky top-[57px] overflow-hidden flex flex-col bg-white shadow-[4px_0px_0px_0px_rgba(0,0,0,0.05)]">
+          <div className="w-[360px] shrink-0 border-r border-[var(--border-subtle)] h-[calc(100vh-160px)] sticky top-[57px] overflow-hidden flex flex-col window rounded-r-none">
             <EditorPanel
               draft={draft}
               saving={isSaving}
@@ -534,8 +533,8 @@ export default function DownloadResume() {
         )}
 
         {/* Preview */}
-        <div className={`flex-1 py-8 ${editOpen ? 'overflow-y-auto px-6' : 'flex justify-center px-4'}`}>
-          <div id="resume-pdf-container" className="shadow-[16px_16px_0px_0px_rgba(0,0,0,0.08)] mx-auto w-fit">
+        <div className={`flex-1 py-6 ${editOpen ? 'overflow-y-auto px-6' : 'flex justify-center px-4'}`}>
+          <div id="resume-pdf-container" className="mx-auto w-fit shadow-lg">
             {/* Always render the live draft so edits are reflected instantly */}
             <ResumePreview data={draft ?? selectedResume} />
           </div>

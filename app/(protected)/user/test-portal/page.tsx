@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { collection, query, getDocs, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
-import { FileText, Clock, HelpCircle, Tag, ArrowRight } from 'lucide-react';
+import { FileText, Clock, HelpCircle, Tag, ArrowRight, Calendar } from 'lucide-react';
 
 interface Test {
   id: string;
@@ -14,6 +14,9 @@ interface Test {
   duration: number;
   totalQuestions: number;
   category: string;
+  examStart?: string;
+  examEnd?: string;
+  approved?: boolean;
 }
 
 export default function TestPortal() {
@@ -25,7 +28,7 @@ export default function TestPortal() {
     async function fetchTests() {
       if (!user) return;
       try {
-        const q = query(collection(db, 'tests'));
+        const q = query(collection(db, 'tests'), where('approved', '==', true));
         const querySnapshot = await getDocs(q);
         const fetchedTests = querySnapshot.docs.map(doc => ({
           id: doc.id,
@@ -46,65 +49,108 @@ export default function TestPortal() {
 
   if (loading || authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center h-64">
         <div className="loading-dots"><span /><span /><span /></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-6 md:p-10">
-      <div className="max-w-5xl mx-auto animate-fade-in">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center">
-              <FileText size={20} className="text-blue-400" />
-            </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-zinc-100">Available Tests</h1>
-          </div>
-          <p className="text-zinc-500">Select a test to begin your assessment.</p>
-        </div>
+    <div className="max-w-[1000px] mx-auto animate-fade-in">
+      <div className="mb-6">
+        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Available Tests</h1>
+        <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Select a test to begin your assessment.</p>
+      </div>
 
-        {tests.length === 0 ? (
-          <div className="text-center py-16 bg-zinc-900 border border-zinc-800 border-dashed rounded-2xl">
-            <FileText size={40} className="mx-auto text-zinc-600 mb-3" />
-            <p className="text-zinc-400 font-medium">No tests available at the moment.</p>
-            <p className="text-zinc-600 text-sm mt-1">New tests will appear here when published.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
-            {tests.map((test) => (
-              <div key={test.id} className="bg-zinc-900 rounded-xl border border-zinc-800 card-hover flex flex-col overflow-hidden group">
-                <div className="p-6 flex-1">
-                  <h3 className="text-lg font-bold text-zinc-100 mb-2">{test.title}</h3>
-                  <p className="text-sm text-zinc-500 mb-4 line-clamp-2">{test.description}</p>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="flex items-center gap-1.5 bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded-lg text-xs font-medium">
-                      <Clock size={12} className="text-zinc-500" />
-                      {test.duration} min
-                    </span>
-                    <span className="flex items-center gap-1.5 bg-zinc-800 text-zinc-300 px-2.5 py-1 rounded-lg text-xs font-medium">
-                      <HelpCircle size={12} className="text-zinc-500" />
-                      {test.totalQuestions} Qs
-                    </span>
-                    <span className="flex items-center gap-1.5 bg-violet-500/10 text-violet-400 px-2.5 py-1 rounded-lg text-xs font-medium">
-                      <Tag size={12} />
-                      {test.category}
-                    </span>
+      {tests.length === 0 ? (
+        <div className="text-center py-16 border border-dashed border-[var(--border-active)] rounded">
+          <FileText size={28} className="mx-auto text-[var(--text-faint)] mb-3" />
+          <p className="text-[var(--text-primary)] text-[13px] font-medium">No tests available at the moment.</p>
+          <p className="text-[var(--text-faint)] text-[12px] mt-1">New tests will appear here when published.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {tests.map((test) => {
+            const now = new Date();
+            const start = test.examStart ? new Date(test.examStart) : null;
+            const end = test.examEnd ? new Date(test.examEnd) : null;
+            const isActive = (!start || now >= start) && (!end || now <= end);
+            const isUpcoming = start && now < start;
+            const isExpired = end && now > end;
+
+            return (
+            <div key={test.id} className={`window group transition-colors duration-150 ${isActive ? 'hover:border-[var(--border-active)]' : 'opacity-70'}`}>
+              <div className="p-5">
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="inline-flex items-center gap-1 bg-[#F54E00]/10 text-[#F54E00] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
+                        <Tag size={9} />
+                        {test.category}
+                      </span>
+                      {isUpcoming && (
+                        <span className="inline-flex items-center gap-1 bg-[#5E6AD2]/10 text-[#5E6AD2] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
+                          Upcoming
+                        </span>
+                      )}
+                      {isExpired && (
+                        <span className="inline-flex items-center gap-1 bg-[var(--border-subtle)] text-[var(--text-faint)] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
+                          Ended
+                        </span>
+                      )}
+                      {isActive && start && (
+                        <span className="inline-flex items-center gap-1 bg-[#4CAF50]/10 text-[#4CAF50] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
+                          Live
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-[15px] font-bold text-[var(--text-primary)] leading-snug">{test.title}</h3>
+                  </div>
+                  <div className="w-9 h-9 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center shrink-0">
+                    <FileText size={16} className="text-[var(--text-faint)]" />
                   </div>
                 </div>
-                <Link
-                  href={`/user/test-portal/${test.id}`}
-                  className="flex items-center justify-center gap-2 bg-zinc-800 text-zinc-100 py-3 font-semibold text-sm hover:bg-zinc-700 transition-colors border-t border-zinc-800"
-                >
-                  Start Test
-                  <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
-                </Link>
+                <p className="text-[12px] text-[var(--text-muted)] leading-relaxed mb-3 line-clamp-2">{test.description}</p>
+                {(start || end) && (
+                  <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-faint)] mb-3">
+                    <Calendar size={11} />
+                    {start && <span>{start.toLocaleDateString([], { month: 'short', day: 'numeric' })} {start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
+                    {start && end && <span>—</span>}
+                    {end && <span>{end.toLocaleDateString([], { month: 'short', day: 'numeric' })} {end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="flex items-center gap-1.5 text-[var(--text-tertiary)] text-[12px]">
+                      <Clock size={12} className="text-[var(--text-faint)]" />
+                      {test.duration} min
+                    </span>
+                    <span className="w-px h-3 bg-[var(--border-subtle)]" />
+                    <span className="flex items-center gap-1.5 text-[var(--text-tertiary)] text-[12px]">
+                      <HelpCircle size={12} className="text-[var(--text-faint)]" />
+                      {test.totalQuestions} questions
+                    </span>
+                  </div>
+                  {isActive ? (
+                    <Link
+                      href={`/user/test-portal/${test.id}`}
+                      className="btn-primary flex items-center gap-1.5 text-[12px] !py-1.5 !px-3"
+                    >
+                      Start
+                      <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform duration-150" />
+                    </Link>
+                  ) : (
+                    <span className="text-[11px] text-[var(--text-faint)] font-medium">
+                      {isUpcoming ? `Opens ${start!.toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}` : 'Closed'}
+                    </span>
+                  )}
+                </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

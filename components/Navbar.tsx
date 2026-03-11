@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -13,52 +13,240 @@ import {
   Calendar,
   User,
   LogOut,
-  Menu,
-  X,
   Search,
   Command,
   PenTool,
   Download,
   GraduationCap,
+  PlusCircle,
+  Settings,
+  Database,
+  TrendingUp,
+  CalendarPlus,
+  ShieldCheck,
+  UserPlus,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Award,
+  FolderKanban,
+  BookOpen,
+  Trophy,
+  Star,
+  Phone,
+  Globe,
+  Github,
+  Linkedin,
+  Camera,
+  Code,
+  Cpu,
+  MapPin,
+  Clock,
+  AlertTriangle,
+  Building2,
+  Hash,
+  Mail,
+  Lock,
+  Upload,
+  Sparkles,
 } from 'lucide-react';
 
-const navLinks = [
+interface NavLink {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+}
+
+interface SearchableItem extends NavLink {
+  desc: string;
+  category: string;
+}
+
+const userNavLinks: NavLink[] = [
   { href: '/user/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/user/test-portal', label: 'Tests', icon: FileText },
-  { href: '/user/internships', label: 'Internships', icon: Briefcase },
+  { href: '/user/internships', label: 'College Space', icon: Briefcase },
   { href: '/user/applications', label: 'Applications', icon: ClipboardCheck },
   { href: '/user/results', label: 'Results', icon: BarChart3 },
   { href: '/user/calendar', label: 'Calendar', icon: Calendar },
+  { href: '/user/resume', label: 'AI Resume Builder', icon: Sparkles },
+  { href: '/user/profile', label: 'Profile', icon: User },
 ];
 
-const searchablePages = [
-  { href: '/user/dashboard', label: 'Dashboard', desc: 'Overview & quick stats', icon: LayoutDashboard },
-  { href: '/user/test-portal', label: 'Test Portal', desc: 'Take assessments', icon: FileText },
-  { href: '/user/internships', label: 'Internships', desc: 'Browse opportunities', icon: Briefcase },
-  { href: '/user/applications', label: 'Applications', desc: 'Track submissions', icon: ClipboardCheck },
-  { href: '/user/results', label: 'Results', desc: 'View performance', icon: BarChart3 },
-  { href: '/user/calendar', label: 'Calendar', desc: 'Upcoming events', icon: Calendar },
-  { href: '/user/profile', label: 'Profile', desc: 'Account settings', icon: User },
-  { href: '/user/resume', label: 'Resume Builder', desc: 'AI-powered resume', icon: PenTool },
-  { href: '/user/resume/download', label: 'Export Resume', desc: 'Download PDF', icon: Download },
+const uniadminNavLinks: NavLink[] = [
+  { href: '/uniadmin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/uniadmin/create-test', label: 'Create Test', icon: PlusCircle },
+  { href: '/uniadmin/tests', label: 'Tests', icon: FileText },
+  { href: '/uniadmin/proctoring', label: 'Proctoring', icon: ShieldCheck },
+  { href: '/uniadmin/create-event', label: 'Create Event', icon: CalendarPlus },
+  { href: '/uniadmin/create-account', label: 'Create Account', icon: UserPlus },
+  { href: '/uniadmin/student-database', label: 'Students', icon: Database },
+  { href: '/uniadmin/analysis', label: 'Analysis', icon: TrendingUp },
+  { href: '/uniadmin/profile', label: 'Profile', icon: User },
 ];
+
+const superadminNavLinks: NavLink[] = [
+  { href: '/superadmin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/superadmin/create-uniadmin', label: 'Create Admin', icon: UserPlus },
+  { href: '/superadmin/manage-uniadmins', label: 'Manage Admins', icon: ShieldCheck },
+];
+
+const userSearchItems: SearchableItem[] = [
+  // Pages
+  { href: '/user/dashboard', label: 'Dashboard', desc: 'Overview & quick stats', icon: LayoutDashboard, category: 'Pages' },
+  { href: '/user/test-portal', label: 'Test Portal', desc: 'Browse & take assessments', icon: FileText, category: 'Pages' },
+  { href: '/user/internships', label: 'College Space', desc: 'Events, internships & opportunities', icon: Briefcase, category: 'Pages' },
+  { href: '/user/applications', label: 'Applications', desc: 'Track your submissions', icon: ClipboardCheck, category: 'Pages' },
+  { href: '/user/results', label: 'Results', desc: 'View scores & performance', icon: BarChart3, category: 'Pages' },
+  { href: '/user/calendar', label: 'Calendar', desc: 'Upcoming events & deadlines', icon: Calendar, category: 'Pages' },
+  { href: '/user/profile', label: 'Profile', desc: 'Account settings & details', icon: User, category: 'Pages' },
+  { href: '/user/resume', label: 'AI Resume Builder', desc: 'AI-powered resume editor', icon: Sparkles, category: 'Pages' },
+  // Profile — In-page sections
+  { href: '/user/profile#personal-details', label: 'Personal Details', desc: 'Name, roll number, phone, email, title', icon: User, category: 'Profile' },
+  { href: '/user/profile#photo', label: 'Profile Photo', desc: 'Upload or change profile picture', icon: Camera, category: 'Profile' },
+  { href: '/user/profile#web-presence', label: 'LinkedIn & GitHub', desc: 'Add or update social links', icon: Globe, category: 'Profile' },
+  { href: '/user/profile#education', label: 'Education', desc: 'Add or edit education entries', icon: GraduationCap, category: 'Profile' },
+  { href: '/user/profile#experience', label: 'Experience', desc: 'Add work experience & internships', icon: Briefcase, category: 'Profile' },
+  { href: '/user/profile#projects', label: 'Projects', desc: 'Add or edit portfolio projects', icon: FolderKanban, category: 'Profile' },
+  { href: '/user/profile#achievements', label: 'Achievements', desc: 'Awards, certifications & honors', icon: Trophy, category: 'Profile' },
+  { href: '/user/profile#positions', label: 'Positions', desc: 'Leadership & club positions', icon: Star, category: 'Profile' },
+  { href: '/user/profile#extracurriculars', label: 'Extracurriculars', desc: 'Activities & hobbies', icon: Award, category: 'Profile' },
+  // Resume — In-page sections
+  { href: '/user/resume#ai-tailor', label: 'AI Resume Tailor', desc: 'Auto-generate tailored resume', icon: Sparkles, category: 'Resume' },
+  { href: '/user/resume/download', label: 'Saved Resumes', desc: 'View & export saved resumes', icon: Download, category: 'Resume' },
+  // Dashboard — In-page sections
+  { href: '/user/dashboard#stats', label: 'Application Stats', desc: 'Total applications count', icon: ClipboardCheck, category: 'Dashboard' },
+  { href: '/user/dashboard#stats', label: 'Pending Tests', desc: 'Tests waiting to be taken', icon: FileText, category: 'Dashboard' },
+  { href: '/user/dashboard#stats', label: 'Upcoming Events', desc: 'Scheduled events count', icon: Calendar, category: 'Dashboard' },
+  { href: '/user/dashboard#stats', label: 'Average Score', desc: 'Overall test performance', icon: BarChart3, category: 'Dashboard' },
+  // College Space — In-page sections
+  { href: '/user/internships#listings', label: 'Browse Listings', desc: 'All posted opportunities', icon: Building2, category: 'College Space' },
+  { href: '/user/internships#listings', label: 'Saved Items', desc: 'Your saved events & opportunities', icon: Star, category: 'College Space' },
+  // Actions
+  { href: '/user/resume/download', label: 'Download Resume', desc: 'Export as PDF', icon: Download, category: 'Actions' },
+  { href: '/user/test-portal', label: 'Take a Test', desc: 'Start an available assessment', icon: FileText, category: 'Actions' },
+  { href: '/user/internships', label: 'Browse College Space', desc: 'Events & opportunities', icon: Search, category: 'Actions' },
+  { href: '/user/applications', label: 'Check Application Status', desc: 'View pending & accepted', icon: ClipboardCheck, category: 'Actions' },
+  { href: '/user/calendar', label: 'View Upcoming Events', desc: 'See scheduled dates', icon: Calendar, category: 'Actions' },
+];
+
+const uniadminSearchItems: SearchableItem[] = [
+  // Pages
+  { href: '/uniadmin/dashboard', label: 'Dashboard', desc: 'Admin overview & stats', icon: LayoutDashboard, category: 'Pages' },
+  { href: '/uniadmin/create-test', label: 'Create Test', desc: 'Build new assessment', icon: PlusCircle, category: 'Pages' },
+  { href: '/uniadmin/tests', label: 'Tests', desc: 'Manage all assessments', icon: FileText, category: 'Pages' },
+  { href: '/uniadmin/create-event', label: 'Create Event', desc: 'Schedule an event', icon: CalendarPlus, category: 'Pages' },
+  { href: '/uniadmin/create-account', label: 'Create Account', desc: 'Add student account', icon: UserPlus, category: 'Pages' },
+  { href: '/uniadmin/student-database', label: 'Student Database', desc: 'Browse all students', icon: Database, category: 'Pages' },
+  { href: '/uniadmin/analysis', label: 'Analysis', desc: 'Performance analytics', icon: TrendingUp, category: 'Pages' },
+  { href: '/uniadmin/profile', label: 'Profile', desc: 'Admin profile settings', icon: User, category: 'Pages' },
+  { href: '/uniadmin/proctoring', label: 'Proctoring', desc: 'Monitor live exams & chat', icon: ShieldCheck, category: 'Pages' },
+  // Dashboard — In-page sections
+  { href: '/uniadmin/dashboard#stats', label: 'Active Tests', desc: 'Count of currently active tests', icon: FileText, category: 'Dashboard' },
+  { href: '/uniadmin/dashboard#stats', label: 'Total Students', desc: 'Number of registered students', icon: User, category: 'Dashboard' },
+  { href: '/uniadmin/dashboard#stats', label: 'Upcoming Events', desc: 'Scheduled university events', icon: Calendar, category: 'Dashboard' },
+  // Create Test — In-page sections
+  { href: '/uniadmin/create-test#generator', label: 'AI Test Generator', desc: 'Generate test from PDF with AI', icon: Cpu, category: 'Create Test' },
+  { href: '/uniadmin/create-test#generator', label: 'Upload PDF', desc: 'Upload document for test generation', icon: Upload, category: 'Create Test' },
+  // Create Event — In-page sections
+  { href: '/uniadmin/create-event#form', label: 'Event Title', desc: 'Set event name', icon: CalendarPlus, category: 'Create Event' },
+  { href: '/uniadmin/create-event#form', label: 'Event Type', desc: 'Workshop, seminar, or other', icon: Star, category: 'Create Event' },
+  { href: '/uniadmin/create-event#form', label: 'Event Date & Time', desc: 'Schedule date and time', icon: Clock, category: 'Create Event' },
+  { href: '/uniadmin/create-event#form', label: 'Event Location', desc: 'Set venue or online link', icon: MapPin, category: 'Create Event' },
+  // Create Account — In-page sections
+  { href: '/uniadmin/create-account#form', label: 'Student Name', desc: 'Register student full name', icon: User, category: 'Create Account' },
+  { href: '/uniadmin/create-account#form', label: 'Student ID', desc: 'Set student roll/ID number', icon: Hash, category: 'Create Account' },
+  { href: '/uniadmin/create-account#form', label: 'Student Email', desc: 'Set student email address', icon: Mail, category: 'Create Account' },
+  { href: '/uniadmin/create-account#form', label: 'Temporary Password', desc: 'Set initial login password', icon: Lock, category: 'Create Account' },
+  // Analysis — In-page sections
+  { href: '/uniadmin/analysis#stats', label: 'Total Enrolled', desc: 'Number of enrolled students', icon: User, category: 'Analysis' },
+  { href: '/uniadmin/analysis#stats', label: 'Average Score', desc: 'Overall student average', icon: BarChart3, category: 'Analysis' },
+  { href: '/uniadmin/analysis#stats', label: 'Tests Taken', desc: 'Total test completions', icon: FileText, category: 'Analysis' },
+  { href: '/uniadmin/analysis#proctoring-alerts', label: 'Proctoring Alerts', desc: 'Recent proctoring violations', icon: AlertTriangle, category: 'Analysis' },
+  // Admin Profile — In-page sections
+  { href: '/uniadmin/profile#account-details', label: 'Admin Email', desc: 'Admin account email', icon: Mail, category: 'Admin Profile' },
+  { href: '/uniadmin/profile#account-details', label: 'University ID', desc: 'University identifier', icon: Hash, category: 'Admin Profile' },
+  { href: '/uniadmin/profile#account-details', label: 'Admin Name', desc: 'Full name setting', icon: User, category: 'Admin Profile' },
+  { href: '/uniadmin/profile#account-details', label: 'Admin Phone', desc: 'Contact phone number', icon: Phone, category: 'Admin Profile' },
+  // Actions
+  { href: '/uniadmin/create-test', label: 'New Assessment', desc: 'Create a new test for students', icon: PlusCircle, category: 'Actions' },
+  { href: '/uniadmin/create-event', label: 'Schedule Event', desc: 'Add a new event or deadline', icon: CalendarPlus, category: 'Actions' },
+  { href: '/uniadmin/create-account', label: 'Add Student', desc: 'Register a new student', icon: UserPlus, category: 'Actions' },
+  { href: '/uniadmin/tests', label: 'Review Submissions', desc: 'Grade & review test results', icon: FileText, category: 'Actions' },
+  { href: '/uniadmin/student-database', label: 'Search Students', desc: 'Find student by name or ID', icon: Search, category: 'Actions' },
+  { href: '/uniadmin/analysis', label: 'View Analytics', desc: 'Check performance trends', icon: TrendingUp, category: 'Actions' },
+  { href: '/uniadmin/proctoring', label: 'Monitor Exams', desc: 'Live proctoring dashboard', icon: ShieldCheck, category: 'Actions' },
+];
+
+const superadminSearchItems: SearchableItem[] = [
+  // Pages
+  { href: '/superadmin/dashboard', label: 'Dashboard', desc: 'System-wide overview', icon: LayoutDashboard, category: 'Pages' },
+  { href: '/superadmin/create-uniadmin', label: 'Create Uni Admin', desc: 'Add university admin', icon: UserPlus, category: 'Pages' },
+  { href: '/superadmin/manage-uniadmins', label: 'Manage Uni Admins', desc: 'View & manage all admins', icon: ShieldCheck, category: 'Pages' },
+  // Dashboard — In-page sections
+  { href: '/superadmin/dashboard#stats', label: 'Total Universities', desc: 'Count of registered universities', icon: Building2, category: 'Dashboard' },
+  { href: '/superadmin/dashboard#stats', label: 'Uni Admins Count', desc: 'Total university administrators', icon: ShieldCheck, category: 'Dashboard' },
+  { href: '/superadmin/dashboard#stats', label: 'Total Students', desc: 'System-wide student count', icon: User, category: 'Dashboard' },
+  // Create Admin — In-page sections
+  { href: '/superadmin/create-uniadmin#form', label: 'Admin Name', desc: 'Set admin full name', icon: User, category: 'Create Admin' },
+  { href: '/superadmin/create-uniadmin#form', label: 'Admin Email', desc: 'Set admin email address', icon: Mail, category: 'Create Admin' },
+  { href: '/superadmin/create-uniadmin#form', label: 'University Name', desc: 'Assign university', icon: Building2, category: 'Create Admin' },
+  { href: '/superadmin/create-uniadmin#form', label: 'University ID', desc: 'Set university identifier', icon: Hash, category: 'Create Admin' },
+  // Manage Admins — In-page sections
+  { href: '/superadmin/manage-uniadmins#admin-list', label: 'Admin Cards', desc: 'View admin details & actions', icon: ShieldCheck, category: 'Manage Admins' },
+  // Actions
+  { href: '/superadmin/create-uniadmin', label: 'Add New Admin', desc: 'Register a university admin', icon: UserPlus, category: 'Actions' },
+  { href: '/superadmin/manage-uniadmins', label: 'Review Admins', desc: 'Edit or remove university admins', icon: ShieldCheck, category: 'Actions' },
+];
+
+
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, role, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [cmdkOpen, setCmdkOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const filteredPages = searchQuery.trim()
-    ? searchablePages.filter(p =>
-        p.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.desc.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : searchablePages;
+  const navLinks = useMemo(() => {
+    if (role === 'super_admin') return superadminNavLinks;
+    if (role === 'university_admin') return uniadminNavLinks;
+    return userNavLinks;
+  }, [role]);
+
+  const searchablePages = useMemo(() => {
+    if (role === 'super_admin') return superadminSearchItems;
+    if (role === 'university_admin') return uniadminSearchItems;
+    return userSearchItems;
+  }, [role]);
+
+  const filteredPages = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return searchablePages.filter(p => p.category === 'Pages');
+    }
+    const q = searchQuery.toLowerCase();
+    return searchablePages.filter(p =>
+      p.label.toLowerCase().includes(q) ||
+      p.desc.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q)
+    );
+  }, [searchQuery, searchablePages]);
+
+  const groupedResults = useMemo(() => {
+    const groups: { category: string; items: typeof filteredPages }[] = [];
+    const seen = new Map<string, typeof filteredPages>();
+    for (const item of filteredPages) {
+      if (!seen.has(item.category)) {
+        seen.set(item.category, []);
+        groups.push({ category: item.category, items: seen.get(item.category)! });
+      }
+      seen.get(item.category)!.push(item);
+    }
+    return groups;
+  }, [filteredPages]);
+
 
   // Cmd+K listener
   useEffect(() => {
@@ -69,31 +257,61 @@ export default function Navbar() {
         setSearchQuery('');
         setSelectedIndex(0);
       }
-      if (e.key === 'Escape') {
-        setCmdkOpen(false);
-      }
+      if (e.key === 'Escape') setCmdkOpen(false);
+    };
+    const handleOpenCmdk = () => {
+      setCmdkOpen(true);
+      setSearchQuery('');
+      setSelectedIndex(0);
     };
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener('open-cmdk', handleOpenCmdk);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('open-cmdk', handleOpenCmdk);
+    };
   }, []);
 
-  // Focus input when opened
   useEffect(() => {
-    if (cmdkOpen) {
-      setTimeout(() => searchInputRef.current?.focus(), 50);
-    }
+    if (cmdkOpen) setTimeout(() => searchInputRef.current?.focus(), 50);
   }, [cmdkOpen]);
 
-  // Reset selected index on filter change
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [searchQuery]);
+  useEffect(() => { setSelectedIndex(0); }, [searchQuery]);
 
   const handleCmdkNavigate = useCallback((href: string) => {
-    router.push(href);
+    const [path, hash] = href.split('#');
+    const isCurrentPage = pathname === path;
     setCmdkOpen(false);
     setSearchQuery('');
-  }, [router]);
+
+    if (hash) {
+      if (isCurrentPage) {
+        const el = document.getElementById(hash);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('ring-2', 'ring-[#F54E00]/40', 'rounded');
+          setTimeout(() => el.classList.remove('ring-2', 'ring-[#F54E00]/40', 'rounded'), 2000);
+        }
+      } else {
+        router.push(path);
+        // Wait for page to render, then scroll
+        const scrollToHash = () => {
+          const el = document.getElementById(hash);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.classList.add('ring-2', 'ring-[#F54E00]/40', 'rounded');
+            setTimeout(() => el.classList.remove('ring-2', 'ring-[#F54E00]/40', 'rounded'), 2000);
+          }
+        };
+        // Retry a few times since the page content may load async
+        setTimeout(scrollToHash, 300);
+        setTimeout(scrollToHash, 800);
+        setTimeout(scrollToHash, 1500);
+      }
+    } else {
+      router.push(href);
+    }
+  }, [router, pathname]);
 
   const handleCmdkKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
@@ -108,201 +326,114 @@ export default function Navbar() {
   };
 
   const handleLogout = async () => {
-    try {
-      await logout();
-      router.push('/login');
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
+    try { await logout(); router.push('/login'); } catch {}
   };
 
   const isActive = (href: string) => pathname === href || pathname?.startsWith(href + '/');
 
+  const roleLabel = role === 'super_admin' ? 'Super Admin' : role === 'university_admin' ? 'Uni Admin' : 'Student';
+
   return (
     <>
-      {/* ── Main Navbar ── */}
-      <nav className="sticky top-0 z-40 h-14 bg-[#09090b]/80 backdrop-blur-xl border-b border-zinc-800/60">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-full flex items-center justify-between">
-          {/* Left: Logo + Nav */}
-          <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2 shrink-0">
-              <GraduationCap size={20} className="text-violet-400" />
-              <span className="text-[15px] font-semibold text-zinc-100">Uniship</span>
-            </Link>
-
-            {/* Desktop segmented nav */}
-            <div className="hidden md:flex items-center bg-zinc-900/60 rounded-lg p-0.5 border border-zinc-800/50">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-all duration-150 ${
-                    isActive(link.href)
-                      ? 'bg-zinc-800 text-zinc-100 shadow-sm'
-                      : 'text-zinc-500 hover:text-zinc-300'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* Right: Search trigger + Profile */}
-          <div className="flex items-center gap-2">
-            {/* Cmd+K search trigger */}
-            <button
-              onClick={() => { setCmdkOpen(true); setSearchQuery(''); setSelectedIndex(0); }}
-              className="hidden sm:flex items-center gap-2 h-8 pl-3 pr-2 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-400 transition-all text-[13px]"
-            >
-              <Search size={14} />
-              <span>Search...</span>
-              <kbd className="ml-3 flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-[11px] text-zinc-500 font-mono">
-                <Command size={10} />K
-              </kbd>
-            </button>
-
-            {user && (
-              <>
-                <Link
-                  href="/user/profile"
-                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
-                    isActive('/user/profile')
-                      ? 'bg-zinc-800 text-zinc-100'
-                      : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50'
-                  }`}
-                >
-                  <div className="w-5 h-5 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-full flex items-center justify-center">
-                    <span className="text-[10px] font-bold text-white">{user.email?.[0]?.toUpperCase()}</span>
-                  </div>
-                  <span className="hidden lg:inline max-w-[100px] truncate">{user.email?.split('@')[0]}</span>
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="hidden sm:flex items-center p-2 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-zinc-800/50 transition-all"
-                  title="Logout"
-                >
-                  <LogOut size={15} />
-                </button>
-              </>
-            )}
-
-            {/* Mobile menu toggle */}
-            <button
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden p-2 rounded-lg text-zinc-500 hover:bg-zinc-800 transition-colors"
-            >
-              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
-          </div>
+      {/* ═══ Left Sidebar ═══ */}
+      <aside className={`h-screen bg-[var(--bg-elevated)] border-r border-[var(--border-subtle)] flex flex-col transition-all duration-150 ease-out shrink-0 sticky top-0 ${collapsed ? 'w-[52px]' : 'w-[220px]'}`}>
+        {/* Logo */}
+        <div className="h-12 flex items-center px-3 border-b border-[var(--border-subtle)] shrink-0">
+          <Link href="/" className="flex items-center gap-2 overflow-hidden">
+            <GraduationCap size={20} className="text-[#F54E00] shrink-0" />
+            {!collapsed && <span className="text-[13px] font-bold text-[var(--text-primary)] tracking-tight whitespace-nowrap">UNISHIP</span>}
+          </Link>
         </div>
 
-        {/* Mobile dropdown */}
-        {mobileOpen && (
-          <div className="md:hidden border-t border-zinc-800 bg-[#0c0c0e] animate-fade-in">
-            <div className="px-3 py-2 space-y-0.5">
-              {/* Mobile search */}
-              <button
-                onClick={() => { setCmdkOpen(true); setMobileOpen(false); setSearchQuery(''); }}
-                className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-lg text-sm text-zinc-500 hover:bg-zinc-800/60"
-              >
-                <Search size={16} />
-                Search...
-              </button>
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                    isActive(link.href)
-                      ? 'bg-zinc-800 text-zinc-100'
-                      : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/60'
-                  }`}
-                >
-                  <link.icon size={16} />
-                  {link.label}
-                </Link>
-              ))}
-              <Link
-                href="/user/profile"
-                onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  isActive('/user/profile')
-                    ? 'bg-zinc-800 text-zinc-100'
-                    : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/60'
-                }`}
-              >
-                <User size={16} />
-                Profile
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:bg-zinc-800/60 w-full"
-              >
-                <LogOut size={16} />
-                Logout
-              </button>
-            </div>
-          </div>
-        )}
-      </nav>
 
-      {/* ── Command-K Modal ── */}
+
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              title={collapsed ? link.label : undefined}
+              className={`flex items-center gap-2.5 rounded text-[13px] font-medium transition-all duration-150 ${collapsed ? 'justify-center p-2' : 'px-2.5 py-[7px]'} ${
+                isActive(link.href)
+                  ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] border border-[var(--border-subtle)]'
+                  : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] border border-transparent'
+              }`}
+            >
+              <link.icon size={16} className="shrink-0" />
+              {!collapsed && <span className="truncate">{link.label}</span>}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Bottom section */}
+        <div className="border-t border-[var(--border-subtle)] p-2 shrink-0">
+          <button
+            onClick={() => setCollapsed(c => !c)}
+            className={`flex items-center gap-2 w-full rounded text-[12px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] transition-all duration-150 ${collapsed ? 'justify-center p-2' : 'px-2.5 py-1.5'}`}
+          >
+            {collapsed ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />}
+            {!collapsed && <span>Collapse</span>}
+          </button>
+        </div>
+      </aside>
+
+      {/* ═══ Command-K Modal ═══ */}
       {cmdkOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh]">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 cmdk-overlay"
-            onClick={() => setCmdkOpen(false)}
-          />
-          {/* Dialog */}
-          <div className="relative w-full max-w-lg mx-4 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl shadow-black/50 overflow-hidden animate-fade-in">
-            {/* Search input */}
-            <div className="flex items-center gap-3 px-4 h-12 border-b border-zinc-800">
-              <Search size={16} className="text-zinc-500 shrink-0" />
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[18vh]">
+          <div className="absolute inset-0 cmdk-overlay" onClick={() => setCmdkOpen(false)} />
+          <div className="relative w-full max-w-xl mx-4 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-lg shadow-2xl shadow-black/60 overflow-hidden animate-fade-in">
+            <div className="flex items-center gap-3 px-4 h-12 border-b border-[var(--border-subtle)]">
+              <Search size={16} className="text-[var(--text-muted)] shrink-0" />
               <input
                 ref={searchInputRef}
                 type="text"
-                placeholder="Type a command or search..."
-                className="flex-1 bg-transparent text-sm text-zinc-100 placeholder:text-zinc-600 outline-none"
+                placeholder="Search pages, actions, or type what you need..."
+                className="flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] outline-none border-none"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleCmdkKeyDown}
               />
-              <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-[10px] text-zinc-500 font-mono shrink-0">
-                ESC
-              </kbd>
+              <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] text-[var(--text-faint)] font-mono shrink-0">ESC</kbd>
             </div>
-            {/* Results */}
-            <div className="max-h-[300px] overflow-y-auto py-2">
+            <div className="max-h-[360px] overflow-y-auto py-1">
               {filteredPages.length === 0 ? (
-                <p className="px-4 py-6 text-center text-sm text-zinc-600">No results found.</p>
+                <p className="px-4 py-8 text-center text-[13px] text-[var(--text-faint)]">No results found.</p>
               ) : (
-                <div className="px-2">
-                  <p className="px-2 py-1.5 text-[11px] font-medium text-zinc-600 uppercase tracking-wider">Pages</p>
-                  {filteredPages.map((page, i) => (
-                    <button
-                      key={page.href}
-                      onClick={() => handleCmdkNavigate(page.href)}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
-                        i === selectedIndex
-                          ? 'bg-zinc-800 text-zinc-100'
-                          : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200'
-                      }`}
-                    >
-                      <page.icon size={16} className={i === selectedIndex ? 'text-violet-400' : 'text-zinc-600'} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{page.label}</p>
-                        <p className="text-[12px] text-zinc-600 truncate">{page.desc}</p>
-                      </div>
-                      {i === selectedIndex && (
-                        <span className="text-[11px] text-zinc-600">↵</span>
-                      )}
-                    </button>
+                <div className="px-1.5">
+                  {groupedResults.map((group) => (
+                    <div key={group.category}>
+                      <p className="px-2.5 pt-3 pb-1 text-[10px] font-bold text-[var(--text-faint)] uppercase tracking-widest">{group.category}</p>
+                      {group.items.map((page) => {
+                        const globalIndex = filteredPages.indexOf(page);
+                        return (
+                          <button
+                            key={`${page.category}-${page.label}`}
+                            onClick={() => handleCmdkNavigate(page.href)}
+                            className={`w-full flex items-center gap-3 px-2.5 py-2 rounded text-left transition-colors duration-100 ${
+                              globalIndex === selectedIndex
+                                ? 'bg-[var(--border-subtle)] text-[var(--text-primary)]'
+                                : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]'
+                            }`}
+                          >
+                            <page.icon size={15} className={globalIndex === selectedIndex ? 'text-[#F54E00]' : 'text-[var(--text-faint)]'} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[13px] font-medium truncate">{page.label}</p>
+                              <p className="text-[11px] text-[var(--text-faint)] truncate">{page.desc}</p>
+                            </div>
+                            {globalIndex === selectedIndex && <span className="text-[11px] text-[var(--text-faint)]">↵</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
                   ))}
                 </div>
               )}
+            </div>
+            <div className="h-8 border-t border-[var(--border-subtle)] flex items-center px-3 gap-3 text-[10px] text-[var(--text-faint)]">
+              <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] font-mono">↑↓</kbd> navigate</span>
+              <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] font-mono">↵</kbd> open</span>
+              <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] font-mono">esc</kbd> close</span>
             </div>
           </div>
         </div>

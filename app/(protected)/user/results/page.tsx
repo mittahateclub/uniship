@@ -48,80 +48,75 @@ export default function ResultsPage() {
 
   if (loading || authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center h-64">
         <div className="loading-dots"><span /><span /><span /></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-6 md:p-10">
-      <div className="max-w-5xl mx-auto animate-fade-in">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-pink-500/10 rounded-xl flex items-center justify-center">
-              <BarChart3 size={20} className="text-pink-400" />
-            </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-zinc-100">My Results</h1>
-          </div>
-          <p className="text-zinc-500">Track your performance across all assessments.</p>
-        </div>
-
-        {results.length === 0 ? (
-          <div className="text-center py-16 bg-zinc-900 border border-zinc-800 border-dashed rounded-2xl">
-            <Trophy size={40} className="mx-auto text-zinc-600 mb-3" />
-            <p className="text-zinc-400 font-medium">You haven&apos;t completed any tests yet.</p>
-            <p className="text-zinc-600 text-sm mt-1">Take a test and your results will show here.</p>
-          </div>
-        ) : (
-          <div className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-zinc-800">
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">Test Name</th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-zinc-500 uppercase tracking-wider">Score</th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-zinc-500 uppercase tracking-wider">Percentage</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-zinc-500 uppercase tracking-wider">Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-800/50">
-                  {results.map((result) => {
-                    const percentage = ((result.score / result.totalQuestions) * 100).toFixed(1);
-                    const date = result.submittedAt?.toDate().toLocaleDateString() || 'N/A';
-                    const pct = Number(percentage);
-                    
-                    return (
-                      <tr key={result.id} className="hover:bg-zinc-800/30 transition-colors">
-                        <td className="px-6 py-4 font-semibold text-zinc-100">
-                          {result.testTitle}
-                        </td>
-                        <td className="px-6 py-4 text-center text-zinc-300">
-                          <span className="font-semibold">{result.score}</span>
-                          <span className="text-zinc-600"> / {result.totalQuestions}</span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
-                            pct >= 80 ? 'bg-emerald-500/10 text-emerald-400' :
-                            pct >= 60 ? 'bg-amber-500/10 text-amber-400' :
-                            'bg-red-500/10 text-red-400'
-                          }`}>
-                            {percentage}%
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right text-sm text-zinc-500 flex items-center justify-end gap-1.5">
-                          <CalendarDays size={13} />
-                          {date}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+    <div className="max-w-[1000px] mx-auto animate-fade-in">
+      <div className="mb-6">
+        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">My Results</h1>
+        <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Track your performance across all assessments.</p>
       </div>
+
+      {results.length === 0 ? (
+        <div className="text-center py-16 border border-dashed border-[var(--border-active)] rounded">
+          <Trophy size={28} className="mx-auto text-[var(--text-faint)] mb-3" />
+          <p className="text-[var(--text-primary)] text-[13px] font-medium">You haven&apos;t completed any tests yet.</p>
+          <p className="text-[var(--text-faint)] text-[12px] mt-1">Take a test and your results will show here.</p>
+        </div>
+      ) : (
+        <div className="window overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-[var(--border-subtle)]">
+                  <th className="px-4 py-3 text-left text-[10px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Test Name</th>
+                  <th className="px-4 py-3 text-center text-[10px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Score</th>
+                  <th className="px-4 py-3 text-center text-[10px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Percentage</th>
+                  <th className="px-4 py-3 text-right text-[10px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {results.map((result) => {
+                  const percentage = ((result.score / result.totalQuestions) * 100).toFixed(1);
+                  const date = result.submittedAt?.toDate().toLocaleDateString() || 'N/A';
+                  const pct = Number(percentage);
+                  
+                  return (
+                    <tr key={result.id} className="border-b border-[var(--border-subtle)]/50 hover:bg-[#1a1a1a] transition-colors duration-150">
+                      <td className="px-4 py-3 text-[13px] font-medium text-[var(--text-primary)]">
+                        {result.testTitle}
+                      </td>
+                      <td className="px-4 py-3 text-center text-[13px] tabular-nums">
+                        <span className="font-bold text-[var(--text-primary)]">{result.score}</span>
+                        <span className="text-[var(--text-faint)]"> / {result.totalQuestions}</span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`inline-flex px-2 py-0.5 rounded text-[11px] font-bold tabular-nums ${
+                          pct >= 80 ? 'bg-[#4CAF50]/10 text-[#4CAF50]' :
+                          pct >= 60 ? 'bg-[#F1A82C]/10 text-[#F1A82C]' :
+                          'bg-[#F54E00]/10 text-[#F54E00]'
+                        }`}>
+                          {percentage}%
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right text-[12px] text-[var(--text-muted)] tabular-nums">
+                        <span className="flex items-center justify-end gap-1.5">
+                          <CalendarDays size={11} />
+                          {date}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

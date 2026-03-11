@@ -1,7 +1,7 @@
 // app/(protected)/user/resume/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { collection, addDoc, serverTimestamp, getDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -27,6 +27,30 @@ interface ResumeData {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function mapProfileToResumeData(profile: any): Partial<ResumeData> {
+  const fmtEdu = (entries: any[]) => entries?.map(e =>
+    `${e.institution} | ${e.location || ''} | ${e.fromDate} – ${e.toDate}\n${e.degree}${e.cgpa ? ` – GPA: ${e.cgpa}` : ''}`
+  ).join('\n\n') || '';
+
+  const fmtExp = (entries: any[]) => entries?.map(e =>
+    `${e.role} | ${e.fromDate} – ${e.toDate}\n${e.company} | ${e.location || ''}\n${e.description?.split('\n').map((l: string) => `- ${l.replace(/^[-•]\s*/, '')}`).join('\n') || ''}`
+  ).join('\n\n') || '';
+
+  const fmtProj = (entries: any[]) => entries?.map(e =>
+    `${e.title} | ${e.techStack || ''} | ${e.fromDate} – ${e.toDate}\n${e.description?.split('\n').map((l: string) => `- ${l.replace(/^[-•]\s*/, '')}`).join('\n') || ''}`
+  ).join('\n\n') || '';
+
+  const fmtAch = (entries: any[]) => entries?.map(e =>
+    `${e.title} – ${e.issuer || ''} | ${e.fromDate}`
+  ).join('\n') || '';
+
+  const fmtPos = (entries: any[]) => entries?.map(e =>
+    `${e.title} | ${e.organization} | ${e.fromDate} – ${e.toDate}`
+  ).join('\n') || '';
+
+  const fmtExtra = (entries: any[]) => entries?.map(e =>
+    `${e.activity} | ${e.role || ''} | ${e.fromDate} – ${e.toDate}`
+  ).join('\n') || '';
+
   return {
     fullName:         profile.name               || '',
     phone:            profile.phone              || '',
@@ -34,24 +58,34 @@ function mapProfileToResumeData(profile: any): Partial<ResumeData> {
     website:          profile.website            || '',
     github:           profile.githubUrl          || '',
     linkedin:         profile.linkedinUrl        || '',
-    education:        profile.education          || '',
-    experience:       profile.experience         || '',
+    education:        (profile.educationEntries?.length ? fmtEdu(profile.educationEntries) : profile.education) || '',
+    experience:       (profile.experienceEntries?.length ? fmtExp(profile.experienceEntries) : profile.experience) || '',
     skills:           profile.technicalSkills    || '',
-    projects:         profile.projects           || '',
+    projects:         (profile.projectEntries?.length ? fmtProj(profile.projectEntries) : profile.projects) || '',
     coursework:       profile.relevantCoursework || '',
-    extracurriculars: profile.extracurriculars   || '',
-    achievements:     profile.achievements       || '',
+    extracurriculars: (profile.extracurricularEntries?.length ? fmtExtra(profile.extracurricularEntries) : profile.extracurriculars) || '',
+    achievements:     (profile.achievementEntries?.length ? fmtAch(profile.achievementEntries) : profile.achievements) || '',
   };
 }
 
 // ─── Live Preview Component ───────────────────────────────────────────────────
 
-function ResumePreview({ data }: { data: ResumeData }) {
+function ResumePreview({ data, keywords }: { data: ResumeData; keywords: string[] }) {
   const hasContent = (val: string) => val && val.trim().length > 0;
 
-  // Converts **text** → <strong>text</strong>
-  const boldMarkdown = (text: string) =>
-    text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Highlight keywords in text
+  const highlightText = (text: string) => {
+    if (!keywords.length) return text;
+    const escaped = keywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const pattern = new RegExp(`(${escaped.join('|')})`, 'gi');
+    return text.replace(pattern, '<mark class="bg-yellow-200/70 text-black px-0.5 rounded-sm">$1</mark>');
+  };
+
+  // Converts **text** → <strong>text</strong>, then highlights keywords
+  const boldMarkdown = (text: string) => {
+    const bolded = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    return highlightText(bolded);
+  };
 
   const renderBullets = (text: string) => {
     const lines = text.split('\n').filter(l => l.trim().length > 0);
@@ -147,9 +181,8 @@ function ResumePreview({ data }: { data: ResumeData }) {
       const parts = line.split('|').map(p => p.trim());
       return (
         <div key={i} className="flex justify-between items-baseline mb-1">
-          <span className="font-bold text-[11px]">
-            {parts[0]}{parts[1] ? ` | ${parts[1]}` : ''}
-          </span>
+          <span className="font-bold text-[11px]"
+            dangerouslySetInnerHTML={{ __html: highlightText(`${parts[0]}${parts[1] ? ` | ${parts[1]}` : ''}`) }} />
           <span className="text-[10.5px]">{parts[2]}</span>
         </div>
       );
@@ -168,8 +201,8 @@ function ResumePreview({ data }: { data: ResumeData }) {
       return (
         <div key={i} className="flex justify-between items-baseline mb-1">
           <span className="text-[11px]">
-            <span className="font-bold underline">{title}</span>
-            {sub && <span> – {sub}</span>}
+            <span className="font-bold underline" dangerouslySetInnerHTML={{ __html: highlightText(title) }} />
+            {sub && <span dangerouslySetInnerHTML={{ __html: ` – ${highlightText(sub)}` }} />}
           </span>
           <span className="text-[10.5px]">{date}</span>
         </div>
@@ -177,7 +210,6 @@ function ResumePreview({ data }: { data: ResumeData }) {
     });
   };
 
-  // Skills: split by newline, parse bold inline per line
   const renderSkills = (raw: string) => {
     return (
       <div className="text-[11px] leading-relaxed space-y-0.5">
@@ -187,8 +219,8 @@ function ResumePreview({ data }: { data: ResumeData }) {
             <div key={i}>
               {parts.map((part, j) =>
                 part.startsWith('**') && part.endsWith('**')
-                  ? <strong key={j}>{part.slice(2, -2)}</strong>
-                  : <span key={j}>{part}</span>
+                  ? <strong key={j} dangerouslySetInnerHTML={{ __html: highlightText(part.slice(2, -2)) }} />
+                  : <span key={j} dangerouslySetInnerHTML={{ __html: highlightText(part) }} />
               )}
             </div>
           );
@@ -260,7 +292,7 @@ function ResumePreview({ data }: { data: ResumeData }) {
       {hasContent(data.coursework) && (
         <>
           <SectionHeader title="Relevant Coursework" />
-          <p className="text-[11px] leading-relaxed">{data.coursework}</p>
+          <p className="text-[11px] leading-relaxed" dangerouslySetInnerHTML={{ __html: highlightText(data.coursework) }} />
         </>
       )}
       {hasContent(data.skills) && (
@@ -290,6 +322,7 @@ export default function ResumeBuilder() {
   const [companyName, setCompanyName]           = useState('');
   const [jobDescription, setJobDescription]     = useState('');
   const [baseProfileData, setBaseProfileData]   = useState<any>(null);
+  const [keywords, setKeywords]                 = useState<string[]>([]);
 
   const emptyForm: ResumeData = {
     fullName: '', phone: '', email: '', website: '',
@@ -303,18 +336,11 @@ export default function ResumeBuilder() {
     async function fetchData() {
       if (!user) return;
       try {
-        const resumeSnap = await getDoc(doc(db, 'resumes', user.uid));
-        if (resumeSnap.exists()) {
-          setFormData(prev => ({ ...prev, ...(resumeSnap.data() as Partial<ResumeData>) }));
-        }
-
         const profileSnap = await getDoc(doc(db, 'users', user.uid));
         if (profileSnap.exists()) {
           const profileData = profileSnap.data();
           setBaseProfileData(profileData);
-          if (!resumeSnap.exists()) {
-            setFormData(prev => ({ ...prev, ...mapProfileToResumeData(profileData) }));
-          }
+          setFormData(prev => ({ ...prev, ...mapProfileToResumeData(profileData) }));
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -324,6 +350,20 @@ export default function ResumeBuilder() {
     }
     fetchData();
   }, [user]);
+
+  // Count profile completeness
+  const profileStats = useMemo(() => {
+    if (!baseProfileData) return null;
+    const fields = [
+      { label: 'Name & Contact', filled: !!(baseProfileData.name && baseProfileData.email) },
+      { label: 'Education', filled: !!(baseProfileData.educationEntries?.length || baseProfileData.education) },
+      { label: 'Experience', filled: !!(baseProfileData.experienceEntries?.length || baseProfileData.experience) },
+      { label: 'Projects', filled: !!(baseProfileData.projectEntries?.length || baseProfileData.projects) },
+      { label: 'Skills', filled: !!baseProfileData.technicalSkills },
+      { label: 'Achievements', filled: !!(baseProfileData.achievementEntries?.length || baseProfileData.achievements) },
+    ];
+    return fields;
+  }, [baseProfileData]);
 
   const handleGenerateAI = async () => {
     if (!companyName || !jobDescription) {
@@ -356,6 +396,10 @@ export default function ResumeBuilder() {
         extracurriculars: generated.extracurriculars || prev.extracurriculars,
         achievements:     generated.achievements     || prev.achievements,
       }));
+
+      if (generated.keywords && Array.isArray(generated.keywords)) {
+        setKeywords(generated.keywords);
+      }
     } catch (error) {
       console.error(error);
       alert('Failed to generate AI resume. Check console for details.');
@@ -364,18 +408,18 @@ export default function ResumeBuilder() {
     }
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async () => {
     if (!user) return;
     setSaving(true);
     try {
       await addDoc(collection(db, 'resumes'), {
         ...formData,
         targetCompany: companyName || 'General Resume',
+        keywords,
         updatedAt:     serverTimestamp(),
         userEmail:     user.email,
       });
-      alert('New Resume Variant saved! You can view it in the Export page.');
+      alert('Resume saved! You can view it in the Export page.');
     } catch (error) {
       console.error('Error saving resume:', error);
       alert('Failed to save changes.');
@@ -384,93 +428,92 @@ export default function ResumeBuilder() {
     }
   };
 
-  const field = (
-    label: string,
-    key: keyof ResumeData,
-    multiline = false,
-    placeholder = '',
-    rows = 4
-  ) => (
-    <div>
-      <label className="block text-xs font-black uppercase mb-1 tracking-wide">{label}</label>
-      {multiline ? (
-        <textarea
-          value={formData[key]}
-          onChange={e => setFormData({ ...formData, [key]: e.target.value })}
-          rows={rows}
-          className="w-full border-2 border-black p-2 text-sm outline-none font-mono resize-y focus:bg-gray-50"
-          placeholder={placeholder}
-        />
-      ) : (
-        <input
-          type="text"
-          value={formData[key]}
-          onChange={e => setFormData({ ...formData, [key]: e.target.value })}
-          className="w-full border-2 border-black p-2 text-sm outline-none font-mono focus:bg-gray-50"
-          placeholder={placeholder}
-        />
-      )}
-    </div>
-  );
-
   if (loading)
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white text-black font-bold uppercase">
-        Loading Resume Builder...
+      <div className="flex items-center justify-center py-24">
+        <div className="loading-dots"><span /><span /><span /></div>
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6 text-black">
+    <div className="animate-fade-in">
       <div className="max-w-screen-2xl mx-auto">
 
         {/* Header */}
-        <div className="border-b-4 border-black pb-4 mb-6 flex justify-between items-center">
+        <div className="border-b border-[var(--border-subtle)] pb-4 mb-6 flex justify-between items-center">
           <div>
-            <h1 className="text-4xl font-black uppercase tracking-tighter">Resume Builder</h1>
-            <p className="text-gray-500 text-sm font-bold mt-1 italic">
-              Your profile data is pre-loaded. Use AI to tailor it for a specific role.
+            <h1 className="text-2xl font-semibold tracking-[-0.02em]">Resume Builder</h1>
+            <p className="text-[var(--text-tertiary)] text-sm mt-1">
+              Data is pulled from your profile. Use AI to tailor it for a specific role.
             </p>
           </div>
           <Link
             href="/user/resume/download"
-            className="border-2 border-black px-4 py-2 text-xs font-black uppercase tracking-widest hover:bg-black hover:text-white transition-colors"
+            className="btn-secondary px-4 py-2 text-xs font-semibold"
           >
             View Saved Resumes →
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
 
-          {/* ── LEFT: Editor ── */}
-          <div className="space-y-6">
+          {/* ── LEFT: Controls ── */}
+          <div className="space-y-5">
+
+            {/* Profile data status */}
+            {profileStats && (
+              <section className="window p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-[13px] font-bold text-[var(--text-primary)]">Profile Data</h2>
+                  <Link href="/user/profile" className="text-[11px] font-semibold text-[#5E6AD2] hover:underline">
+                    Edit Profile →
+                  </Link>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {profileStats.map(f => (
+                    <div key={f.label} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-[11px] font-medium ${
+                      f.filled
+                        ? 'bg-[#4CAF50]/8 border-[#4CAF50]/20 text-[#4CAF50]'
+                        : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-faint)]'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${f.filled ? 'bg-[#4CAF50]' : 'bg-[var(--text-faint)]'}`} />
+                      {f.label}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10px] text-[var(--text-faint)] mt-2">
+                  The resume is built from your profile. Fill in more sections for a richer resume.
+                </p>
+              </section>
+            )}
 
             {/* AI Section */}
-            <section className="border-4 border-black p-6 bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-              <h2 className="text-lg font-black uppercase mb-1 bg-black text-white inline-block px-3 py-0.5">
-                Auto-Tailor via AI
-              </h2>
-              <p className="text-xs font-bold uppercase text-gray-500 mb-4">
-                All your profile fields are fed to the AI automatically.
+            <section className="window p-6" id="ai-tailor">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="inline-block bg-[#F54E00] text-black px-2.5 py-0.5 text-[11px] font-bold uppercase rounded">AI</span>
+                <h2 className="text-sm font-semibold">Tailor for a Job</h2>
+              </div>
+              <p className="text-[11px] text-[var(--text-muted)] mb-4">
+                Paste the job description and the AI will rewrite your resume to match the role, highlighting relevant keywords.
               </p>
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-black uppercase mb-1">Target Company</label>
+                  <label className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5 block">Target Company</label>
                   <input
                     type="text"
                     value={companyName}
                     onChange={e => setCompanyName(e.target.value)}
-                    className="w-full border-2 border-black p-2 text-sm outline-none font-mono"
+                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-2 text-sm text-[var(--text-primary)] font-mono outline-none focus:border-[#5E6AD2] transition-colors"
                     placeholder="e.g. Google, Vercel…"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-black uppercase mb-1">Job Description</label>
+                  <label className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5 block">Job Description</label>
                   <textarea
                     value={jobDescription}
                     onChange={e => setJobDescription(e.target.value)}
-                    rows={4}
-                    className="w-full border-2 border-black p-2 text-sm outline-none font-mono resize-y"
+                    rows={6}
+                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-2 text-sm text-[var(--text-primary)] font-mono outline-none resize-y focus:border-[#5E6AD2] transition-colors"
                     placeholder="Paste the full JD here…"
                   />
                 </div>
@@ -478,113 +521,54 @@ export default function ResumeBuilder() {
                   type="button"
                   onClick={handleGenerateAI}
                   disabled={generating}
-                  className="w-full bg-black text-white py-2.5 text-sm font-black uppercase tracking-widest hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-primary w-full py-2.5 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {generating ? 'Synthesizing all profile fields…' : '✦ Generate Tailored Resume'}
+                  {generating ? 'Analyzing JD & tailoring resume…' : 'Generate Tailored Resume'}
                 </button>
               </div>
             </section>
 
-            {/* Form */}
-            <form onSubmit={handleSave} className="space-y-6">
-
-              <section className="border-4 border-black p-6 bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                <h2 className="text-lg font-black uppercase mb-4 bg-black text-white inline-block px-3 py-0.5">01. Personal Info</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-2">{field('Full Name', 'fullName', false, 'Pranav Reddy Mitta')}</div>
-                  {field('Email', 'email', false, 'email@example.com')}
-                  {field('Phone', 'phone', false, '+91 99999 99999')}
-                  {field('Website', 'website', false, 'itsbypranav.com')}
-                  {field('LinkedIn URL', 'linkedin', false, 'linkedin.com/in/…')}
-                  {field('GitHub URL', 'github', false, 'github.com/…')}
+            {/* Keywords */}
+            {keywords.length > 0 && (
+              <section className="window p-5">
+                <h2 className="text-[13px] font-bold text-[var(--text-primary)] mb-2">Matched Keywords</h2>
+                <p className="text-[10px] text-[var(--text-faint)] mb-3">These keywords from the JD are highlighted in your resume preview.</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {keywords.map((kw, i) => (
+                    <span key={i} className="px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-200/60 text-yellow-900 border border-yellow-300/50">
+                      {kw}
+                    </span>
+                  ))}
                 </div>
               </section>
+            )}
 
-              <section className="border-4 border-black p-6 bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                <h2 className="text-lg font-black uppercase mb-2 bg-black text-white inline-block px-3 py-0.5">02. Education</h2>
-                <p className="text-[10px] font-bold text-gray-500 uppercase mb-3">
-                  Institution | Location | Date · Next line: Degree · Then - bullets · Blank line between entries
-                </p>
-                {field('Education', 'education', true,
-                  'Mahindra University | Hyderabad, IN | Aug. 2023 – Present\nB.Tech in CSE – GPA: 9.14\n- Relevant info\n\nIIIT Hyderabad | Hyderabad, IN | Sep. 2024 – Mar. 2025\nStudent Training Program on AIML',
-                  8)}
-              </section>
-
-              <section className="border-4 border-black p-6 bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                <h2 className="text-lg font-black uppercase mb-2 bg-black text-white inline-block px-3 py-0.5">03. Experience</h2>
-                <p className="text-[10px] font-bold text-gray-500 uppercase mb-3">
-                  Role — Title | Date · Next line: Org | Location · Then - bullets · Blank line between entries
-                </p>
-                {field('Experience', 'experience', true,
-                  'Head of Tech — Mathematics Society | Aug. 2024 — Present\nMahindra University | Hyderabad, IN\n- **Rebuilt** the Math Club website using Next.js and Firebase.',
-                  10)}
-              </section>
-
-              <section className="border-4 border-black p-6 bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                <h2 className="text-lg font-black uppercase mb-2 bg-black text-white inline-block px-3 py-0.5">04. Projects</h2>
-                <p className="text-[10px] font-bold text-gray-500 uppercase mb-3">
-                  Project Name | Tech Stack | Date · Then - bullets · Blank line between entries
-                </p>
-                {field('Projects', 'projects', true,
-                  'Stock Trading Simulator | Next.js, Firebase | Apr. 2025\n- Built a **400+ participant** simulation platform.',
-                  10)}
-              </section>
-
-              <section className="border-4 border-black p-6 bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                <h2 className="text-lg font-black uppercase mb-2 bg-black text-white inline-block px-3 py-0.5">05. Relevant Coursework</h2>
-                {field('Coursework (comma separated)', 'coursework', false,
-                  'Data Structures and Algorithms, Linear Algebra, Statistics and Probability…')}
-              </section>
-
-              <section className="border-4 border-black p-6 bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                <h2 className="text-lg font-black uppercase mb-2 bg-black text-white inline-block px-3 py-0.5">06. Technical Skills</h2>
-                <p className="text-[10px] font-bold text-gray-500 uppercase mb-3">
-                  Use: Languages: …(newline) Frameworks: …(newline) Tools: … — wrap tech names in **bold** if desired
-                </p>
-                {field('Technical Skills', 'skills', true,
-                  'Languages: Python, TypeScript, JavaScript\nFrameworks: Next.js, React, Tailwind CSS\nTools: Firebase, Vercel, Git',
-                  5)}
-              </section>
-
-              <section className="border-4 border-black p-6 bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                <h2 className="text-lg font-black uppercase mb-2 bg-black text-white inline-block px-3 py-0.5">07. Extracurriculars</h2>
-                <p className="text-[10px] font-bold text-gray-500 uppercase mb-3">
-                  Title | Organization | Date · One per line
-                </p>
-                {field('Extracurriculars', 'extracurriculars', true,
-                  'Head of Design and Tech | Mathematics Society | Aug. 2024 – Present\nHead of Tech | The Echo | Aug. 2024 – Present',
-                  4)}
-              </section>
-
-              <section className="border-4 border-black p-6 bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                <h2 className="text-lg font-black uppercase mb-2 bg-black text-white inline-block px-3 py-0.5">08. Achievements & Certifications</h2>
-                <p className="text-[10px] font-bold text-gray-500 uppercase mb-3">
-                  Award Name – Description | Date · One per line
-                </p>
-                {field('Achievements', 'achievements', true,
-                  'Academic Excellence Award – First Year, Mahindra University | Nov. 2024\nHacktoberfest 2024 Contributor – Open-source contributions in AI/ML | Oct. 2024',
-                  4)}
-              </section>
-
-              <button
-                type="submit"
-                disabled={saving}
-                className="w-full bg-black text-white py-4 text-lg font-black uppercase tracking-widest hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {saving ? 'Saving…' : 'Save Resume'}
-              </button>
-            </form>
+            {/* Save */}
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="btn-primary w-full py-3 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? 'Saving…' : 'Save Resume'}
+            </button>
           </div>
 
           {/* ── RIGHT: Live Preview ── */}
           <div className="xl:sticky xl:top-6">
-            <div className="border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] bg-white overflow-hidden">
-              <div className="bg-black text-white px-4 py-3 flex justify-between items-center">
-                <span className="text-sm font-black uppercase tracking-widest">Live Preview</span>
-                <span className="text-[10px] font-bold uppercase bg-white text-black px-2 py-0.5">A4 Format</span>
+            <div className="window overflow-hidden">
+              <div className="bg-[var(--bg-elevated)] border-b border-[var(--border-subtle)] px-4 py-3 flex justify-between items-center">
+                <span className="text-xs font-semibold uppercase tracking-widest text-[var(--text-secondary)]">Live Preview</span>
+                <div className="flex items-center gap-2">
+                  {keywords.length > 0 && (
+                    <span className="text-[10px] font-bold text-yellow-600 bg-yellow-200/50 px-2 py-0.5 rounded">
+                      {keywords.length} keywords highlighted
+                    </span>
+                  )}
+                  <span className="text-[10px] font-bold uppercase bg-[var(--border-subtle)] text-[var(--text-tertiary)] px-2 py-0.5 rounded">A4 Format</span>
+                </div>
               </div>
               <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 140px)' }}>
-                <ResumePreview data={formData} />
+                <ResumePreview data={formData} keywords={keywords} />
               </div>
             </div>
           </div>

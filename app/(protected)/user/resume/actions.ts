@@ -30,6 +30,7 @@ Instructions:
 10. Keep tone professional and impactful.
 11. IMPORTANT: "Technical Skills" and "Relevant Coursework" are SEPARATE sections. Do NOT repeat coursework items in skills or vice versa. Skills = programming languages, frameworks, tools, technologies. Coursework = academic courses/subjects taken.
 12. Output the "coursework" field as a simple comma-separated list of course names. Do NOT duplicate any coursework content in the "skills" field.
+13. Extract a "keywords" array: list the top 10–20 important keywords, skills, tools, and phrases from the job description that appear (or were woven into) the resume. These will be highlighted in the preview so the student can see which JD terms their resume covers.
 
 Format the output STRICTLY as a JSON object with NO markdown fences, NO extra text — just raw JSON:
 
@@ -46,7 +47,8 @@ Format the output STRICTLY as a JSON object with NO markdown fences, NO extra te
   "projects": "Formatted projects block tailored to the job",
   "coursework": "Relevant coursework as comma-separated list",
   "extracurriculars": "Formatted extracurriculars block",
-  "achievements": "Formatted achievements block"
+  "achievements": "Formatted achievements block",
+  "keywords": ["keyword1", "keyword2", "..."]
 }
 `;
 

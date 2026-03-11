@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
+import { UserPlus, Mail, Building2, Hash, Phone } from 'lucide-react';
 
 interface UniadminData {
   id: string;
@@ -24,9 +25,7 @@ export default function ManageUniadminsPage() {
   const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
+    if (!loading && !user) router.push('/login');
   }, [user, loading, router]);
 
   useEffect(() => {
@@ -34,15 +33,10 @@ export default function ManageUniadminsPage() {
       try {
         const q = query(collection(db, 'users'), where('role', '==', 'university_admin'));
         const querySnapshot = await getDocs(q);
-        
         const admins: UniadminData[] = [];
         querySnapshot.forEach((doc) => {
-          admins.push({
-            id: doc.id,
-            ...doc.data(),
-          } as UniadminData);
+          admins.push({ id: doc.id, ...doc.data() } as UniadminData);
         });
-
         setUniadmins(admins);
       } catch (error) {
         console.error('Error fetching uniadmins:', error);
@@ -50,110 +44,83 @@ export default function ManageUniadminsPage() {
         setLoadingData(false);
       }
     }
-
-    if (user) {
-      fetchUniadmins();
-    }
+    if (user) fetchUniadmins();
   }, [user]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-black text-xl">Loading...</div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="loading-dots"><span /><span /><span /></div>
+    </div>
+  );
+  if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-white p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8 flex justify-between items-center">
-          <div>
-            <Link 
-              href="/superadmin/dashboard" 
-              className="text-black hover:text-gray-600 mb-4 inline-block"
-            >
-              ← Back to Dashboard
-            </Link>
-            <h1 className="text-4xl font-bold text-black mb-2">Manage University Admins</h1>
-            <p className="text-gray-600">View and manage all university administrators</p>
-          </div>
-          <Link
-            href="/superadmin/create-uniadmin"
-            className="bg-black text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
-          >
-            + Create New Admin
+    <div className="animate-fade-in">
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Manage University Admins</h1>
+          <p className="text-[var(--text-tertiary)] text-[13px] mt-1">View and manage all university administrators</p>
+        </div>
+        <Link href="/superadmin/create-uniadmin" className="btn-primary inline-flex items-center gap-2">
+          <UserPlus size={14} /> Create New Admin
+        </Link>
+      </div>
+
+      {loadingData ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="loading-dots"><span /><span /><span /></div>
+        </div>
+      ) : uniadmins.length === 0 ? (
+        <div className="window p-12 text-center">
+          <p className="text-[var(--text-tertiary)] mb-4">No university admins found</p>
+          <Link href="/superadmin/create-uniadmin" className="btn-primary inline-flex items-center gap-2">
+            <UserPlus size={14} /> Create First Admin
           </Link>
         </div>
-
-        {loadingData ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600">Loading administrators...</p>
-          </div>
-        ) : uniadmins.length === 0 ? (
-          <div className="bg-black text-white p-12 rounded-lg text-center">
-            <p className="text-xl mb-4">No university admins found</p>
-            <Link
-              href="/superadmin/create-uniadmin"
-              className="inline-block bg-white text-black px-6 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
-            >
-              Create First Admin
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {uniadmins.map((admin) => (
-              <div key={admin.id} className="bg-black text-white p-6 rounded-lg shadow-lg">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="text-3xl">👤</div>
-                  <span className="text-xs bg-white text-black px-2 py-1 rounded">
-                    Uni Admin
-                  </span>
+      ) : (
+        <div id="admin-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {uniadmins.map((admin) => (
+            <div key={admin.id} className="window p-5 group hover:border-[var(--border-active)] transition-colors duration-150">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-8 h-8 rounded bg-[#F54E00]/10 flex items-center justify-center text-[#F54E00] text-sm font-bold">
+                  {admin.name?.charAt(0)?.toUpperCase() || '?'}
                 </div>
-                
-                <h3 className="text-xl font-bold mb-2">{admin.name}</h3>
-                
-                <div className="space-y-2 text-sm">
-                  <div className="border-t border-gray-700 pt-2">
-                    <p className="text-gray-400">Email</p>
-                    <p className="font-medium">{admin.email}</p>
-                  </div>
-                  
-                  <div className="border-t border-gray-700 pt-2">
-                    <p className="text-gray-400">University</p>
-                    <p className="font-medium">{admin.universityName}</p>
-                  </div>
-                  
-                  <div className="border-t border-gray-700 pt-2">
-                    <p className="text-gray-400">University ID</p>
-                    <p className="font-medium">{admin.universityId}</p>
-                  </div>
-                  
-                  {admin.phone && (
-                    <div className="border-t border-gray-700 pt-2">
-                      <p className="text-gray-400">Phone</p>
-                      <p className="font-medium">{admin.phone}</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-gray-700 flex gap-2">
-                  <button className="flex-1 bg-white text-black py-2 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors">
-                    View Details
-                  </button>
-                  <button className="flex-1 bg-gray-800 text-white py-2 rounded-lg text-sm font-semibold hover:bg-gray-700 transition-colors">
-                    Edit
-                  </button>
-                </div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] border border-[var(--border-subtle)] px-2 py-0.5 rounded">
+                  Uni Admin
+                </span>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+
+              <h3 className="text-[15px] font-bold text-[var(--text-primary)] mb-3">{admin.name}</h3>
+
+              <div className="space-y-2 text-[13px]">
+                <div className="flex items-center gap-2 text-[var(--text-tertiary)]">
+                  <Mail size={12} className="text-[var(--text-faint)] shrink-0" />
+                  <span className="truncate">{admin.email}</span>
+                </div>
+                <div className="flex items-center gap-2 text-[var(--text-tertiary)]">
+                  <Building2 size={12} className="text-[var(--text-faint)] shrink-0" />
+                  <span className="truncate">{admin.universityName}</span>
+                </div>
+                <div className="flex items-center gap-2 text-[var(--text-tertiary)]">
+                  <Hash size={12} className="text-[var(--text-faint)] shrink-0" />
+                  <span>{admin.universityId}</span>
+                </div>
+                {admin.phone && (
+                  <div className="flex items-center gap-2 text-[var(--text-tertiary)]">
+                    <Phone size={12} className="text-[var(--text-faint)] shrink-0" />
+                    <span>{admin.phone}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-[var(--border-subtle)] flex gap-2">
+                <button className="btn-primary flex-1 text-[12px] py-1.5">View Details</button>
+                <button className="btn-secondary flex-1 text-[12px] py-1.5">Edit</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

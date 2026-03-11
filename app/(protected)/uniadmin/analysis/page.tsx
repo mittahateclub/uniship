@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import Link from 'next/link';
+import { Users, Target, ClipboardCheck, AlertTriangle } from 'lucide-react';
 
 interface AnalysisStats {
   totalStudents: number;
@@ -27,94 +27,85 @@ export default function StudentAnalysisPage() {
   useEffect(() => {
     async function fetchAnalysis() {
       try {
-        const univId = 'HARV-001'; // Placeholder for admin's universityId
-
-        // 1. Fetch Students count
+        const univId = 'HARV-001';
         const studentQ = query(collection(db, 'users'), where('role', '==', 'student'), where('universityId', '==', univId));
         const studentSnap = await getDocs(studentQ);
-        
-        // 2. Fetch Test Results
         const resultsQ = query(collection(db, 'testResults'), where('universityId', '==', univId));
         const resultsSnap = await getDocs(resultsQ);
-        
         let totalScore = 0;
         resultsSnap.forEach(doc => totalScore += doc.data().score);
-
         setStats({
           totalStudents: studentSnap.size,
           testsCompleted: resultsSnap.size,
           averageScore: resultsSnap.size > 0 ? Math.round(totalScore / resultsSnap.size) : 0
         });
-
-        // 3. Fetch Recent Proctoring Violations
-        const logsQ = query(
-          collection(db, 'mock_proctoring_logs'),
-          where('universityId', '==', univId),
-          orderBy('timestamp', 'desc'),
-          limit(5)
-        );
+        const logsQ = query(collection(db, 'mock_proctoring_logs'), where('universityId', '==', univId), orderBy('timestamp', 'desc'), limit(5));
         const logsSnap = await getDocs(logsQ);
         const logs: any[] = [];
         logsSnap.forEach(doc => logs.push({ id: doc.id, ...doc.data() }));
         setRecentViolations(logs);
-
       } catch (error) {
         console.error("Analysis fetch error:", error);
       } finally {
         setLoadingData(false);
       }
     }
-
     if (user) fetchAnalysis();
   }, [user]);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="loading-dots"><span /><span /><span /></div>
+    </div>
+  );
+
+  const statCards = [
+    { label: 'Total Enrolled', value: stats.totalStudents, icon: Users, color: '' },
+    { label: 'Average Score', value: `${stats.averageScore}%`, icon: Target, color: 'text-[#4CAF50]' },
+    { label: 'Tests Taken', value: stats.testsCompleted, icon: ClipboardCheck, color: '' },
+  ];
 
   return (
-    <div className="min-h-screen bg-white p-8 text-black">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <Link href="/uniadmin/dashboard" className="hover:text-gray-600 mb-4 inline-block">← Back</Link>
-          <h1 className="text-4xl font-bold">Student Performance Analysis</h1>
-        </div>
+    <div className="animate-fade-in">
+      <div className="mb-6">
+        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Student Performance Analysis</h1>
+        <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Overview of academic metrics and proctoring alerts</p>
+      </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div className="bg-black text-white p-8 rounded-xl shadow-lg">
-            <p className="text-gray-400 text-sm uppercase font-bold">Total Enrolled</p>
-            <p className="text-5xl font-bold mt-2">{stats.totalStudents}</p>
-          </div>
-          <div className="bg-black text-white p-8 rounded-xl shadow-lg">
-            <p className="text-gray-400 text-sm uppercase font-bold">Average Score</p>
-            <p className="text-5xl font-bold mt-2 text-green-400">{stats.averageScore}%</p>
-          </div>
-          <div className="bg-black text-white p-8 rounded-xl shadow-lg">
-            <p className="text-gray-400 text-sm uppercase font-bold">Tests Taken</p>
-            <p className="text-5xl font-bold mt-2">{stats.testsCompleted}</p>
-          </div>
-        </div>
-
-        {/* Proctoring Alerts */}
-        <div className="bg-gray-50 p-8 rounded-xl border border-gray-200">
-          <h2 className="text-2xl font-bold mb-6 flex items-center">
-            <span className="mr-2">⚠️</span> Recent Proctoring Alerts
-          </h2>
-          {recentViolations.length === 0 ? (
-            <p className="text-gray-500">No violations recorded recently.</p>
-          ) : (
-            <div className="space-y-4">
-              {recentViolations.map((log) => (
-                <div key={log.id} className="bg-white p-4 rounded border-l-4 border-red-500 shadow-sm flex justify-between items-center">
-                  <div>
-                    <p className="font-bold">{log.studentName} <span className="text-gray-500 font-normal">({log.studentId})</span></p>
-                    <p className="text-sm text-gray-600">Type: {log.violationType} — {log.testTitle}</p>
-                  </div>
-                  <p className="text-xs text-gray-400">{new Date(log.timestamp?.toDate()).toLocaleString()}</p>
-                </div>
-              ))}
+      <div id="stats" className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+        {statCards.map((s) => (
+          <div key={s.label} className="window p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">{s.label}</span>
+              <s.icon size={14} className="text-[#F54E00]" />
             </div>
-          )}
+            <p className={`text-2xl font-bold tabular-nums ${s.color || 'text-[var(--text-primary)]'}`}>{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="divider-dashed mb-6" />
+
+      <div id="proctoring-alerts" className="window p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <AlertTriangle size={14} className="text-[#F1A82C]" />
+          <h2 className="text-[14px] font-bold text-[var(--text-primary)]">Recent Proctoring Alerts</h2>
         </div>
+        {recentViolations.length === 0 ? (
+          <p className="text-[var(--text-muted)] text-[13px]">No violations recorded recently.</p>
+        ) : (
+          <div className="space-y-2">
+            {recentViolations.map((log) => (
+              <div key={log.id} className="flex items-center justify-between p-3 rounded bg-[var(--bg-elevated)] border-l-2 border-[#F54E00]">
+                <div>
+                  <p className="text-[13px] font-semibold text-[var(--text-primary)]">{log.studentName} <span className="text-[var(--text-muted)] font-normal">({log.studentId})</span></p>
+                  <p className="text-[12px] text-[var(--text-tertiary)]">{log.violationType} — {log.testTitle}</p>
+                </div>
+                <p className="text-[11px] text-[var(--text-faint)] tabular-nums shrink-0">{new Date(log.timestamp?.toDate()).toLocaleString()}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

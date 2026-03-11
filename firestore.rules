@@ -87,6 +87,12 @@ service cloud.firestore {
       allow read: if isUniversityAdmin() || isSuperAdmin();
       allow update, delete: if false;
     }
+
+    match /test_results/{resultId} {
+      allow read, create: if isAuthenticated() && request.auth.uid == (resource == null ? request.resource.data.userId : resource.data.userId);
+      allow read: if isUniversityAdmin() || isSuperAdmin();
+      allow delete: if isUniversityAdmin() && belongsToSameUniversity(resource.data.universityId);
+    }
     
     match /universities/{universityId} {
       allow read: if isAuthenticated();
@@ -96,6 +102,26 @@ service cloud.firestore {
     match /analytics/{analyticsId} {
       allow read: if isUniversityAdmin() || isSuperAdmin();
       allow write: if false;
+    }
+
+    // --- Saved Events (student bookmarks) ---
+    match /savedEvents/{saveId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // --- Exam Sessions (proctoring + live support) ---
+    match /exam_sessions/{sessionId} {
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read, update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || isUniversityAdmin() || isSuperAdmin()
+      );
+
+      match /messages/{messageId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated();
+      }
     }
     
     match /{document=**} {

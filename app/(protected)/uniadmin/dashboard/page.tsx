@@ -6,50 +6,37 @@ import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import Link from 'next/link';
+import {
+  FileText, ClipboardCheck, UserPlus, CalendarPlus,
+  Database, TrendingUp, Settings, PlusCircle, ArrowUpRight,
+  Users, Calendar as CalendarIcon,
+} from 'lucide-react';
 
 export default function UniAdminDashboard() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [adminData, setAdminData] = useState<any>(null);
-  const [stats, setStats] = useState({
-    activeTests: 0,
-    totalStudents: 0,
-    upcomingEvents: 0
-  });
+  const [stats, setStats] = useState({ activeTests: 0, totalStudents: 0, upcomingEvents: 0 });
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
+    if (!loading && !user) router.push('/login');
   }, [user, loading, router]);
 
   useEffect(() => {
     async function fetchDashboardData() {
       if (user) {
-        // Fetch Admin Profile
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
           const data = userDoc.data();
           setAdminData(data);
-
-          // Fetch Stats based on University ID
           const univId = data.universityId;
           if (univId) {
-            const studentsQuery = query(collection(db, 'users'), where('universityId', '==', univId), where('role', '==', 'student'));
-            const testsQuery = query(collection(db, 'pdf_uploads'), where('universityId', '==', univId));
-            const eventsQuery = query(collection(db, 'events'), where('universityId', '==', univId));
-
             const [studentSnap, testSnap, eventSnap] = await Promise.all([
-              getDocs(studentsQuery),
-              getDocs(testsQuery),
-              getDocs(eventsQuery)
+              getDocs(query(collection(db, 'users'), where('universityId', '==', univId), where('role', '==', 'student'))),
+              getDocs(query(collection(db, 'pdf_uploads'), where('universityId', '==', univId))),
+              getDocs(query(collection(db, 'events'), where('universityId', '==', univId))),
             ]);
-
-            setStats({
-              totalStudents: studentSnap.size,
-              activeTests: testSnap.size,
-              upcomingEvents: eventSnap.size
-            });
+            setStats({ totalStudents: studentSnap.size, activeTests: testSnap.size, upcomingEvents: eventSnap.size });
           }
         }
       }
@@ -57,93 +44,67 @@ export default function UniAdminDashboard() {
     fetchDashboardData();
   }, [user]);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-white text-black">Loading Dashboard...</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="loading-dots"><span /><span /><span /></div>
+    </div>
+  );
+
+  const tools = [
+    { title: 'Create AI Test', desc: 'Upload PDFs to generate questions.', href: '/uniadmin/create-test', icon: PlusCircle },
+    { title: 'Manage Tests', desc: 'View & approve AI-generated tests.', href: '/uniadmin/tests', icon: ClipboardCheck },
+    { title: 'Create Account', desc: 'Register new student profiles.', href: '/uniadmin/create-account', icon: UserPlus },
+    { title: 'Create Event', desc: 'Post workshops & seminars.', href: '/uniadmin/create-event', icon: CalendarPlus },
+    { title: 'Student Database', desc: 'View all registered students.', href: '/uniadmin/student-database', icon: Database },
+    { title: 'Analysis', desc: 'Performance reports & progress.', href: '/uniadmin/analysis', icon: TrendingUp },
+    { title: 'Admin Profile', desc: 'Settings & credentials.', href: '/uniadmin/profile', icon: Settings },
+  ];
 
   return (
-    <div className="min-h-screen bg-white text-black p-6 md:p-12">
-      <div className="max-w-7xl mx-auto">
-        <header className="mb-10">
-          <h1 className="text-4xl font-bold tracking-tight">University Admin Dashboard</h1>
-          <p className="text-gray-500 mt-2">Welcome back, {user?.email}</p>
-        </header>
+    <div className="max-w-[1100px] mx-auto animate-fade-in">
+      <div className="mb-8">
+        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">University Admin Dashboard</h1>
+        <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Welcome back, <span className="text-[var(--text-primary)]">{user?.email?.split('@')[0]}</span></p>
+      </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div className="bg-black text-white p-8 rounded-2xl shadow-xl">
-            <p className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-1">Active Tests</p>
-            <h2 className="text-5xl font-bold">{stats.activeTests}</h2>
+      {/* Stats */}
+      <div id="stats" className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+        {[
+          { label: 'Active Tests', value: stats.activeTests, icon: FileText },
+          { label: 'Total Students', value: stats.totalStudents, icon: Users },
+          { label: 'Upcoming Events', value: stats.upcomingEvents, icon: CalendarIcon },
+        ].map((s, i) => (
+          <div key={i} className="window p-5 hover:border-[var(--border-active)] transition-colors duration-150">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[10px] font-bold text-[var(--text-faint)] uppercase tracking-widest">{s.label}</span>
+              <div className="w-7 h-7 rounded-lg bg-[#F54E00]/10 flex items-center justify-center">
+                <s.icon size={14} className="text-[#F54E00]" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{s.value}</p>
           </div>
-          <div className="bg-black text-white p-8 rounded-2xl shadow-xl">
-            <p className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-1">Total Students</p>
-            <h2 className="text-5xl font-bold">{stats.totalStudents}</h2>
-          </div>
-          <div className="bg-black text-white p-8 rounded-2xl shadow-xl">
-            <p className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-1">Upcoming Events</p>
-            <h2 className="text-5xl font-bold">{stats.upcomingEvents}</h2>
-          </div>
-        </div>
+        ))}
+      </div>
 
-        {/* Quick Actions Grid */}
-        <h2 className="text-2xl font-bold mb-6">Management Tools</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          
-          <Link href="/uniadmin/create-test">
-            <div className="group border-2 border-black p-6 rounded-2xl hover:bg-black hover:text-white transition-all cursor-pointer h-full">
-              <span className="text-3xl mb-4 block">📝</span>
-              <h3 className="text-xl font-bold mb-2">Create AI Test</h3>
-              <p className="text-sm opacity-70">Upload PDFs to generate new practice questions.</p>
+      <div className="divider-dashed my-6" />
+
+      {/* Tools Grid */}
+      <h2 className="text-[13px] font-bold text-[var(--text-faint)] uppercase tracking-widest mb-4">Management Tools</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        {tools.map((item) => (
+          <Link key={item.href} href={item.href} className="group window p-4 hover:border-[var(--border-active)] transition-all duration-150">
+            <div className="w-8 h-8 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded flex items-center justify-center mb-3">
+              <item.icon size={15} className="text-[#F54E00]" />
+            </div>
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-[13px] font-medium text-[var(--text-primary)] mb-0.5">{item.title}</h3>
+                <p className="text-[var(--text-muted)] text-[11px]">{item.desc}</p>
+              </div>
+              <ArrowUpRight size={12} className="text-[var(--text-faint)] group-hover:text-[#F54E00] transition-colors duration-150 mt-0.5 shrink-0" />
             </div>
           </Link>
-
-          {/* THIS IS THE LINK YOU WERE MISSING */}
-          <Link href="/uniadmin/tests">
-            <div className="group border-2 border-black p-6 rounded-2xl hover:bg-black hover:text-white transition-all cursor-pointer h-full">
-              <span className="text-3xl mb-4 block">📋</span>
-              <h3 className="text-xl font-bold mb-2">Review & Manage Tests</h3>
-              <p className="text-sm opacity-70">View upload status and approve AI-generated tests.</p>
-            </div>
-          </Link>
-
-          <Link href="/uniadmin/create-account">
-            <div className="group border-2 border-black p-6 rounded-2xl hover:bg-black hover:text-white transition-all cursor-pointer h-full">
-              <span className="text-3xl mb-4 block">👤</span>
-              <h3 className="text-xl font-bold mb-2">Create Account</h3>
-              <p className="text-sm opacity-70">Register new student profiles to your university.</p>
-            </div>
-          </Link>
-
-          <Link href="/uniadmin/create-event">
-            <div className="group border-2 border-black p-6 rounded-2xl hover:bg-black hover:text-white transition-all cursor-pointer h-full">
-              <span className="text-3xl mb-4 block">📅</span>
-              <h3 className="text-xl font-bold mb-2">Create Event</h3>
-              <p className="text-sm opacity-70">Post workshops, seminars, or placement talks.</p>
-            </div>
-          </Link>
-
-          <Link href="/uniadmin/student-database">
-            <div className="group border-2 border-black p-6 rounded-2xl hover:bg-black hover:text-white transition-all cursor-pointer h-full">
-              <span className="text-3xl mb-4 block">🗄️</span>
-              <h3 className="text-xl font-bold mb-2">Student Database</h3>
-              <p className="text-sm opacity-70">View and manage all registered students.</p>
-            </div>
-          </Link>
-
-          <Link href="/uniadmin/analysis">
-            <div className="group border-2 border-black p-6 rounded-2xl hover:bg-black hover:text-white transition-all cursor-pointer h-full">
-              <span className="text-3xl mb-4 block">📊</span>
-              <h3 className="text-xl font-bold mb-2">Student Analysis</h3>
-              <p className="text-sm opacity-70">Detailed reports on test performance and progress.</p>
-            </div>
-          </Link>
-
-          <Link href="/uniadmin/profile">
-            <div className="group border-2 border-black p-6 rounded-2xl hover:bg-black hover:text-white transition-all cursor-pointer h-full">
-              <span className="text-3xl mb-4 block">⚙️</span>
-              <h3 className="text-xl font-bold mb-2">Admin Profile</h3>
-              <p className="text-sm opacity-70">Manage your university settings and credentials.</p>
-            </div>
-          </Link>
-        </div>
+        ))}
       </div>
     </div>
   );

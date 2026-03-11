@@ -63,7 +63,7 @@ If the markdown contains multiple problems, convert ALL of them into the JSON ar
 
 Failure to follow these rules is considered an incorrect response.`;
 
-export async function processTestDocument(formData: FormData, userId: string, universityId: string) {
+export async function processTestDocument(formData: FormData, userId: string, universityId: string, options?: { title?: string; description?: string; duration?: number; category?: string; totalQuestions?: number; examStart?: string; examEnd?: string }) {
   try {
     const file = formData.get("file") as File;
     if (!file) throw new Error("No file uploaded");
@@ -186,16 +186,25 @@ export async function processTestDocument(formData: FormData, userId: string, un
     console.log('Extracted', parsedData.problems.length, 'problems');
 
     // 7. Save to Firestore in the expected format
+    const problemCount = parsedData.problems.length;
     const docRef = await addDoc(collection(db, "tests"), {
+      title: options?.title || file.name.replace(/\.pdf$/i, ''),
+      description: options?.description || '',
+      duration: options?.duration || 60,
+      category: options?.category || 'General',
+      totalQuestions: options?.totalQuestions || problemCount,
+      examStart: options?.examStart || null,
+      examEnd: options?.examEnd || null,
       metadata: parsedData.metadata || {
         difficultyLevels: [],
-        totalProblems: parsedData.problems.length
+        totalProblems: problemCount
       },
       problems: parsedData.problems,
       universityId,
       createdBy: userId,
       createdAt: serverTimestamp(),
       sourceFileName: file.name,
+      approved: false,
     });
 
     console.log('Saved to Firestore with ID:', docRef.id);

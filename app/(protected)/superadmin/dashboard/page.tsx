@@ -6,103 +6,93 @@ import { useEffect, useState } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
+import { UserPlus, ShieldCheck, BarChart3, Users, GraduationCap, ArrowUpRight } from 'lucide-react';
 
 export default function SuperadminDashboard() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [stats, setStats] = useState({
-    totalUniadmins: 0,
-    totalStudents: 0,
-    totalUniversities: 0,
-  });
+  const [stats, setStats] = useState({ totalUniadmins: 0, totalStudents: 0, totalUniversities: 0 });
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
+    if (!loading && !user) router.push('/login');
   }, [user, loading, router]);
 
   useEffect(() => {
     async function fetchStats() {
       try {
-        // Get uniadmins count
-        const uniadminsQuery = query(collection(db, 'users'), where('role', '==', 'uniadmin'));
-        const uniadminsSnapshot = await getDocs(uniadminsQuery);
-        
-        // Get students count
-        const studentsQuery = query(collection(db, 'users'), where('role', '==', 'user'));
-        const studentsSnapshot = await getDocs(studentsQuery);
-
+        const [uniadminsSnapshot, studentsSnapshot] = await Promise.all([
+          getDocs(query(collection(db, 'users'), where('role', '==', 'university_admin'))),
+          getDocs(query(collection(db, 'users'), where('role', '==', 'student'))),
+        ]);
         setStats({
           totalUniadmins: uniadminsSnapshot.size,
           totalStudents: studentsSnapshot.size,
-          totalUniversities: uniadminsSnapshot.size, // For now, 1 uni per admin
+          totalUniversities: uniadminsSnapshot.size,
         });
       } catch (error) {
         console.error('Error fetching stats:', error);
       }
     }
-
-    if (user) {
-      fetchStats();
-    }
+    if (user) fetchStats();
   }, [user]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-black text-xl">Loading...</div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="loading-dots"><span /><span /><span /></div>
+    </div>
+  );
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   const menuItems = [
-    { title: 'Create Uniadmins', href: '/superadmin/create-uniadmin', icon: '➕' },
-    { title: 'Manage Uniadmins', href: '/superadmin/manage-uniadmins', icon: '👥' },
-    { title: 'System Analytics', href: '/superadmin/analytics', icon: '📊' },
-    { title: 'Profile', href: '/superadmin/profile', icon: '⚙️' },
+    { title: 'Create Uni Admin', desc: 'Add a new university admin.', href: '/superadmin/create-uniadmin', icon: UserPlus },
+    { title: 'Manage Admins', desc: 'View & manage all admins.', href: '/superadmin/manage-uniadmins', icon: ShieldCheck },
   ];
 
   return (
-    <div className="min-h-screen bg-white p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-black mb-2">Superadmin Dashboard</h1>
-          <p className="text-gray-600">Welcome back, {user.email}</p>
-        </div>
+    <div className="max-w-[1100px] mx-auto animate-fade-in">
+      <div className="mb-8">
+        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Superadmin Dashboard</h1>
+        <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Welcome back, <span className="text-[var(--text-primary)]">{user.email?.split('@')[0]}</span></p>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {menuItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="bg-black text-white p-6 rounded-lg shadow-lg hover:bg-gray-800 transition-colors"
-            >
-              <div className="text-4xl mb-4">{item.icon}</div>
-              <h3 className="text-xl font-semibold">{item.title}</h3>
-            </Link>
-          ))}
-        </div>
+      {/* Stats */}
+      <div id="stats" className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+        {[
+          { label: 'Total Universities', value: stats.totalUniversities, icon: GraduationCap },
+          { label: 'Uni Admins', value: stats.totalUniadmins, icon: ShieldCheck },
+          { label: 'Total Students', value: stats.totalStudents, icon: Users },
+        ].map((s, i) => (
+          <div key={i} className="window p-5 hover:border-[var(--border-active)] transition-colors duration-150">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[10px] font-bold text-[var(--text-faint)] uppercase tracking-widest">{s.label}</span>
+              <div className="w-7 h-7 rounded-lg bg-[#F54E00]/10 flex items-center justify-center">
+                <s.icon size={14} className="text-[#F54E00]" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{s.value}</p>
+          </div>
+        ))}
+      </div>
 
-        {/* Quick Stats */}
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-black text-white p-6 rounded-lg">
-            <p className="text-sm text-gray-300">Total Universities</p>
-            <p className="text-3xl font-bold mt-2">{stats.totalUniversities}</p>
-          </div>
-          <div className="bg-black text-white p-6 rounded-lg">
-            <p className="text-sm text-gray-300">Total Uni Admins</p>
-            <p className="text-3xl font-bold mt-2">{stats.totalUniadmins}</p>
-          </div>
-          <div className="bg-black text-white p-6 rounded-lg">
-            <p className="text-sm text-gray-300">Total Students</p>
-            <p className="text-3xl font-bold mt-2">{stats.totalStudents}</p>
-          </div>
-        </div>
+      <div className="divider-dashed my-6" />
+
+      {/* Actions */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {menuItems.map((item) => (
+          <Link key={item.href} href={item.href} className="group window p-4 hover:border-[var(--border-active)] transition-all duration-150">
+            <div className="w-8 h-8 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded flex items-center justify-center mb-3">
+              <item.icon size={15} className="text-[#F54E00]" />
+            </div>
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-[13px] font-medium text-[var(--text-primary)] mb-0.5">{item.title}</h3>
+                <p className="text-[var(--text-muted)] text-[11px]">{item.desc}</p>
+              </div>
+              <ArrowUpRight size={12} className="text-[var(--text-faint)] group-hover:text-[#F54E00] transition-colors duration-150 mt-0.5 shrink-0" />
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
   );

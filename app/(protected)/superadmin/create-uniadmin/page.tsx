@@ -6,19 +6,13 @@ import { useEffect, useState, FormEvent } from 'react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import Link from 'next/link';
 
 export default function CreateUniadminPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    universityName: '',
-    universityId: '',
-    phone: '',
+    name: '', email: '', password: '', universityName: '', universityId: '', phone: '',
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -26,218 +20,79 @@ export default function CreateUniadminPage() {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
+    if (!loading && !user) router.push('/login');
   }, [user, loading, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
-    setSubmitting(true);
-
+    setError(''); setSuccess(''); setSubmitting(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
-
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       await setDoc(doc(db, 'users', userCredential.user.uid), {
-        name: formData.name,
-        email: formData.email,
-        role: 'university_admin',
-        universityName: formData.universityName,
-        universityId: formData.universityId,
-        phone: formData.phone,
-        createdAt: new Date(),
-        createdBy: user?.uid,
+        name: formData.name, email: formData.email, role: 'university_admin',
+        universityName: formData.universityName, universityId: formData.universityId,
+        phone: formData.phone, createdAt: new Date(), createdBy: user?.uid,
       });
-
-      setSuccess(`University Admin account created successfully for ${formData.email}`);
-      
-      setFormData({
-        name: '',
-        email: '',
-        password: '',
-        universityName: '',
-        universityId: '',
-        phone: '',
-      });
-
+      setSuccess(`University Admin account created for ${formData.email}`);
+      setFormData({ name: '', email: '', password: '', universityName: '', universityId: '', phone: '' });
     } catch (err: any) {
-      console.error('Error creating uniadmin:', err);
-      if (err.code === 'auth/email-already-in-use') {
-        setError('This email is already registered.');
-      } else if (err.code === 'auth/weak-password') {
-        setError('Password should be at least 6 characters.');
-      } else {
-        setError('Failed to create account. Please try again.');
-      }
-    } finally {
-      setSubmitting(false);
-    }
+      if (err.code === 'auth/email-already-in-use') setError('This email is already registered.');
+      else if (err.code === 'auth/weak-password') setError('Password should be at least 6 characters.');
+      else setError('Failed to create account. Please try again.');
+    } finally { setSubmitting(false); }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-black text-xl">Loading...</div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="loading-dots"><span /><span /><span /></div>
+    </div>
+  );
+  if (!user) return null;
 
-  if (!user) {
-    return null;
-  }
+  const fields = [
+    { name: 'name', label: 'Full Name', type: 'text', placeholder: "Enter admin's full name", required: true },
+    { name: 'email', label: 'Email Address', type: 'email', placeholder: 'admin@university.edu', required: true },
+    { name: 'password', label: 'Password', type: 'password', placeholder: 'Min 6 characters', required: true },
+    { name: 'universityName', label: 'University Name', type: 'text', placeholder: 'e.g., Harvard University', required: true },
+    { name: 'universityId', label: 'University ID', type: 'text', placeholder: 'e.g., HARV-001', required: true },
+    { name: 'phone', label: 'Phone Number', type: 'tel', placeholder: '+1 (555) 123-4567', required: false },
+  ];
 
   return (
-    <div className="min-h-screen bg-white p-8">
-      <div className="max-w-3xl mx-auto">
-        <div className="mb-8">
-          <Link 
-            href="/superadmin/dashboard" 
-            className="text-black hover:text-gray-600 mb-4 inline-block"
-          >
-            ← Back to Dashboard
-          </Link>
-          <h1 className="text-4xl font-bold text-black mb-2">Create University Admin</h1>
-          <p className="text-gray-600">Add a new university administrator account</p>
-        </div>
+    <div className="max-w-lg mx-auto animate-fade-in">
+      <div className="mb-6">
+        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Create University Admin</h1>
+        <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Add a new university administrator account</p>
+      </div>
 
-        <div className="bg-black text-white p-8 rounded-lg shadow-2xl">
-          {error && (
-            <div className="mb-6 p-4 bg-red-500 text-white rounded-lg">
-              {error}
-            </div>
-          )}
+      <div className="window p-6">
+        {error && (
+          <div className="mb-4 p-3 rounded bg-[#F54E00]/10 text-[#F54E00] border border-[#F54E00]/20 text-[13px] font-medium">{error}</div>
+        )}
+        {success && (
+          <div className="mb-4 p-3 rounded bg-[#4CAF50]/10 text-[#4CAF50] border border-[#4CAF50]/20 text-[13px] font-medium">{success}</div>
+        )}
 
-          {success && (
-            <div className="mb-6 p-4 bg-green-500 text-white rounded-lg">
-              {success}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium mb-2">
-                Full Name *
-              </label>
+        <form id="form" onSubmit={handleSubmit} className="space-y-4">
+          {fields.map((f) => (
+            <div key={f.name}>
+              <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">{f.label} {f.required && '*'}</label>
               <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white text-black border-2 border-white rounded-lg focus:outline-none focus:border-gray-300 transition-colors"
-                placeholder="Enter admin's full name"
-                required
-                disabled={submitting}
+                type={f.type} name={f.name} placeholder={f.placeholder} required={f.required}
+                value={formData[f.name as keyof typeof formData]}
+                onChange={handleChange} disabled={submitting}
+                className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-faint)] text-[13px] focus:outline-none focus:border-[#5E6AD2] transition-all duration-150 disabled:opacity-50"
               />
             </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium mb-2">
-                Email Address *
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white text-black border-2 border-white rounded-lg focus:outline-none focus:border-gray-300 transition-colors"
-                placeholder="admin@university.edu"
-                required
-                disabled={submitting}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium mb-2">
-                Password *
-              </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white text-black border-2 border-white rounded-lg focus:outline-none focus:border-gray-300 transition-colors"
-                placeholder="Min 6 characters"
-                required
-                disabled={submitting}
-                minLength={6}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="universityName" className="block text-sm font-medium mb-2">
-                University Name *
-              </label>
-              <input
-                type="text"
-                id="universityName"
-                name="universityName"
-                value={formData.universityName}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white text-black border-2 border-white rounded-lg focus:outline-none focus:border-gray-300 transition-colors"
-                placeholder="e.g., Harvard University"
-                required
-                disabled={submitting}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="universityId" className="block text-sm font-medium mb-2">
-                University ID *
-              </label>
-              <input
-                type="text"
-                id="universityId"
-                name="universityId"
-                value={formData.universityId}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white text-black border-2 border-white rounded-lg focus:outline-none focus:border-gray-300 transition-colors"
-                placeholder="e.g., HARV-001"
-                required
-                disabled={submitting}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium mb-2">
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                id="phone"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white text-black border-2 border-white rounded-lg focus:outline-none focus:border-gray-300 transition-colors"
-                placeholder="+1 (555) 123-4567"
-                disabled={submitting}
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full bg-white text-black py-3 rounded-lg font-semibold hover:bg-gray-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {submitting ? 'Creating Account...' : 'Create University Admin'}
-            </button>
-          </form>
-        </div>
+          ))}
+          <button type="submit" disabled={submitting} className="btn-primary w-full mt-2">
+            {submitting ? 'Creating Account...' : 'Create University Admin'}
+          </button>
+        </form>
       </div>
     </div>
   );

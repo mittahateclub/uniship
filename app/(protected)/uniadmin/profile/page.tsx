@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import Link from 'next/link';
+import { Pencil, X } from 'lucide-react';
 
 export default function UniadminProfilePage() {
   const { user, loading } = useAuth();
@@ -49,80 +49,79 @@ export default function UniadminProfilePage() {
     }
   };
 
-  if (loading || !profileData) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (loading || !profileData) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="loading-dots"><span /><span /><span /></div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-white p-8 text-black">
-      <div className="max-w-3xl mx-auto">
-        <div className="mb-8">
-          <Link href="/uniadmin/dashboard" className="hover:text-gray-600 mb-4 inline-block">← Back to Dashboard</Link>
-          <h1 className="text-4xl font-bold">Admin Profile</h1>
+    <div className="max-w-lg mx-auto animate-fade-in">
+      <div className="mb-6">
+        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Admin Profile</h1>
+        <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Your account details</p>
+      </div>
+
+      {message && (
+        <div className="mb-4 p-3 rounded bg-[#4CAF50]/10 text-[#4CAF50] border border-[#4CAF50]/20 text-[13px] font-medium">{message}</div>
+      )}
+
+      <div id="account-details" className="window p-6">
+        <div className="flex justify-between items-center mb-5 pb-4 border-b border-[var(--border-subtle)]">
+          <h2 className="text-[14px] font-bold text-[var(--text-primary)]">Account Details</h2>
+          <button
+            onClick={() => setIsEditing(!isEditing)}
+            className="btn-secondary inline-flex items-center gap-1.5 text-[12px] px-3 py-1"
+          >
+            {isEditing ? <><X size={12} /> Cancel</> : <><Pencil size={12} /> Edit</>}
+          </button>
         </div>
 
-        {message && <p className="mb-4 p-3 bg-black text-white rounded">{message}</p>}
-
-        <div className="bg-black text-white p-8 rounded-xl shadow-2xl">
-          <div className="flex justify-between items-center mb-8 border-b border-gray-800 pb-4">
-            <h2 className="text-xl font-semibold">Account Details</h2>
-            <button 
-              onClick={() => setIsEditing(!isEditing)}
-              className="bg-white text-black px-4 py-1 rounded font-bold hover:bg-gray-200 transition"
-            >
-              {isEditing ? 'Cancel' : 'Edit Profile'}
-            </button>
+        <form onSubmit={handleUpdate} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">Email</label>
+              <p className="text-[13px] text-[var(--text-tertiary)]">{profileData.email}</p>
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">University ID</label>
+              <p className="text-[13px] font-mono text-[#F54E00]">{profileData.universityId}</p>
+            </div>
           </div>
 
-          <form onSubmit={handleUpdate} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-gray-400 text-sm mb-1">Email Address</label>
-                <p className="text-lg font-medium opacity-70">{profileData.email}</p>
-              </div>
-              <div>
-                <label className="block text-gray-400 text-sm mb-1">University ID</label>
-                <p className="text-lg font-medium text-blue-400">{profileData.universityId}</p>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">Full Name</label>
+              {isEditing ? (
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] text-[13px] focus:outline-none focus:border-[#5E6AD2] transition-all duration-150"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                />
+              ) : (
+                <p className="text-[13px] text-[var(--text-primary)]">{profileData.name || 'Not set'}</p>
+              )}
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-gray-400 text-sm mb-2">Full Name</label>
-                {isEditing ? (
-                  <input 
-                    type="text" 
-                    className="w-full p-2 bg-gray-900 border border-gray-700 rounded text-white"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  />
-                ) : (
-                  <p className="text-lg">{profileData.name || 'Not set'}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-gray-400 text-sm mb-2">Phone Number</label>
-                {isEditing ? (
-                  <input 
-                    type="text" 
-                    className="w-full p-2 bg-gray-900 border border-gray-700 rounded text-white"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  />
-                ) : (
-                  <p className="text-lg">{profileData.phone || 'Not set'}</p>
-                )}
-              </div>
+            <div>
+              <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">Phone</label>
+              {isEditing ? (
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] text-[13px] focus:outline-none focus:border-[#5E6AD2] transition-all duration-150"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                />
+              ) : (
+                <p className="text-[13px] text-[var(--text-primary)]">{profileData.phone || 'Not set'}</p>
+              )}
             </div>
+          </div>
 
-            {isEditing && (
-              <button 
-                type="submit"
-                className="w-full bg-white text-black py-3 rounded-lg font-bold hover:bg-gray-200 transition"
-              >
-                Save Changes
-              </button>
-            )}
-          </form>
-        </div>
+          {isEditing && (
+            <button type="submit" className="btn-primary w-full mt-2">Save Changes</button>
+          )}
+        </form>
       </div>
     </div>
   );

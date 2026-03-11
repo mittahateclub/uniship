@@ -24,13 +24,13 @@ export default function Home() {
             const role = userDoc.data().role;
             
             switch(role) {
-              case 'superadmin':
+              case 'super_admin':
                 router.push('/superadmin/dashboard');
                 break;
-              case 'uniadmin':
+              case 'university_admin':
                 router.push('/uniadmin/dashboard');
                 break;
-              case 'user':
+              case 'student':
                 router.push('/user/dashboard');
                 break;
               default:
@@ -49,7 +49,7 @@ export default function Home() {
   }, [user, loading, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#09090b]">
+    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)]">
       <div className="loading-dots"><span /><span /><span /></div>
     </div>
   );

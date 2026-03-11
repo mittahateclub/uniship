@@ -47,36 +47,33 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#09090b] p-4 relative overflow-hidden">
-      {/* Subtle gradient glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-violet-500/5 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="relative w-full max-w-sm animate-fade-in">
-        {/* Logo & Branding */}
+    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] p-4">
+      <div className="w-full max-w-sm animate-fade-in">
+        {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-zinc-900 border border-zinc-800 rounded-2xl mb-4">
-            <GraduationCap size={24} className="text-violet-400" />
+          <div className="inline-flex items-center justify-center w-10 h-10 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded mb-4">
+            <GraduationCap size={20} className="text-[#F54E00]" />
           </div>
-          <h1 className="text-2xl font-semibold text-zinc-100">Welcome back</h1>
-          <p className="text-zinc-500 text-sm mt-1">Sign in to your Uniship account</p>
+          <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Welcome back</h1>
+          <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Sign in to your Uniship account</p>
         </div>
 
         {/* Card */}
-        <div className="bg-zinc-900/80 rounded-xl border border-zinc-800 p-6 backdrop-blur-sm">
+        <div className="bg-[var(--bg-surface)] rounded border border-[var(--border-subtle)] p-6">
           {error && (
-            <div className="bg-red-500/10 text-red-400 px-4 py-2.5 rounded-lg text-sm font-medium mb-5 border border-red-500/20">
+            <div className="bg-[#F54E00]/10 text-[#F54E00] px-3 py-2 rounded text-[13px] font-medium mb-5 border border-[#F54E00]/20">
               {error}
             </div>
           )}
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-[13px] font-medium text-zinc-400 mb-1.5">Email</label>
+              <label className="block text-[12px] font-medium text-[var(--text-tertiary)] mb-1.5 uppercase tracking-wider">Email</label>
               <div className="relative">
-                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+                <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)]" />
                 <input
                   type="email"
                   placeholder="you@university.edu"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-zinc-700 focus:ring-1 focus:ring-violet-500/20 transition-all text-sm"
+                  className="w-full pl-9 pr-3 py-2 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#5E6AD2] transition-all duration-150 text-[13px]"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -84,13 +81,13 @@ export default function LoginPage() {
               </div>
             </div>
             <div>
-              <label className="block text-[13px] font-medium text-zinc-400 mb-1.5">Password</label>
+              <label className="block text-[12px] font-medium text-[var(--text-tertiary)] mb-1.5 uppercase tracking-wider">Password</label>
               <div className="relative">
-                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+                <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)]" />
                 <input
                   type="password"
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-zinc-700 focus:ring-1 focus:ring-violet-500/20 transition-all text-sm"
+                  className="w-full pl-9 pr-3 py-2 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#5E6AD2] transition-all duration-150 text-[13px]"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -100,21 +97,21 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-zinc-100 text-zinc-900 font-medium py-2.5 rounded-lg hover:bg-white transition-all text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+              className="w-full bg-[#F54E00] text-black font-bold py-2 rounded hover:brightness-110 transition-all duration-150 text-[13px] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2 uppercase tracking-wider"
             >
               {isLoading ? (
                 <div className="loading-dots"><span /><span /><span /></div>
               ) : (
                 <>
                   Sign In
-                  <ArrowRight size={15} />
+                  <ArrowRight size={14} />
                 </>
               )}
             </button>
           </form>
         </div>
 
-        <p className="text-center text-[12px] text-zinc-700 mt-6">
+        <p className="text-center text-[11px] text-[var(--text-faint)] mt-6 uppercase tracking-widest">
           Powered by Uniship
         </p>
       </div>

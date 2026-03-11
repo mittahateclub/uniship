@@ -85,72 +85,69 @@ export default function InternshipDetail({ params }: { params: Promise<{ id: str
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-white text-black font-bold">Loading details...</div>;
-  if (!internship) return <div className="min-h-screen flex items-center justify-center bg-white text-black font-bold">Internship not found.</div>;
+  if (loading) return <div className="flex items-center justify-center py-24"><div className="loading-dots"><span /><span /><span /></div></div>;
+  if (!internship) return <div className="flex items-center justify-center py-24 text-[var(--text-tertiary)]">Internship not found.</div>;
 
   return (
-    <div className="min-h-screen bg-white p-8 text-black">
+    <div className="animate-fade-in">
       <div className="max-w-4xl mx-auto">
-        <Link href="/user/internships" className="inline-block mb-8 font-bold hover:underline">
-          ← Back to Listings
-        </Link>
 
-        <div className="border-4 border-black p-8 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
-          <div className="flex flex-col md:flex-row justify-between items-start mb-8 gap-4 border-b-4 border-black pb-6">
+        <div className="window p-6 sm:p-8">
+          <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4 border-b border-[var(--border-subtle)] pb-6">
             <div>
-              <span className="bg-black text-white px-3 py-1 text-xs font-black uppercase mb-2 inline-block">
+              <span className="inline-block bg-[#F54E00] text-black px-2.5 py-0.5 text-[11px] font-bold uppercase rounded mb-2">
                 {internship.companyName}
               </span>
-              <h1 className="text-4xl font-black uppercase leading-none">{internship.role}</h1>
-              <p className="text-gray-500 mt-2 font-bold">{internship.location}</p>
+              <h1 className="text-2xl font-semibold tracking-[-0.02em]">{internship.role}</h1>
+              <p className="text-[var(--text-tertiary)] mt-1 text-sm">{internship.location}</p>
             </div>
             
             <div className="text-right">
-              <p className="text-sm font-bold text-gray-400 uppercase">Deadline</p>
-              <p className="text-xl font-black">{internship.deadline?.toDate().toLocaleDateString()}</p>
+              <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Deadline</p>
+              <p className="text-lg font-semibold tabular-nums">{internship.deadline?.toDate().toLocaleDateString()}</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-            <div className="bg-gray-50 p-6 border-2 border-black">
-              <p className="text-xs font-black uppercase text-gray-400 mb-1">Stipend</p>
-              <p className="text-lg font-bold">{internship.stipend}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded p-4">
+              <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1">Stipend</p>
+              <p className="text-sm font-medium">{internship.stipend}</p>
             </div>
-            <div className="bg-gray-50 p-6 border-2 border-black">
-              <p className="text-xs font-black uppercase text-gray-400 mb-1">Duration</p>
-              <p className="text-lg font-bold">{internship.duration}</p>
+            <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded p-4">
+              <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1">Duration</p>
+              <p className="text-sm font-medium">{internship.duration}</p>
             </div>
           </div>
 
-          <div className="space-y-8">
+          <div className="space-y-6">
             <section>
-              <h3 className="text-xl font-black uppercase mb-4 decoration-4 underline">About the Role</h3>
-              <p className="leading-relaxed text-gray-700 whitespace-pre-wrap">{internship.description}</p>
+              <h3 className="text-sm font-semibold uppercase tracking-wide mb-3">About the Role</h3>
+              <p className="leading-relaxed text-[var(--text-secondary)] text-sm whitespace-pre-wrap">{internship.description}</p>
             </section>
 
             {internship.requirements && (
               <section>
-                <h3 className="text-xl font-black uppercase mb-4 decoration-4 underline">Requirements</h3>
-                <ul className="list-disc list-inside space-y-2">
+                <h3 className="text-sm font-semibold uppercase tracking-wide mb-3">Requirements</h3>
+                <ul className="list-disc list-inside space-y-1.5">
                   {internship.requirements.map((req, i) => (
-                    <li key={i} className="text-gray-700">{req}</li>
+                    <li key={i} className="text-[var(--text-secondary)] text-sm">{req}</li>
                   ))}
                 </ul>
               </section>
             )}
           </div>
 
-          <div className="mt-12 border-t-4 border-black pt-8">
+          <div className="mt-8 border-t border-[var(--border-subtle)] pt-6">
             {hasApplied ? (
-              <div className="bg-green-100 border-4 border-green-600 p-6 text-center">
-                <p className="text-green-800 font-black uppercase text-xl">✓ Application Submitted</p>
-                <p className="text-green-700 text-sm mt-1">You applied for this position on {new Date().toLocaleDateString()}</p>
+              <div className="window p-5 text-center border-[#4CAF50]">
+                <p className="text-[#4CAF50] font-semibold">Application Submitted</p>
+                <p className="text-[var(--text-tertiary)] text-xs mt-1">You applied for this position on {new Date().toLocaleDateString()}</p>
               </div>
             ) : (
               <button
                 onClick={handleApply}
                 disabled={isApplying}
-                className="w-full bg-black text-white py-5 text-2xl font-black uppercase tracking-widest hover:bg-gray-800 transition-all shadow-[8px_8px_0px_0px_rgba(200,200,200,1)] active:shadow-none active:translate-x-1 active:translate-y-1"
+                className="btn-primary w-full py-3 text-sm font-semibold"
               >
                 {isApplying ? 'Processing...' : 'Apply Now'}
               </button>
