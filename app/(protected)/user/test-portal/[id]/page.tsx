@@ -5,10 +5,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { doc, getDoc, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import Editor from '@monaco-editor/react';
 import {
   Shield, AlertTriangle, Maximize, Eye, Clock,
   Wifi, CheckCircle2, XCircle, Monitor, Lock,
   MessageCircle, Send, ShieldCheck, MonitorPlay,
+  Play, Terminal, Loader2, ChevronDown,
 } from 'lucide-react';
 
 // ── Interfaces ──
@@ -46,6 +48,13 @@ interface ChatMessage {
 const MAX_VIOLATIONS = 10;
 const HIGH_SEVERITY_LIMIT = 3;
 const TAB_AWAY_AUTO_SUBMIT = 30;
+
+// Language ID → Monaco language mapping
+const LANG_MONACO: Record<number, string> = {
+  71: 'python', 62: 'java', 54: 'cpp', 50: 'c', 63: 'javascript',
+  74: 'typescript', 51: 'csharp', 72: 'ruby', 60: 'go', 73: 'rust',
+  78: 'kotlin', 76: 'sql', 68: 'php', 85: 'dart',
+};
 
 const SEVERITY_CONFIG = {
   low:    { label: 'Low',    color: '#F1A82C', points: 1 },
@@ -88,6 +97,15 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   const chatEndRef = useRef<HTMLDivElement>(null);
   const tabAwayStartRef = useRef<number | null>(null);
   const tabAwayTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Compiler state
+  const [selectedLang, setSelectedLang] = useState(71);
+  const [codeStdin, setCodeStdin] = useState('');
+  const [codeOutput, setCodeOutput] = useState<string | null>(null);
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [compiling, setCompiling] = useState(false);
+  const [compileTime, setCompileTime] = useState<string | null>(null);
+  const [compileMemory, setCompileMemory] = useState<string | null>(null);
 
   // Live support state
   const [chatOpen, setChatOpen] = useState(false);
@@ -379,6 +397,42 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         userEmail: user.email,
       });
     } catch (e) { console.error('Failed to send message:', e); }
+  };
+
+  // ── Run code against compiler ──
+  const runCode = async () => {
+    const code = answers[currentQuestion];
+    if (!code?.trim() || compiling) return;
+    setCompiling(true);
+    setCodeOutput(null);
+    setCodeError(null);
+    setCompileTime(null);
+    setCompileMemory(null);
+    try {
+      const res = await fetch('/api/compile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source_code: code, language_id: selectedLang, stdin: codeStdin }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setCodeError(data.error || `Server error (${res.status})`);
+      } else if (data.status?.id >= 6) {
+        // Compilation error, runtime error, etc.
+        setCodeError(data.compile_output || data.stderr || data.status?.description || 'Execution failed');
+      } else if (data.stderr) {
+        setCodeError(data.stderr);
+        if (data.stdout) setCodeOutput(data.stdout);
+      } else {
+        setCodeOutput(data.stdout || '(no output)');
+      }
+      if (data.time) setCompileTime(data.time);
+      if (data.memory) setCompileMemory(`${(data.memory / 1024).toFixed(1)} MB`);
+    } catch {
+      setCodeError('Failed to connect to compiler');
+    } finally {
+      setCompiling(false);
+    }
   };
 
   const handleNext = () => { if (test && currentQuestion < test.problems.length - 1) setCurrentQuestion(p => p + 1); };
@@ -764,15 +818,108 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
         {/* Answer */}
         <div className="window p-5 mb-5">
-          <label className="block mb-2 text-sm font-semibold">Your Solution:</label>
-          <textarea
-            value={answers[currentQuestion] || ''}
-            onChange={(e) => setAnswers({ ...answers, [currentQuestion]: e.target.value })}
-            placeholder="Write your solution code here..."
-            className="w-full h-64 p-4 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded font-mono text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[#5E6AD2] focus:outline-none transition-colors"
-            onPaste={(e) => e.preventDefault()}
-          />
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-sm font-semibold text-[var(--text-primary)]">Your Solution:</label>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <select
+                  value={selectedLang}
+                  onChange={e => setSelectedLang(Number(e.target.value))}
+                  className="appearance-none bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-1.5 pr-7 text-[12px] text-[var(--text-primary)] font-medium focus:outline-none focus:border-[#5E6AD2] cursor-pointer"
+                >
+                  <option value={71}>Python 3</option>
+                  <option value={62}>Java</option>
+                  <option value={54}>C++</option>
+                  <option value={50}>C</option>
+                  <option value={63}>JavaScript</option>
+                  <option value={74}>TypeScript</option>
+                  <option value={51}>C#</option>
+                  <option value={72}>Ruby</option>
+                  <option value={60}>Go</option>
+                  <option value={73}>Rust</option>
+                  <option value={78}>Kotlin</option>
+                  <option value={76}>SQL</option>
+                  <option value={68}>PHP</option>
+                  <option value={85}>Dart</option>
+                </select>
+                <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-faint)] pointer-events-none" />
+              </div>
+              <button
+                onClick={runCode}
+                disabled={!answers[currentQuestion]?.trim() || compiling}
+                className="flex items-center gap-1.5 bg-[#4CAF50] hover:bg-[#43A047] text-white px-3 py-1.5 rounded text-[12px] font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                {compiling ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
+                {compiling ? 'Running...' : 'Run Code'}
+              </button>
+            </div>
+          </div>
+          <div className="rounded-lg overflow-hidden border border-[var(--border-subtle)]">
+            <Editor
+              height="280px"
+              language={LANG_MONACO[selectedLang] || 'plaintext'}
+              theme="vs-dark"
+              value={answers[currentQuestion] || ''}
+              onChange={(val) => setAnswers({ ...answers, [currentQuestion]: val || '' })}
+              options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                lineNumbers: 'on',
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+                tabSize: 4,
+                wordWrap: 'on',
+                padding: { top: 12 },
+                renderLineHighlight: 'line',
+                cursorBlinking: 'smooth',
+                smoothScrolling: true,
+                contextmenu: false,
+                domReadOnly: false,
+              }}
+            />
+          </div>
           <p className="text-xs text-[var(--text-faint)] mt-2">{answers[currentQuestion] ? 'Answer saved' : 'No answer provided yet'}</p>
+
+          {/* Stdin input */}
+          <div className="mt-3">
+            <label className="block text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-widest mb-1.5">Input (stdin)</label>
+            <textarea
+              value={codeStdin}
+              onChange={e => setCodeStdin(e.target.value)}
+              placeholder="Optional: provide input for your program..."
+              className="w-full h-16 p-3 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded font-mono text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[#5E6AD2] focus:outline-none transition-colors resize-none"
+            />
+          </div>
+
+          {/* Output terminal */}
+          {(codeOutput !== null || codeError !== null || compiling) && (
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-1.5">
+                  <Terminal size={12} className="text-[var(--text-faint)]" />
+                  <span className="text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Output</span>
+                </div>
+                {compileTime && (
+                  <div className="flex items-center gap-3 text-[10px] text-[var(--text-faint)]">
+                    <span>Time: {compileTime}s</span>
+                    {compileMemory && <span>Memory: {compileMemory}</span>}
+                  </div>
+                )}
+              </div>
+              <div className="bg-[#0D1117] border border-[var(--border-subtle)] rounded p-4 min-h-[60px] max-h-48 overflow-auto">
+                {compiling ? (
+                  <div className="flex items-center gap-2 text-[var(--text-faint)] text-[12px]">
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>Compiling and executing...</span>
+                  </div>
+                ) : codeError ? (
+                  <pre className="text-[#F87171] text-[12px] font-mono whitespace-pre-wrap">{codeError}</pre>
+                ) : (
+                  <pre className="text-[#4ADE80] text-[12px] font-mono whitespace-pre-wrap">{codeOutput}</pre>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Navigation */}
