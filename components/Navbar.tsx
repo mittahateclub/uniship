@@ -12,6 +12,7 @@ import {
   BarChart3,
   Calendar,
   User,
+  Users,
   LogOut,
   Search,
   Command,
@@ -86,6 +87,8 @@ const uniadminNavLinks: NavLink[] = [
 
 const superadminNavLinks: NavLink[] = [
   { href: '/superadmin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/superadmin/universities', label: 'Universities', icon: Building2 },
+  { href: '/superadmin/manage-students', label: 'Manage Students', icon: Users },
   { href: '/superadmin/create-uniadmin', label: 'Create Admin', icon: UserPlus },
   { href: '/superadmin/manage-uniadmins', label: 'Manage Admins', icon: ShieldCheck },
 ];
@@ -180,6 +183,8 @@ const uniadminSearchItems: SearchableItem[] = [
 const superadminSearchItems: SearchableItem[] = [
   // Pages
   { href: '/superadmin/dashboard', label: 'Dashboard', desc: 'System-wide overview', icon: LayoutDashboard, category: 'Pages' },
+  { href: '/superadmin/universities', label: 'Universities', desc: 'Register & verify universities', icon: Building2, category: 'Pages' },
+  { href: '/superadmin/manage-students', label: 'Manage Students', desc: 'View & edit all students', icon: Users, category: 'Pages' },
   { href: '/superadmin/create-uniadmin', label: 'Create Uni Admin', desc: 'Add university admin', icon: UserPlus, category: 'Pages' },
   { href: '/superadmin/manage-uniadmins', label: 'Manage Uni Admins', desc: 'View & manage all admins', icon: ShieldCheck, category: 'Pages' },
   // Dashboard — In-page sections
@@ -194,6 +199,7 @@ const superadminSearchItems: SearchableItem[] = [
   // Manage Admins — In-page sections
   { href: '/superadmin/manage-uniadmins#admin-list', label: 'Admin Cards', desc: 'View admin details & actions', icon: ShieldCheck, category: 'Manage Admins' },
   // Actions
+  { href: '/superadmin/manage-students', label: 'Review Students', desc: 'Assign students to universities', icon: Users, category: 'Actions' },
   { href: '/superadmin/create-uniadmin', label: 'Add New Admin', desc: 'Register a university admin', icon: UserPlus, category: 'Actions' },
   { href: '/superadmin/manage-uniadmins', label: 'Review Admins', desc: 'Edit or remove university admins', icon: ShieldCheck, category: 'Actions' },
 ];

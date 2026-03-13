@@ -7,5 +7,17 @@
   },
   "storage": {
     "rules": "storage.rules"
+  },
+  "hosting": {
+    "target": "main",
+    "source": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "frameworksBackend": {
+      "region": "asia-east1"
+    }
   }
 }

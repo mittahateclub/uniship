@@ -24,7 +24,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
+      <body suppressHydrationWarning style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
         <AuthProvider>
           {children}
           <ThemeToggle />

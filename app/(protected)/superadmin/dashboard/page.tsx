@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
-import { UserPlus, ShieldCheck, BarChart3, Users, GraduationCap, ArrowUpRight } from 'lucide-react';
+import { UserPlus, ShieldCheck, BarChart3, Users, GraduationCap, ArrowUpRight, Building2 } from 'lucide-react';
 
 export default function SuperadminDashboard() {
   const { user, loading } = useAuth();
@@ -20,14 +20,15 @@ export default function SuperadminDashboard() {
   useEffect(() => {
     async function fetchStats() {
       try {
-        const [uniadminsSnapshot, studentsSnapshot] = await Promise.all([
+        const [uniadminsSnapshot, studentsSnapshot, universitiesSnapshot] = await Promise.all([
           getDocs(query(collection(db, 'users'), where('role', '==', 'university_admin'))),
           getDocs(query(collection(db, 'users'), where('role', '==', 'student'))),
+          getDocs(collection(db, 'universities')),
         ]);
         setStats({
           totalUniadmins: uniadminsSnapshot.size,
           totalStudents: studentsSnapshot.size,
-          totalUniversities: uniadminsSnapshot.size,
+          totalUniversities: universitiesSnapshot.size,
         });
       } catch (error) {
         console.error('Error fetching stats:', error);
@@ -47,6 +48,8 @@ export default function SuperadminDashboard() {
   const menuItems = [
     { title: 'Create Uni Admin', desc: 'Add a new university admin.', href: '/superadmin/create-uniadmin', icon: UserPlus },
     { title: 'Manage Admins', desc: 'View & manage all admins.', href: '/superadmin/manage-uniadmins', icon: ShieldCheck },
+    { title: 'Manage Students', desc: 'Edit and assign students to universities.', href: '/superadmin/manage-students', icon: Users },
+    { title: 'Universities', desc: 'Register & verify universities.', href: '/superadmin/universities', icon: Building2 },
   ];
 
   return (

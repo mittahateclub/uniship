@@ -11,6 +11,7 @@ export default function CreateStudentPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [adminUnivId, setAdminUnivId] = useState<string | null>(null);
+  const [adminUnivName, setAdminUnivName] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: '', email: '', password: '', studentId: '', phone: '',
@@ -24,7 +25,10 @@ export default function CreateStudentPage() {
     async function getAdminProfile() {
       if (user) {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists()) setAdminUnivId(userDoc.data().universityId);
+        if (userDoc.exists()) {
+          setAdminUnivId(userDoc.data().universityId || null);
+          setAdminUnivName(userDoc.data().universityName || null);
+        }
       }
     }
     getAdminProfile();
@@ -47,6 +51,7 @@ export default function CreateStudentPage() {
       await setDoc(doc(db, 'users', userCredential.user.uid), {
         name: formData.name, email: formData.email, role: 'student',
         universityId: adminUnivId, studentId: formData.studentId,
+        universityName: adminUnivName || '', verified: false,
         phone: formData.phone, createdAt: new Date(), createdBy: user?.uid,
       });
       setSuccess(`Account created for ${formData.email}`);

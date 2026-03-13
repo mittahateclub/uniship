@@ -17,6 +17,8 @@ import {
 interface Problem {
   questionDescription: string;
   difficulty?: string;
+  correctAnswer?: string;
+  expectedOutput?: string;
   sampleTestCases?: Array<{ input: string; output: string }>;
   constraints?: string[];
   hints?: string[];
@@ -77,6 +79,13 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [submitReason, setSubmitReason] = useState('');
+  const [resultSummary, setResultSummary] = useState<{
+    score: number;
+    totalQuestions: number;
+    attemptedQuestions: number;
+    percentage: number;
+    mode: 'auto' | 'attempted';
+  } | null>(null);
 
   // Proctoring state
   const [violations, setViolations] = useState<Violation[]>([]);
@@ -142,14 +151,45 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
     try {
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      const normalize = (value: string) => value.trim().replace(/\r\n/g, '\n').replace(/\s+/g, ' ').toLowerCase();
+      const attemptedQuestions = Object.keys(answers).filter((k) => (answers[Number(k)] || '').trim().length > 0).length;
+
+      let score = 0;
+      let gradable = 0;
+
+      test.problems.forEach((problem, index) => {
+        const answer = (answers[index] || '').trim();
+        if (!answer) return;
+
+        const expected =
+          (problem.correctAnswer || '').trim() ||
+          (problem.expectedOutput || '').trim() ||
+          (problem.sampleTestCases?.[0]?.output || '').trim();
+
+        if (!expected) return;
+
+        gradable += 1;
+        if (normalize(answer) === normalize(expected)) {
+          score += 1;
+        }
+      });
+
+      const mode: 'auto' | 'attempted' = gradable > 0 ? 'auto' : 'attempted';
+      const finalScore = mode === 'auto' ? score : attemptedQuestions;
+      const totalQuestions = test.problems.length;
+      const percentage = totalQuestions > 0 ? Math.round((finalScore / totalQuestions) * 1000) / 10 : 0;
+
       await addDoc(collection(db, 'test_results'), {
         testId: id,
         testTitle: test.title || test.sourceFileName,
         userId: user.uid,
         userEmail: user.email,
         answers,
-        attemptedQuestions: Object.keys(answers).length,
+        attemptedQuestions,
+        score: finalScore,
         totalQuestions: test.problems.length,
+        percentage,
+        scoringMode: mode,
         submittedAt: serverTimestamp(),
         universityId: test.universityId,
         sessionId: sessionIdRef.current,
@@ -159,6 +199,13 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           violationLog: violations.map(v => `[${v.severity.toUpperCase()}] ${v.type} — ${v.timestamp}`),
           submitReason: reason,
         },
+      });
+      setResultSummary({
+        score: finalScore,
+        totalQuestions,
+        attemptedQuestions,
+        percentage,
+        mode,
       });
       setSubmitReason(reason);
       setPhase('submitted');
@@ -472,9 +519,42 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               Integrity report: {violations.length} violation{violations.length > 1 ? 's' : ''} recorded ({violationPoints} severity points)
             </p>
           )}
-          <button onClick={() => router.push('/user/dashboard')} className="btn-primary px-6 py-2.5 text-[13px]">
-            Return to Dashboard
-          </button>
+
+          {resultSummary && (
+            <div className="mb-6 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4 text-left">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)] mb-2">Exam Result</p>
+              <div className="flex items-center justify-between">
+                <span className="text-[13px] text-[var(--text-tertiary)]">Score</span>
+                <span className="text-[14px] font-bold text-[var(--text-primary)] tabular-nums">
+                  {resultSummary.score} / {resultSummary.totalQuestions}
+                </span>
+              </div>
+              <div className="flex items-center justify-between mt-1.5">
+                <span className="text-[13px] text-[var(--text-tertiary)]">Percentage</span>
+                <span className="text-[14px] font-bold text-[#4CAF50] tabular-nums">{resultSummary.percentage}%</span>
+              </div>
+              <div className="flex items-center justify-between mt-1.5">
+                <span className="text-[13px] text-[var(--text-tertiary)]">Attempted</span>
+                <span className="text-[13px] text-[var(--text-primary)] tabular-nums">
+                  {resultSummary.attemptedQuestions} / {resultSummary.totalQuestions}
+                </span>
+              </div>
+              {resultSummary.mode === 'attempted' && (
+                <p className="text-[11px] text-[var(--text-faint)] mt-2">
+                  Note: This exam uses coding-style answers without explicit answer keys, so the score reflects attempted questions.
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="flex items-center justify-center gap-3">
+            <button onClick={() => router.push('/user/results')} className="btn-primary px-6 py-2.5 text-[13px]">
+              View Results
+            </button>
+            <button onClick={() => router.push('/user/dashboard')} className="btn-secondary px-6 py-2.5 text-[13px]">
+              Return to Dashboard
+            </button>
+          </div>
         </div>
       </div>
     );

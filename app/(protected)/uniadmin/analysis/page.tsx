@@ -3,7 +3,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, limit, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Users, Target, ClipboardCheck, AlertTriangle } from 'lucide-react';
 
@@ -26,8 +26,11 @@ export default function StudentAnalysisPage() {
 
   useEffect(() => {
     async function fetchAnalysis() {
+      if (!user) return;
       try {
-        const univId = 'HARV-001';
+        const adminDoc = await getDoc(doc(db, 'users', user.uid));
+        const univId = adminDoc.data()?.universityId;
+        if (!univId) return;
         const studentQ = query(collection(db, 'users'), where('role', '==', 'student'), where('universityId', '==', univId));
         const studentSnap = await getDocs(studentQ);
         const resultsQ = query(collection(db, 'testResults'), where('universityId', '==', univId));

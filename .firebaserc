@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "uniship-4c1a1"
-  }
+  },
+  "targets": {
+    "uniship-4c1a1": {
+      "hosting": {
+        "main": [
+          "uniship-4c1a1"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

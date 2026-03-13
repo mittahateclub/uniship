@@ -9,8 +9,11 @@ import { BarChart3, Trophy, CalendarDays } from 'lucide-react';
 interface TestResult {
   id: string;
   testTitle: string;
-  score: number;
+  score?: number;
+  attemptedQuestions?: number;
   totalQuestions: number;
+  percentage?: number;
+  scoringMode?: 'auto' | 'attempted';
   submittedAt: any;
 }
 
@@ -81,7 +84,11 @@ export default function ResultsPage() {
               </thead>
               <tbody>
                 {results.map((result) => {
-                  const percentage = ((result.score / result.totalQuestions) * 100).toFixed(1);
+                  const score = typeof result.score === 'number' ? result.score : (result.attemptedQuestions || 0);
+                  const percentage = (typeof result.percentage === 'number'
+                    ? result.percentage
+                    : ((score / result.totalQuestions) * 100)
+                  ).toFixed(1);
                   const date = result.submittedAt?.toDate().toLocaleDateString() || 'N/A';
                   const pct = Number(percentage);
                   
@@ -91,7 +98,7 @@ export default function ResultsPage() {
                         {result.testTitle}
                       </td>
                       <td className="px-4 py-3 text-center text-[13px] tabular-nums">
-                        <span className="font-bold text-[var(--text-primary)]">{result.score}</span>
+                        <span className="font-bold text-[var(--text-primary)]">{score}</span>
                         <span className="text-[var(--text-faint)]"> / {result.totalQuestions}</span>
                       </td>
                       <td className="px-4 py-3 text-center">
@@ -108,6 +115,9 @@ export default function ResultsPage() {
                           <CalendarDays size={11} />
                           {date}
                         </span>
+                        {result.scoringMode === 'attempted' && (
+                          <span className="block text-[10px] text-[var(--text-faint)] mt-0.5">attempt-based</span>
+                        )}
                       </td>
                     </tr>
                   );

@@ -72,6 +72,26 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
 
+    match /tests/{testId} {
+      // Students can only read approved tests from their own university.
+      allow read: if isStudent() &&
+                  resource.data.approved == true &&
+                  belongsToSameUniversity(resource.data.universityId);
+
+      // Uni admins and super admins can read tests in-scope.
+      allow read: if isSuperAdmin() ||
+                  (isUniversityAdmin() && belongsToSameUniversity(resource.data.universityId));
+
+      // Uni admins can create tests only for their own university.
+      allow create: if isUniversityAdmin() &&
+                    request.resource.data.universityId == getUserData().universityId &&
+                    request.resource.data.createdBy == request.auth.uid;
+
+      // Uni admins can update/delete tests in their own university.
+      allow update, delete: if isSuperAdmin() ||
+                            (isUniversityAdmin() && belongsToSameUniversity(resource.data.universityId));
+    }
+
     match /mock_tests/{testId} {
       allow read: if isSuperAdmin() || isAuthenticated();
       allow write: if isUniversityAdmin() || isSuperAdmin();
