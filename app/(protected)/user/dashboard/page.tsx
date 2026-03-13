@@ -85,6 +85,7 @@ export default function UserDashboard() {
     { title: 'AI Resume Builder', desc: 'AI-powered resume', href: '/user/resume', icon: Sparkles },
     { title: 'Export Resume', desc: 'Download A4 PDF', href: '/user/resume/download', icon: Download },
     { title: 'Results', desc: 'Performance analytics', href: '/user/results', icon: BarChart3 },
+    { title: 'My Analysis', desc: 'Progress, speed and reliability', href: '/user/analysis', icon: BarChart3 },
     { title: 'Profile', desc: 'Academic details', href: '/user/profile', icon: User },
   ];
 

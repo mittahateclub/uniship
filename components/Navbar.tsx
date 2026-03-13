@@ -68,6 +68,7 @@ const userNavLinks: NavLink[] = [
   { href: '/user/internships', label: 'College Space', icon: Briefcase },
   { href: '/user/applications', label: 'Applications', icon: ClipboardCheck },
   { href: '/user/results', label: 'Results', icon: BarChart3 },
+  { href: '/user/analysis', label: 'Analysis', icon: TrendingUp },
   { href: '/user/calendar', label: 'Calendar', icon: Calendar },
   { href: '/user/resume', label: 'AI Resume Builder', icon: Sparkles },
   { href: '/user/profile', label: 'Profile', icon: User },
@@ -100,6 +101,7 @@ const userSearchItems: SearchableItem[] = [
   { href: '/user/internships', label: 'College Space', desc: 'Events, internships & opportunities', icon: Briefcase, category: 'Pages' },
   { href: '/user/applications', label: 'Applications', desc: 'Track your submissions', icon: ClipboardCheck, category: 'Pages' },
   { href: '/user/results', label: 'Results', desc: 'View scores & performance', icon: BarChart3, category: 'Pages' },
+  { href: '/user/analysis', label: 'Analysis', desc: 'Personal growth, speed and reliability metrics', icon: TrendingUp, category: 'Pages' },
   { href: '/user/calendar', label: 'Calendar', desc: 'Upcoming events & deadlines', icon: Calendar, category: 'Pages' },
   { href: '/user/profile', label: 'Profile', desc: 'Account settings & details', icon: User, category: 'Pages' },
   { href: '/user/resume', label: 'AI Resume Builder', desc: 'AI-powered resume editor', icon: Sparkles, category: 'Pages' },
@@ -121,6 +123,7 @@ const userSearchItems: SearchableItem[] = [
   { href: '/user/dashboard#stats', label: 'Pending Tests', desc: 'Tests waiting to be taken', icon: FileText, category: 'Dashboard' },
   { href: '/user/dashboard#stats', label: 'Upcoming Events', desc: 'Scheduled events count', icon: Calendar, category: 'Dashboard' },
   { href: '/user/dashboard#stats', label: 'Average Score', desc: 'Overall test performance', icon: BarChart3, category: 'Dashboard' },
+  { href: '/user/analysis', label: 'Performance Trends', desc: 'Accuracy trends by section and speed', icon: TrendingUp, category: 'Dashboard' },
   // College Space — In-page sections
   { href: '/user/internships#listings', label: 'Browse Listings', desc: 'All posted opportunities', icon: Building2, category: 'College Space' },
   { href: '/user/internships#listings', label: 'Saved Items', desc: 'Your saved events & opportunities', icon: Star, category: 'College Space' },
@@ -130,6 +133,7 @@ const userSearchItems: SearchableItem[] = [
   { href: '/user/internships', label: 'Browse College Space', desc: 'Events & opportunities', icon: Search, category: 'Actions' },
   { href: '/user/applications', label: 'Check Application Status', desc: 'View pending & accepted', icon: ClipboardCheck, category: 'Actions' },
   { href: '/user/calendar', label: 'View Upcoming Events', desc: 'See scheduled dates', icon: Calendar, category: 'Actions' },
+  { href: '/user/analysis', label: 'Open My Analysis', desc: 'Review strengths and improvement areas', icon: TrendingUp, category: 'Actions' },
 ];
 
 const uniadminSearchItems: SearchableItem[] = [
