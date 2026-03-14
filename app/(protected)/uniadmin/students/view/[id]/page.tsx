@@ -1,18 +1,32 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
 import {
-  ArrowLeft, Mail, Phone, Globe, GraduationCap, Briefcase,
-  FolderKanban, Trophy, Star, Award, Code, MapPin, Calendar,
-  Linkedin, Github, ExternalLink,
+  AlertCircle,
+  ArrowLeft,
+  Award,
+  BadgeCheck,
+  Briefcase,
+  Calendar,
+  ClipboardCheck,
+  Clock3,
+  Code,
+  FileText,
+  FolderKanban,
+  GraduationCap,
+  Mail,
+  MapPin,
+  Star,
+  Trophy,
 } from 'lucide-react';
 
 interface StudentData {
+  id?: string;
   name?: string;
   email?: string;
   phone?: string;
@@ -21,8 +35,6 @@ interface StudentData {
   bio?: string;
   rollNumber?: string;
   studentId?: string;
-  linkedinUrl?: string;
-  githubUrl?: string;
   technicalSkills?: string;
   relevantCoursework?: string;
   educationEntries?: any[];
@@ -31,24 +43,74 @@ interface StudentData {
   achievementEntries?: any[];
   positionEntries?: any[];
   extracurricularEntries?: any[];
-  // legacy
-  education?: string;
-  experience?: string;
-  projects?: string;
-  achievements?: string;
-  positions?: string;
-  extracurriculars?: string;
+  profileReviewStatus?: 'verified' | 'resubmission_requested';
+  profileReviewNote?: string;
+  profileReviewedAt?: any;
+  profileReviewedBy?: string;
 }
 
+interface ApplicationItem {
+  id: string;
+  internshipRole?: string;
+  companyName?: string;
+  status?: 'pending' | 'shortlisted' | 'selected' | 'rejected';
+  appliedAt?: any;
+}
+
+interface ResultItem {
+  id: string;
+  testTitle?: string;
+  score?: number;
+  attemptedQuestions?: number;
+  totalQuestions?: number;
+  percentage?: number;
+  submittedAt?: any;
+  proctoring?: {
+    totalViolations?: number;
+    violationPoints?: number;
+  };
+}
+
+interface ResumeItem {
+  id: string;
+  targetCompany?: string;
+  updatedAt?: any;
+  keywords?: string[];
+}
+
+type TabId = 'placements' | 'about' | 'academic' | 'profile' | 'resumes';
+
+const tabs: Array<{ id: TabId; label: string }> = [
+  { id: 'placements', label: 'Placements' },
+  { id: 'about', label: 'About' },
+  { id: 'academic', label: 'Academic Details' },
+  { id: 'profile', label: 'Profile' },
+  { id: 'resumes', label: 'Resumes' },
+];
+
 function formatDateRange(from: string, to: string): string {
-  if (from && to) return `${from} – ${to}`;
-  if (from) return `${from} – Present`;
+  if (from && to) return `${from} - ${to}`;
+  if (from) return `${from} - Present`;
   return '';
+}
+
+function toDateLabel(value: any): string {
+  if (!value) return 'N/A';
+  if (typeof value?.toDate === 'function') return value.toDate().toLocaleDateString();
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? 'N/A' : d.toLocaleDateString();
+}
+
+function safePercentage(result: ResultItem): number {
+  if (typeof result.percentage === 'number') return result.percentage;
+  const score = typeof result.score === 'number' ? result.score : (result.attemptedQuestions || 0);
+  const total = result.totalQuestions || 0;
+  return total > 0 ? (score / total) * 100 : 0;
 }
 
 function SectionHeader({ icon: Icon, title }: { icon: React.ComponentType<any>; title: string }) {
   return (
-    <div className="flex items-center gap-2 mb-3 mt-6 first:mt-0">
+    <div className="flex items-center gap-2 mb-3 mt-5 first:mt-0">
       <Icon size={15} className="text-[#5E6AD2]" />
       <h2 className="text-[13px] font-bold uppercase tracking-widest text-[var(--text-primary)]">{title}</h2>
     </div>
@@ -58,8 +120,15 @@ function SectionHeader({ icon: Icon, title }: { icon: React.ComponentType<any>; 
 export default function StudentViewPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
+
   const [student, setStudent] = useState<StudentData | null>(null);
+  const [applications, setApplications] = useState<ApplicationItem[]>([]);
+  const [results, setResults] = useState<ResultItem[]>([]);
+  const [resumes, setResumes] = useState<ResumeItem[]>([]);
+  const [activeTab, setActiveTab] = useState<TabId>('placements');
+  const [notice, setNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [reviewing, setReviewing] = useState(false);
   const [fetching, setFetching] = useState(true);
 
   useEffect(() => {
@@ -67,31 +136,107 @@ export default function StudentViewPage() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    async function fetchStudent() {
+    async function fetchWorkspace() {
       if (!id) return;
       try {
-        const snap = await getDoc(doc(db, 'users', id as string));
-        if (snap.exists()) setStudent(snap.data() as StudentData);
+        const studentSnap = await getDoc(doc(db, 'users', id));
+        if (!studentSnap.exists()) return;
+
+        const studentData = { id: studentSnap.id, ...studentSnap.data() } as StudentData;
+        setStudent(studentData);
+
+        const [applicationSnap, modernResultsSnap, legacyResultsSnap, resumesSnap] = await Promise.all([
+          getDocs(query(collection(db, 'applications'), where('userId', '==', id))).catch(() => ({ docs: [] } as any)),
+          getDocs(query(collection(db, 'test_results'), where('userId', '==', id))).catch(() => ({ docs: [] } as any)),
+          getDocs(query(collection(db, 'testResults'), where('userId', '==', id))).catch(() => ({ docs: [] } as any)),
+          studentData.email
+            ? getDocs(query(collection(db, 'resumes'), where('userEmail', '==', studentData.email))).catch(() => ({ docs: [] } as any))
+            : Promise.resolve({ docs: [] } as any),
+        ]);
+
+        const appRows = applicationSnap.docs.map((d: any) => ({ id: d.id, ...d.data() } as ApplicationItem));
+        appRows.sort((a: ApplicationItem, b: ApplicationItem) => {
+          const at = typeof a.appliedAt?.toMillis === 'function' ? a.appliedAt.toMillis() : 0;
+          const bt = typeof b.appliedAt?.toMillis === 'function' ? b.appliedAt.toMillis() : 0;
+          return bt - at;
+        });
+        setApplications(appRows);
+
+        const resultRows = [
+          ...modernResultsSnap.docs.map((d: any) => ({ id: `modern-${d.id}`, ...d.data() } as ResultItem)),
+          ...legacyResultsSnap.docs.map((d: any) => ({ id: `legacy-${d.id}`, ...d.data() } as ResultItem)),
+        ];
+        resultRows.sort((a: ResultItem, b: ResultItem) => {
+          const at = typeof a.submittedAt?.toMillis === 'function' ? a.submittedAt.toMillis() : 0;
+          const bt = typeof b.submittedAt?.toMillis === 'function' ? b.submittedAt.toMillis() : 0;
+          return bt - at;
+        });
+        setResults(resultRows);
+
+        const resumeRows = resumesSnap.docs.map((d: any) => ({ id: d.id, ...d.data() } as ResumeItem));
+        resumeRows.sort((a: ResumeItem, b: ResumeItem) => {
+          const at = typeof a.updatedAt?.toMillis === 'function' ? a.updatedAt.toMillis() : 0;
+          const bt = typeof b.updatedAt?.toMillis === 'function' ? b.updatedAt.toMillis() : 0;
+          return bt - at;
+        });
+        setResumes(resumeRows);
       } catch (error) {
-        console.error('Error fetching student:', error);
+        console.error('Error fetching student workspace:', error);
       } finally {
         setFetching(false);
       }
     }
-    fetchStudent();
+
+    fetchWorkspace();
   }, [id]);
 
-  if (loading || fetching) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="loading-dots"><span /><span /><span /></div>
-    </div>
-  );
+  const handleReview = async (status: 'verified' | 'resubmission_requested') => {
+    if (!student || !id || !user) return;
 
-  if (!student) return (
-    <div className="window p-12 text-center">
-      <p className="text-[#F54E00] text-[13px]">Student not found.</p>
-    </div>
-  );
+    const note = status === 'resubmission_requested'
+      ? window.prompt('Add a resubmission reason (required):', '')
+      : window.prompt('Optional verification note:', '') || '';
+
+    if (status === 'resubmission_requested' && !note?.trim()) {
+      setNotice({ type: 'error', message: 'Resubmission reason is required.' });
+      return;
+    }
+
+    setReviewing(true);
+    try {
+      const payload = {
+        profileReviewStatus: status,
+        profileReviewNote: note?.trim() || '',
+        profileReviewedAt: new Date().toISOString(),
+        profileReviewedBy: user.email || user.uid,
+      };
+
+      await updateDoc(doc(db, 'users', id), payload);
+      setStudent((prev) => (prev ? { ...prev, ...payload } : prev));
+      setNotice({ type: 'success', message: status === 'verified' ? 'Profile marked as verified.' : 'Resubmission requested.' });
+    } catch (error) {
+      console.error('Failed to update review status:', error);
+      setNotice({ type: 'error', message: 'Unable to update review status. Check Firestore rules for uni-admin updates.' });
+    } finally {
+      setReviewing(false);
+    }
+  };
+
+  if (loading || fetching) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="loading-dots"><span /><span /><span /></div>
+      </div>
+    );
+  }
+
+  if (!student) {
+    return (
+      <div className="window p-12 text-center">
+        <p className="text-[#F54E00] text-[13px]">Student not found.</p>
+      </div>
+    );
+  }
 
   const eduEntries = student.educationEntries?.length ? student.educationEntries : null;
   const expEntries = student.experienceEntries?.length ? student.experienceEntries : null;
@@ -100,221 +245,339 @@ export default function StudentViewPage() {
   const posEntries = student.positionEntries?.length ? student.positionEntries : null;
   const extraEntries = student.extracurricularEntries?.length ? student.extracurricularEntries : null;
 
+  const cgpa = eduEntries?.[0]?.cgpa || 'N/A';
+
+  const applicationsCount = applications.length;
+  const shortlistedCount = applications.filter((a) => a.status === 'shortlisted').length;
+  const offersCount = applications.filter((a) => a.status === 'selected').length;
+  const avgScore = results.length > 0
+    ? results.reduce((sum, item) => sum + safePercentage(item), 0) / results.length
+    : 0;
+  const avgViolationPoints = results.length > 0
+    ? results.reduce((sum, item) => sum + (item.proctoring?.violationPoints || 0), 0) / results.length
+    : 0;
+  const reliability = Math.max(0, Math.round(100 - avgViolationPoints * 10));
+
   return (
-    <div className="max-w-3xl mx-auto animate-fade-in">
-      {/* Back */}
+    <div className="max-w-6xl mx-auto animate-fade-in">
       <Link href="/uniadmin/student-database" className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--text-muted)] hover:text-[var(--text-primary)] mb-5 transition-colors">
         <ArrowLeft size={14} /> Back to Database
       </Link>
 
-      {/* Header Card */}
-      <div className="window p-6 mb-5">
-        <div className="flex items-start gap-4">
-          {/* Avatar */}
-          {student.photoURL ? (
-            <img src={student.photoURL} alt={student.name} className="w-16 h-16 rounded-full object-cover border-2 border-[var(--border-subtle)]" />
-          ) : (
-            <div className="w-16 h-16 rounded-full bg-[#5E6AD2]/10 flex items-center justify-center text-[#5E6AD2] text-xl font-bold">
-              {student.name?.charAt(0)?.toUpperCase() || '?'}
-            </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">{student.name || 'Unnamed'}</h1>
-            {student.title && <p className="text-[13px] text-[var(--text-muted)] mt-0.5">{student.title}</p>}
-            {student.bio && <p className="text-[12px] text-[var(--text-tertiary)] mt-1 line-clamp-2">{student.bio}</p>}
+      {notice && (
+        <div className={`mb-4 p-3 rounded border text-[13px] ${notice.type === 'success' ? 'border-[#4CAF50]/20 bg-[#4CAF50]/10 text-[#4CAF50]' : 'border-[#F54E00]/20 bg-[#F54E00]/10 text-[#F54E00]'}`}>
+          {notice.message}
+        </div>
+      )}
 
-            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3">
-              {student.email && (
-                <span className="flex items-center gap-1.5 text-[12px] text-[var(--text-muted)]">
-                  <Mail size={12} /> {student.email}
-                </span>
-              )}
-              {student.phone && (
-                <span className="flex items-center gap-1.5 text-[12px] text-[var(--text-muted)]">
-                  <Phone size={12} /> {student.phone}
-                </span>
-              )}
-              {(student.rollNumber || student.studentId) && (
-                <span className="text-[12px] font-mono text-[#F54E00]">
-                  {student.rollNumber || student.studentId}
-                </span>
-              )}
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <aside className="window p-5 lg:col-span-1 h-fit">
+          <div className="flex flex-col items-center text-center">
+            {student.photoURL ? (
+              <img src={student.photoURL} alt={student.name || 'Student'} className="w-24 h-24 rounded-full object-cover border-2 border-[var(--border-subtle)]" />
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-[#5E6AD2]/10 flex items-center justify-center text-[#5E6AD2] text-3xl font-bold">
+                {student.name?.charAt(0)?.toUpperCase() || '?'}
+              </div>
+            )}
+            <h1 className="text-[20px] font-bold text-[var(--text-primary)] mt-3">{student.name || 'Unnamed'}</h1>
+            <p className="text-[13px] text-[var(--text-tertiary)]">{student.title || 'Student'}</p>
+            <p className="text-[12px] font-mono text-[#F54E00] mt-1">{student.rollNumber || student.studentId || 'N/A'}</p>
 
-            {/* Links */}
-            <div className="flex gap-2 mt-3">
-              {student.linkedinUrl && (
-                <a href={student.linkedinUrl} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-[#0077B5] bg-[#0077B5]/10 border border-[#0077B5]/20 rounded hover:bg-[#0077B5]/20 transition-colors">
-                  <Linkedin size={11} /> LinkedIn <ExternalLink size={9} />
-                </a>
-              )}
-              {student.githubUrl && (
-                <a href={student.githubUrl} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-[var(--text-primary)] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded hover:border-[var(--border-active)] transition-colors">
-                  <Github size={11} /> GitHub <ExternalLink size={9} />
-                </a>
-              )}
+            <div className="w-full mt-5 space-y-3">
+              <div className="rounded bg-[var(--bg-elevated)] p-3 border border-[var(--border-subtle)]">
+                <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-wider">CGPA</p>
+                <p className="text-3xl font-bold text-[var(--text-primary)] tabular-nums">{cgpa}</p>
+              </div>
+              <div className="rounded bg-[var(--bg-elevated)] p-3 border border-[var(--border-subtle)]">
+                <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-wider">Applications</p>
+                <p className="text-3xl font-bold text-[var(--text-primary)] tabular-nums">{applicationsCount}</p>
+              </div>
+              <div className="rounded bg-[var(--bg-elevated)] p-3 border border-[var(--border-subtle)]">
+                <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-wider">Offers</p>
+                <p className="text-3xl font-bold text-[var(--text-primary)] tabular-nums">{offersCount}</p>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </aside>
 
-      {/* Skills & Coursework */}
-      {(student.technicalSkills || student.relevantCoursework) && (
-        <div className="window p-5 mb-5">
-          {student.technicalSkills && (
-            <>
-              <SectionHeader icon={Code} title="Technical Skills" />
-              <div className="flex flex-wrap gap-1.5">
-                {student.technicalSkills.split(/[,\n]+/).map((s, i) => s.trim()).filter(Boolean).map((skill, i) => (
-                  <span key={i} className="px-2 py-0.5 text-[11px] font-medium rounded bg-[#5E6AD2]/8 text-[#5E6AD2] border border-[#5E6AD2]/15">
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </>
-          )}
-          {student.relevantCoursework && (
-            <>
-              <SectionHeader icon={GraduationCap} title="Relevant Coursework" />
-              <p className="text-[12px] text-[var(--text-secondary)] leading-relaxed">{student.relevantCoursework}</p>
-            </>
-          )}
-        </div>
-      )}
+        <section className="lg:col-span-3 window overflow-hidden">
+          <div className="border-b border-[var(--border-subtle)] p-4 flex flex-wrap items-center justify-between gap-2">
+            <div className="inline-flex rounded border border-[var(--border-subtle)] overflow-hidden bg-[var(--bg-elevated)]">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-3 py-2 text-[12px] font-semibold transition-colors ${activeTab === tab.id ? 'bg-[#5E6AD2]/10 text-[#5E6AD2]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
 
-      {/* Education */}
-      {eduEntries && (
-        <div className="window p-5 mb-5">
-          <SectionHeader icon={GraduationCap} title="Education" />
-          <div className="space-y-3">
-            {eduEntries.map((e: any, i: number) => (
-              <div key={i} className="border-l-2 border-[#5E6AD2]/30 pl-3">
-                <div className="flex justify-between items-baseline">
-                  <h3 className="text-[13px] font-bold text-[var(--text-primary)]">{e.institution}</h3>
-                  <span className="text-[11px] text-[var(--text-faint)] shrink-0 ml-2">{formatDateRange(e.fromDate, e.toDate)}</span>
-                </div>
-                <p className="text-[12px] text-[var(--text-muted)]">{e.degree}</p>
-                <div className="flex gap-3 mt-0.5">
-                  {e.cgpa && <span className="text-[11px] text-[#4CAF50] font-semibold">GPA: {e.cgpa}</span>}
-                  {e.location && <span className="flex items-center gap-1 text-[11px] text-[var(--text-faint)]"><MapPin size={10} />{e.location}</span>}
-                </div>
-              </div>
-            ))}
+            <div className="flex items-center gap-2">
+              <button type="button" disabled={reviewing} onClick={() => handleReview('verified')} className="btn-secondary inline-flex items-center gap-1 text-[12px]">
+                <BadgeCheck size={13} /> Mark Profile Verified
+              </button>
+              <button type="button" disabled={reviewing} onClick={() => handleReview('resubmission_requested')} className="btn-secondary inline-flex items-center gap-1 text-[12px]">
+                <AlertCircle size={13} /> Ask Resubmission
+              </button>
+            </div>
           </div>
-        </div>
-      )}
 
-      {/* Experience */}
-      {expEntries && (
-        <div className="window p-5 mb-5">
-          <SectionHeader icon={Briefcase} title="Experience" />
-          <div className="space-y-3">
-            {expEntries.map((e: any, i: number) => (
-              <div key={i} className="border-l-2 border-[#00C16E]/30 pl-3">
-                <div className="flex justify-between items-baseline">
-                  <h3 className="text-[13px] font-bold text-[var(--text-primary)]">{e.role}</h3>
-                  <span className="text-[11px] text-[var(--text-faint)] shrink-0 ml-2">{formatDateRange(e.fromDate, e.toDate)}</span>
-                </div>
-                <p className="text-[12px] text-[var(--text-muted)]">{e.company}</p>
-                {e.location && <span className="flex items-center gap-1 text-[11px] text-[var(--text-faint)] mt-0.5"><MapPin size={10} />{e.location}</span>}
-                {e.description && <p className="text-[11px] text-[var(--text-tertiary)] mt-1 whitespace-pre-line">{e.description}</p>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Projects */}
-      {projEntries && (
-        <div className="window p-5 mb-5">
-          <SectionHeader icon={FolderKanban} title="Projects" />
-          <div className="space-y-3">
-            {projEntries.map((p: any, i: number) => (
-              <div key={i} className="border-l-2 border-[#F54E00]/30 pl-3">
-                <div className="flex justify-between items-baseline">
-                  <h3 className="text-[13px] font-bold text-[var(--text-primary)]">
-                    {p.title}
-                    {p.link && (
-                      <a href={p.link} target="_blank" rel="noopener noreferrer" className="ml-1.5 text-[#5E6AD2] hover:underline">
-                        <ExternalLink size={10} className="inline" />
-                      </a>
-                    )}
-                  </h3>
-                  <span className="text-[11px] text-[var(--text-faint)] shrink-0 ml-2">{formatDateRange(p.fromDate, p.toDate)}</span>
-                </div>
-                {p.techStack && <p className="text-[11px] text-[#5E6AD2] font-medium mt-0.5">{p.techStack}</p>}
-                {p.description && <p className="text-[11px] text-[var(--text-tertiary)] mt-1 whitespace-pre-line">{p.description}</p>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Achievements */}
-      {achEntries && (
-        <div className="window p-5 mb-5">
-          <SectionHeader icon={Trophy} title="Achievements" />
-          <div className="space-y-2">
-            {achEntries.map((a: any, i: number) => (
-              <div key={i} className="flex justify-between items-baseline">
-                <div>
-                  <span className="text-[12px] font-bold text-[var(--text-primary)]">{a.title}</span>
-                  {a.issuer && <span className="text-[11px] text-[var(--text-muted)]"> — {a.issuer}</span>}
-                </div>
-                <span className="text-[11px] text-[var(--text-faint)] shrink-0 ml-2">{a.fromDate}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Positions */}
-      {posEntries && (
-        <div className="window p-5 mb-5">
-          <SectionHeader icon={Star} title="Positions of Responsibility" />
-          <div className="space-y-2">
-            {posEntries.map((p: any, i: number) => (
-              <div key={i} className="flex justify-between items-baseline">
-                <div>
-                  <span className="text-[12px] font-bold text-[var(--text-primary)]">{p.title}</span>
-                  <span className="text-[11px] text-[var(--text-muted)]"> — {p.organization}</span>
-                </div>
-                <span className="text-[11px] text-[var(--text-faint)] shrink-0 ml-2">{formatDateRange(p.fromDate, p.toDate)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Extracurriculars */}
-      {extraEntries && (
-        <div className="window p-5 mb-5">
-          <SectionHeader icon={Award} title="Extracurriculars" />
-          <div className="space-y-2">
-            {extraEntries.map((e: any, i: number) => (
-              <div key={i}>
-                <div className="flex justify-between items-baseline">
-                  <div>
-                    <span className="text-[12px] font-bold text-[var(--text-primary)]">{e.activity}</span>
-                    {e.role && <span className="text-[11px] text-[var(--text-muted)]"> — {e.role}</span>}
+          <div className="p-5">
+            {activeTab === 'placements' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                    <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest">Applications</p>
+                    <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{applicationsCount}</p>
                   </div>
-                  <span className="text-[11px] text-[var(--text-faint)] shrink-0 ml-2">{formatDateRange(e.fromDate, e.toDate)}</span>
+                  <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                    <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest">Shortlisted</p>
+                    <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{shortlistedCount}</p>
+                  </div>
+                  <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                    <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest">Offers</p>
+                    <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{offersCount}</p>
+                  </div>
+                  <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                    <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest">Avg Test Score</p>
+                    <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{avgScore.toFixed(1)}%</p>
+                  </div>
+                  <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                    <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest">Reliability</p>
+                    <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{reliability}/100</p>
+                  </div>
                 </div>
-                {e.description && <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">{e.description}</p>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {/* Fallback for legacy string data when no structured entries */}
-      {!eduEntries && !expEntries && !projEntries && !achEntries && !posEntries && !extraEntries && !student.technicalSkills && (
-        <div className="window p-8 text-center">
-          <p className="text-[var(--text-faint)] text-[13px]">This student hasn&apos;t filled out their profile yet.</p>
-        </div>
-      )}
+                <SectionHeader icon={ClipboardCheck} title="Recent Applications" />
+                {applications.length === 0 ? (
+                  <p className="text-[12px] text-[var(--text-faint)]">No applications available.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {applications.slice(0, 6).map((app) => (
+                      <div key={app.id} className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3 flex items-center justify-between">
+                        <div>
+                          <p className="text-[12px] font-semibold text-[var(--text-primary)]">{app.internshipRole || 'Internship'}</p>
+                          <p className="text-[11px] text-[var(--text-tertiary)]">{app.companyName || 'Unknown company'} - {toDateLabel(app.appliedAt)}</p>
+                        </div>
+                        <span className="text-[11px] font-semibold uppercase text-[var(--text-faint)]">{app.status || 'pending'}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <SectionHeader icon={FileText} title="Recent Test Performance" />
+                {results.length === 0 ? (
+                  <p className="text-[12px] text-[var(--text-faint)]">No test results yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {results.slice(0, 6).map((result) => (
+                      <div key={result.id} className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3 flex items-center justify-between">
+                        <div>
+                          <p className="text-[12px] font-semibold text-[var(--text-primary)]">{result.testTitle || 'Untitled Test'}</p>
+                          <p className="text-[11px] text-[var(--text-tertiary)]">Submitted {toDateLabel(result.submittedAt)}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[12px] font-semibold text-[var(--text-primary)]">{safePercentage(result).toFixed(1)}%</p>
+                          <p className="text-[10px] text-[var(--text-faint)]">Violations: {result.proctoring?.totalViolations || 0}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'about' && (
+              <div className="space-y-4">
+                <SectionHeader icon={Mail} title="Contact" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3 text-[12px]">
+                    <p className="text-[var(--text-faint)] mb-1">Email</p>
+                    <p className="text-[var(--text-primary)] break-all">{student.email || 'N/A'}</p>
+                  </div>
+                  <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3 text-[12px]">
+                    <p className="text-[var(--text-faint)] mb-1">Phone</p>
+                    <p className="text-[var(--text-primary)]">{student.phone || 'N/A'}</p>
+                  </div>
+                </div>
+
+                <SectionHeader icon={Calendar} title="Review Status" />
+                <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3 text-[12px] space-y-1">
+                  <p>Status: <span className="font-semibold text-[var(--text-primary)]">{student.profileReviewStatus || 'Not reviewed'}</span></p>
+                  <p>Reviewed by: <span className="font-semibold text-[var(--text-primary)]">{student.profileReviewedBy || 'N/A'}</span></p>
+                  <p>Reviewed at: <span className="font-semibold text-[var(--text-primary)]">{toDateLabel(student.profileReviewedAt)}</span></p>
+                  {student.profileReviewNote && <p>Note: <span className="text-[var(--text-primary)]">{student.profileReviewNote}</span></p>}
+                </div>
+
+                {student.bio && (
+                  <>
+                    <SectionHeader icon={FileText} title="Bio" />
+                    <p className="text-[12px] text-[var(--text-secondary)] whitespace-pre-line">{student.bio}</p>
+                  </>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'academic' && (
+              <div className="space-y-4">
+                {(student.technicalSkills || student.relevantCoursework) && (
+                  <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4">
+                    {student.technicalSkills && (
+                      <>
+                        <SectionHeader icon={Code} title="Technical Skills" />
+                        <div className="flex flex-wrap gap-1.5">
+                          {student.technicalSkills.split(/[,\n]+/).map((s) => s.trim()).filter(Boolean).map((skill, i) => (
+                            <span key={i} className="px-2 py-0.5 text-[11px] font-medium rounded bg-[#5E6AD2]/8 text-[#5E6AD2] border border-[#5E6AD2]/15">{skill}</span>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                    {student.relevantCoursework && (
+                      <>
+                        <SectionHeader icon={GraduationCap} title="Relevant Coursework" />
+                        <p className="text-[12px] text-[var(--text-secondary)] leading-relaxed">{student.relevantCoursework}</p>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {eduEntries ? (
+                  <div className="space-y-3">
+                    {eduEntries.map((e: any, i: number) => (
+                      <div key={i} className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4">
+                        <div className="flex justify-between items-baseline">
+                          <h3 className="text-[13px] font-bold text-[var(--text-primary)]">{e.institution}</h3>
+                          <span className="text-[11px] text-[var(--text-faint)]">{formatDateRange(e.fromDate, e.toDate)}</span>
+                        </div>
+                        <p className="text-[12px] text-[var(--text-muted)]">{e.degree}</p>
+                        <div className="flex gap-3 mt-1">
+                          {e.cgpa && <span className="text-[11px] text-[#4CAF50] font-semibold">CGPA: {e.cgpa}</span>}
+                          {e.location && <span className="flex items-center gap-1 text-[11px] text-[var(--text-faint)]"><MapPin size={10} />{e.location}</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[12px] text-[var(--text-faint)]">No academic records available.</p>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'profile' && (
+              <div className="space-y-4">
+                {expEntries && (
+                  <div className="window p-4">
+                    <SectionHeader icon={Briefcase} title="Experience" />
+                    <div className="space-y-3">
+                      {expEntries.map((e: any, i: number) => (
+                        <div key={i} className="border-l-2 border-[#00C16E]/30 pl-3">
+                          <div className="flex justify-between items-baseline">
+                            <h3 className="text-[13px] font-bold text-[var(--text-primary)]">{e.role}</h3>
+                            <span className="text-[11px] text-[var(--text-faint)]">{formatDateRange(e.fromDate, e.toDate)}</span>
+                          </div>
+                          <p className="text-[12px] text-[var(--text-muted)]">{e.company}</p>
+                          {e.description && <p className="text-[11px] text-[var(--text-tertiary)] mt-1 whitespace-pre-line">{e.description}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {projEntries && (
+                  <div className="window p-4">
+                    <SectionHeader icon={FolderKanban} title="Projects" />
+                    <div className="space-y-3">
+                      {projEntries.map((p: any, i: number) => (
+                        <div key={i} className="border-l-2 border-[#F54E00]/30 pl-3">
+                          <div className="flex justify-between items-baseline">
+                            <h3 className="text-[13px] font-bold text-[var(--text-primary)]">{p.title}</h3>
+                            <span className="text-[11px] text-[var(--text-faint)]">{formatDateRange(p.fromDate, p.toDate)}</span>
+                          </div>
+                          {p.techStack && <p className="text-[11px] text-[#5E6AD2] mt-1">{p.techStack}</p>}
+                          {p.description && <p className="text-[11px] text-[var(--text-tertiary)] mt-1 whitespace-pre-line">{p.description}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {achEntries && (
+                  <div className="window p-4">
+                    <SectionHeader icon={Trophy} title="Achievements" />
+                    <div className="space-y-2">
+                      {achEntries.map((a: any, i: number) => (
+                        <div key={i} className="text-[12px]">
+                          <span className="font-semibold text-[var(--text-primary)]">{a.title}</span>
+                          {a.issuer && <span className="text-[var(--text-muted)]"> - {a.issuer}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {posEntries && (
+                  <div className="window p-4">
+                    <SectionHeader icon={Star} title="Positions of Responsibility" />
+                    <div className="space-y-2">
+                      {posEntries.map((p: any, i: number) => (
+                        <div key={i} className="text-[12px]">
+                          <span className="font-semibold text-[var(--text-primary)]">{p.title}</span>
+                          <span className="text-[var(--text-muted)]"> - {p.organization}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {extraEntries && (
+                  <div className="window p-4">
+                    <SectionHeader icon={Award} title="Extracurriculars" />
+                    <div className="space-y-2">
+                      {extraEntries.map((e: any, i: number) => (
+                        <div key={i} className="text-[12px]">
+                          <span className="font-semibold text-[var(--text-primary)]">{e.activity}</span>
+                          {e.role && <span className="text-[var(--text-muted)]"> - {e.role}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'resumes' && (
+              <div className="space-y-3">
+                {resumes.length === 0 ? (
+                  <p className="text-[12px] text-[var(--text-faint)]">No saved resumes found or access is restricted by rules.</p>
+                ) : (
+                  resumes.map((resume) => (
+                    <div key={resume.id} className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-[13px] font-semibold text-[var(--text-primary)]">{resume.targetCompany || 'General Resume'}</p>
+                          <p className="text-[11px] text-[var(--text-faint)]">Updated: {toDateLabel(resume.updatedAt)}</p>
+                        </div>
+                        <Clock3 size={14} className="text-[var(--text-faint)]" />
+                      </div>
+                      {resume.keywords && resume.keywords.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {resume.keywords.slice(0, 10).map((keyword, i) => (
+                            <span key={`${resume.id}-${i}`} className="px-2 py-0.5 rounded text-[10px] border border-[var(--border-subtle)] text-[var(--text-tertiary)]">{keyword}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }
