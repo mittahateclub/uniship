@@ -8,7 +8,7 @@ import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firesto
 import Link from 'next/link';
 import {
   FileText, ClipboardCheck, UserPlus, CalendarPlus,
-  Database, TrendingUp, Settings, PlusCircle, ArrowUpRight,
+  Database, Settings, PlusCircle, ArrowUpRight,
   Users, Calendar as CalendarIcon,
 } from 'lucide-react';
 
@@ -56,7 +56,6 @@ export default function UniAdminDashboard() {
     { title: 'Create Account', desc: 'Register new student profiles.', href: '/uniadmin/create-account', icon: UserPlus },
     { title: 'Create Event', desc: 'Post workshops & seminars.', href: '/uniadmin/create-event', icon: CalendarPlus },
     { title: 'Student Database', desc: 'View all registered students.', href: '/uniadmin/student-database', icon: Database },
-    { title: 'Analysis', desc: 'Performance reports & progress.', href: '/uniadmin/analysis', icon: TrendingUp },
     { title: 'Admin Profile', desc: 'Settings & credentials.', href: '/uniadmin/profile', icon: Settings },
   ];
 

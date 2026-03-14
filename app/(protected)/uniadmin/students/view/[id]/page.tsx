@@ -21,6 +21,8 @@ import {
   GraduationCap,
   Mail,
   MapPin,
+  TrendingUp,
+  BookOpen,
   Star,
   Trophy,
 } from 'lucide-react';
@@ -78,7 +80,7 @@ interface ResumeItem {
   keywords?: string[];
 }
 
-type TabId = 'placements' | 'about' | 'academic' | 'profile' | 'resumes';
+type TabId = 'placements' | 'about' | 'academic' | 'profile' | 'resumes' | 'analysis';
 
 const tabs: Array<{ id: TabId; label: string }> = [
   { id: 'placements', label: 'Placements' },
@@ -86,6 +88,7 @@ const tabs: Array<{ id: TabId; label: string }> = [
   { id: 'academic', label: 'Academic Details' },
   { id: 'profile', label: 'Profile' },
   { id: 'resumes', label: 'Resumes' },
+  { id: 'analysis', label: 'Analysis' },
 ];
 
 function formatDateRange(from: string, to: string): string {
@@ -106,6 +109,22 @@ function safePercentage(result: ResultItem): number {
   const score = typeof result.score === 'number' ? result.score : (result.attemptedQuestions || 0);
   const total = result.totalQuestions || 0;
   return total > 0 ? (score / total) * 100 : 0;
+}
+
+function getResultSections(result: ResultItem): Array<{ name: string; percentage: number }> {
+  const sectionSource = (result as any)?.sectionResults || (result as any)?.sections || [];
+  if (!Array.isArray(sectionSource)) return [];
+
+  return sectionSource
+    .map((section: any) => {
+      const name = section?.sectionName || section?.name || 'Section';
+      const percentage = typeof section?.percentage === 'number'
+        ? section.percentage
+        : (section?.totalQuestions > 0 ? ((section?.score || 0) / section.totalQuestions) * 100 : 0);
+
+      return { name, percentage };
+    })
+    .filter((section: { name: string; percentage: number }) => Number.isFinite(section.percentage));
 }
 
 function SectionHeader({ icon: Icon, title }: { icon: React.ComponentType<any>; title: string }) {
@@ -250,13 +269,37 @@ export default function StudentViewPage() {
   const applicationsCount = applications.length;
   const shortlistedCount = applications.filter((a) => a.status === 'shortlisted').length;
   const offersCount = applications.filter((a) => a.status === 'selected').length;
+  const scoreSeries = [...results].reverse().map((item) => safePercentage(item));
   const avgScore = results.length > 0
-    ? results.reduce((sum, item) => sum + safePercentage(item), 0) / results.length
+    ? scoreSeries.reduce((sum, value) => sum + value, 0) / scoreSeries.length
     : 0;
   const avgViolationPoints = results.length > 0
     ? results.reduce((sum, item) => sum + (item.proctoring?.violationPoints || 0), 0) / results.length
     : 0;
   const reliability = Math.max(0, Math.round(100 - avgViolationPoints * 10));
+  const latestScore = scoreSeries.length ? scoreSeries[scoreSeries.length - 1] : 0;
+  const baselineScore = scoreSeries.length ? scoreSeries[0] : 0;
+  const scoreDelta = latestScore - baselineScore;
+  const totalViolations = results.reduce((sum, item) => sum + (item.proctoring?.totalViolations || 0), 0);
+  const testsAbove70 = scoreSeries.filter((value) => value >= 70).length;
+  const consistency = scoreSeries.length > 0 ? Math.round((testsAbove70 / scoreSeries.length) * 100) : 0;
+
+  const sectionBuckets: Record<string, { sum: number; count: number }> = {};
+  results.forEach((result) => {
+    getResultSections(result).forEach((section) => {
+      if (!sectionBuckets[section.name]) sectionBuckets[section.name] = { sum: 0, count: 0 };
+      sectionBuckets[section.name].sum += section.percentage;
+      sectionBuckets[section.name].count += 1;
+    });
+  });
+
+  const sectionAverages = Object.entries(sectionBuckets)
+    .map(([name, bucket]) => ({
+      name,
+      average: bucket.count > 0 ? bucket.sum / bucket.count : 0,
+      attempts: bucket.count,
+    }))
+    .sort((a, b) => b.average - a.average);
 
   return (
     <div className="max-w-6xl mx-auto animate-fade-in">
@@ -572,6 +615,78 @@ export default function StudentViewPage() {
                       )}
                     </div>
                   ))
+                )}
+              </div>
+            )}
+
+            {activeTab === 'analysis' && (
+              <div className="space-y-4">
+                {results.length === 0 ? (
+                  <p className="text-[12px] text-[var(--text-faint)]">No test result data available for analysis yet.</p>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                      <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                        <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest">Tests Taken</p>
+                        <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{results.length}</p>
+                      </div>
+                      <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                        <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest">Avg Score</p>
+                        <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{avgScore.toFixed(1)}%</p>
+                      </div>
+                      <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                        <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest">Reliability</p>
+                        <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{reliability}/100</p>
+                      </div>
+                      <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                        <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest">Consistency</p>
+                        <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{consistency}%</p>
+                      </div>
+                      <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                        <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest">Violations</p>
+                        <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{totalViolations}</p>
+                      </div>
+                    </div>
+
+                    <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4">
+                      <SectionHeader icon={TrendingUp} title="Performance Trend" />
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                          <p className="text-[11px] text-[var(--text-faint)] uppercase tracking-widest">Baseline</p>
+                          <p className="text-xl font-bold text-[var(--text-primary)] tabular-nums">{baselineScore.toFixed(1)}%</p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] text-[var(--text-faint)] uppercase tracking-widest">Latest</p>
+                          <p className="text-xl font-bold text-[var(--text-primary)] tabular-nums">{latestScore.toFixed(1)}%</p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] text-[var(--text-faint)] uppercase tracking-widest">Progress</p>
+                          <p className={`text-xl font-bold tabular-nums ${scoreDelta >= 0 ? 'text-[#4CAF50]' : 'text-[#F54E00]'}`}>
+                            {scoreDelta >= 0 ? '+' : ''}{scoreDelta.toFixed(1)}%
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4">
+                      <SectionHeader icon={BookOpen} title="Section-Wise Strength" />
+                      {sectionAverages.length === 0 ? (
+                        <p className="text-[12px] text-[var(--text-faint)]">Section-wise scores are not available in submitted test data.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {sectionAverages.map((section) => (
+                            <div key={section.name} className="rounded border border-[var(--border-subtle)] px-3 py-2 flex items-center justify-between">
+                              <div>
+                                <p className="text-[12px] font-semibold text-[var(--text-primary)]">{section.name}</p>
+                                <p className="text-[10px] text-[var(--text-faint)]">Based on {section.attempts} test{section.attempts === 1 ? '' : 's'}</p>
+                              </div>
+                              <p className="text-[12px] font-bold text-[var(--text-primary)] tabular-nums">{section.average.toFixed(1)}%</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
             )}

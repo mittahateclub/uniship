@@ -52,6 +52,12 @@ Expected top-level JSON structure:
           "output": "string",
           "explanation": "string"
         }
+      ],
+      "hiddenTestCases": [
+        {
+          "input": "string",
+          "output": "string"
+        }
       ]
     }
   ]

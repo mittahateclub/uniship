@@ -42,7 +42,6 @@ import {
   Cpu,
   MapPin,
   Clock,
-  AlertTriangle,
   Building2,
   Hash,
   Mail,
@@ -82,7 +81,6 @@ const uniadminNavLinks: NavLink[] = [
   { href: '/uniadmin/create-event', label: 'Create Event', icon: CalendarPlus },
   { href: '/uniadmin/create-account', label: 'Create Account', icon: UserPlus },
   { href: '/uniadmin/student-database', label: 'Students', icon: Database },
-  { href: '/uniadmin/analysis', label: 'Analysis', icon: TrendingUp },
   { href: '/uniadmin/profile', label: 'Profile', icon: User },
 ];
 
@@ -144,7 +142,6 @@ const uniadminSearchItems: SearchableItem[] = [
   { href: '/uniadmin/create-event', label: 'Create Event', desc: 'Schedule an event', icon: CalendarPlus, category: 'Pages' },
   { href: '/uniadmin/create-account', label: 'Create Account', desc: 'Add student account', icon: UserPlus, category: 'Pages' },
   { href: '/uniadmin/student-database', label: 'Student Database', desc: 'Browse all students', icon: Database, category: 'Pages' },
-  { href: '/uniadmin/analysis', label: 'Analysis', desc: 'Performance analytics', icon: TrendingUp, category: 'Pages' },
   { href: '/uniadmin/profile', label: 'Profile', desc: 'Admin profile settings', icon: User, category: 'Pages' },
   { href: '/uniadmin/proctoring', label: 'Proctoring', desc: 'Monitor live exams & chat', icon: ShieldCheck, category: 'Pages' },
   // Dashboard — In-page sections
@@ -164,11 +161,6 @@ const uniadminSearchItems: SearchableItem[] = [
   { href: '/uniadmin/create-account#form', label: 'Student ID', desc: 'Set student roll/ID number', icon: Hash, category: 'Create Account' },
   { href: '/uniadmin/create-account#form', label: 'Student Email', desc: 'Set student email address', icon: Mail, category: 'Create Account' },
   { href: '/uniadmin/create-account#form', label: 'Temporary Password', desc: 'Set initial login password', icon: Lock, category: 'Create Account' },
-  // Analysis — In-page sections
-  { href: '/uniadmin/analysis#stats', label: 'Total Enrolled', desc: 'Number of enrolled students', icon: User, category: 'Analysis' },
-  { href: '/uniadmin/analysis#stats', label: 'Average Score', desc: 'Overall student average', icon: BarChart3, category: 'Analysis' },
-  { href: '/uniadmin/analysis#stats', label: 'Tests Taken', desc: 'Total test completions', icon: FileText, category: 'Analysis' },
-  { href: '/uniadmin/analysis#proctoring-alerts', label: 'Proctoring Alerts', desc: 'Recent proctoring violations', icon: AlertTriangle, category: 'Analysis' },
   // Admin Profile — In-page sections
   { href: '/uniadmin/profile#account-details', label: 'Admin Email', desc: 'Admin account email', icon: Mail, category: 'Admin Profile' },
   { href: '/uniadmin/profile#account-details', label: 'University ID', desc: 'University identifier', icon: Hash, category: 'Admin Profile' },
@@ -180,7 +172,6 @@ const uniadminSearchItems: SearchableItem[] = [
   { href: '/uniadmin/create-account', label: 'Add Student', desc: 'Register a new student', icon: UserPlus, category: 'Actions' },
   { href: '/uniadmin/tests', label: 'Review Submissions', desc: 'Grade & review test results', icon: FileText, category: 'Actions' },
   { href: '/uniadmin/student-database', label: 'Search Students', desc: 'Find student by name or ID', icon: Search, category: 'Actions' },
-  { href: '/uniadmin/analysis', label: 'View Analytics', desc: 'Check performance trends', icon: TrendingUp, category: 'Actions' },
   { href: '/uniadmin/proctoring', label: 'Monitor Exams', desc: 'Live proctoring dashboard', icon: ShieldCheck, category: 'Actions' },
 ];
 

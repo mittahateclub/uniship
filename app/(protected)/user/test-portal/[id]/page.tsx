@@ -20,6 +20,7 @@ interface Problem {
   correctAnswer?: string;
   expectedOutput?: string;
   sampleTestCases?: Array<{ input: string; output: string }>;
+  hiddenTestCases?: Array<{ input: string; output: string }>;
   constraints?: string[];
   hints?: string[];
 }
@@ -63,6 +64,8 @@ const SEVERITY_CONFIG = {
   medium: { label: 'Medium', color: '#F54E00', points: 2 },
   high:   { label: 'High',   color: '#DC2626', points: 3 },
 };
+
+const normalizeJudgeText = (value: string) => value.trim().replace(/\r\n/g, '\n').replace(/\s+/g, ' ').toLowerCase();
 
 // ── Phase type ──
 type Phase = 'loading' | 'preflight' | 'rules' | 'active' | 'frozen' | 'submitted';
@@ -115,6 +118,9 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   const [compiling, setCompiling] = useState(false);
   const [compileTime, setCompileTime] = useState<string | null>(null);
   const [compileMemory, setCompileMemory] = useState<string | null>(null);
+  const [judgeSubmitting, setJudgeSubmitting] = useState(false);
+  const [judgeSummary, setJudgeSummary] = useState<{ verdict: string; passed: number; total: number; failedCase: number | null } | null>(null);
+  const [judgeCaseResults, setJudgeCaseResults] = useState<Array<{ caseNumber: number; statusCode: string; status: string; stderr: string | null }> | null>(null);
 
   // Live support state
   const [chatOpen, setChatOpen] = useState(false);
@@ -449,36 +455,142 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   // ── Run code against compiler ──
   const runCode = async () => {
     const code = answers[currentQuestion];
-    if (!code?.trim() || compiling) return;
+    if (!code?.trim() || compiling || !test) return;
+
+    const sampleInput = test.problems[currentQuestion]?.sampleTestCases?.[0]?.input || '';
+    const effectiveStdin = codeStdin.trim().length > 0 ? codeStdin : sampleInput;
+    if (!codeStdin.trim() && sampleInput.trim()) {
+      setCodeStdin(sampleInput);
+    }
+
     setCompiling(true);
     setCodeOutput(null);
     setCodeError(null);
     setCompileTime(null);
     setCompileMemory(null);
+    setJudgeSummary(null);
+    setJudgeCaseResults(null);
     try {
       const res = await fetch('/api/compile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source_code: code, language_id: selectedLang, stdin: codeStdin }),
+        body: JSON.stringify({
+          mode: 'run',
+          source_code: code,
+          language_id: selectedLang,
+          stdin: effectiveStdin,
+          timeLimitSec: 2,
+          memoryLimitKb: 262144,
+        }),
       });
       const data = await res.json();
       if (!res.ok || data.error) {
         setCodeError(data.error || `Server error (${res.status})`);
-      } else if (data.status?.id >= 6) {
-        // Compilation error, runtime error, etc.
-        setCodeError(data.compile_output || data.stderr || data.status?.description || 'Execution failed');
+      } else if (data.statusCode === 'CE' || data.statusCode === 'RE' || data.statusCode === 'TLE') {
+        setCodeError(data.friendlyError || data.compile_output || data.stderr || data.status?.description || 'Execution failed');
       } else if (data.stderr) {
-        setCodeError(data.stderr);
+        setCodeError(data.friendlyError || data.stderr);
         if (data.stdout) setCodeOutput(data.stdout);
       } else {
         setCodeOutput(data.stdout || '(no output)');
       }
       if (data.time) setCompileTime(data.time);
-      if (data.memory) setCompileMemory(`${(data.memory / 1024).toFixed(1)} MB`);
+      if (typeof data.memory === 'number') setCompileMemory(`${(data.memory / 1024).toFixed(1)} MB`);
     } catch {
       setCodeError('Failed to connect to compiler');
     } finally {
       setCompiling(false);
+    }
+  };
+
+  const submitCode = async () => {
+    const code = answers[currentQuestion];
+    if (!code?.trim() || judgeSubmitting || compiling || !test) return;
+
+    const problemData = test.problems[currentQuestion];
+    const hiddenCases = (problemData.hiddenTestCases || []).map((tc) => ({
+      input: tc.input,
+      expectedOutput: tc.output,
+      isHidden: true,
+    }));
+    const fallbackSampleCases = (problemData.sampleTestCases || []).map((tc) => ({
+      input: tc.input,
+      expectedOutput: tc.output,
+      isHidden: false,
+    }));
+    const testCases = hiddenCases.length > 0 ? hiddenCases : fallbackSampleCases;
+
+    const fallbackExpectedAnswer =
+      (problemData.correctAnswer || '').trim() ||
+      (problemData.expectedOutput || '').trim();
+
+    if (testCases.length === 0 && fallbackExpectedAnswer) {
+      const accepted = normalizeJudgeText(code) === normalizeJudgeText(fallbackExpectedAnswer);
+      setJudgeSummary({
+        verdict: accepted ? 'AC' : 'WA',
+        passed: accepted ? 1 : 0,
+        total: 1,
+        failedCase: accepted ? null : 1,
+      });
+      setJudgeCaseResults([
+        {
+          caseNumber: 1,
+          statusCode: accepted ? 'AC' : 'WA',
+          status: accepted ? 'Answer Matched' : 'Answer Mismatch',
+          stderr: accepted ? null : 'Submitted solution does not match the admin-provided answer key.',
+        },
+      ]);
+      if (!accepted) {
+        setCodeError('Your submission did not match the admin-provided answer key.');
+      }
+      return;
+    }
+
+    if (testCases.length === 0) {
+      setCodeError('No test cases or answer key configured for this question yet. Ask your admin to add one of them.');
+      setJudgeSummary(null);
+      setJudgeCaseResults(null);
+      return;
+    }
+
+    setJudgeSubmitting(true);
+    setCodeError(null);
+    setCodeOutput(null);
+    setCompileTime(null);
+    setCompileMemory(null);
+    setJudgeSummary(null);
+    setJudgeCaseResults(null);
+
+    try {
+      const res = await fetch('/api/compile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'submit',
+          source_code: code,
+          language_id: selectedLang,
+          testCases,
+          timeLimitSec: 2,
+          memoryLimitKb: 262144,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setCodeError(data.error || `Server error (${res.status})`);
+      } else {
+        setJudgeSummary(data.summary || null);
+        setJudgeCaseResults((data.cases || []).map((c: any) => ({
+          caseNumber: c.caseNumber,
+          statusCode: c.statusCode,
+          status: c.status,
+          stderr: c.stderr || null,
+        })));
+      }
+    } catch {
+      setCodeError('Failed to submit code for judging');
+    } finally {
+      setJudgeSubmitting(false);
     }
   };
 
@@ -932,6 +1044,14 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                 {compiling ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
                 {compiling ? 'Running...' : 'Run Code'}
               </button>
+              <button
+                onClick={submitCode}
+                disabled={!answers[currentQuestion]?.trim() || judgeSubmitting || compiling}
+                className="flex items-center gap-1.5 bg-[#5E6AD2] hover:bg-[#4C5ABF] text-white px-3 py-1.5 rounded text-[12px] font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                {judgeSubmitting ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
+                {judgeSubmitting ? 'Submitting...' : 'Submit Code'}
+              </button>
             </div>
           </div>
           <div className="rounded-lg overflow-hidden border border-[var(--border-subtle)]">
@@ -998,6 +1118,34 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                   <pre className="text-[#4ADE80] text-[12px] font-mono whitespace-pre-wrap">{codeOutput}</pre>
                 )}
               </div>
+            </div>
+          )}
+
+          {judgeSummary && (
+            <div className="mt-3 rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Submission Verdict</span>
+                <span className={`text-[12px] font-bold ${judgeSummary.verdict === 'AC' ? 'text-[#4CAF50]' : judgeSummary.verdict === 'WA' ? 'text-[#F54E00]' : 'text-[#DC2626]'}`}>
+                  {judgeSummary.verdict}
+                </span>
+              </div>
+              <p className="text-[12px] text-[var(--text-secondary)]">
+                Passed {judgeSummary.passed} / {judgeSummary.total} test cases
+                {judgeSummary.failedCase ? ` (failed at case #${judgeSummary.failedCase})` : ''}
+              </p>
+              {judgeCaseResults && judgeCaseResults.length > 0 && (
+                <div className="mt-2 space-y-1.5">
+                  {judgeCaseResults.map((c) => (
+                    <div key={c.caseNumber} className="flex items-start justify-between gap-3 text-[11px]">
+                      <span className="text-[var(--text-tertiary)]">Case {c.caseNumber}</span>
+                      <span className={`font-bold ${c.statusCode === 'AC' ? 'text-[#4CAF50]' : c.statusCode === 'WA' ? 'text-[#F54E00]' : 'text-[#DC2626]'}`}>{c.statusCode}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {judgeCaseResults?.find((c) => c.stderr)?.stderr && (
+                <pre className="mt-2 text-[#F87171] text-[11px] font-mono whitespace-pre-wrap">{judgeCaseResults.find((c) => c.stderr)?.stderr}</pre>
+              )}
             </div>
           )}
         </div>
