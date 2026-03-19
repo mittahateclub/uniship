@@ -89,6 +89,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
     percentage: number;
     mode: 'auto' | 'attempted';
   } | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   // Proctoring state
   const [violations, setViolations] = useState<Violation[]>([]);
@@ -836,6 +837,9 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
   // ── Active test ──
   const problem = test.problems[currentQuestion];
+  const answeredCount = test.problems.reduce((count, _p, idx) => (
+    (answers[idx] || '').trim().length > 0 ? count + 1 : count
+  ), 0);
 
   return (
     <div className="fixed inset-0 z-[9999] bg-[var(--bg-primary)] overflow-y-auto animate-fade-in select-none" style={{ userSelect: 'none' }}>
@@ -964,7 +968,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
             Question {currentQuestion + 1} of {test.problems.length}
           </p>
           <span className="text-[11px] text-[var(--text-faint)]">
-            {Object.keys(answers).length}/{test.problems.length} answered
+            {answeredCount}/{test.problems.length} answered
           </span>
         </div>
 
@@ -1156,12 +1160,11 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
             ← Previous
           </button>
           <div className="flex gap-3">
-            <button onClick={() => {
-              if (window.confirm(`Submit test? You have answered ${Object.keys(answers).length} of ${test.problems.length} questions.`)) {
-                doSubmit('manual');
-              }
-            }} className="btn-secondary px-5 py-2.5 text-sm font-medium text-[#DC2626] border-[#DC2626]/30 hover:bg-[#DC2626]/10">
-              Submit Test
+            <button
+              onClick={() => setReviewOpen(true)}
+              className="btn-secondary px-5 py-2.5 text-sm font-medium text-[#DC2626] border-[#DC2626]/30 hover:bg-[#DC2626]/10"
+            >
+              Review & Submit
             </button>
             {currentQuestion < test.problems.length - 1 && (
               <button onClick={handleNext} className="btn-primary px-6 py-2.5 text-sm font-semibold">Next →</button>
@@ -1188,9 +1191,81 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
             ))}
           </div>
           <p className="text-xs text-[var(--text-faint)] mt-3 tabular-nums">
-            Answered: {Object.keys(answers).length} / {test.problems.length}
+            Answered: {answeredCount} / {test.problems.length}
           </p>
         </div>
+
+        {reviewOpen && (
+          <div className="fixed inset-0 z-[10001] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="w-full max-w-3xl rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] shadow-xl max-h-[85vh] overflow-hidden">
+              <div className="px-5 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
+                <div>
+                  <h3 className="text-[15px] font-bold text-[var(--text-primary)]">Review Before Final Submission</h3>
+                  <p className="text-[12px] text-[var(--text-tertiary)] mt-0.5">
+                    You answered {answeredCount} of {test.problems.length} questions.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setReviewOpen(false)}
+                  className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  <XCircle size={18} />
+                </button>
+              </div>
+
+              <div className="px-5 py-4 overflow-y-auto max-h-[55vh] space-y-2">
+                {test.problems.map((q, idx) => {
+                  const answer = (answers[idx] || '').trim();
+                  const answered = answer.length > 0;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setCurrentQuestion(idx);
+                        setReviewOpen(false);
+                      }}
+                      className="w-full text-left rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3 hover:border-[var(--border-active)] transition-colors"
+                    >
+                      <div className="flex items-center justify-between gap-3 mb-1">
+                        <p className="text-[12px] font-semibold text-[var(--text-primary)]">
+                          Q{idx + 1}. {q.questionDescription?.slice(0, 90) || 'Question'}{(q.questionDescription || '').length > 90 ? '...' : ''}
+                        </p>
+                        <span className={`text-[10px] font-bold uppercase tracking-widest ${answered ? 'text-[#4CAF50]' : 'text-[#F54E00]'}`}>
+                          {answered ? 'Answered' : 'Unanswered'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-[var(--text-faint)]">
+                        {answered ? `${answer.slice(0, 120)}${answer.length > 120 ? '...' : ''}` : 'No answer provided yet.'}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="px-5 py-4 border-t border-[var(--border-subtle)] flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setReviewOpen(false)}
+                  className="btn-secondary px-5 py-2.5 text-sm font-medium"
+                >
+                  Continue Editing
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReviewOpen(false);
+                    doSubmit('manual');
+                  }}
+                  className="btn-primary px-5 py-2.5 text-sm font-semibold bg-[#DC2626] hover:bg-[#B91C1C] border-[#DC2626]"
+                >
+                  Final Submit
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
