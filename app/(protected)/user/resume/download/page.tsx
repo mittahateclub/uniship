@@ -3,10 +3,11 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, addDoc, deleteDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { db, storage } from '@/lib/firebase';
 import Link from 'next/link';
-import { FileText, ArrowLeft, Download, Pencil, X, Save } from 'lucide-react';
+import { FileText, ArrowLeft, Download, Pencil, X, Save, Upload, ExternalLink, Trash2 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -26,6 +27,9 @@ interface ResumeData {
   extracurriculars: string;
   achievements: string;
   targetCompany?: string;
+  uploadedFileUrl?: string;
+  uploadedFileName?: string;
+  uploadedFileType?: string;
   updatedAt?: any;
 }
 
@@ -318,6 +322,10 @@ export default function DownloadResume() {
   const [loading, setLoading]               = useState(true);
   const [isDownloading, setIsDownloading]   = useState(false);
   const [isSaving, setIsSaving]             = useState(false);
+  const [isUploading, setIsUploading]       = useState(false);
+  const [isDeleting, setIsDeleting]         = useState<string | null>(null);
+  const [isDragOver, setIsDragOver]         = useState(false);
+  const [uploadError, setUploadError]       = useState('');
   const [resumes, setResumes]               = useState<ResumeData[]>([]);
   const [selectedResume, setSelectedResume] = useState<ResumeData | null>(null);
 
@@ -383,6 +391,82 @@ export default function DownloadResume() {
     }
   };
 
+  const handleUploadPreviousResume = async (file: File) => {
+    if (!user || !user.email) return;
+
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      setUploadError('Only PDF, DOC, and DOCX files are allowed.');
+      return;
+    }
+
+    if (file.size > 6 * 1024 * 1024) {
+      setUploadError('File size must be under 6MB.');
+      return;
+    }
+
+    setUploadError('');
+    setIsUploading(true);
+    try {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `uploaded_resumes/${user.uid}/${Date.now()}-${safeName}`;
+      const storageRef = ref(storage, path);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+
+      const emptyResume: Omit<ResumeData, 'id'> = {
+        fullName: '',
+        phone: '',
+        email: user.email,
+        website: '',
+        github: '',
+        linkedin: '',
+        education: '',
+        experience: '',
+        skills: '',
+        projects: '',
+        coursework: '',
+        extracurriculars: '',
+        achievements: '',
+        targetCompany: 'Uploaded Resume',
+        uploadedFileUrl: url,
+        uploadedFileName: file.name,
+        uploadedFileType: file.type,
+      };
+
+      const created = await addDoc(collection(db, 'resumes'), {
+        ...emptyResume,
+        userId: user.uid,
+        userEmail: user.email,
+        updatedAt: serverTimestamp(),
+      });
+
+      const newItem: ResumeData = {
+        ...emptyResume,
+        id: created.id,
+        updatedAt: { seconds: Math.floor(Date.now() / 1000) },
+      };
+
+      setResumes(prev => [newItem, ...prev]);
+    } catch (err) {
+      console.error('Upload failed:', err);
+      const code = (err as any)?.code ? String((err as any).code) : '';
+      if (code.includes('permission-denied') || code.includes('unauthorized')) {
+        setUploadError(`Upload blocked by Firebase rules (${code || 'unknown'}).`);
+      } else {
+        setUploadError(`Failed to upload resume${code ? ` (${code})` : ''}. Please try again.`);
+      }
+    } finally {
+      setIsUploading(false);
+      setIsDragOver(false);
+    }
+  };
+
   const handleDownloadPDF = async () => {
     const element = document.getElementById('resume-pdf-container');
     if (!element || !draft) return;
@@ -405,6 +489,40 @@ export default function DownloadResume() {
     }
   };
 
+  const handleDeleteResume = async (resume: ResumeData) => {
+    if (!resume.id) return;
+
+    const confirmed = window.confirm('Delete this resume permanently? This action cannot be undone.');
+    if (!confirmed) return;
+
+    setIsDeleting(resume.id);
+    try {
+      if (resume.uploadedFileUrl) {
+        try {
+          await deleteObject(ref(storage, resume.uploadedFileUrl));
+        } catch (storageErr: any) {
+          const code = String(storageErr?.code || '');
+          // Continue doc deletion when storage file is already gone.
+          if (!code.includes('object-not-found')) throw storageErr;
+        }
+      }
+
+      await deleteDoc(doc(db, 'resumes', resume.id));
+      setResumes(prev => prev.filter(r => r.id !== resume.id));
+
+      if (selectedResume?.id === resume.id) {
+        setSelectedResume(null);
+        setDraft(null);
+        setEditOpen(false);
+      }
+    } catch (err) {
+      console.error('Error deleting resume:', err);
+      alert('Failed to delete resume. Please try again.');
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
   // ── Loading ──
   if (loading) {
     return (
@@ -414,24 +532,59 @@ export default function DownloadResume() {
     );
   }
 
-  // ── Empty ──
-  if (resumes.length === 0) {
-    return (
-      <div className="animate-fade-in flex flex-col items-center justify-center py-24">
-        <h1 className="text-xl font-semibold mb-3">No Resumes Found</h1>
-        <p className="text-[var(--text-tertiary)] text-sm mb-6">You haven&apos;t generated or saved any resumes yet.</p>
-        <Link href="/user/resume" className="btn-primary px-6 py-2.5 text-sm font-semibold">
-          Go to Builder
-        </Link>
-      </div>
-    );
-  }
-
   // ── Resume List ──
   if (!selectedResume) {
     return (
       <div className="animate-fade-in">
         <div className="max-w-6xl mx-auto">
+          <div className="window p-6 mb-6">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Easy upload resumes manually</h2>
+              <p className="text-[var(--text-tertiary)] text-sm mt-1">One click OR drag and drop candidate&apos;s resumes.</p>
+            </div>
+
+            <label
+              htmlFor="previous-resume-upload"
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragOver(true);
+              }}
+              onDragLeave={() => setIsDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDragOver(false);
+                const file = e.dataTransfer.files?.[0];
+                if (file) handleUploadPreviousResume(file);
+              }}
+              className={`block rounded-lg border-2 border-dashed p-8 text-center cursor-pointer transition-colors ${
+                isDragOver ? 'border-[#5E6AD2] bg-[#5E6AD2]/10' : 'border-[#5E6AD2]/40 bg-[var(--bg-elevated)]'
+              }`}
+            >
+              <input
+                id="previous-resume-upload"
+                type="file"
+                accept=".pdf,.doc,.docx"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleUploadPreviousResume(file);
+                  e.currentTarget.value = '';
+                }}
+              />
+              <div className="mx-auto w-16 h-16 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] flex items-center justify-center mb-3">
+                <Upload size={22} className="text-[var(--text-secondary)]" />
+              </div>
+              <p className="text-sm font-semibold text-[var(--text-primary)]">
+                {isUploading ? 'Uploading...' : 'Drop your resume here or click to upload'}
+              </p>
+              <p className="text-xs text-[var(--text-faint)] mt-1">Accepted formats: PDF, DOC, DOCX (max 6MB)</p>
+            </label>
+
+            {uploadError && (
+              <p className="text-xs text-[#F54E00] mt-3">{uploadError}</p>
+            )}
+          </div>
+
           <div className="flex justify-between items-end mb-8 border-b border-[var(--border-subtle)] pb-5">
             <div>
               <h1 className="text-2xl font-semibold tracking-[-0.02em]">My Resumes</h1>
@@ -444,6 +597,16 @@ export default function DownloadResume() {
               + Create New
             </Link>
           </div>
+
+          {resumes.length === 0 && (
+            <div className="window p-8 text-center mb-6">
+              <h3 className="text-lg font-semibold mb-2">No resumes found yet</h3>
+              <p className="text-[var(--text-tertiary)] text-sm mb-5">Upload your previous resume above or create a new one from the builder.</p>
+              <Link href="/user/resume" className="btn-primary px-5 py-2.5 text-sm font-semibold inline-block">
+                Go to Builder
+              </Link>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {resumes.map((resume, idx) => (
@@ -467,12 +630,46 @@ export default function DownloadResume() {
                     <span className="text-[var(--text-muted)] uppercase text-[10px]">For: </span>
                     {resume.targetCompany || 'General Resume'}
                     {resume.fullName ? ` · ${resume.fullName}` : ''}
+                    {!resume.fullName && resume.uploadedFileName ? ` · ${resume.uploadedFileName}` : ''}
                   </p>
                 </div>
-                <button onClick={() => handleSelect(resume)}
-                  className="btn-secondary w-full py-2.5 text-xs font-semibold">
-                  View & Export
-                </button>
+                {resume.uploadedFileUrl && !resume.fullName ? (
+                  <div className="flex gap-2">
+                    <a
+                      href={resume.uploadedFileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-secondary w-full py-2.5 text-xs font-semibold inline-flex items-center justify-center gap-1.5"
+                    >
+                      <ExternalLink size={13} /> Open Uploaded File
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteResume(resume)}
+                      disabled={isDeleting === resume.id}
+                      className="btn-secondary px-3 py-2.5 text-xs font-semibold text-[#F54E00] border-[#F54E00]/30 disabled:opacity-50"
+                      title="Delete resume"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <button onClick={() => handleSelect(resume)}
+                      className="btn-secondary w-full py-2.5 text-xs font-semibold">
+                      View & Export
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteResume(resume)}
+                      disabled={isDeleting === resume.id}
+                      className="btn-secondary px-3 py-2.5 text-xs font-semibold text-[#F54E00] border-[#F54E00]/30 disabled:opacity-50"
+                      title="Delete resume"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -498,6 +695,18 @@ export default function DownloadResume() {
         </div>
 
         <div className="flex gap-2">
+          {/* Delete selected */}
+          {selectedResume && (
+            <button
+              onClick={() => handleDeleteResume(selectedResume)}
+              disabled={isDeleting === selectedResume.id}
+              className="btn-secondary flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-[#F54E00] border-[#F54E00]/30 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Trash2 size={13} />
+              {isDeleting === selectedResume.id ? 'Deleting…' : 'Delete Resume'}
+            </button>
+          )}
+
           {/* Toggle editor */}
           <button
             onClick={() => setEditOpen(o => !o)}

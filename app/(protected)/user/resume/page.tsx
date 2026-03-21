@@ -417,6 +417,7 @@ export default function ResumeBuilder() {
         targetCompany: companyName || 'General Resume',
         keywords,
         updatedAt:     serverTimestamp(),
+        userId:        user.uid,
         userEmail:     user.email,
       });
       alert('Resume saved! You can view it in the Export page.');
