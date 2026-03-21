@@ -497,13 +497,18 @@ export default function DownloadResume() {
 
     setIsDeleting(resume.id);
     try {
+      let storageDeleteWarning = '';
+
       if (resume.uploadedFileUrl) {
         try {
           await deleteObject(ref(storage, resume.uploadedFileUrl));
         } catch (storageErr: any) {
           const code = String(storageErr?.code || '');
-          // Continue doc deletion when storage file is already gone.
-          if (!code.includes('object-not-found')) throw storageErr;
+          // Never block resume deletion because of storage cleanup failures.
+          if (!code.includes('object-not-found')) {
+            storageDeleteWarning = code || 'storage-delete-failed';
+            console.warn('Storage cleanup warning:', storageErr);
+          }
         }
       }
 
@@ -515,9 +520,14 @@ export default function DownloadResume() {
         setDraft(null);
         setEditOpen(false);
       }
+
+      if (storageDeleteWarning) {
+        alert(`Resume deleted, but file cleanup in storage failed (${storageDeleteWarning}).`);
+      }
     } catch (err) {
       console.error('Error deleting resume:', err);
-      alert('Failed to delete resume. Please try again.');
+      const code = String((err as any)?.code || '');
+      alert(`Failed to delete resume${code ? ` (${code})` : ''}. Please try again.`);
     } finally {
       setIsDeleting(null);
     }

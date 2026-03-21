@@ -40,7 +40,10 @@ export default function ReviewGeneratedQuestions() {
     setPublishing(true);
     try {
       await updateDoc(doc(db, 'tests', id as string), {
-        published: true, publishedAt: new Date().toISOString(), publishedBy: user?.uid
+        approved: true,
+        published: true,
+        publishedAt: new Date().toISOString(),
+        publishedBy: user?.uid,
       });
       alert("Test published successfully!");
       router.push('/uniadmin/tests');

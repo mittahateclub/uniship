@@ -30,6 +30,7 @@ export default function CreateTestPage() {
   const [endAmPm, setEndAmPm] = useState<'AM' | 'PM'>('AM');
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
+  const [createdTestId, setCreatedTestId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -61,6 +62,7 @@ export default function CreateTestPage() {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
       setStatus({ type: '', message: '' });
+      setCreatedTestId(null);
     }
   };
 
@@ -115,10 +117,11 @@ export default function CreateTestPage() {
       });
 
       if (result.success) {
-        setStatus({ type: 'success', message: 'Test generated and saved!' });
-        setTimeout(() => router.push('/uniadmin/dashboard'), 2000);
+        setStatus({ type: 'success', message: 'Uploaded PDF successfully. Please approve the test before students can take it.' });
+        setCreatedTestId(result.id || null);
       } else {
         setStatus({ type: 'error', message: result.error });
+        setCreatedTestId(null);
       }
     } catch (err: any) {
       setStatus({ type: 'error', message: err.message });
@@ -148,6 +151,26 @@ export default function CreateTestPage() {
             : 'bg-[#5E6AD2]/10 text-[#5E6AD2] border-[#5E6AD2]/20'
           }`}>
             {status.message}
+          </div>
+        )}
+        {status.type === 'success' && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => router.push('/uniadmin/tests')}
+              className="btn-secondary text-[12px] px-3 py-1.5"
+            >
+              Go to Manage Tests
+            </button>
+            {createdTestId && (
+              <button
+                type="button"
+                onClick={() => router.push(`/uniadmin/tests/review/${createdTestId}`)}
+                className="btn-primary text-[12px] px-3 py-1.5"
+              >
+                Open Review & Approve
+              </button>
+            )}
           </div>
         )}
         <form onSubmit={handleGenerate} className="space-y-4">

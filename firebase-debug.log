@@ -1,0 +1,40 @@
+[debug] [2026-03-21T09:22:49.736Z] ----------------------------------------------------------------------
+[debug] [2026-03-21T09:22:49.741Z] Command:       /usr/local/bin/node /usr/local/bin/firebase deploy --only firestore:rules
+[debug] [2026-03-21T09:22:49.741Z] CLI Version:   15.5.1
+[debug] [2026-03-21T09:22:49.741Z] Platform:      darwin
+[debug] [2026-03-21T09:22:49.741Z] Node Version:  v22.16.0
+[debug] [2026-03-21T09:22:49.742Z] Time:          Sat Mar 21 2026 14:52:49 GMT+0530 (India Standard Time)
+[debug] [2026-03-21T09:22:49.742Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-03-21T09:22:50.656Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-03-21T09:22:50.656Z] > authorizing via signed-in user (dibzhost@gmail.com)
+[debug] [2026-03-21T09:22:50.656Z] [iam] checking project uniship-4c1a1 for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]
+[debug] [2026-03-21T09:22:50.657Z] Checked if tokens are valid: false, expires at: 1774085652839
+[debug] [2026-03-21T09:22:50.657Z] Checked if tokens are valid: false, expires at: 1774085652839
+[debug] [2026-03-21T09:22:50.657Z] > refreshing access token with scopes: []
+[debug] [2026-03-21T09:22:50.658Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-03-21T09:22:50.658Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-03-21T09:22:51.007Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-03-21T09:22:51.007Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-03-21T09:22:51.026Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions [none]
+[debug] [2026-03-21T09:22:51.026Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions  x-goog-user-project=uniship-4c1a1
+[debug] [2026-03-21T09:22:51.026Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[debug] [2026-03-21T09:22:52.535Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions 200
+[debug] [2026-03-21T09:22:52.536Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[info] 
+[info] === Deploying to 'uniship-4c1a1'...
+[info] 
+[info] i  deploying firestore 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[debug] [2026-03-21T09:22:52.538Z] Checked if tokens are valid: true, expires at: 1774088570007
+[debug] [2026-03-21T09:22:52.538Z] Checked if tokens are valid: true, expires at: 1774088570007
+[debug] [2026-03-21T09:22:52.538Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/uniship-4c1a1/databases/(default) [none]
+[debug] [2026-03-21T09:22:52.774Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/uniship-4c1a1/databases/(default) 200
+[debug] [2026-03-21T09:22:52.774Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/uniship-4c1a1/databases/(default) {"name":"projects/uniship-4c1a1/databases/(default)","uid":"d828d889-dd5a-41b2-b117-0b6fc92aee2b","createTime":"2025-08-16T14:36:21.760387Z","updateTime":"2025-08-16T14:36:21.760387Z","locationId":"asia-south1","type":"FIRESTORE_NATIVE","concurrencyMode":"PESSIMISTIC","versionRetentionPeriod":"3600s","earliestVersionTime":"2026-03-21T08:22:52.775348Z","appEngineIntegrationMode":"DISABLED","keyPrefix":"j","pointInTimeRecoveryEnablement":"POINT_IN_TIME_RECOVERY_DISABLED","deleteProtectionState":"DELETE_PROTECTION_DISABLED","databaseEdition":"STANDARD","freeTier":true,"realtimeUpdatesMode":"REALTIME_UPDATES_MODE_ENABLED","etag":"IPuJ6sTVsJMDMPO4rZji4ZID"}
+[info] i  firestore: reading indexes from firestore.indexes.json... 
+[info] i  cloud.firestore: checking firestore.rules for compilation errors... 
+[debug] [2026-03-21T09:22:52.776Z] Checked if tokens are valid: true, expires at: 1774088570007
+[debug] [2026-03-21T09:22:52.776Z] Checked if tokens are valid: true, expires at: 1774088570007
+[debug] [2026-03-21T09:22:52.776Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/uniship-4c1a1:test [none]
+[debug] [2026-03-21T09:22:52.776Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/uniship-4c1a1:test [omitted]

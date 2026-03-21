@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, getDocs, where } from 'firebase/firestore';
+import { collection, query, getDocs, where, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
 import { FileText, Clock, HelpCircle, Tag, ArrowRight, Calendar } from 'lucide-react';
@@ -17,6 +17,7 @@ interface Test {
   examStart?: string;
   examEnd?: string;
   approved?: boolean;
+  published?: boolean;
 }
 
 export default function TestPortal() {
@@ -28,13 +29,37 @@ export default function TestPortal() {
     async function fetchTests() {
       if (!user) return;
       try {
-        const q = query(collection(db, 'tests'), where('approved', '==', true));
-        const querySnapshot = await getDocs(q);
-        const fetchedTests = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Test[];
-        setTests(fetchedTests);
+        const userSnap = await getDoc(doc(db, 'users', user.uid));
+        const universityId = userSnap.data()?.universityId;
+        if (!universityId) {
+          setTests([]);
+          return;
+        }
+
+        const [approvedSnapshot, publishedSnapshot] = await Promise.all([
+          getDocs(query(
+            collection(db, 'tests'),
+            where('universityId', '==', universityId),
+            where('approved', '==', true),
+          )).catch(() => ({ docs: [] } as any)),
+          getDocs(query(
+            collection(db, 'tests'),
+            where('universityId', '==', universityId),
+            where('published', '==', true),
+          )).catch(() => ({ docs: [] } as any)),
+        ]);
+
+        const merged = new Map<string, Test>();
+
+        approvedSnapshot.docs.forEach((docSnap: any) => {
+          merged.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as Test);
+        });
+
+        publishedSnapshot.docs.forEach((docSnap: any) => {
+          merged.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as Test);
+        });
+
+        setTests(Array.from(merged.values()));
       } catch (error) {
         console.error("Error fetching tests:", error);
       } finally {

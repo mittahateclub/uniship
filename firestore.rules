@@ -73,9 +73,9 @@ service cloud.firestore {
     }
 
     match /tests/{testId} {
-      // Students can only read approved tests from their own university.
+      // Students can read approved/published tests from their own university.
       allow read: if isStudent() &&
-                  resource.data.approved == true &&
+                  (resource.data.approved == true || resource.data.published == true) &&
                   belongsToSameUniversity(resource.data.universityId);
 
       // Uni admins and super admins can read tests in-scope.
