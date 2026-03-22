@@ -383,7 +383,7 @@ export default function Home() {
           </div>
 
           <div className="hero-right">
-            <div className="resume-widget" id="resumeWidget">
+            <div className="resume-widget sketch-widget" id="resumeWidget">
               <div className="rw-score" id="rwScore">
                 <svg width="52" height="52" viewBox="0 0 52 52">
                   <circle cx="26" cy="26" r="22" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
@@ -940,6 +940,10 @@ export default function Home() {
           animation: fadeUp 0.8s 0.2s ease both;
         }
 
+        .sketch-widget {
+          filter: contrast(1.03) saturate(0.9);
+        }
+
         .rw-score {
           position: absolute;
           top: -24px;
@@ -947,8 +951,8 @@ export default function Home() {
           z-index: 10;
           width: 80px;
           height: 80px;
-          background: #0f0f0f;
-          border: 1px solid rgba(232,81,10,0.35);
+          background: #171514;
+          border: 1.5px dashed rgba(232,81,10,0.42);
           border-radius: 16px;
           display: flex;
           align-items: center;
@@ -991,8 +995,8 @@ export default function Home() {
           top: -16px;
           right: -20px;
           z-index: 10;
-          background: #0f0f0f;
-          border: 1px solid rgba(232,81,10,0.4);
+          background: #171514;
+          border: 1.5px dashed rgba(232,81,10,0.46);
           border-radius: 12px;
           padding: 10px 14px;
           display: flex;
@@ -1035,15 +1039,27 @@ export default function Home() {
         .rw-card {
           width: 100%;
           height: 100%;
-          background: linear-gradient(145deg, #181818 0%, #111 100%);
-          border: 1px solid rgba(255,255,255,0.09);
+          background:
+            repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 22px),
+            repeating-linear-gradient(90deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 22px),
+            #141312;
+          border: 1.5px dashed rgba(255,255,255,0.24);
           border-radius: 16px;
           position: relative;
           overflow: hidden;
           transform-style: preserve-3d;
           transition: transform 0.08s linear, box-shadow 0.3s;
-          box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(232,81,10,0.06);
+          box-shadow: 10px 12px 0 rgba(0,0,0,0.34), 0 20px 54px rgba(0,0,0,0.5), 0 0 0 1px rgba(232,81,10,0.08);
           cursor: grab;
+        }
+
+        .rw-card::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: repeating-linear-gradient(-18deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 9px);
+          opacity: 0.18;
+          pointer-events: none;
         }
 
         .rw-card:active {
@@ -1063,7 +1079,7 @@ export default function Home() {
           top: 0;
           left: 0;
           right: 0;
-          height: 3px;
+          height: 2px;
           background: linear-gradient(90deg, #E8510A, #FF9340);
           border-radius: 16px 16px 0 0;
         }
@@ -1090,29 +1106,29 @@ export default function Home() {
         .rw-corner.tl {
           top: 10px;
           left: 10px;
-          border-top: 1.5px solid rgba(255,255,255,0.15);
-          border-left: 1.5px solid rgba(255,255,255,0.15);
+          border-top: 1.5px dashed rgba(255,255,255,0.24);
+          border-left: 1.5px dashed rgba(255,255,255,0.24);
         }
 
         .rw-corner.tr {
           top: 10px;
           right: 10px;
-          border-top: 1.5px solid rgba(255,255,255,0.15);
-          border-right: 1.5px solid rgba(255,255,255,0.15);
+          border-top: 1.5px dashed rgba(255,255,255,0.24);
+          border-right: 1.5px dashed rgba(255,255,255,0.24);
         }
 
         .rw-corner.bl {
           bottom: 10px;
           left: 10px;
-          border-bottom: 1.5px solid rgba(255,255,255,0.15);
-          border-left: 1.5px solid rgba(255,255,255,0.15);
+          border-bottom: 1.5px dashed rgba(255,255,255,0.24);
+          border-left: 1.5px dashed rgba(255,255,255,0.24);
         }
 
         .rw-corner.br {
           bottom: 10px;
           right: 10px;
-          border-bottom: 1.5px solid rgba(255,255,255,0.15);
-          border-right: 1.5px solid rgba(255,255,255,0.15);
+          border-bottom: 1.5px dashed rgba(255,255,255,0.24);
+          border-right: 1.5px dashed rgba(255,255,255,0.24);
         }
 
         .rw-header {
@@ -1179,7 +1195,8 @@ export default function Home() {
           display: flex;
           gap: 4px;
           margin-bottom: 12px;
-          background: rgba(255,255,255,0.03);
+          background: rgba(255,255,255,0.02);
+          border: 1px dashed rgba(255,255,255,0.13);
           border-radius: 8px;
           padding: 3px;
         }
@@ -1227,7 +1244,7 @@ export default function Home() {
           align-items: center;
           padding: 9px 10px;
           border-radius: 8px;
-          border: 1px solid transparent;
+          border: 1px dashed rgba(255,255,255,0.08);
           background: rgba(255,255,255,0.025);
           transition: all 0.2s;
           cursor: pointer;
@@ -1235,7 +1252,7 @@ export default function Home() {
 
         .rw-entry:hover {
           background: rgba(232,81,10,0.07);
-          border-color: rgba(232,81,10,0.2);
+          border-color: rgba(232,81,10,0.35);
           transform: translateX(3px);
         }
 
@@ -1298,7 +1315,7 @@ export default function Home() {
         .rw-skill-bar-wrap {
           margin-top: 10px;
           background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.06);
+          border: 1px dashed rgba(255,255,255,0.18);
           border-radius: 8px;
           padding: 10px 12px;
           animation: tabIn 0.2s ease both;
@@ -1342,8 +1359,8 @@ export default function Home() {
           width: 100%;
           padding: 11px;
           border-radius: 9px;
-          background: linear-gradient(135deg, rgba(232,81,10,0.15), rgba(232,81,10,0.08));
-          border: 1px solid rgba(232,81,10,0.35);
+          background: rgba(232,81,10,0.1);
+          border: 1.5px dashed rgba(232,81,10,0.46);
           color: #FF6B2B;
           font-weight: 700;
           font-size: 0.78rem;
@@ -1406,9 +1423,9 @@ export default function Home() {
         }
 
         [data-theme='light'] .rw-score {
-          background: #fff7ef;
-          border-color: rgba(232,81,10,0.45);
-          box-shadow: 0 8px 32px rgba(232,81,10,0.14), 0 0 0 1px rgba(31,26,20,0.06);
+          background: #fff8ef;
+          border-color: rgba(232,81,10,0.5);
+          box-shadow: 0 8px 30px rgba(232,81,10,0.13), 0 0 0 1px rgba(31,26,20,0.06);
         }
 
         [data-theme='light'] .rw-score svg circle:first-child {
@@ -1434,16 +1451,24 @@ export default function Home() {
         }
 
         [data-theme='light'] .rw-card {
-          background: linear-gradient(145deg, #fffaf4 0%, #f7ecdf 100%);
-          border-color: rgba(31,26,20,0.13);
-          box-shadow: 0 24px 60px rgba(31,26,20,0.14), 0 0 0 1px rgba(232,81,10,0.1);
+          background:
+            repeating-linear-gradient(0deg, rgba(31,26,20,0.055) 0 1px, transparent 1px 22px),
+            repeating-linear-gradient(90deg, rgba(31,26,20,0.04) 0 1px, transparent 1px 22px),
+            #fdf6eb;
+          border-color: rgba(31,26,20,0.28);
+          box-shadow: 8px 10px 0 rgba(31,26,20,0.14), 0 16px 44px rgba(31,26,20,0.12), 0 0 0 1px rgba(232,81,10,0.1);
+        }
+
+        [data-theme='light'] .rw-card::before {
+          background: repeating-linear-gradient(-18deg, rgba(31,26,20,0.06) 0 1px, transparent 1px 9px);
+          opacity: 0.2;
         }
 
         [data-theme='light'] .rw-corner.tl,
         [data-theme='light'] .rw-corner.tr,
         [data-theme='light'] .rw-corner.bl,
         [data-theme='light'] .rw-corner.br {
-          border-color: rgba(31,26,20,0.2);
+          border-color: rgba(31,26,20,0.32);
         }
 
         [data-theme='light'] .rw-name {
@@ -1457,7 +1482,8 @@ export default function Home() {
         }
 
         [data-theme='light'] .rw-tabs {
-          background: rgba(31,26,20,0.05);
+          background: rgba(31,26,20,0.04);
+          border-color: rgba(31,26,20,0.2);
         }
 
         [data-theme='light'] .rw-tab:hover:not(.active) {
@@ -1467,6 +1493,7 @@ export default function Home() {
 
         [data-theme='light'] .rw-entry {
           background: rgba(31,26,20,0.03);
+          border-color: rgba(31,26,20,0.14);
         }
 
         [data-theme='light'] .rw-entry-title,
@@ -1482,7 +1509,7 @@ export default function Home() {
 
         [data-theme='light'] .rw-skill-bar-wrap {
           background: rgba(31,26,20,0.03);
-          border-color: rgba(31,26,20,0.1);
+          border-color: rgba(31,26,20,0.18);
         }
 
         [data-theme='light'] .rw-skill-bar-track {
