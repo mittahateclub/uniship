@@ -1405,6 +1405,94 @@ export default function Home() {
           animation: fadeUp 1s 0.6s ease both;
         }
 
+        [data-theme='light'] .rw-score {
+          background: #fff7ef;
+          border-color: rgba(232,81,10,0.45);
+          box-shadow: 0 8px 32px rgba(232,81,10,0.14), 0 0 0 1px rgba(31,26,20,0.06);
+        }
+
+        [data-theme='light'] .rw-score svg circle:first-child {
+          stroke: rgba(31,26,20,0.14);
+        }
+
+        [data-theme='light'] .rw-score-label {
+          color: rgba(31,26,20,0.45);
+        }
+
+        [data-theme='light'] .rw-ai-card {
+          background: #fff7ef;
+          border-color: rgba(232,81,10,0.4);
+          box-shadow: 0 8px 28px rgba(232,81,10,0.12), 0 0 0 1px rgba(31,26,20,0.05);
+        }
+
+        [data-theme='light'] .rw-ai-title {
+          color: #1F1A14;
+        }
+
+        [data-theme='light'] .rw-ai-body {
+          color: #655C51;
+        }
+
+        [data-theme='light'] .rw-card {
+          background: linear-gradient(145deg, #fffaf4 0%, #f7ecdf 100%);
+          border-color: rgba(31,26,20,0.13);
+          box-shadow: 0 24px 60px rgba(31,26,20,0.14), 0 0 0 1px rgba(232,81,10,0.1);
+        }
+
+        [data-theme='light'] .rw-corner.tl,
+        [data-theme='light'] .rw-corner.tr,
+        [data-theme='light'] .rw-corner.bl,
+        [data-theme='light'] .rw-corner.br {
+          border-color: rgba(31,26,20,0.2);
+        }
+
+        [data-theme='light'] .rw-name {
+          color: #1F1A14;
+        }
+
+        [data-theme='light'] .rw-location,
+        [data-theme='light'] .rw-tab,
+        [data-theme='light'] .rw-entry-sub {
+          color: #655C51;
+        }
+
+        [data-theme='light'] .rw-tabs {
+          background: rgba(31,26,20,0.05);
+        }
+
+        [data-theme='light'] .rw-tab:hover:not(.active) {
+          color: #1F1A14;
+          background: rgba(31,26,20,0.05);
+        }
+
+        [data-theme='light'] .rw-entry {
+          background: rgba(31,26,20,0.03);
+        }
+
+        [data-theme='light'] .rw-entry-title,
+        [data-theme='light'] .rw-skill-bar-label {
+          color: #1F1A14;
+        }
+
+        [data-theme='light'] .rw-skill {
+          color: rgba(31,26,20,0.62);
+          background: rgba(232,81,10,0.09);
+          border-color: rgba(232,81,10,0.24);
+        }
+
+        [data-theme='light'] .rw-skill-bar-wrap {
+          background: rgba(31,26,20,0.03);
+          border-color: rgba(31,26,20,0.1);
+        }
+
+        [data-theme='light'] .rw-skill-bar-track {
+          background: rgba(31,26,20,0.08);
+        }
+
+        [data-theme='light'] .rw-drag-hint {
+          color: #8A7E6F;
+        }
+
         .btn-primary {
           background: var(--orange);
           color: #fff;
