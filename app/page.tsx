@@ -941,7 +941,7 @@ export default function Home() {
         }
 
         .sketch-widget {
-          filter: contrast(1.03) saturate(0.9);
+          filter: sepia(0.1) saturate(0.7) contrast(1.12);
         }
 
         .rw-score {
@@ -953,17 +953,18 @@ export default function Home() {
           height: 80px;
           background: #171514;
           border: 1.5px dashed rgba(232,81,10,0.42);
-          border-radius: 16px;
+          border-radius: 14px;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 8px 32px rgba(232,81,10,0.15);
+          box-shadow: 5px 6px 0 rgba(0,0,0,0.24), 0 10px 26px rgba(0,0,0,0.3);
+          transform: rotate(-2deg);
           transition: transform 0.3s, box-shadow 0.3s;
         }
 
         .rw-score:hover {
-          transform: scale(1.07) translateY(-3px);
-          box-shadow: 0 16px 40px rgba(232,81,10,0.25);
+          transform: rotate(-2deg) scale(1.04) translateY(-2px);
+          box-shadow: 7px 9px 0 rgba(0,0,0,0.28), 0 14px 32px rgba(0,0,0,0.34);
         }
 
         .rw-score svg {
@@ -997,20 +998,21 @@ export default function Home() {
           z-index: 10;
           background: #171514;
           border: 1.5px dashed rgba(232,81,10,0.46);
-          border-radius: 12px;
+          border-radius: 10px;
           padding: 10px 14px;
           display: flex;
           align-items: center;
           gap: 10px;
           min-width: 185px;
-          box-shadow: 0 8px 32px rgba(232,81,10,0.12);
+          box-shadow: 4px 6px 0 rgba(0,0,0,0.22), 0 8px 24px rgba(0,0,0,0.28);
+          transform: rotate(1.5deg);
           animation: floatCard 4s ease-in-out infinite;
         }
 
         .rw-ai-icon {
           font-size: 1rem;
           color: #E8510A;
-          animation: spinGlow 3s linear infinite;
+          animation: pulse 2.1s ease-in-out infinite;
         }
 
         .rw-ai-title {
@@ -1040,8 +1042,9 @@ export default function Home() {
           width: 100%;
           height: 100%;
           background:
-            repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 22px),
-            repeating-linear-gradient(90deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 22px),
+            repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 19px),
+            repeating-linear-gradient(90deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 19px),
+            radial-gradient(circle at 30% 20%, rgba(255,255,255,0.06), transparent 60%),
             #141312;
           border: 1.5px dashed rgba(255,255,255,0.24);
           border-radius: 16px;
@@ -1049,7 +1052,7 @@ export default function Home() {
           overflow: hidden;
           transform-style: preserve-3d;
           transition: transform 0.08s linear, box-shadow 0.3s;
-          box-shadow: 10px 12px 0 rgba(0,0,0,0.34), 0 20px 54px rgba(0,0,0,0.5), 0 0 0 1px rgba(232,81,10,0.08);
+          box-shadow: 14px 16px 0 rgba(0,0,0,0.32), 0 22px 48px rgba(0,0,0,0.45), 0 0 0 1px rgba(232,81,10,0.06);
           cursor: grab;
         }
 
@@ -1058,7 +1061,17 @@ export default function Home() {
           position: absolute;
           inset: 0;
           background: repeating-linear-gradient(-18deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 9px);
-          opacity: 0.18;
+          opacity: 0.22;
+          pointer-events: none;
+        }
+
+        .rw-card::after {
+          content: '';
+          position: absolute;
+          inset: 6px;
+          border: 1.25px dashed rgba(255,255,255,0.2);
+          border-radius: 12px;
+          opacity: 0.5;
           pointer-events: none;
         }
 
@@ -1080,7 +1093,7 @@ export default function Home() {
           left: 0;
           right: 0;
           height: 2px;
-          background: linear-gradient(90deg, #E8510A, #FF9340);
+          background: linear-gradient(90deg, rgba(232,81,10,0.95), rgba(255,147,64,0.7));
           border-radius: 16px 16px 0 0;
         }
 
@@ -1196,7 +1209,7 @@ export default function Home() {
           gap: 4px;
           margin-bottom: 12px;
           background: rgba(255,255,255,0.02);
-          border: 1px dashed rgba(255,255,255,0.13);
+          border: 1px dashed rgba(255,255,255,0.2);
           border-radius: 8px;
           padding: 3px;
         }
@@ -1216,9 +1229,9 @@ export default function Home() {
         }
 
         .rw-tab.active {
-          background: rgba(232,81,10,0.15);
+          background: rgba(232,81,10,0.12);
           color: #FF6B2B;
-          box-shadow: 0 1px 6px rgba(232,81,10,0.15);
+          box-shadow: inset 0 0 0 1px rgba(232,81,10,0.35);
         }
 
         .rw-tab:hover:not(.active) {
@@ -1245,13 +1258,13 @@ export default function Home() {
           padding: 9px 10px;
           border-radius: 8px;
           border: 1px dashed rgba(255,255,255,0.08);
-          background: rgba(255,255,255,0.025);
+          background: rgba(255,255,255,0.02);
           transition: all 0.2s;
           cursor: pointer;
         }
 
         .rw-entry:hover {
-          background: rgba(232,81,10,0.07);
+          background: rgba(232,81,10,0.06);
           border-color: rgba(232,81,10,0.35);
           transform: translateX(3px);
         }
@@ -1272,7 +1285,7 @@ export default function Home() {
           font-size: 0.6rem;
           font-weight: 700;
           background: rgba(232,81,10,0.12);
-          border: 1px solid rgba(232,81,10,0.25);
+          border: 1px dashed rgba(232,81,10,0.4);
           color: #FF6B2B;
           border-radius: 20px;
           padding: 2px 8px;
@@ -1297,7 +1310,7 @@ export default function Home() {
           font-size: 0.72rem;
           letter-spacing: 0.01em;
           background: rgba(232,81,10,0.08);
-          border: 1px solid rgba(232,81,10,0.2);
+          border: 1px dashed rgba(232,81,10,0.34);
           color: rgba(255,255,255,0.6);
           cursor: pointer;
           transition: all 0.2s;
@@ -1305,11 +1318,11 @@ export default function Home() {
 
         .rw-skill:hover,
         .rw-skill.active {
-          background: rgba(232,81,10,0.2);
+          background: rgba(232,81,10,0.16);
           border-color: rgba(232,81,10,0.5);
           color: #FF6B2B;
           transform: translateY(-2px);
-          box-shadow: 0 4px 16px rgba(232,81,10,0.2);
+          box-shadow: 2px 3px 0 rgba(232,81,10,0.18);
         }
 
         .rw-skill-bar-wrap {
@@ -1358,7 +1371,7 @@ export default function Home() {
         .rw-generate-btn {
           width: 100%;
           padding: 11px;
-          border-radius: 9px;
+          border-radius: 7px;
           background: rgba(232,81,10,0.1);
           border: 1.5px dashed rgba(232,81,10,0.46);
           color: #FF6B2B;
@@ -1376,9 +1389,9 @@ export default function Home() {
         }
 
         .rw-generate-btn:hover {
-          background: rgba(232,81,10,0.2);
+          background: rgba(232,81,10,0.16);
           border-color: rgba(232,81,10,0.6);
-          box-shadow: 0 0 24px rgba(232,81,10,0.25);
+          box-shadow: 3px 4px 0 rgba(232,81,10,0.22);
           transform: translateY(-1px);
         }
 
@@ -1425,7 +1438,7 @@ export default function Home() {
         [data-theme='light'] .rw-score {
           background: #fff8ef;
           border-color: rgba(232,81,10,0.5);
-          box-shadow: 0 8px 30px rgba(232,81,10,0.13), 0 0 0 1px rgba(31,26,20,0.06);
+          box-shadow: 4px 5px 0 rgba(31,26,20,0.16), 0 8px 24px rgba(31,26,20,0.1);
         }
 
         [data-theme='light'] .rw-score svg circle:first-child {
@@ -1439,7 +1452,7 @@ export default function Home() {
         [data-theme='light'] .rw-ai-card {
           background: #fff7ef;
           border-color: rgba(232,81,10,0.4);
-          box-shadow: 0 8px 28px rgba(232,81,10,0.12), 0 0 0 1px rgba(31,26,20,0.05);
+          box-shadow: 4px 5px 0 rgba(31,26,20,0.14), 0 8px 20px rgba(31,26,20,0.08);
         }
 
         [data-theme='light'] .rw-ai-title {
@@ -1454,9 +1467,10 @@ export default function Home() {
           background:
             repeating-linear-gradient(0deg, rgba(31,26,20,0.055) 0 1px, transparent 1px 22px),
             repeating-linear-gradient(90deg, rgba(31,26,20,0.04) 0 1px, transparent 1px 22px),
+            radial-gradient(circle at 30% 20%, rgba(31,26,20,0.08), transparent 60%),
             #fdf6eb;
           border-color: rgba(31,26,20,0.28);
-          box-shadow: 8px 10px 0 rgba(31,26,20,0.14), 0 16px 44px rgba(31,26,20,0.12), 0 0 0 1px rgba(232,81,10,0.1);
+          box-shadow: 10px 12px 0 rgba(31,26,20,0.16), 0 16px 40px rgba(31,26,20,0.1), 0 0 0 1px rgba(232,81,10,0.1);
         }
 
         [data-theme='light'] .rw-card::before {
@@ -1494,6 +1508,12 @@ export default function Home() {
         [data-theme='light'] .rw-entry {
           background: rgba(31,26,20,0.03);
           border-color: rgba(31,26,20,0.14);
+        }
+
+        [data-theme='light'] .rw-entry-chip,
+        [data-theme='light'] .rw-skill,
+        [data-theme='light'] .rw-generate-btn {
+          border-style: dashed;
         }
 
         [data-theme='light'] .rw-entry-title,
