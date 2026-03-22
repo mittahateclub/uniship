@@ -132,8 +132,8 @@ export default function Home() {
 
     const animateScore = () => {
       const total = 138;
-      const target = 92;
-      let cur = 0;
+      const target = 99;
+      let cur = 99;
       const id = window.setInterval(() => {
         cur += 2;
         if (cur >= target) {
@@ -267,12 +267,12 @@ export default function Home() {
             generateBtn.classList.remove('loading');
             genBtnText.textContent = 'AI Optimize Resume';
             genProgress.style.width = '0%';
-            scoreNum.textContent = '97';
-            scoreArc.style.strokeDashoffset = String(138 - (138 * 97 / 100));
+            scoreNum.textContent = '99';
+            scoreArc.style.strokeDashoffset = String(138 - (138 * 99 / 100));
 
             const t2 = window.setTimeout(() => {
-              scoreNum.textContent = '92';
-              scoreArc.style.strokeDashoffset = String(138 - (138 * 92 / 100));
+              scoreNum.textContent = '99';
+              scoreArc.style.strokeDashoffset = String(138 - (138 * 99 / 100));
             }, 2000);
             timeouts.push(t2);
           }, 800);
@@ -395,15 +395,15 @@ export default function Home() {
                     stroke="#E8510A"
                     strokeWidth="3"
                     strokeDasharray="138"
-                    strokeDashoffset="138"
+                    strokeDashoffset="1.38"
                     strokeLinecap="round"
                     id="scoreArc"
                     style={{ transform: 'rotate(-90deg)', transformOrigin: 'center', transition: 'stroke-dashoffset 1.8s cubic-bezier(.4,0,.2,1)' }}
                   />
                 </svg>
+                <span className="rw-score-label">ATS SCORE</span>
                 <div className="rw-score-inner">
-                  <span className="rw-score-num" id="scoreNum">0</span>
-                  <span className="rw-score-label">MATCH</span>
+                  <span className="rw-score-num" id="scoreNum">99</span>
                 </div>
               </div>
 
@@ -949,8 +949,8 @@ export default function Home() {
           top: -24px;
           left: -36px;
           z-index: 10;
-          width: 80px;
-          height: 80px;
+          width: 92px;
+          height: 92px;
           background: #171514;
           border: 1.5px dashed rgba(232,81,10,0.42);
           border-radius: 14px;
@@ -974,21 +974,30 @@ export default function Home() {
         .rw-score-inner {
           position: relative;
           text-align: center;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .rw-score-num {
           display: block;
           font-weight: 800;
-          font-size: 1.3rem;
+          font-size: 1.45rem;
           color: #E8510A;
           line-height: 1;
         }
 
         .rw-score-label {
-          font-size: 0.5rem;
-          letter-spacing: 0.1em;
+          position: absolute;
+          top: 8px;
+          left: 50%;
+          transform: translateX(-50%);
+          font-size: 0.47rem;
+          letter-spacing: 0.07em;
           color: rgba(255,255,255,0.3);
           text-transform: uppercase;
+          white-space: nowrap;
+          font-weight: 700;
         }
 
         .rw-ai-card {
