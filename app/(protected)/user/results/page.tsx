@@ -26,6 +26,14 @@ interface TestResult {
   userId?: string;
   userEmail?: string;
   answers?: Record<string, string>;
+  questionEvaluations?: Array<{
+    index: number;
+    verdict: 'AC' | 'WA' | 'TLE' | 'CE' | 'RE' | 'UNGRADED' | 'UNANSWERED';
+    passed?: number;
+    total?: number;
+    failedCase?: number | null;
+    usedHiddenCases?: boolean;
+  }>;
   submittedAt: any;
 }
 
@@ -153,26 +161,50 @@ export default function ResultsPage() {
           let ungraded = 0;
           let unanswered = 0;
 
-          problems.forEach((problem, index) => {
-            const answer = (result.answers?.[String(index)] || '').trim();
-            const expected = getExpectedAnswer(problem);
+          const hasQuestionEvaluations = Array.isArray(result.questionEvaluations) && result.questionEvaluations.length > 0;
 
-            if (!answer) {
-              unanswered += 1;
-              return;
-            }
-            if (!expected) {
-              ungraded += 1;
-              return;
-            }
-            if (normalize(answer) === normalize(expected)) {
-              correct += 1;
-            } else {
-              incorrect += 1;
-            }
-          });
+          if (hasQuestionEvaluations) {
+            const byIndex = new Map(result.questionEvaluations!.map((entry) => [entry.index, entry]));
 
-          questionStats = { correct, incorrect, ungraded, unanswered };
+            for (let index = 0; index < problems.length; index += 1) {
+              const entry = byIndex.get(index);
+              const verdict = entry?.verdict || 'UNANSWERED';
+
+              if (verdict === 'UNANSWERED') {
+                unanswered += 1;
+              } else if (verdict === 'UNGRADED') {
+                ungraded += 1;
+              } else if (verdict === 'AC') {
+                correct += 1;
+              } else {
+                incorrect += 1;
+              }
+            }
+
+            questionStats = { correct, incorrect, ungraded, unanswered };
+          } else {
+            // Legacy fallback for old records that do not have per-question judge verdicts.
+            problems.forEach((problem, index) => {
+              const answer = (result.answers?.[String(index)] || '').trim();
+              const expected = getExpectedAnswer(problem);
+
+              if (!answer) {
+                unanswered += 1;
+                return;
+              }
+              if (!expected) {
+                ungraded += 1;
+                return;
+              }
+              if (normalize(answer) === normalize(expected)) {
+                correct += 1;
+              } else {
+                incorrect += 1;
+              }
+            });
+
+            questionStats = { correct, incorrect, ungraded, unanswered };
+          }
         }
       }
 

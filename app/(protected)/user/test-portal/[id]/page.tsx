@@ -23,6 +23,9 @@ interface Problem {
   hiddenTestCases?: Array<{ input: string; output: string }>;
   constraints?: string[];
   hints?: string[];
+  functionName?: string;
+  inputType?: string;
+  outputType?: string;
 }
 interface TestData {
   sourceFileName: string;
@@ -32,7 +35,10 @@ interface TestData {
   universityId: string;
   published: boolean;
   createdAt: string;
+  sourceType?: string;
 }
+
+type QuestionVerdict = 'AC' | 'WA' | 'TLE' | 'CE' | 'RE' | 'UNGRADED' | 'UNANSWERED';
 interface Violation {
   type: string;
   severity: 'low' | 'medium' | 'high';
@@ -78,6 +84,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   // Core state
   const [test, setTest] = useState<TestData | null>(null);
   const [phase, setPhase] = useState<Phase>('loading');
+  const isPractice = test?.sourceType === 'manual_practice';
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
@@ -101,6 +108,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
   // Refs
   const submittedRef = useRef(false);
+  const hiddenCasesRef = useRef<Array<Array<{ input: string; output: string }>>>([]);
   const violationPointsRef = useRef(0);
   const highViolationsRef = useRef(0);
   const savedThemeRef = useRef<string | null>(null);
@@ -113,6 +121,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
   // Compiler state
   const [selectedLang, setSelectedLang] = useState(71);
+  const [questionLanguages, setQuestionLanguages] = useState<Record<number, number>>({});
   const [codeStdin, setCodeStdin] = useState('');
   const [codeOutput, setCodeOutput] = useState<string | null>(null);
   const [codeError, setCodeError] = useState<string | null>(null);
@@ -136,13 +145,28 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         const docSnap = await getDoc(doc(db, 'tests', id));
         if (docSnap.exists()) {
           const data = docSnap.data() as TestData;
-          setTest(data);
+          // Stash hidden test cases in a ref (not visible in React state / devtools)
+          hiddenCasesRef.current = (data.problems || []).map(
+            (p) => (p.hiddenTestCases || [])
+          );
+          // Strip hidden cases from the state exposed to the client
+          const sanitized: TestData = {
+            ...data,
+            problems: data.problems.map(({ hiddenTestCases: _h, ...rest }) => rest),
+          };
+          setTest(sanitized);
           if (data.duration) setTimeLeft(data.duration * 60);
+          // Practice tests skip preflight/rules — go straight to rules (which will auto-skip)
+          if (data.sourceType === 'manual_practice') {
+            setPhase('rules');
+          }
         }
       } catch (error) {
         console.error('Error fetching test:', error);
       } finally {
-        setPhase('preflight');
+        if (!test || test?.sourceType !== 'manual_practice') {
+          setPhase(prev => prev === 'loading' ? 'preflight' : prev);
+        }
       }
     }
     fetchTestData();
@@ -158,28 +182,113 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
     try {
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-      const normalize = (value: string) => value.trim().replace(/\r\n/g, '\n').replace(/\s+/g, ' ').toLowerCase();
       const attemptedQuestions = Object.keys(answers).filter((k) => (answers[Number(k)] || '').trim().length > 0).length;
 
       let score = 0;
       let gradable = 0;
+      const questionEvaluations: Array<{
+        index: number;
+        verdict: QuestionVerdict;
+        passed: number;
+        total: number;
+        failedCase: number | null;
+        usedHiddenCases: boolean;
+      }> = [];
 
-      test.problems.forEach((problem, index) => {
+      for (let index = 0; index < test.problems.length; index += 1) {
+        const problem = test.problems[index];
         const answer = (answers[index] || '').trim();
-        if (!answer) return;
+        if (!answer) {
+          questionEvaluations.push({
+            index,
+            verdict: 'UNANSWERED',
+            passed: 0,
+            total: 0,
+            failedCase: null,
+            usedHiddenCases: (hiddenCasesRef.current[index] || []).length > 0,
+          });
+          continue;
+        }
 
-        const expected =
-          (problem.correctAnswer || '').trim() ||
-          (problem.expectedOutput || '').trim() ||
-          (problem.sampleTestCases?.[0]?.output || '').trim();
+        const hiddenCases = (hiddenCasesRef.current[index] || []).map((tc) => ({
+          input: tc.input,
+          expectedOutput: tc.output,
+          isHidden: true,
+        }));
+        const sampleCases = (problem.sampleTestCases || []).map((tc: any) => ({
+          input: tc.input,
+          expectedOutput: tc.output,
+          isHidden: false,
+        }));
 
-        if (!expected) return;
+        const casesForScoring = hiddenCases.length > 0 ? hiddenCases : sampleCases;
+        if (casesForScoring.length === 0) {
+          questionEvaluations.push({
+            index,
+            verdict: 'UNGRADED',
+            passed: 0,
+            total: 0,
+            failedCase: null,
+            usedHiddenCases: false,
+          });
+          continue;
+        }
 
         gradable += 1;
-        if (normalize(answer) === normalize(expected)) {
-          score += 1;
+
+        try {
+          const compileRes = await fetch('/api/compile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              mode: 'submit',
+              source_code: answer,
+              language_id: questionLanguages[index] || 71,
+              testCases: casesForScoring,
+              timeLimitSec: 2,
+              memoryLimitKb: 262144,
+    
+            }),
+          });
+
+          const compileData = await compileRes.json();
+          if (!compileRes.ok || compileData.error) {
+            questionEvaluations.push({
+              index,
+              verdict: 'RE',
+              passed: 0,
+              total: casesForScoring.length,
+              failedCase: null,
+              usedHiddenCases: hiddenCases.length > 0,
+            });
+            continue;
+          }
+
+          const verdict = (compileData.summary?.verdict || 'RE') as QuestionVerdict;
+          if (verdict === 'AC') {
+            score += 1;
+          }
+
+          questionEvaluations.push({
+            index,
+            verdict,
+            passed: compileData.summary?.passed ?? 0,
+            total: compileData.summary?.total ?? casesForScoring.length,
+            failedCase: compileData.summary?.failedCase ?? null,
+            usedHiddenCases: hiddenCases.length > 0,
+          });
+        } catch {
+          // Ignore compiler failures here; unanswered/failed compiler runs are counted as incorrect.
+          questionEvaluations.push({
+            index,
+            verdict: 'RE',
+            passed: 0,
+            total: casesForScoring.length,
+            failedCase: null,
+            usedHiddenCases: hiddenCases.length > 0,
+          });
         }
-      });
+      }
 
       const mode: 'auto' | 'attempted' = gradable > 0 ? 'auto' : 'attempted';
       const finalScore = mode === 'auto' ? score : attemptedQuestions;
@@ -197,6 +306,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         totalQuestions: test.problems.length,
         percentage,
         scoringMode: mode,
+        questionEvaluations,
         submittedAt: serverTimestamp(),
         universityId: test.universityId,
         sessionId: sessionIdRef.current,
@@ -221,7 +331,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       console.error('Error submitting test:', error);
       submittedRef.current = false;
     }
-  }, [test, user, answers, id, violations]);
+  }, [test, user, answers, id, violations, questionLanguages]);
 
   // ── Add violation ──
   const addViolation = useCallback((type: string, severity: 'low' | 'medium' | 'high', userMessage: string) => {
@@ -274,8 +384,8 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   }, []);
 
   useEffect(() => {
-    if (phase === 'preflight') runPreflight();
-  }, [phase, runPreflight]);
+    if (phase === 'preflight' && !isPractice) runPreflight();
+  }, [phase, runPreflight, isPractice]);
 
   // ── Timer ──
   useEffect(() => {
@@ -287,7 +397,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
   // ── Fullscreen enforcement ──
   useEffect(() => {
-    if (phase !== 'active') return;
+    if (phase !== 'active' || isPractice) return;
     const handleFS = () => {
       if (!document.fullscreenElement && !submittedRef.current) {
         addViolation('Exited fullscreen', 'medium', 'You exited fullscreen mode. Please remain in fullscreen.');
@@ -300,7 +410,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
   // ── Tab switch / visibility ──
   useEffect(() => {
-    if (phase !== 'active') return;
+    if (phase !== 'active' || isPractice) return;
     const handleVis = () => {
       if (document.hidden && !submittedRef.current) {
         addViolation('Tab switch', 'high', 'Tab switching detected. This is a serious integrity violation.');
@@ -344,17 +454,18 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
   // ── Keyboard / clipboard blocking ──
   useEffect(() => {
-    if (phase !== 'active') return;
+    if (phase !== 'active' || isPractice) return;
     const blockEv = (e: Event) => { e.preventDefault(); addViolation(e.type, 'medium', `Attempted ${e.type}. This action is not permitted.`); };
     const blockKeys = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && ['c','v','x','a','p','s'].includes(e.key.toLowerCase())) {
+      // Temporary relaxation: allow copy/paste shortcuts.
+      if ((e.ctrlKey || e.metaKey) && ['x','a','p','s'].includes(e.key.toLowerCase())) {
         e.preventDefault();
         addViolation(`Shortcut ${e.key}`, 'medium', `Keyboard shortcut blocked: ${e.metaKey ? 'Cmd' : 'Ctrl'}+${e.key.toUpperCase()}`);
       }
       if (['F12','PrintScreen'].includes(e.key)) { e.preventDefault(); addViolation(e.key, 'high', `${e.key} is not allowed during the exam.`); }
       if (e.key === 'Escape') e.preventDefault();
     };
-    const events = ['copy','paste','cut','contextmenu'] as const;
+    const events = ['cut','contextmenu'] as const;
     events.forEach(ev => document.addEventListener(ev, blockEv));
     document.addEventListener('keydown', blockKeys);
     return () => { events.forEach(ev => document.removeEventListener(ev, blockEv)); document.removeEventListener('keydown', blockKeys); };
@@ -420,12 +531,14 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         userId: user?.uid,
         userEmail: user?.email,
         startedAt: serverTimestamp(),
-        status: 'active',
+        status: isPractice ? 'practice' : 'active',
         browser: navigator.userAgent,
         screenRes: `${screen.width}x${screen.height}`,
       });
     } catch (e) { console.error('Session creation failed:', e); }
-    try { await document.documentElement.requestFullscreen(); } catch { /* ok */ }
+    if (!isPractice) {
+      try { await document.documentElement.requestFullscreen(); } catch { /* ok */ }
+    }
     setPhase('active');
   };
 
@@ -458,7 +571,8 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
     const code = answers[currentQuestion];
     if (!code?.trim() || compiling || !test) return;
 
-    const sampleInput = test.problems[currentQuestion]?.sampleTestCases?.[0]?.input || '';
+    const problemData = test.problems[currentQuestion];
+    const sampleInput = problemData?.sampleTestCases?.[0]?.input || '';
     const effectiveStdin = codeStdin.trim().length > 0 ? codeStdin : sampleInput;
     if (!codeStdin.trim() && sampleInput.trim()) {
       setCodeStdin(sampleInput);
@@ -482,6 +596,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           stdin: effectiveStdin,
           timeLimitSec: 2,
           memoryLimitKb: 262144,
+
         }),
       });
       const data = await res.json();
@@ -509,43 +624,32 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
     if (!code?.trim() || judgeSubmitting || compiling || !test) return;
 
     const problemData = test.problems[currentQuestion];
-    const hiddenCases = (problemData.hiddenTestCases || []).map((tc) => ({
+    let hiddenCases = (hiddenCasesRef.current[currentQuestion] || []).map((tc) => ({
       input: tc.input,
       expectedOutput: tc.output,
       isHidden: true,
     }));
-    const fallbackSampleCases = (problemData.sampleTestCases || []).map((tc) => ({
+    let fallbackSampleCases = (problemData.sampleTestCases || []).map((tc) => ({
       input: tc.input,
       expectedOutput: tc.output,
       isHidden: false,
     }));
-    const testCases = hiddenCases.length > 0 ? hiddenCases : fallbackSampleCases;
 
-    const fallbackExpectedAnswer =
-      (problemData.correctAnswer || '').trim() ||
-      (problemData.expectedOutput || '').trim();
+    const fallbackExpectedOutput =
+      (problemData.expectedOutput || '').trim() ||
+      (problemData.sampleTestCases?.[0]?.output || '').trim();
 
-    if (testCases.length === 0 && fallbackExpectedAnswer) {
-      const accepted = normalizeJudgeText(code) === normalizeJudgeText(fallbackExpectedAnswer);
-      setJudgeSummary({
-        verdict: accepted ? 'AC' : 'WA',
-        passed: accepted ? 1 : 0,
-        total: 1,
-        failedCase: accepted ? null : 1,
-      });
-      setJudgeCaseResults([
+    if (hiddenCases.length === 0 && fallbackSampleCases.length === 0 && fallbackExpectedOutput) {
+      fallbackSampleCases = [
         {
-          caseNumber: 1,
-          statusCode: accepted ? 'AC' : 'WA',
-          status: accepted ? 'Answer Matched' : 'Answer Mismatch',
-          stderr: accepted ? null : 'Submitted solution does not match the admin-provided answer key.',
+          input: problemData.sampleTestCases?.[0]?.input || codeStdin || '',
+          expectedOutput: fallbackExpectedOutput,
+          isHidden: false,
         },
-      ]);
-      if (!accepted) {
-        setCodeError('Your submission did not match the admin-provided answer key.');
-      }
-      return;
+      ];
     }
+
+    const testCases = hiddenCases.length > 0 ? hiddenCases : fallbackSampleCases;
 
     if (testCases.length === 0) {
       setCodeError('No test cases or answer key configured for this question yet. Ask your admin to add one of them.');
@@ -573,6 +677,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           testCases,
           timeLimitSec: 2,
           memoryLimitKb: 262144,
+
         }),
       });
 
@@ -598,6 +703,10 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   const handleNext = () => { if (test && currentQuestion < test.problems.length - 1) setCurrentQuestion(p => p + 1); };
   const handlePrevious = () => { if (currentQuestion > 0) setCurrentQuestion(p => p - 1); };
   const formatTime = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
+
+  useEffect(() => {
+    setSelectedLang(questionLanguages[currentQuestion] || 71);
+  }, [currentQuestion, questionLanguages]);
 
   const allChecksPassed = (checks.internet === 'pass' || checks.internet === 'slow') && checks.screen === 'pass';
 
@@ -661,11 +770,16 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           )}
 
           <div className="flex items-center justify-center gap-3">
-            <button onClick={() => router.push('/user/results')} className="btn-primary px-6 py-2.5 text-[13px]">
+            {isPractice && (
+              <button onClick={() => window.location.reload()} className="btn-primary px-6 py-2.5 text-[13px]">
+                Try Again
+              </button>
+            )}
+            <button onClick={() => router.push('/user/results')} className={`${isPractice ? 'btn-secondary' : 'btn-primary'} px-6 py-2.5 text-[13px]`}>
               View Results
             </button>
-            <button onClick={() => router.push('/user/dashboard')} className="btn-secondary px-6 py-2.5 text-[13px]">
-              Return to Dashboard
+            <button onClick={() => router.push('/user/test-portal')} className="btn-secondary px-6 py-2.5 text-[13px]">
+              Back to Tests
             </button>
           </div>
         </div>
@@ -767,6 +881,42 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
   // ── Rules screen ──
   if (phase === 'rules') {
+    // Practice tests get a simplified start screen — no proctoring rules
+    if (isPractice) {
+      return (
+        <div className="max-w-lg mx-auto animate-fade-in py-12">
+          <div className="window p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-lg bg-[#5E6AD2]/10 flex items-center justify-center">
+                <Play size={20} className="text-[#5E6AD2]" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-[var(--text-primary)]">{test.title || test.sourceFileName}</h1>
+                <p className="text-[var(--text-tertiary)] text-[12px]">Practice Set — No proctoring, unlimited attempts</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 mb-6 text-[13px] text-[var(--text-secondary)]">
+              <span className="flex items-center gap-1.5"><Eye size={14} className="text-[var(--text-faint)]" /> {test.problems.length} questions</span>
+              {test.duration && <span className="flex items-center gap-1.5"><Clock size={14} className="text-[var(--text-faint)]" /> {test.duration} min</span>}
+            </div>
+
+            <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg p-5 mb-6">
+              <p className="text-[12px] text-[var(--text-tertiary)] leading-relaxed">
+                This is a practice set. There is <strong className="text-[var(--text-primary)]">no proctoring</strong>, no screen recording, and no violation tracking.
+                You can attempt this as many times as you want. Your code will be evaluated against test cases when you submit.
+              </p>
+            </div>
+
+            <button onClick={startTest} className="btn-primary w-full py-3 text-[13px] font-semibold flex items-center justify-center gap-2">
+              <Play size={14} />
+              Start Practice
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="max-w-lg mx-auto animate-fade-in py-12">
         <div className="window p-8">
@@ -842,9 +992,9 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   ), 0);
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-[var(--bg-primary)] overflow-y-auto animate-fade-in select-none" style={{ userSelect: 'none' }}>
-      {/* Warning toast */}
-      {warningVisible && (
+    <div className={`fixed inset-0 z-[9999] bg-[var(--bg-primary)] overflow-y-auto animate-fade-in ${isPractice ? '' : 'select-none'}`} style={isPractice ? undefined : { userSelect: 'none' }}>
+      {/* Warning toast — only for proctored tests */}
+      {!isPractice && warningVisible && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[9999] max-w-md w-full px-4">
           <div className="rounded-lg shadow-lg border px-4 py-3 flex items-start gap-3 text-[13px]" style={{
             background: `${SEVERITY_CONFIG[warningData.severity as keyof typeof SEVERITY_CONFIG]?.color || '#F54E00'}15`,
@@ -861,31 +1011,43 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         </div>
       )}
 
-      {/* Top proctoring bar */}
+      {/* Top bar */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-[var(--bg-primary)]/95 backdrop-blur border-b border-[var(--border-subtle)] px-4 py-2">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 bg-[#4CAF50]/10 px-2 py-0.5 rounded">
-              <Shield size={11} className="text-[#4CAF50]" />
-              <span className="text-[10px] font-bold text-[#4CAF50] uppercase tracking-wider">Secure Environment Active</span>
-            </div>
-            <span className="w-px h-4 bg-[var(--border-subtle)] hidden sm:block" />
-            <span className="text-[11px] text-[var(--text-faint)] hidden sm:block">Monitoring Enabled</span>
-            <span className="w-px h-4 bg-[var(--border-subtle)] hidden sm:block" />
-            <div className="hidden sm:flex items-center gap-1 text-[10px] text-[#4CAF50]">
-              <Lock size={9} />
-              <span>SSL</span>
-            </div>
-            <div className="hidden sm:flex items-center gap-1 text-[10px] text-[#4CAF50]">
-              <MonitorPlay size={9} />
-              <span>Screen</span>
-            </div>
+            {isPractice ? (
+              <>
+                <div className="flex items-center gap-1.5 bg-[#5E6AD2]/10 px-2 py-0.5 rounded">
+                  <Play size={11} className="text-[#5E6AD2]" />
+                  <span className="text-[10px] font-bold text-[#5E6AD2] uppercase tracking-wider">Practice Mode</span>
+                </div>
+                <span className="text-[11px] text-[var(--text-faint)] hidden sm:block">No proctoring • Unlimited attempts</span>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-1.5 bg-[#4CAF50]/10 px-2 py-0.5 rounded">
+                  <Shield size={11} className="text-[#4CAF50]" />
+                  <span className="text-[10px] font-bold text-[#4CAF50] uppercase tracking-wider">Secure Environment Active</span>
+                </div>
+                <span className="w-px h-4 bg-[var(--border-subtle)] hidden sm:block" />
+                <span className="text-[11px] text-[var(--text-faint)] hidden sm:block">Monitoring Enabled</span>
+                <span className="w-px h-4 bg-[var(--border-subtle)] hidden sm:block" />
+                <div className="hidden sm:flex items-center gap-1 text-[10px] text-[#4CAF50]">
+                  <Lock size={9} />
+                  <span>SSL</span>
+                </div>
+                <div className="hidden sm:flex items-center gap-1 text-[10px] text-[#4CAF50]">
+                  <MonitorPlay size={9} />
+                  <span>Screen</span>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
             <span className="w-px h-4 bg-[var(--border-subtle)]" />
-            {/* Violations */}
-            {violations.length > 0 && (
+            {/* Violations — only for proctored tests */}
+            {!isPractice && violations.length > 0 && (
               <span className="flex items-center gap-1 text-[11px] font-bold text-[#F54E00]">
                 <AlertTriangle size={11} />
                 {violationPoints}/{MAX_VIOLATIONS}
@@ -898,23 +1060,27 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                 {formatTime(timeLeft)}
               </span>
             )}
-            <span className="w-px h-4 bg-[var(--border-subtle)]" />
-            {/* Live Support */}
-            <button onClick={toggleChat} className="relative flex items-center gap-1 text-[11px] font-bold text-[#5E6AD2] hover:text-[#4C5ABF] transition-colors">
-              <MessageCircle size={12} />
-              <span className="hidden sm:inline">Support</span>
-              {newMsgCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#DC2626] text-white text-[8px] font-bold flex items-center justify-center">
-                  {newMsgCount}
-                </span>
-              )}
-            </button>
+            {!isPractice && (
+              <>
+                <span className="w-px h-4 bg-[var(--border-subtle)]" />
+                {/* Live Support */}
+                <button onClick={toggleChat} className="relative flex items-center gap-1 text-[11px] font-bold text-[#5E6AD2] hover:text-[#4C5ABF] transition-colors">
+                  <MessageCircle size={12} />
+                  <span className="hidden sm:inline">Support</span>
+                  {newMsgCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#DC2626] text-white text-[8px] font-bold flex items-center justify-center">
+                      {newMsgCount}
+                    </span>
+                  )}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
 
       {/* Live Support Chat Panel */}
-      {chatOpen && (
+      {chatOpen && !isPractice && (
         <div className="fixed top-11 right-4 z-[10000] w-80 h-96 rounded-lg border border-[var(--border-subtle)] shadow-xl bg-[var(--bg-primary)] flex flex-col overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
             <div className="flex items-center gap-2">
@@ -1020,7 +1186,11 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               <div className="relative">
                 <select
                   value={selectedLang}
-                  onChange={e => setSelectedLang(Number(e.target.value))}
+                  onChange={e => {
+                    const lang = Number(e.target.value);
+                    setSelectedLang(lang);
+                    setQuestionLanguages(prev => ({ ...prev, [currentQuestion]: lang }));
+                  }}
                   className="appearance-none bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-1.5 pr-7 text-[12px] text-[var(--text-primary)] font-medium focus:outline-none focus:border-[#5E6AD2] cursor-pointer"
                 >
                   <option value={71}>Python 3</option>
@@ -1260,7 +1430,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                   }}
                   className="btn-primary px-5 py-2.5 text-sm font-semibold bg-[#DC2626] hover:bg-[#B91C1C] border-[#DC2626]"
                 >
-                  Final Submit
+                  {isPractice ? 'Submit Practice' : 'Final Submit'}
                 </button>
               </div>
             </div>

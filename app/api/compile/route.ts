@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { wrapCode } from '@/lib/code-wrapper';
 
 const JUDGE0_CE_URL = 'https://ce.judge0.com';
 
@@ -21,7 +22,17 @@ interface JudgeRequest {
 }
 
 function normalizeOutput(value: string | null | undefined): string {
-  return (value || '').replace(/\r\n/g, '\n').trim();
+  return (value || '')
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map((line) => line.replace(/[\[\],]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase())
+    .filter((line, index, arr) => !(line === '' && index === arr.length - 1))
+    .join('\n')
+    .trim();
+}
+
+function outputsMatch(actual: string | null | undefined, expected: string | null | undefined) {
+  return normalizeOutput(actual) === normalizeOutput(expected);
 }
 
 function mapStatusToCode(statusId: number | undefined, statusDescription: string | undefined) {
@@ -164,6 +175,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'source_code and language_id are required' }, { status: 400 });
   }
 
+  // Auto-detect function, params, and wrap if applicable
+  const wrappedCode = wrapCode(source_code, language_id);
+
   if (mode === 'submit') {
     if (!Array.isArray(testCases) || testCases.length === 0) {
       return NextResponse.json({ error: 'testCases are required for submit mode' }, { status: 400 });
@@ -189,24 +203,37 @@ export async function POST(request: Request) {
       }
 
       try {
-        const result = await executeWithFallback(source_code, language_id, {
+        const result = await executeWithFallback(wrappedCode, language_id, {
           stdin: tc.input,
-          expectedOutput: tc.expectedOutput,
           timeLimitSec,
           memoryLimitKb,
         });
 
-        const code = mapStatusToCode(result.status?.id, result.status?.description);
+        const executionCode = mapStatusToCode(result.status?.id, result.status?.description);
+        const actualNorm = normalizeOutput(result.stdout);
+        const expectedNorm = normalizeOutput(tc.expectedOutput);
+        const code = executionCode === 'AC'
+          ? (actualNorm === expectedNorm ? 'AC' : 'WA')
+          : executionCode;
+
+        if (code !== 'AC') {
+          console.log(`[CASE ${i + 1}] status=${code} execCode=${executionCode}`);
+          console.log(`  STDIN:    ${JSON.stringify(tc.input.slice(0, 500))}`);
+          console.log(`  ACTUAL:   ${JSON.stringify((result.stdout || '').slice(0, 500))}`);
+          console.log(`  EXPECTED: ${JSON.stringify(tc.expectedOutput.slice(0, 500))}`);
+          if (result.stderr) console.log(`  STDERR:   ${JSON.stringify(result.stderr.slice(0, 500))}`);
+        }
+
         evaluatedCases.push({
           caseNumber: i + 1,
           statusCode: code,
-          status: result.status?.description || 'Unknown',
+          status: code === 'WA' ? 'Wrong Answer' : (result.status?.description || 'Unknown'),
           time: result.time || null,
           memory: result.memory || null,
-          stdout: result.stdout || null,
+          stdout: tc.isHidden ? null : (result.stdout || null),
           stderr: result.compile_output || result.stderr || result.message || null,
-          expectedOutput: tc.expectedOutput,
-          inputPreview: tc.input.slice(0, 240),
+          expectedOutput: tc.isHidden ? '' : tc.expectedOutput,
+          inputPreview: tc.isHidden ? '' : tc.input.slice(0, 240),
           isHidden: !!tc.isHidden,
         });
 
@@ -221,8 +248,8 @@ export async function POST(request: Request) {
           memory: null,
           stdout: null,
           stderr: message,
-          expectedOutput: tc.expectedOutput,
-          inputPreview: tc.input.slice(0, 240),
+          expectedOutput: tc.isHidden ? '' : tc.expectedOutput,
+          inputPreview: tc.isHidden ? '' : tc.input.slice(0, 240),
           isHidden: !!tc.isHidden,
         });
         break;
@@ -247,7 +274,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await executeWithFallback(source_code, language_id, {
+    const result = await executeWithFallback(wrappedCode, language_id, {
       stdin: stdin || '',
       timeLimitSec,
       memoryLimitKb,
