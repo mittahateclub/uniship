@@ -167,9 +167,34 @@ export async function generateTestCasesForQuestion(
       userContent += `\n\nKnown sample test cases (your reference solution MUST produce these exact outputs for these inputs):\n${samplesStr}`;
     }
 
+    // Try up to 3 times with increasing temperature to get a correct ref solution
+    const temperatures = [0.2, 0.4, 0.7];
+    for (let attempt = 0; attempt < temperatures.length; attempt++) {
+      const result = await tryGenerateWithRef(
+        userContent, requestedCount, sampleTestCases, temperatures[attempt],
+      );
+      if (result) return { success: true as const, cases: result };
+      await new Promise((r) => setTimeout(r, 500));
+    }
+
+    // All attempts failed — fall back to Groq-only generation
+    return await fallbackGenerateTestCases(trimmed, requestedCount);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to generate test cases.';
+    return { success: false as const, error: message };
+  }
+}
+
+async function tryGenerateWithRef(
+  userContent: string,
+  requestedCount: number,
+  sampleTestCases: Array<{ input: string; output: string }> | undefined,
+  temperature: number,
+): Promise<Array<{ input: string; output: string }> | null> {
+  try {
     const completion = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
-      temperature: 0.2,
+      temperature,
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: REF_SOLUTION_PROMPT(requestedCount) },
@@ -188,9 +213,7 @@ export async function generateTestCasesForQuestion(
       .map((s) => (s || '').trim())
       .filter((s) => s.length > 0);
 
-    if (!refSolution || testInputs.length === 0) {
-      return await fallbackGenerateTestCases(trimmed, requestedCount);
-    }
+    if (!refSolution || testInputs.length === 0) return null;
 
     // Detect if Groq split function arguments into separate testInput entries
     const funcName = extractFunctionName(refSolution, 71);
@@ -229,11 +252,11 @@ export async function generateTestCasesForQuestion(
         }
         await new Promise((r) => setTimeout(r, 600));
       }
-      if (samplesPassed === 0) {
-        return await fallbackGenerateTestCases(trimmed, requestedCount);
-      }
+      // If ref solution fails ALL samples, this attempt failed
+      if (samplesPassed === 0) return null;
     }
 
+    // Ref solution validated — now generate hidden case outputs
     const cases: Array<{ input: string; output: string }> = [];
 
     for (const input of testInputs) {
@@ -248,14 +271,11 @@ export async function generateTestCasesForQuestion(
       await new Promise((r) => setTimeout(r, 600));
     }
 
-    if (cases.length === 0) {
-      return await fallbackGenerateTestCases(trimmed, requestedCount);
-    }
+    if (cases.length === 0) return null;
 
-    return { success: true as const, cases };
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Failed to generate test cases.';
-    return { success: false as const, error: message };
+    return cases;
+  } catch {
+    return null;
   }
 }
 
