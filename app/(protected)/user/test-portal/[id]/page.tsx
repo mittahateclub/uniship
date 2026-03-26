@@ -17,6 +17,7 @@ import {
 interface Problem {
   questionDescription: string;
   difficulty?: string;
+  topic?: string;
   correctAnswer?: string;
   expectedOutput?: string;
   sampleTestCases?: Array<{ input: string; output: string }>;
@@ -1140,9 +1141,16 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
         <div className="window p-6 sm:p-8 mb-5">
           <div className="flex justify-between items-start mb-5">
-            <span className="inline-block bg-[#F54E00] text-white px-2.5 py-0.5 text-[11px] font-bold uppercase rounded">
-              {problem.difficulty || 'Problem'} {currentQuestion + 1}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="inline-block bg-[#F54E00] text-white px-2.5 py-0.5 text-[11px] font-bold uppercase rounded">
+                {problem.difficulty || 'Problem'} {currentQuestion + 1}
+              </span>
+              {problem.topic && (
+                <span className="inline-block bg-[var(--bg-surface)] text-[var(--text-secondary)] px-2.5 py-0.5 text-[11px] font-medium rounded border border-[var(--border-subtle)]">
+                  {problem.topic}
+                </span>
+              )}
+            </div>
           </div>
           
           <h2 className="text-base font-medium mb-5 leading-relaxed text-[var(--text-primary)]">

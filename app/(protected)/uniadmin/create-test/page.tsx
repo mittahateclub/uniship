@@ -32,7 +32,23 @@ interface PracticeQuestion {
   hints: string[];
   marks: number;
   hasTestCases: boolean;
+  topic: string;
 }
+
+const DSA_TOPICS = [
+  'Arrays',
+  'Strings',
+  '2D Arrays',
+  'Searching & Sorting',
+  'Backtracking',
+  'Linked List',
+  'Stacks & Queues',
+  'Greedy',
+  'Trees & Graphs',
+  'Dynamic Programming',
+  'Bit Manipulation',
+  'Other',
+] as const;
 
 const DIFF_COLORS: Record<Tier, { bg: string; text: string; border: string }> = {
   easy: { bg: 'bg-[#4CAF50]/10', text: 'text-[#4CAF50]', border: 'border-[#4CAF50]/20' },
@@ -55,6 +71,7 @@ function emptyPracticeQuestion(): PracticeQuestion {
     hints: [],
     marks: 1,
     hasTestCases: true,
+    topic: 'Arrays',
   };
 }
 
@@ -240,7 +257,8 @@ export default function CreateTestPage() {
       setAiTestCaseGenId(qId);
       setManualStatus({ type: 'info', message: 'AI is generating test cases...' });
       const fullText = `${q.title}\n\n${q.description}\n\nInput Format: ${q.inputFormat}\nOutput Format: ${q.outputFormat}`;
-      const result = await generateTestCasesForQuestion(fullText, 4);
+      const sampleCases = (q.sampleTestCases || []).filter(tc => tc.input.trim() && tc.output.trim()).map(tc => ({ input: tc.input, output: tc.output }));
+      const result = await generateTestCasesForQuestion(fullText, 4, sampleCases);
       if (!result.success) {
         setManualStatus({ type: 'error', message: result.error });
         return;
@@ -281,6 +299,7 @@ export default function CreateTestPage() {
       const problems = valid.map((q, index) => ({
         section: `${activeTierTab.toUpperCase()}_${index + 1}`,
         difficulty: activeTierTab.toUpperCase(),
+        topic: q.topic || 'Other',
         title: q.title.trim(),
         questionDescription: q.description.trim(),
         functionDescription: { name: '', parameters: [], return: '' },
@@ -468,7 +487,7 @@ export default function CreateTestPage() {
       setAiGeneratingQuestionId(questionId);
       setManualStatus({ type: 'info', message: 'Groq is scanning the question and generating hidden test cases...' });
 
-      const result = await generateHiddenTestCases(question.questionText.trim(), 3);
+      const result = await generateHiddenTestCases(question.questionText.trim(), 3, (question.testCases || []).filter(tc => tc.input.trim() && tc.output.trim()));
       if (!result.success || !result.cases) {
         setManualStatus({ type: 'error', message: result.error || 'Could not generate hidden test cases.' });
         return;

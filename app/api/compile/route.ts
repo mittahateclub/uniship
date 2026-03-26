@@ -22,13 +22,15 @@ interface JudgeRequest {
 }
 
 function normalizeOutput(value: string | null | undefined): string {
+  // Token-based comparison: strip brackets/commas, split on any whitespace,
+  // compare as flat token list. This handles format differences like
+  // "[6, 9, 12]" vs "6\n9\n12" vs "6 9 12".
   return (value || '')
-    .replace(/\r\n/g, '\n')
-    .split('\n')
-    .map((line) => line.replace(/[\[\],]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase())
-    .filter((line, index, arr) => !(line === '' && index === arr.length - 1))
-    .join('\n')
-    .trim();
+    .replace(/[\[\],]/g, ' ')
+    .split(/\s+/)
+    .map((t) => t.trim().toLowerCase())
+    .filter((t) => t.length > 0)
+    .join(' ');
 }
 
 function outputsMatch(actual: string | null | undefined, expected: string | null | undefined) {
@@ -176,7 +178,7 @@ export async function POST(request: Request) {
   }
 
   // Auto-detect function, params, and wrap if applicable
-  const wrappedCode = wrapCode(source_code, language_id);
+  const wrappedCode = wrapCode(source_code, language_id, mode);
 
   if (mode === 'submit') {
     if (!Array.isArray(testCases) || testCases.length === 0) {
@@ -215,14 +217,6 @@ export async function POST(request: Request) {
         const code = executionCode === 'AC'
           ? (actualNorm === expectedNorm ? 'AC' : 'WA')
           : executionCode;
-
-        if (code !== 'AC') {
-          console.log(`[CASE ${i + 1}] status=${code} execCode=${executionCode}`);
-          console.log(`  STDIN:    ${JSON.stringify(tc.input.slice(0, 500))}`);
-          console.log(`  ACTUAL:   ${JSON.stringify((result.stdout || '').slice(0, 500))}`);
-          console.log(`  EXPECTED: ${JSON.stringify(tc.expectedOutput.slice(0, 500))}`);
-          if (result.stderr) console.log(`  STDERR:   ${JSON.stringify(result.stderr.slice(0, 500))}`);
-        }
 
         evaluatedCases.push({
           caseNumber: i + 1,

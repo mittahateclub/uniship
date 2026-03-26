@@ -1,8 +1,17 @@
 'use server';
 
 import { groq } from '@/lib/groq';
-import { wrapCode } from '@/lib/code-wrapper';
+import { wrapCode, extractFunctionName, extractPythonParamCount } from '@/lib/code-wrapper';
 import { runCode } from '@/lib/judge0';
+
+function normalizeTokens(value: string): string {
+  return (value || '')
+    .replace(/[\[\],]/g, ' ')
+    .split(/\s+/)
+    .map((t) => t.trim().toLowerCase())
+    .filter((t) => t.length > 0)
+    .join(' ');
+}
 
 interface ParsedQuestion {
   title: string;
@@ -31,8 +40,29 @@ Rules:
 5. If no test cases are found in the text, generate 1-2 reasonable sample test cases.
 6. If no constraints are mentioned, leave constraints as empty array.
 7. The description should be clear, well-formatted, and include the problem statement.
+   - Clearly state the function signature: function name, parameter names and types, return type.
+   - Describe the input/output format for sample test cases.
 8. Title should be concise (3-8 words).
-9. No markdown, no explanation outside JSON.`;
+9. DATA STRUCTURE CONVENTIONS for test case inputs/outputs:
+   - Linked lists → represent as arrays: [1, 2, 3, 4, 5]
+   - Binary trees → level-order array with null: [1, 2, 3, null, 4]
+   - Graphs → number of nodes + edge list: n on line 1, edges as [[0,1],[1,2]] on line 2
+   - Matrix/Grid → list of lists: [[1,0],[0,1]]
+   - Intervals → list of [start, end]: [[1,3],[2,6]]
+   - Strings → quoted string: "abcba"
+   - Arrays → Python list: [1, 2, 3, 4, 5]
+10. For test case inputs: each "input" is a COMPLETE stdin for one test run.
+    - If the function has N parameters, the input must have EXACTLY N lines separated by \n.
+    - Each line is one function argument as a valid Python literal (parseable by ast.literal_eval).
+    - Examples for f(arr, queries): "[1, 2, 3]\n[[0, 1], [1, 2]]" (two lines).
+    - Examples for f(arr, target): "[2, 7, 11]\n9" (two lines).
+    - NEVER include variable names like "arr = ". Just raw values.
+11. For test case outputs: use SPACE-SEPARATED VALUES on one line, NOT Python list syntax.
+    - Correct: "6 15 18"
+    - Wrong: "[6, 15, 18]"
+    - Single value: just the value, e.g. "42"
+    - Multiple output lines: separate with newlines.
+12. No markdown, no explanation outside JSON.`;
 
     const completion = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
@@ -51,6 +81,28 @@ Rules:
       return { success: false as const, error: 'AI could not extract a valid question from the provided text.' };
     }
 
+    // Clean up sample test case inputs: strip variable prefixes like "arr = "
+    if (parsed.sampleTestCases) {
+      parsed.sampleTestCases = parsed.sampleTestCases.map((tc) => ({
+        ...tc,
+        input: tc.input
+          .split('\n')
+          .map((line) => {
+            const trimmed2 = line.trim();
+            const eq = trimmed2.indexOf('=');
+            if (eq > 0 && trimmed2[eq + 1] !== '=' && /^[a-zA-Z_]\w*$/.test(trimmed2.slice(0, eq).trim())) {
+              return trimmed2.slice(eq + 1).trim();
+            }
+            return trimmed2;
+          })
+          .join('\n'),
+        output: tc.output
+          .replace(/^\[/, '').replace(/\]$/, '')
+          .replace(/,\s*/g, ' ')
+          .trim(),
+      }));
+    }
+
     return { success: true as const, question: parsed };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to parse question.';
@@ -58,7 +110,47 @@ Rules:
   }
 }
 
-export async function generateTestCasesForQuestion(questionText: string, count: number = 4) {
+const REF_SOLUTION_PROMPT = (count: number) => `You generate test data for coding problems by providing a correct Python reference solution and test inputs.
+
+CRITICAL RULES:
+1. Output valid JSON ONLY. No markdown.
+2. Return: {"referenceSolution": "def func_name(...):\\n    ...", "testInputs": ["input1", "input2", ...]}
+3. "referenceSolution" must be a complete, correct Python function (or set of helper functions + main function).
+   - ONLY function definitions. NO if __name__ block, NO input() calls, NO imports (standard lib is pre-imported).
+   - The LAST public function is the one that will be called.
+   - If the question says to print output, use print(). If it says to return, use return.
+   - The solution MUST be correct — it will be executed to compute expected outputs.
+   - VERIFY your solution against the sample test cases provided in the question. If the question shows Input: [1,2,3,4,5] / [[0,2],[1,3],[2,4]] and Output: [6,9,12], your solution must produce exactly those values.
+4. Generate exactly ${count} diverse test inputs in "testInputs".
+5. INPUT FORMAT — STRICT RULES:
+   - Each element in "testInputs" is a COMPLETE stdin string for ONE test run.
+   - If the function has N parameters, each testInput string must have EXACTLY N lines separated by \\n.
+   - Each line must be a valid Python literal (parseable by ast.literal_eval).
+   - Examples:
+     * f(n): "5"
+     * f(arr): "[1, 4, 3, 2, 6, 5]"
+     * f(arr, target): "[2, 7, 11, 15]\\n9"  (two lines: arr on line 1, target on line 2)
+     * f(arr, queries): "[1, 2, 3, 4, 5]\\n[[0, 2], [1, 3], [2, 4]]"  (two lines: arr on line 1, queries on line 2)
+     * f(matrix): "[[1, 2, 3], [4, 5, 6], [7, 8, 9]]"
+     * f(n, edges): "5\\n[[0, 1], [1, 2], [2, 3]]"  (two lines)
+   - NEVER put each argument as a separate testInput entry. Each testInput = complete stdin for one call.
+   - NEVER include variable names, size prefixes, or extra lines.
+6. DATA STRUCTURE CONVENTIONS — functions must use these representations:
+   - Linked List: use a Python list (e.g., [1, 2, 3, 4, 5]). Function takes/returns a list.
+   - Binary Tree: level-order list with None for missing nodes (e.g., [1, 2, 3, None, 4, None, 5]).
+   - Graph: take number of nodes and edge list. E.g., def f(n, edges) where edges = [[0,1], [1,2]].
+     For weighted graphs: edges = [[0, 1, 5], [1, 2, 3]].
+   - Matrix/Grid: list of lists. E.g., [[1, 0, 1], [0, 1, 0]].
+   - Stack/Queue problems: represent as a list of operations or just a list.
+   - Intervals: list of [start, end] pairs. E.g., [[1, 3], [2, 6], [8, 10]].
+   - Strings: just a string literal. E.g., "abcba".
+7. Include edge cases (empty inputs, single element, large inputs, boundary values) and normal cases.`;
+
+export async function generateTestCasesForQuestion(
+  questionText: string,
+  count: number = 4,
+  sampleTestCases?: Array<{ input: string; output: string }>,
+) {
   try {
     const trimmed = (questionText || '').trim();
     if (!trimmed) {
@@ -67,33 +159,21 @@ export async function generateTestCasesForQuestion(questionText: string, count: 
 
     const requestedCount = Math.min(Math.max(count, 2), 8);
 
-    // Ask Groq for a reference solution + test inputs, then run the solution to get outputs
-    const systemPrompt = `You generate test data for coding problems by providing a correct Python reference solution and test inputs.
-
-Rules:
-1. Output valid JSON only.
-2. Return: {"referenceSolution": "def func_name(...):\\n    ...", "testInputs": ["input1", "input2", ...]}
-3. "referenceSolution" must be a complete, correct Python function definition(s).
-   - Just the function definition(s), NO if __name__ block, NO input() calls.
-   - The function name and parameters MUST match what the question describes.
-   - If the question says to print output, the function should use print(). If it says to return, it should return.
-   - The solution MUST be correct — it will be executed to compute expected outputs.
-4. Generate exactly ${requestedCount} diverse test inputs in "testInputs".
-5. Each test input must contain one function argument per line, using Python literal syntax:
-   - For f(arr, queries): line 1 = [1, 2, 3]\\nline 2 = [[0, 2], [1, 4]]
-   - For f(arr): single line = [1, 4, 3, 2, 6, 5]
-   - For f(n): single line = 5
-   - NEVER include variable names like "arr = ". Just raw values, one per line.
-6. Include basic cases, edge cases (single element, small inputs), and normal cases.
-7. No markdown, no explanation.`;
+    let userContent = `Generate test data for this coding question:\n\n${trimmed}`;
+    if (sampleTestCases && sampleTestCases.length > 0) {
+      const samplesStr = sampleTestCases
+        .map((tc, i) => `Sample ${i + 1}:\n  Input:\n${tc.input.split('\n').map(l => '    ' + l).join('\n')}\n  Expected Output: ${tc.output}`)
+        .join('\n');
+      userContent += `\n\nKnown sample test cases (your reference solution MUST produce these exact outputs for these inputs):\n${samplesStr}`;
+    }
 
     const completion = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       temperature: 0.2,
       response_format: { type: 'json_object' },
       messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Generate test data for this coding question:\n\n${trimmed}` },
+        { role: 'system', content: REF_SOLUTION_PROMPT(requestedCount) },
+        { role: 'user', content: userContent },
       ],
     });
 
@@ -104,18 +184,58 @@ Rules:
     };
 
     const refSolution = (parsed.referenceSolution || '').trim();
-    const testInputs = (parsed.testInputs || [])
+    let testInputs = (parsed.testInputs || [])
       .map((s) => (s || '').trim())
-      .filter((s) => s.length > 0)
-      .slice(0, requestedCount);
+      .filter((s) => s.length > 0);
 
     if (!refSolution || testInputs.length === 0) {
       return await fallbackGenerateTestCases(trimmed, requestedCount);
     }
 
+    // Detect if Groq split function arguments into separate testInput entries
+    const funcName = extractFunctionName(refSolution, 71);
+    const paramCount = funcName ? extractPythonParamCount(refSolution, funcName) : 0;
+    if (paramCount > 1) {
+      const allSingleLine = testInputs.every(
+        (inp) => inp.split('\n').filter((l) => l.trim()).length === 1
+      );
+      if (allSingleLine && testInputs.length >= paramCount) {
+        const merged: string[] = [];
+        for (let i = 0; i + paramCount - 1 < testInputs.length; i += paramCount) {
+          merged.push(testInputs.slice(i, i + paramCount).join('\n'));
+        }
+        testInputs = merged;
+      }
+    }
+    testInputs = testInputs.slice(0, requestedCount);
+
     const wrappedCode = wrapCode(refSolution, 71);
 
+    // Validate: run ref solution against sample test cases first
+    if (sampleTestCases && sampleTestCases.length > 0) {
+      let samplesPassed = 0;
+      for (const sample of sampleTestCases) {
+        try {
+          const sampleResult = await runCode(wrappedCode, 71, sample.input);
+          if (sampleResult.ok) {
+            const actualTokens = normalizeTokens(sampleResult.stdout);
+            const expectedTokens = normalizeTokens(sample.output);
+            if (actualTokens === expectedTokens) {
+              samplesPassed += 1;
+            }
+          }
+        } catch {
+          // ignore
+        }
+        await new Promise((r) => setTimeout(r, 600));
+      }
+      if (samplesPassed === 0) {
+        return await fallbackGenerateTestCases(trimmed, requestedCount);
+      }
+    }
+
     const cases: Array<{ input: string; output: string }> = [];
+
     for (const input of testInputs) {
       try {
         const result = await runCode(wrappedCode, 71, input);
@@ -142,18 +262,20 @@ Rules:
 async function fallbackGenerateTestCases(questionText: string, count: number) {
   const systemPrompt = `You generate test cases for coding problems.
 
-Rules:
-1. Output valid JSON only.
+CRITICAL RULES:
+1. Output valid JSON ONLY. No markdown.
 2. Return: {"testCases": [{"input": "...", "output": "..."}]}
-3. Generate exactly ${count} diverse test cases.
-4. Include edge cases and normal cases.
-5. The "input" field must contain one function argument per line, using Python literal syntax.
-   - NEVER include variable names like "arr = ". Just raw values, one per line.
-6. The "output" must exactly match what a correct program would print to stdout.
-   - For lists/arrays: space-separated values on one line (e.g. "5 4 3 2 1"), NOT Python list syntax.
-   - For a single value: just the value.
-   - For multiple lines of output: separate with newlines.
-7. No markdown, no explanation.`;
+3. Generate exactly ${count} diverse test cases with edge cases.
+4. INPUT FORMAT: Each "input" string is a COMPLETE stdin for one test run.
+   - If the function has N parameters, the input string must have EXACTLY N lines separated by \n.
+   - Each line is one function argument as a valid Python literal (parseable by ast.literal_eval).
+   - Examples for f(arr, queries): "[1, 2, 3]\n[[0, 1], [1, 2]]" (two lines: arr then queries).
+   - Examples for f(arr, target): "[2, 7, 11]\n9" (two lines).
+   - NEVER include variable names like "arr = ". Just raw values.
+5. OUTPUT FORMAT: exactly what a correct program would print to stdout.
+   - Lists/arrays: space-separated on one line (e.g. "5 4 3 2 1"), NOT Python list syntax.
+   - Single value: just the value.
+   - Multiple output lines: separate with newlines.`;
 
   const completion = await groq.chat.completions.create({
     model: 'llama-3.3-70b-versatile',
