@@ -230,6 +230,22 @@ async function tryGenerateWithRef(
         testInputs = merged;
       }
     }
+    // Repair: ensure each input has exactly paramCount lines
+    if (paramCount > 0) {
+      testInputs = testInputs.map((inp) => {
+        const lines = inp.split('\n').filter((l) => l.trim());
+        if (lines.length > paramCount) {
+          const firstLines = lines.slice(0, paramCount - 1);
+          const restLines = lines.slice(paramCount - 1);
+          const allBracketed = restLines.every((l) => l.trim().startsWith('['));
+          if (allBracketed) {
+            const combined = '[' + restLines.map((l) => l.trim()).join(', ') + ']';
+            return [...firstLines, combined].join('\n');
+          }
+        }
+        return inp;
+      });
+    }
     testInputs = testInputs.slice(0, requestedCount);
 
     const wrappedCode = wrapCode(refSolution, 71);

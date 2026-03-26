@@ -79,7 +79,7 @@ def _smart_parse(_text, _pc):
     if len(_lns) == _pc:
         return [_parse_arg(_l) for _l in _lns]
 
-    # More lines than params: skip size-prefix lines
+    # More lines than params: skip size-prefix lines, then combine extras
     if len(_lns) > _pc:
         _fl = []
         _i = 0
@@ -94,7 +94,15 @@ def _smart_parse(_text, _pc):
             _i += 1
         if len(_fl) == _pc:
             return _fl
-        if len(_fl) > _pc:
+        # Extra items remain: combine trailing items into last param as a list
+        if len(_fl) > _pc and _pc >= 1:
+            _first = _fl[:_pc - 1]
+            _rest = _fl[_pc - 1:]
+            if all(isinstance(_x, (list, tuple)) for _x in _rest):
+                # If each rest item is a single-element list, unwrap one level
+                if all(len(_x) == 1 and isinstance(_x[0], (list, tuple)) for _x in _rest):
+                    return _first + [[_x[0] for _x in _rest]]
+                return _first + [_rest]
             return _fl[:_pc]
 
     # Single line, multiple params: try as comma-separated tuple
