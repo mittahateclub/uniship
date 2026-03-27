@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
 import {
-  addDoc, collection, doc, getDoc, getDocs, query, where, deleteDoc, serverTimestamp, orderBy,
+  addDoc, collection, doc, getDoc, getDocs, query, where, deleteDoc, serverTimestamp,
 } from 'firebase/firestore';
 import { generatePracticeProblem } from '@/app/actions/generate-practice-problem';
 import {
@@ -31,7 +31,7 @@ interface PracticeProblem {
   testCases: TestCase[];
   universityId: string;
   createdBy: string;
-  createdAt: unknown;
+  createdAt: { seconds: number } | null;
 }
 
 const DIFFICULTY_COLORS: Record<string, string> = {
@@ -98,10 +98,11 @@ export default function AdminPracticePage() {
         const q2 = query(
           collection(db, 'practice_problems'),
           where('universityId', '==', uid),
-          orderBy('createdAt', 'desc'),
         );
         const qs = await getDocs(q2);
-        setProblems(qs.docs.map(d => ({ id: d.id, ...d.data() } as PracticeProblem)));
+        const items = qs.docs.map(d => ({ id: d.id, ...d.data() } as PracticeProblem));
+        items.sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
+        setProblems(items);
       }
       setLoading(false);
     })();
@@ -201,7 +202,7 @@ export default function AdminPracticePage() {
         testCases: validTestCases,
         universityId,
         createdBy: user.uid,
-        createdAt: new Date(),
+        createdAt: { seconds: Math.floor(Date.now() / 1000) },
       }, ...prev]);
 
       setForm(emptyProblem());

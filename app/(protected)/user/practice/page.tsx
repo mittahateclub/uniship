@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { collection, doc, getDoc, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { Code2, Search, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
 
 interface PracticeProblem {
@@ -13,6 +13,7 @@ interface PracticeProblem {
   difficulty: string;
   functionName: string;
   testCases: Array<{ isHidden: boolean }>;
+  createdAt: { seconds: number } | null;
 }
 
 const DIFFICULTY_COLORS: Record<string, string> = {
@@ -39,10 +40,11 @@ export default function PracticeListPage() {
       const q = query(
         collection(db, 'practice_problems'),
         where('universityId', '==', universityId),
-        orderBy('createdAt', 'desc'),
       );
       const qs = await getDocs(q);
-      setProblems(qs.docs.map(d => ({ id: d.id, ...d.data() } as PracticeProblem)));
+      const items = qs.docs.map(d => ({ id: d.id, ...d.data() } as PracticeProblem));
+      items.sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
+      setProblems(items);
       setLoading(false);
     })();
   }, [user]);
