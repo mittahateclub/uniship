@@ -126,6 +126,23 @@ def _smart_parse(_text, _pc):
                     continue
             _fl.append(_v)
             _i += 1
+
+          # Common DSA shape for 2-arg functions:
+          # arg1 on one line, then integer N, then N lines for arg2 rows/items.
+          # Example:
+          # [1,3,5,2,7,5]
+          # 3
+          # [0,2]
+          # [1,4]
+          # [2,5]
+          if _pc == 2 and len(_fl) >= 3 and isinstance(_fl[1], int) and _fl[1] >= 0:
+            _n = _fl[1]
+            if _n == 0:
+              return [_fl[0], []]
+            if len(_fl) >= 2 + _n:
+              _rows = _fl[2:2 + _n]
+              return [_fl[0], _rows]
+
         if len(_fl) == _pc:
             return _fl
         # Extra items remain: combine trailing items into last param
