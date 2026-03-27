@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { wrapCode } from '@/lib/code-wrapper';
 
 const JUDGE0_CE_URL = 'https://ce.judge0.com';
+const PARSE_ERR_PREFIX = '__PLATFORM_PARSE_ERROR__';
 
 type CompileMode = 'run' | 'submit';
 
@@ -21,20 +22,51 @@ interface JudgeRequest {
   memoryLimitKb?: number;
 }
 
-function normalizeOutput(value: string | null | undefined): string {
-  // Token-based comparison: strip brackets/commas, split on any whitespace,
-  // compare as flat token list. This handles format differences like
-  // "[6, 9, 12]" vs "6\n9\n12" vs "6 9 12".
+/* ── Language-aware default CPU time limits (seconds) ── */
+function getDefaultTimeLimit(languageId: number): number {
+  switch (languageId) {
+    case 71: return 5;               // Python 3
+    case 62: return 4;               // Java
+    case 63: case 74: case 72:       // JS, TS, Ruby
+    case 68: case 85: return 4;      // PHP, Dart
+    case 51: case 78: case 60:       // C#, Kotlin, Go
+      return 3;
+    case 50: case 54: case 73:       // C, C++, Rust
+      return 2;
+    default: return 3;
+  }
+}
+
+function normalizeOutput(value: string | null | undefined): string[] {
   return (value || '')
     .replace(/[\[\],]/g, ' ')
     .split(/\s+/)
     .map((t) => t.trim().toLowerCase())
-    .filter((t) => t.length > 0)
-    .join(' ');
+    .filter((t) => t.length > 0);
 }
 
-function outputsMatch(actual: string | null | undefined, expected: string | null | undefined) {
-  return normalizeOutput(actual) === normalizeOutput(expected);
+function tokensMatch(a: string, b: string): boolean {
+  if (a === b) return true;
+  const fa = parseFloat(a);
+  const fb = parseFloat(b);
+  if (!isNaN(fa) && !isNaN(fb)) {
+    const diff = Math.abs(fa - fb);
+    if (diff <= 1e-9) return true;
+    const maxAbs = Math.max(Math.abs(fa), Math.abs(fb));
+    if (maxAbs > 0 && diff / maxAbs <= 1e-6) return true;
+  }
+  return false;
+}
+
+function outputsMatch(actual: string | null | undefined, expected: string | null | undefined): boolean {
+  const aToks = normalizeOutput(actual);
+  const eToks = normalizeOutput(expected);
+  if (aToks.length !== eToks.length) return false;
+  return aToks.every((t, i) => tokensMatch(t, eToks[i]));
+}
+
+function isPlatformParseError(stderr: string | null | undefined): boolean {
+  return (stderr || '').includes(PARSE_ERR_PREFIX);
 }
 
 function mapStatusToCode(statusId: number | undefined, statusDescription: string | undefined) {
@@ -102,12 +134,13 @@ async function executeOnJudge0(
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (authToken) headers['X-Auth-Token'] = authToken;
 
+  const cpuLimit = options.timeLimitSec ?? getDefaultTimeLimit(language_id);
   const body: Record<string, unknown> = {
     source_code: encodedCode,
     language_id,
     stdin: encodedStdin,
-    cpu_time_limit: options.timeLimitSec ?? 2,
-    wall_time_limit: Math.max((options.timeLimitSec ?? 2) + 1, 3),
+    cpu_time_limit: cpuLimit,
+    wall_time_limit: cpuLimit + 3,
     memory_limit: options.memoryLimitKb ?? 262144,
   };
   if (encodedExpected) body.expected_output = encodedExpected;
@@ -212,20 +245,26 @@ export async function POST(request: Request) {
         });
 
         const executionCode = mapStatusToCode(result.status?.id, result.status?.description);
-        const actualNorm = normalizeOutput(result.stdout);
-        const expectedNorm = normalizeOutput(tc.expectedOutput);
         const code = executionCode === 'AC'
-          ? (actualNorm === expectedNorm ? 'AC' : 'WA')
+          ? (outputsMatch(result.stdout, tc.expectedOutput) ? 'AC' : 'WA')
           : executionCode;
+
+        // Detect platform parse errors and surface them clearly
+        const stderrText = result.compile_output || result.stderr || result.message || null;
+        const parseErr = isPlatformParseError(result.stderr);
 
         evaluatedCases.push({
           caseNumber: i + 1,
-          statusCode: code,
-          status: code === 'WA' ? 'Wrong Answer' : (result.status?.description || 'Unknown'),
+          statusCode: parseErr ? 'RE' : code,
+          status: parseErr
+            ? 'Internal Parse Error'
+            : (code === 'WA' ? 'Wrong Answer' : (result.status?.description || 'Unknown')),
           time: result.time || null,
           memory: result.memory || null,
           stdout: tc.isHidden ? null : (result.stdout || null),
-          stderr: result.compile_output || result.stderr || result.message || null,
+          stderr: parseErr
+            ? 'The platform could not parse the test input for this case. Please contact your admin.'
+            : stderrText,
           expectedOutput: tc.isHidden ? '' : tc.expectedOutput,
           inputPreview: tc.isHidden ? '' : tc.input.slice(0, 240),
           isHidden: !!tc.isHidden,

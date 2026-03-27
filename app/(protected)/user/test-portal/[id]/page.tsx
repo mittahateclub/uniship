@@ -246,7 +246,6 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               source_code: answer,
               language_id: questionLanguages[index] || 71,
               testCases: casesForScoring,
-              timeLimitSec: 2,
               memoryLimitKb: 262144,
     
             }),
@@ -595,7 +594,6 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           source_code: code,
           language_id: selectedLang,
           stdin: effectiveStdin,
-          timeLimitSec: 2,
           memoryLimitKb: 262144,
 
         }),
@@ -676,7 +674,6 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           source_code: code,
           language_id: selectedLang,
           testCases,
-          timeLimitSec: 2,
           memoryLimitKb: 262144,
 
         }),

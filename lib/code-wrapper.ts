@@ -39,17 +39,22 @@ import io as _io
 import copy as _copy
 from contextlib import redirect_stdout as _redirect_stdout
 
+_PERR = '__PLATFORM_PARSE_ERROR__'
+
 def _parse_arg(_line):
     _line = _line.strip()
     if not _line:
         return None
+    # Strip variable assignment prefix: "arr = [1,2,3]" -> "[1,2,3]"
     _eq = _line.find('=')
     if _eq > 0 and _line[_eq+1:_eq+2] != '=' and _line[:_eq].strip().isidentifier():
         _line = _line[_eq+1:].strip()
+    # Try ast.literal_eval (lists, tuples, dicts, strings, numbers, bools, None)
     try:
         return _ast.literal_eval(_line)
     except Exception:
         pass
+    # Space-separated numbers: "1 2 3" -> [1,2,3]
     _tks = _line.split()
     if len(_tks) > 1:
         try:
@@ -59,6 +64,7 @@ def _parse_arg(_line):
                 return list(map(float, _tks))
             except Exception:
                 pass
+    # Single number
     try:
         return int(_line)
     except Exception:
@@ -71,21 +77,22 @@ def _parse_arg(_line):
 
 def _smart_parse(_text, _pc):
     _text = _text.strip()
-    if not _text:
+    if not _text or _pc <= 0:
         return []
     _lns = [_l for _l in _text.split(chr(10)) if _l.strip()]
 
-    # Best case: exactly one line per argument
+    # Strategy 1: exactly one line per argument
     if len(_lns) == _pc:
         return [_parse_arg(_l) for _l in _lns]
 
-    # More lines than params: skip size-prefix lines, then combine extras
+    # Strategy 2: more lines than params — skip size-prefix lines, combine extras
     if len(_lns) > _pc:
         _fl = []
         _i = 0
         while _i < len(_lns):
             _v = _parse_arg(_lns[_i])
-            if isinstance(_v, int) and _i + 1 < len(_lns):
+            # Size-prefix check: integer N followed by a list/tuple of length N
+            if isinstance(_v, int) and _v >= 0 and _i + 1 < len(_lns):
                 _nxt = _parse_arg(_lns[_i + 1])
                 if isinstance(_nxt, (list, tuple)) and len(_nxt) == _v:
                     _i += 1
@@ -94,35 +101,49 @@ def _smart_parse(_text, _pc):
             _i += 1
         if len(_fl) == _pc:
             return _fl
-        # Extra items remain: combine trailing items into last param as a list
+        # Extra items remain: combine trailing items into last param
         if len(_fl) > _pc and _pc >= 1:
             _first = _fl[:_pc - 1]
             _rest = _fl[_pc - 1:]
+            # All lists → 2D matrix or list-of-lists
             if all(isinstance(_x, (list, tuple)) for _x in _rest):
-                # If each rest item is a single-element list, unwrap one level
-                if all(len(_x) == 1 and isinstance(_x[0], (list, tuple)) for _x in _rest):
-                    return _first + [[_x[0] for _x in _rest]]
+                return _first + [list(_rest)]
+            # All scalars → flat list
+            if all(isinstance(_x, (int, float)) for _x in _rest):
                 return _first + [_rest]
             return _fl[:_pc]
 
-    # Single line, multiple params: try as comma-separated tuple
+    # Strategy 3: single line, multiple params
     if len(_lns) == 1 and _pc > 1:
+        # Try as comma-separated tuple
         try:
             _v = _ast.literal_eval(chr(40) + _text + chr(41))
             if isinstance(_v, tuple) and len(_v) == _pc:
                 return list(_v)
         except Exception:
             pass
+        # Try whitespace-separated tokens
+        _tks = _text.split()
+        if len(_tks) == _pc:
+            return [_parse_arg(_t) for _t in _tks]
 
-    # Single param: parse everything as one arg
+    # Strategy 4: fewer lines — single param collects everything
     if _pc == 1:
         if len(_lns) == 1:
             return [_parse_arg(_lns[0])]
-        return [[_parse_arg(_l) for _l in _lns]]
+        _parsed_lines = [_parse_arg(_l) for _l in _lns]
+        # If all parsed as lists → 2D matrix
+        if all(isinstance(_p, (list, tuple)) for _p in _parsed_lines):
+            return [_parsed_lines]
+        return [_parsed_lines]
 
     # Fallback: parse each line, take first _pc
     _parsed = [_parse_arg(_l) for _l in _lns]
-    return _parsed[:_pc] if len(_parsed) >= _pc else _parsed
+    if len(_parsed) >= _pc:
+        return _parsed[:_pc]
+    # Not enough args — report clearly
+    _sys.stderr.write(f'{_PERR}: expected {_pc} args, parsed {len(_parsed)} from {len(_lns)} lines\\n')
+    return _parsed
 
 def _fmt(_r):
     if _r is None:
@@ -130,6 +151,8 @@ def _fmt(_r):
     if isinstance(_r, bool):
         print(str(_r).lower())
     elif isinstance(_r, str):
+        print(_r)
+    elif isinstance(_r, dict):
         print(_r)
     elif isinstance(_r, (list, tuple)):
         if _r and isinstance(_r[0], (list, tuple)):
@@ -142,6 +165,7 @@ def _fmt(_r):
 
 def _run_fn(_fn, _args, _pc):
     if not _args:
+        _sys.stderr.write(f'{_PERR}: no arguments parsed from stdin\\n')
         return
     _saved = _copy.deepcopy(_args)
     _cap = _io.StringIO()
@@ -149,7 +173,7 @@ def _run_fn(_fn, _args, _pc):
     with _redirect_stdout(_cap):
         try:
             _res = _fn(*_args)
-        except TypeError:
+        except TypeError as _te:
             if len(_args) == 1 and isinstance(_args[0], (list, tuple)) and _pc > 1:
                 _res = _fn(*_args[0])
             else:
