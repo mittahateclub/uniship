@@ -162,34 +162,6 @@ service cloud.firestore {
       }
     }
 
-    // --- Practice Questions ---
-    match /practice_questions/{questionId} {
-      // Students can read practice questions from their own university.
-      allow read: if isStudent() && belongsToSameUniversity(resource.data.universityId);
-
-      // Uni admins and super admins can read all in scope.
-      allow read: if isSuperAdmin() ||
-                  (isUniversityAdmin() && belongsToSameUniversity(resource.data.universityId));
-
-      // Uni admins can create/update/delete for their own university.
-      allow create: if isUniversityAdmin() &&
-                    request.resource.data.universityId == getUserData().universityId &&
-                    request.resource.data.createdBy == request.auth.uid;
-      allow update, delete: if isSuperAdmin() ||
-                            (isUniversityAdmin() && belongsToSameUniversity(resource.data.universityId));
-    }
-
-    // --- Practice Submissions ---
-    match /practice_submissions/{submissionId} {
-      // Students can create their own submissions.
-      allow create: if isAuthenticated() &&
-                    request.resource.data.userId == request.auth.uid;
-      // Students can read their own submissions.
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      // Uni admins and super admins can read submissions.
-      allow read: if isUniversityAdmin() || isSuperAdmin();
-    }
-    
     match /{document=**} {
       allow read, write: if false;
     }

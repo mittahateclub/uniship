@@ -139,7 +139,6 @@ const uniadminSearchItems: SearchableItem[] = [
   { href: '/uniadmin/dashboard', label: 'Dashboard', desc: 'Admin overview & stats', icon: LayoutDashboard, category: 'Pages' },
   { href: '/uniadmin/create-test', label: 'Create Test', desc: 'Build new assessment', icon: PlusCircle, category: 'Pages' },
   { href: '/uniadmin/tests', label: 'Tests', desc: 'Manage all assessments', icon: FileText, category: 'Pages' },
-  { href: '/uniadmin/create-test', label: 'Practice Questions', desc: 'Upload coding practice problems', icon: Code, category: 'Pages' },
   { href: '/uniadmin/create-event', label: 'Create Event', desc: 'Schedule an event', icon: CalendarPlus, category: 'Pages' },
   { href: '/uniadmin/create-account', label: 'Create Account', desc: 'Add student account', icon: UserPlus, category: 'Pages' },
   { href: '/uniadmin/student-database', label: 'Student Database', desc: 'Browse all students', icon: Database, category: 'Pages' },
@@ -169,7 +168,6 @@ const uniadminSearchItems: SearchableItem[] = [
   { href: '/uniadmin/profile#account-details', label: 'Admin Phone', desc: 'Contact phone number', icon: Phone, category: 'Admin Profile' },
   // Actions
   { href: '/uniadmin/create-test', label: 'New Assessment', desc: 'Create a new test for students', icon: PlusCircle, category: 'Actions' },
-  { href: '/uniadmin/create-test', label: 'Upload Practice Questions', desc: 'Add coding problems for practice', icon: Code, category: 'Actions' },
   { href: '/uniadmin/create-event', label: 'Schedule Event', desc: 'Add a new event or deadline', icon: CalendarPlus, category: 'Actions' },
   { href: '/uniadmin/create-account', label: 'Add Student', desc: 'Register a new student', icon: UserPlus, category: 'Actions' },
   { href: '/uniadmin/tests', label: 'Review Submissions', desc: 'Grade & review test results', icon: FileText, category: 'Actions' },

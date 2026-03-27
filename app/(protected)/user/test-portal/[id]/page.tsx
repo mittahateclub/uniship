@@ -85,7 +85,6 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   // Core state
   const [test, setTest] = useState<TestData | null>(null);
   const [phase, setPhase] = useState<Phase>('loading');
-  const isPractice = test?.sourceType === 'manual_practice';
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
@@ -157,15 +156,11 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           };
           setTest(sanitized);
           if (data.duration) setTimeLeft(data.duration * 60);
-          // Practice tests skip preflight/rules — go straight to rules (which will auto-skip)
-          if (data.sourceType === 'manual_practice') {
-            setPhase('rules');
-          }
         }
       } catch (error) {
         console.error('Error fetching test:', error);
       } finally {
-        if (!test || test?.sourceType !== 'manual_practice') {
+        if (!test) {
           setPhase(prev => prev === 'loading' ? 'preflight' : prev);
         }
       }
@@ -384,8 +379,8 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   }, []);
 
   useEffect(() => {
-    if (phase === 'preflight' && !isPractice) runPreflight();
-  }, [phase, runPreflight, isPractice]);
+    if (phase === 'preflight') runPreflight();
+  }, [phase, runPreflight]);
 
   // ── Timer ──
   useEffect(() => {
@@ -397,7 +392,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
   // ── Fullscreen enforcement ──
   useEffect(() => {
-    if (phase !== 'active' || isPractice) return;
+    if (phase !== 'active') return;
     const handleFS = () => {
       if (!document.fullscreenElement && !submittedRef.current) {
         addViolation('Exited fullscreen', 'medium', 'You exited fullscreen mode. Please remain in fullscreen.');
@@ -410,7 +405,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
   // ── Tab switch / visibility ──
   useEffect(() => {
-    if (phase !== 'active' || isPractice) return;
+    if (phase !== 'active') return;
     const handleVis = () => {
       if (document.hidden && !submittedRef.current) {
         addViolation('Tab switch', 'high', 'Tab switching detected. This is a serious integrity violation.');
@@ -454,7 +449,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
   // ── Keyboard / clipboard blocking ──
   useEffect(() => {
-    if (phase !== 'active' || isPractice) return;
+    if (phase !== 'active') return;
     const blockEv = (e: Event) => { e.preventDefault(); addViolation(e.type, 'medium', `Attempted ${e.type}. This action is not permitted.`); };
     const blockKeys = (e: KeyboardEvent) => {
       // Temporary relaxation: allow copy/paste shortcuts.
@@ -531,14 +526,12 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         userId: user?.uid,
         userEmail: user?.email,
         startedAt: serverTimestamp(),
-        status: isPractice ? 'practice' : 'active',
+        status: 'active',
         browser: navigator.userAgent,
         screenRes: `${screen.width}x${screen.height}`,
       });
     } catch (e) { console.error('Session creation failed:', e); }
-    if (!isPractice) {
-      try { await document.documentElement.requestFullscreen(); } catch { /* ok */ }
-    }
+    try { await document.documentElement.requestFullscreen(); } catch { /* ok */ }
     setPhase('active');
   };
 
@@ -768,12 +761,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           )}
 
           <div className="flex items-center justify-center gap-3">
-            {isPractice && (
-              <button onClick={() => window.location.reload()} className="btn-primary px-6 py-2.5 text-[13px]">
-                Try Again
-              </button>
-            )}
-            <button onClick={() => router.push('/user/results')} className={`${isPractice ? 'btn-secondary' : 'btn-primary'} px-6 py-2.5 text-[13px]`}>
+            <button onClick={() => router.push('/user/results')} className="btn-primary px-6 py-2.5 text-[13px]">
               View Results
             </button>
             <button onClick={() => router.push('/user/test-portal')} className="btn-secondary px-6 py-2.5 text-[13px]">
@@ -879,42 +867,6 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
   // ── Rules screen ──
   if (phase === 'rules') {
-    // Practice tests get a simplified start screen — no proctoring rules
-    if (isPractice) {
-      return (
-        <div className="max-w-lg mx-auto animate-fade-in py-12">
-          <div className="window p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-[#5E6AD2]/10 flex items-center justify-center">
-                <Play size={20} className="text-[#5E6AD2]" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-[var(--text-primary)]">{test.title || test.sourceFileName}</h1>
-                <p className="text-[var(--text-tertiary)] text-[12px]">Practice Set — No proctoring, unlimited attempts</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 mb-6 text-[13px] text-[var(--text-secondary)]">
-              <span className="flex items-center gap-1.5"><Eye size={14} className="text-[var(--text-faint)]" /> {test.problems.length} questions</span>
-              {test.duration && <span className="flex items-center gap-1.5"><Clock size={14} className="text-[var(--text-faint)]" /> {test.duration} min</span>}
-            </div>
-
-            <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg p-5 mb-6">
-              <p className="text-[12px] text-[var(--text-tertiary)] leading-relaxed">
-                This is a practice set. There is <strong className="text-[var(--text-primary)]">no proctoring</strong>, no screen recording, and no violation tracking.
-                You can attempt this as many times as you want. Your code will be evaluated against test cases when you submit.
-              </p>
-            </div>
-
-            <button onClick={startTest} className="btn-primary w-full py-3 text-[13px] font-semibold flex items-center justify-center gap-2">
-              <Play size={14} />
-              Start Practice
-            </button>
-          </div>
-        </div>
-      );
-    }
-
     return (
       <div className="max-w-lg mx-auto animate-fade-in py-12">
         <div className="window p-8">
@@ -990,9 +942,9 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   ), 0);
 
   return (
-    <div className={`fixed inset-0 z-[9999] bg-[var(--bg-primary)] overflow-y-auto animate-fade-in ${isPractice ? '' : 'select-none'}`} style={isPractice ? undefined : { userSelect: 'none' }}>
-      {/* Warning toast — only for proctored tests */}
-      {!isPractice && warningVisible && (
+    <div className="fixed inset-0 z-[9999] bg-[var(--bg-primary)] overflow-y-auto animate-fade-in select-none" style={{ userSelect: 'none' }}>
+      {/* Warning toast */}
+      {warningVisible && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[9999] max-w-md w-full px-4">
           <div className="rounded-lg shadow-lg border px-4 py-3 flex items-start gap-3 text-[13px]" style={{
             background: `${SEVERITY_CONFIG[warningData.severity as keyof typeof SEVERITY_CONFIG]?.color || '#F54E00'}15`,
@@ -1013,16 +965,6 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       <div className="fixed top-0 left-0 right-0 z-50 bg-[var(--bg-primary)]/95 backdrop-blur border-b border-[var(--border-subtle)] px-4 py-2">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {isPractice ? (
-              <>
-                <div className="flex items-center gap-1.5 bg-[#5E6AD2]/10 px-2 py-0.5 rounded">
-                  <Play size={11} className="text-[#5E6AD2]" />
-                  <span className="text-[10px] font-bold text-[#5E6AD2] uppercase tracking-wider">Practice Mode</span>
-                </div>
-                <span className="text-[11px] text-[var(--text-faint)] hidden sm:block">No proctoring • Unlimited attempts</span>
-              </>
-            ) : (
-              <>
                 <div className="flex items-center gap-1.5 bg-[#4CAF50]/10 px-2 py-0.5 rounded">
                   <Shield size={11} className="text-[#4CAF50]" />
                   <span className="text-[10px] font-bold text-[#4CAF50] uppercase tracking-wider">Secure Environment Active</span>
@@ -1038,14 +980,12 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                   <MonitorPlay size={9} />
                   <span>Screen</span>
                 </div>
-              </>
-            )}
           </div>
 
           <div className="flex items-center gap-3">
             <span className="w-px h-4 bg-[var(--border-subtle)]" />
             {/* Violations — only for proctored tests */}
-            {!isPractice && violations.length > 0 && (
+            {violations.length > 0 && (
               <span className="flex items-center gap-1 text-[11px] font-bold text-[#F54E00]">
                 <AlertTriangle size={11} />
                 {violationPoints}/{MAX_VIOLATIONS}
@@ -1058,8 +998,6 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                 {formatTime(timeLeft)}
               </span>
             )}
-            {!isPractice && (
-              <>
                 <span className="w-px h-4 bg-[var(--border-subtle)]" />
                 {/* Live Support */}
                 <button onClick={toggleChat} className="relative flex items-center gap-1 text-[11px] font-bold text-[#5E6AD2] hover:text-[#4C5ABF] transition-colors">
@@ -1071,14 +1009,12 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                     </span>
                   )}
                 </button>
-              </>
-            )}
           </div>
         </div>
       </div>
 
       {/* Live Support Chat Panel */}
-      {chatOpen && !isPractice && (
+      {chatOpen && (
         <div className="fixed top-11 right-4 z-[10000] w-80 h-96 rounded-lg border border-[var(--border-subtle)] shadow-xl bg-[var(--bg-primary)] flex flex-col overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
             <div className="flex items-center gap-2">
@@ -1435,7 +1371,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                   }}
                   className="btn-primary px-5 py-2.5 text-sm font-semibold bg-[#DC2626] hover:bg-[#B91C1C] border-[#DC2626]"
                 >
-                  {isPractice ? 'Submit Practice' : 'Final Submit'}
+                  Final Submit
                 </button>
               </div>
             </div>

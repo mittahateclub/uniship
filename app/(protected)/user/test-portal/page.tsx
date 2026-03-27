@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { collection, query, getDocs, where, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
-import { FileText, Clock, HelpCircle, Tag, ArrowRight, Calendar, RefreshCw } from 'lucide-react';
+import { FileText, Clock, HelpCircle, Tag, ArrowRight, Calendar } from 'lucide-react';
 
 interface Test {
   id: string;
@@ -84,8 +84,8 @@ export default function TestPortal() {
   return (
     <div className="max-w-[1000px] mx-auto animate-fade-in">
       <div className="mb-6">
-        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Tests &amp; Practice</h1>
-        <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Select a test or practice set to begin.</p>
+        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Tests</h1>
+        <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Select a test to begin.</p>
       </div>
 
       {tests.length === 0 ? (
@@ -97,15 +97,11 @@ export default function TestPortal() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {tests.map((test) => {
-            const isPractice = test.sourceType === 'manual_practice';
             const now = new Date();
             const start = test.examStart ? new Date(test.examStart) : null;
             const end = test.examEnd ? new Date(test.examEnd) : null;
-            // Practice tests are always active unless an explicit end date has passed
-            const isActive = isPractice
-              ? (!end || now <= end)
-              : (!start || now >= start) && (!end || now <= end);
-            const isUpcoming = !isPractice && start && now < start;
+            const isActive = (!start || now >= start) && (!end || now <= end);
+            const isUpcoming = start && now < start;
             const isExpired = end && now > end;
 
             return (
@@ -118,12 +114,6 @@ export default function TestPortal() {
                         <Tag size={9} />
                         {test.category}
                       </span>
-                      {isPractice && (
-                        <span className="inline-flex items-center gap-1 bg-[#5E6AD2]/10 text-[#5E6AD2] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
-                          <RefreshCw size={9} />
-                          Practice
-                        </span>
-                      )}
                       {isUpcoming && (
                         <span className="inline-flex items-center gap-1 bg-[#5E6AD2]/10 text-[#5E6AD2] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
                           Upcoming
@@ -172,7 +162,7 @@ export default function TestPortal() {
                       href={`/user/test-portal/${test.id}`}
                       className="btn-primary flex items-center gap-1.5 text-[12px] !py-1.5 !px-3"
                     >
-                      {isPractice ? 'Practice' : 'Start'}
+                      Start
                       <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform duration-150" />
                     </Link>
                   ) : (
