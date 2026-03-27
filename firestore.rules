@@ -162,6 +162,23 @@ service cloud.firestore {
       }
     }
 
+    // --- Practice Problems ---
+    match /practice_problems/{problemId} {
+      allow read: if isAuthenticated() && belongsToSameUniversity(resource.data.universityId);
+      allow create: if isUniversityAdmin() &&
+                    request.resource.data.universityId == getUserData().universityId &&
+                    request.resource.data.createdBy == request.auth.uid;
+      allow update, delete: if isSuperAdmin() ||
+                            (isUniversityAdmin() && belongsToSameUniversity(resource.data.universityId));
+    }
+
+    // --- Practice Submissions ---
+    match /practice_submissions/{submissionId} {
+      allow read, create: if isAuthenticated() && request.auth.uid == (resource == null ? request.resource.data.userId : resource.data.userId);
+      allow read: if isUniversityAdmin() || isSuperAdmin();
+      allow update, delete: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

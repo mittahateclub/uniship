@@ -64,6 +64,7 @@ interface SearchableItem extends NavLink {
 const userNavLinks: NavLink[] = [
   { href: '/user/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/user/test-portal', label: 'Tests', icon: FileText },
+  { href: '/user/practice', label: 'Practice', icon: Code },
   { href: '/user/internships', label: 'College Space', icon: Briefcase },
   { href: '/user/applications', label: 'Applications', icon: ClipboardCheck },
   { href: '/user/results', label: 'Results', icon: BarChart3 },
@@ -77,6 +78,7 @@ const uniadminNavLinks: NavLink[] = [
   { href: '/uniadmin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/uniadmin/create-test', label: 'Create Test', icon: PlusCircle },
   { href: '/uniadmin/tests', label: 'Tests', icon: FileText },
+  { href: '/uniadmin/practice', label: 'Practice', icon: Code },
   { href: '/uniadmin/proctoring', label: 'Proctoring', icon: ShieldCheck },
   { href: '/uniadmin/create-event', label: 'Create Event', icon: CalendarPlus },
   { href: '/uniadmin/create-account', label: 'Create Account', icon: UserPlus },
@@ -103,6 +105,7 @@ const userSearchItems: SearchableItem[] = [
   { href: '/user/calendar', label: 'Calendar', desc: 'Upcoming events & deadlines', icon: Calendar, category: 'Pages' },
   { href: '/user/profile', label: 'Profile', desc: 'Account settings & details', icon: User, category: 'Pages' },
   { href: '/user/resume', label: 'AI Resume Builder', desc: 'AI-powered resume editor', icon: Sparkles, category: 'Pages' },
+  { href: '/user/practice', label: 'Practice', desc: 'LeetCode-style coding practice', icon: Code, category: 'Pages' },
   // Profile — In-page sections
   { href: '/user/profile#personal-details', label: 'Personal Details', desc: 'Name, roll number, phone, email, title', icon: User, category: 'Profile' },
   { href: '/user/profile#photo', label: 'Profile Photo', desc: 'Upload or change profile picture', icon: Camera, category: 'Profile' },
@@ -144,6 +147,7 @@ const uniadminSearchItems: SearchableItem[] = [
   { href: '/uniadmin/student-database', label: 'Student Database', desc: 'Browse all students', icon: Database, category: 'Pages' },
   { href: '/uniadmin/profile', label: 'Profile', desc: 'Admin profile settings', icon: User, category: 'Pages' },
   { href: '/uniadmin/proctoring', label: 'Proctoring', desc: 'Monitor live exams & chat', icon: ShieldCheck, category: 'Pages' },
+  { href: '/uniadmin/practice', label: 'Practice', desc: 'Manage coding practice problems', icon: Code, category: 'Pages' },
   // Dashboard — In-page sections
   { href: '/uniadmin/dashboard#stats', label: 'Active Tests', desc: 'Count of currently active tests', icon: FileText, category: 'Dashboard' },
   { href: '/uniadmin/dashboard#stats', label: 'Total Students', desc: 'Number of registered students', icon: User, category: 'Dashboard' },
