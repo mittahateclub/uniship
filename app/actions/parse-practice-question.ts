@@ -121,6 +121,10 @@ CRITICAL RULES:
    - If the question says to print output, use print(). If it says to return, use return.
    - The solution MUST be correct — it will be executed to compute expected outputs.
    - VERIFY your solution against the sample test cases provided in the question. If the question shows Input: [1,2,3,4,5] / [[0,2],[1,3],[2,4]] and Output: [6,9,12], your solution must produce exactly those values.
+   - IMPORTANT: Use the SIMPLEST correct approach. Prefer brute-force or straightforward iteration.
+     Do NOT use algorithms that reorder queries or input (like MO's Algorithm, segment trees with lazy propagation, etc.)
+     unless the brute force approach would be incorrect. For range sum queries, use simple iteration or prefix sums.
+   - The function MUST return results in the ORIGINAL input order, not sorted or reordered.
 4. Generate exactly ${count} diverse test inputs in "testInputs".
 5. INPUT FORMAT — STRICT RULES:
    - Each element in "testInputs" is a COMPLETE stdin string for ONE test run.
@@ -250,36 +254,31 @@ async function tryGenerateWithRef(
 
     const wrappedCode = wrapCode(refSolution, 71);
 
-    // Validate: run ref solution against sample test cases first
+    // Validate: run ref solution against ALL sample test cases
     if (sampleTestCases && sampleTestCases.length > 0) {
-      let samplesPassed = 0;
       for (const sample of sampleTestCases) {
         try {
           const sampleResult = await runCode(wrappedCode, 71, sample.input);
-          if (sampleResult.ok) {
-            const actualTokens = normalizeTokens(sampleResult.stdout);
-            const expectedTokens = normalizeTokens(sample.output);
-            if (actualTokens === expectedTokens) {
-              samplesPassed += 1;
-            }
-          }
+          if (!sampleResult.ok) return null; // runtime error → reject
+          const actualTokens = normalizeTokens(sampleResult.stdout);
+          const expectedTokens = normalizeTokens(sample.output);
+          if (actualTokens !== expectedTokens) return null; // wrong answer → reject
         } catch {
-          // ignore
+          return null;
         }
         await new Promise((r) => setTimeout(r, 600));
       }
-      // If ref solution fails ALL samples, this attempt failed
-      if (samplesPassed === 0) return null;
     }
 
-    // Ref solution validated — now generate hidden case outputs
+    // Ref solution passed ALL samples — now generate test case outputs
     const cases: Array<{ input: string; output: string }> = [];
 
     for (const input of testInputs) {
       try {
         const result = await runCode(wrappedCode, 71, input);
         if (result.ok && result.stdout.length > 0) {
-          cases.push({ input, output: result.stdout });
+          // Normalize output to space-separated tokens (consistent format)
+          cases.push({ input, output: normalizeTokens(result.stdout) });
         }
       } catch {
         // Skip failed executions
