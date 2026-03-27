@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
 import {
-  addDoc, collection, doc, getDoc, getDocs, query, where, deleteDoc, serverTimestamp,
+  addDoc, collection, doc, getDoc, getDocs, query, where, deleteDoc, updateDoc, serverTimestamp,
 } from 'firebase/firestore';
 import { generatePracticeProblem } from '@/app/actions/generate-practice-problem';
 import {
   Sparkles, Plus, Trash2, ChevronDown, ChevronUp, Code2, Clock,
-  CheckCircle2, AlertTriangle, BookOpen, Keyboard, Eye, EyeOff,
+  CheckCircle2, AlertTriangle, BookOpen, Keyboard, Eye, EyeOff, Pencil,
 } from 'lucide-react';
 
 interface TestCase {
@@ -77,7 +77,8 @@ export default function AdminPracticePage() {
   const [loading, setLoading] = useState(true);
 
   // Creation mode
-  const [mode, setMode] = useState<'list' | 'create'>('list');
+  const [mode, setMode] = useState<'list' | 'create' | 'edit'>('list');
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [createMode, setCreateMode] = useState<'ai' | 'manual'>('ai');
   const [aiTopic, setAiTopic] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -225,6 +226,70 @@ export default function AdminPracticePage() {
     }
   };
 
+  const handleEdit = (problem: PracticeProblem) => {
+    setEditingId(problem.id);
+    setForm({
+      title: problem.title,
+      difficulty: problem.difficulty,
+      description: problem.description,
+      functionName: problem.functionName,
+      constraints: problem.constraints.length ? problem.constraints : [''],
+      inputFormat: problem.inputFormat || '',
+      outputFormat: problem.outputFormat || '',
+      starterCode: {
+        'Python3': problem.starterCode?.['Python3'] || '',
+        'JavaScript': problem.starterCode?.['JavaScript'] || '',
+        'Java': problem.starterCode?.['Java'] || '',
+        'C++': problem.starterCode?.['C++'] || '',
+      },
+      testCases: problem.testCases.length ? problem.testCases : [{ input: '', expectedOutput: '', isHidden: false }],
+    });
+    setMode('edit');
+    setStatus({ type: '', message: '' });
+  };
+
+  const handleUpdate = async () => {
+    if (!editingId || !user || !universityId) return;
+    if (!form.title.trim() || !form.functionName.trim()) {
+      setStatus({ type: 'error', message: 'Title and function name are required.' });
+      return;
+    }
+    const validTestCases = form.testCases.filter(tc => tc.expectedOutput.trim());
+    if (validTestCases.length < 2) {
+      setStatus({ type: 'error', message: 'At least 2 test cases with expected outputs are required.' });
+      return;
+    }
+    try {
+      setStatus({ type: 'info', message: 'Updating problem...' });
+      const starterCode: Record<string, string> = { ...form.starterCode };
+      for (const lang of Object.keys(STARTER_TEMPLATES) as Array<keyof typeof STARTER_TEMPLATES>) {
+        if (!starterCode[lang]?.trim()) {
+          starterCode[lang] = STARTER_TEMPLATES[lang](form.functionName);
+        }
+      }
+      const updateData = {
+        title: form.title.trim(),
+        difficulty: form.difficulty,
+        description: form.description.trim(),
+        functionName: form.functionName.trim(),
+        constraints: form.constraints.filter(c => c.trim()),
+        inputFormat: form.inputFormat.trim(),
+        outputFormat: form.outputFormat.trim(),
+        starterCode,
+        testCases: validTestCases,
+      };
+      await updateDoc(doc(db, 'practice_problems', editingId), updateData);
+      setProblems(prev => prev.map(p => p.id === editingId ? { ...p, ...updateData } : p));
+      setMode('list');
+      setEditingId(null);
+      setForm(emptyProblem());
+      setStatus({ type: 'success', message: `Updated "${form.title.trim()}" successfully!` });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to update.';
+      setStatus({ type: 'error', message: msg });
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -239,11 +304,11 @@ export default function AdminPracticePage() {
         <div>
           <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Practice Problems</h1>
           <p className="text-[var(--text-tertiary)] text-[13px] mt-1">
-            {mode === 'list' ? `${problems.length} problem${problems.length !== 1 ? 's' : ''} published` : 'Create a new practice problem'}
+            {mode === 'list' ? `${problems.length} problem${problems.length !== 1 ? 's' : ''} published` : mode === 'edit' ? 'Edit practice problem' : 'Create a new practice problem'}
           </p>
         </div>
         <button
-          onClick={() => { setMode(mode === 'list' ? 'create' : 'list'); setStatus({ type: '', message: '' }); }}
+          onClick={() => { if (mode === 'list') { setMode('create'); setForm(emptyProblem()); setEditingId(null); } else { setMode('list'); } setStatus({ type: '', message: '' }); }}
           className={mode === 'list' ? 'btn-primary text-[12px] px-3 py-1.5 flex items-center gap-1.5' : 'btn-secondary text-[12px] px-3 py-1.5'}
         >
           {mode === 'list' ? <><Plus size={13} /> New Problem</> : 'Back to List'}
@@ -288,12 +353,22 @@ export default function AdminPracticePage() {
                     </div>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleDelete(p.id)}
-                  className="text-[var(--text-faint)] hover:text-[#F54E00] transition-colors opacity-0 group-hover:opacity-100"
-                >
-                  <Trash2 size={14} />
-                </button>
+                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => handleEdit(p)}
+                    className="text-[var(--text-faint)] hover:text-[#5E6AD2] transition-colors"
+                    title="Edit problem"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(p.id)}
+                    className="text-[var(--text-faint)] hover:text-[#F54E00] transition-colors"
+                    title="Delete problem"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
             ))
           )}
@@ -301,7 +376,8 @@ export default function AdminPracticePage() {
       ) : (
         /* ── Create Mode ── */
         <div className="space-y-4">
-          {/* Mode Toggle */}
+          {/* Mode Toggle — hide when editing */}
+          {mode !== 'edit' && (
           <div className="window p-4">
             <div className="inline-flex rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-1">
               <button
@@ -322,9 +398,10 @@ export default function AdminPracticePage() {
               </button>
             </div>
           </div>
+          )}
 
           {/* AI Input */}
-          {createMode === 'ai' && (
+          {createMode === 'ai' && mode !== 'edit' && (
             <div className="window p-5 space-y-3">
               <label className="text-[12px] font-medium text-[var(--text-secondary)]">Topic or Problem Description</label>
               <div className="flex gap-2">
@@ -351,7 +428,7 @@ export default function AdminPracticePage() {
           )}
 
           {/* Manual / Review Form */}
-          {createMode === 'manual' && (
+          {(createMode === 'manual' || mode === 'edit') && (
             <div className="space-y-4">
               {/* Title, Difficulty, Function Name */}
               <div className="window p-5 space-y-4">
@@ -542,9 +619,9 @@ export default function AdminPracticePage() {
                 </div>
               </div>
 
-              {/* Publish */}
-              <button onClick={handlePublish} className="btn-primary w-full flex items-center justify-center gap-2">
-                <BookOpen size={14} /> Publish Problem
+              {/* Publish / Update */}
+              <button onClick={mode === 'edit' ? handleUpdate : handlePublish} className="btn-primary w-full flex items-center justify-center gap-2">
+                <BookOpen size={14} /> {mode === 'edit' ? 'Update Problem' : 'Publish Problem'}
               </button>
             </div>
           )}
