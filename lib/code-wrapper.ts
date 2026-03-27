@@ -4,17 +4,37 @@
  *
  * Input contract: one function argument per line, as a Python literal.
  * Python 3 only; other languages pass through unchanged.
+ * JavaScript/TypeScript: reads stdin, JSON-parses each line, calls function.
  */
 
 const PYTHON3_ID = 71;
+const JS_ID = 93;
+const TS_ID = 74;
+const JAVA_ID = 62;
+const CPP_ID = 54;
 
 export function extractFunctionName(code: string, languageId: number): string | null {
-  if (languageId !== PYTHON3_ID) return null;
-  const matches = [...code.matchAll(/^def\s+(\w+)\s*\(/gm)];
-  if (matches.length === 0) return null;
-  const publicFns = matches.filter(m => !m[1].startsWith('_'));
-  if (publicFns.length > 0) return publicFns[publicFns.length - 1][1];
-  return matches[matches.length - 1][1];
+  if (languageId === PYTHON3_ID) {
+    const matches = [...code.matchAll(/^def\s+(\w+)\s*\(/gm)];
+    if (matches.length === 0) return null;
+    const publicFns = matches.filter(m => !m[1].startsWith('_'));
+    if (publicFns.length > 0) return publicFns[publicFns.length - 1][1];
+    return matches[matches.length - 1][1];
+  }
+
+  if (languageId === JS_ID || languageId === TS_ID) {
+    return extractJsFunctionName(code);
+  }
+
+  if (languageId === JAVA_ID) {
+    return extractJavaMethodName(code);
+  }
+
+  if (languageId === CPP_ID) {
+    return extractCppFunctionName(code);
+  }
+
+  return null;
 }
 
 export function extractPythonParamCount(code: string, functionName: string): number {
@@ -40,6 +60,13 @@ import copy as _copy
 from contextlib import redirect_stdout as _redirect_stdout
 
 _PERR = '__PLATFORM_PARSE_ERROR__'
+_orig_print = print
+
+def _quiet_print(*_a, **_k):
+  return None
+
+# Suppress top-level student demo output while loading student code.
+print = _quiet_print
 
 def _parse_arg(_line):
     _line = _line.strip()
@@ -204,21 +231,38 @@ export function wrapCode(
   languageId: number,
   mode: 'run' | 'submit' = 'submit',
 ): string {
-  if (languageId !== PYTHON3_ID) return studentCode;
-
-  // In "run" mode, if the student already has an if __name__ block,
-  // respect their own test harness and don't wrap.
-  if (mode === 'run' && HAS_MAIN_BLOCK.test(studentCode)) {
-    return studentCode;
+  if (languageId === PYTHON3_ID) {
+    // In "run" mode, if the student already has an if __name__ block,
+    // respect their own test harness and don't wrap.
+    if (mode === 'run' && HAS_MAIN_BLOCK.test(studentCode)) {
+      return studentCode;
+    }
+    const functionName = extractFunctionName(studentCode, languageId);
+    if (!functionName) return studentCode;
+    const paramCount = extractPythonParamCount(studentCode, functionName);
+    if (paramCount === 0) return studentCode;
+    return buildPythonWrapper(studentCode, functionName, paramCount);
   }
 
-  const functionName = extractFunctionName(studentCode, languageId);
-  if (!functionName) return studentCode;
+  if (languageId === JS_ID || languageId === TS_ID) {
+    const functionName = extractJsFunctionName(studentCode);
+    if (!functionName) return studentCode;
+    return buildJsWrapper(studentCode, functionName);
+  }
 
-  const paramCount = extractPythonParamCount(studentCode, functionName);
-  if (paramCount === 0) return studentCode;
+  if (languageId === JAVA_ID) {
+    const methodName = extractJavaMethodName(studentCode);
+    if (!methodName) return studentCode;
+    return buildJavaWrapper(studentCode, methodName);
+  }
 
-  return buildPythonWrapper(studentCode, functionName, paramCount);
+  if (languageId === CPP_ID) {
+    const functionName = extractCppFunctionName(studentCode);
+    if (!functionName) return studentCode;
+    return buildCppWrapper(studentCode, functionName);
+  }
+
+  return studentCode;
 }
 
 function buildPythonWrapper(
@@ -232,13 +276,324 @@ function buildPythonWrapper(
       /^if\s+__name__\s*==\s*["']__main__["']\s*:.*(?:\n(?:[ \t]+.*|\s*))*$/m,
       '',
     )
+    // Strip top-level print-based demo lines; they pollute judged stdout.
+    .replace(/^print\s*\(.*\)\s*$/gm, '')
     .trimEnd();
 
   const driver = [
+    `print = _orig_print`,
     `_inp = _sys.stdin.read()`,
     `_args = _smart_parse(_inp, ${paramCount})`,
     `_run_fn(${functionName}, _args, ${paramCount})`,
   ].join('\n');
 
   return [UNIVERSAL_DRIVER, '', '# ---- student code ----', stripped, '', '# ---- driver ----', driver].join('\n');
+}
+
+
+/* ═══════════════════════════════════════════════
+ * JavaScript / TypeScript wrapper
+ * ═══════════════════════════════════════════════ */
+
+function extractJsFunctionName(code: string): string | null {
+  // Match: function name(
+  const fnDecl = [...code.matchAll(/^function\s+(\w+)\s*\(/gm)];
+  // Match: var/let/const name = function(  OR  var/let/const name = (
+  const fnExpr = [...code.matchAll(/^(?:var|let|const)\s+(\w+)\s*=\s*(?:function\s*)?\(/gm)];
+  const all = [...fnDecl, ...fnExpr];
+  if (all.length === 0) return null;
+  // Filter out obvious internal names
+  const publicFns = all.filter(m => !m[1].startsWith('_'));
+  if (publicFns.length > 0) return publicFns[publicFns.length - 1][1];
+  return all[all.length - 1][1];
+}
+
+function buildJsWrapper(studentCode: string, functionName: string): string {
+  // Suppress student's console.log/error, include code, then driver
+  return `
+// ---- suppress student output ----
+const _origLog = console.log;
+const _origErr = console.error;
+console.log = function(){};
+console.error = function(){};
+
+// ---- student code ----
+${studentCode}
+
+// ---- driver ----
+console.log = _origLog;
+console.error = _origErr;
+const _inp = require('fs').readFileSync(0, 'utf8').trim();
+const _lines = _inp.split('\\n').filter(l => l.trim());
+const _args = _lines.map(function(_l) {
+  _l = _l.trim();
+  try { return JSON.parse(_l); } catch(_e) {}
+  // Handle Python-style booleans/None
+  if (_l === 'True') return true;
+  if (_l === 'False') return false;
+  if (_l === 'None') return null;
+  // Try number
+  const _n = Number(_l);
+  if (!isNaN(_n) && _l !== '') return _n;
+  return _l;
+});
+const _res = ${functionName}(..._args);
+if (_res !== undefined && _res !== null) {
+  if (typeof _res === 'boolean') _origLog(_res.toString());
+  else if (Array.isArray(_res) || typeof _res === 'object') _origLog(JSON.stringify(_res));
+  else _origLog(_res);
+}
+`.trim();
+}
+
+
+/* ═══════════════════════════════════════════════
+ * Java wrapper
+ * ═══════════════════════════════════════════════ */
+
+function extractJavaMethodName(code: string): string | null {
+  // Match public methods that are not "main"
+  const matches = [...code.matchAll(/public\s+(?:static\s+)?(?:\w+(?:<[^>]*>)?(?:\[\])*)\s+(\w+)\s*\(/gm)];
+  const filtered = matches.filter(m => m[1] !== 'main' && m[1] !== 'Main');
+  if (filtered.length === 0) return null;
+  return filtered[filtered.length - 1][1];
+}
+
+function extractJavaParamTypes(code: string, methodName: string): string[] {
+  const escaped = methodName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = code.match(new RegExp(`public\\s+(?:static\\s+)?(?:\\w+(?:<[^>]*>)?(?:\\[\\])*)\\s+${escaped}\\s*\\(([^)]*)\\)`));
+  if (!match || !match[1].trim()) return [];
+  return match[1].split(',').map(p => {
+    const parts = p.trim().split(/\s+/);
+    return parts.length >= 2 ? parts[0] : 'String';
+  });
+}
+
+function extractJavaReturnType(code: string, methodName: string): string {
+  const escaped = methodName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = code.match(new RegExp(`public\\s+(?:static\\s+)?(\\w+(?:<[^>]*>)?(?:\\[\\])*)\\s+${escaped}\\s*\\(`));
+  return match ? match[1] : 'void';
+}
+
+function javaParseExpr(type: string, varName: string): string {
+  const t = type.replace(/\s/g, '');
+  if (t === 'int' || t === 'Integer') return `Integer.parseInt(${varName}.trim())`;
+  if (t === 'long' || t === 'Long') return `Long.parseLong(${varName}.trim())`;
+  if (t === 'double' || t === 'Double') return `Double.parseDouble(${varName}.trim())`;
+  if (t === 'boolean' || t === 'Boolean') return `Boolean.parseBoolean(${varName}.trim().toLowerCase().replace("true","true").replace("false","false"))`;
+  if (t === 'String') return `${varName}.trim().replaceAll("^\\"|\\"$","")`;
+  if (t === 'int[]' || t === 'Integer[]') return `_parseIntArr(${varName})`;
+  if (t === 'int[][]') return `_parseInt2D(${varName})`;
+  if (t === 'String[]') return `_parseStrArr(${varName})`;
+  if (t.startsWith('List<Integer>') || t === 'List<Integer>') return `_parseIntList(${varName})`;
+  if (t.startsWith('List<List<Integer>>')) return `_parseInt2DList(${varName})`;
+  if (t.startsWith('List<String>')) return `_parseStrList(${varName})`;
+  return `${varName}.trim()`;
+}
+
+function javaFormatExpr(type: string, varName: string): string {
+  const t = type.replace(/\s/g, '');
+  if (t === 'int[]' || t === 'Integer[]') return `java.util.Arrays.toString(${varName})`;
+  if (t === 'int[][]') return `java.util.Arrays.deepToString(${varName})`;
+  if (t === 'boolean' || t === 'Boolean') return `String.valueOf(${varName}).toLowerCase()`;
+  if (t.startsWith('List') || t.startsWith('ArrayList')) return `${varName}.toString()`;
+  return `String.valueOf(${varName})`;
+}
+
+function buildJavaWrapper(studentCode: string, methodName: string): string {
+  const paramTypes = extractJavaParamTypes(studentCode, methodName);
+  const returnType = extractJavaReturnType(studentCode, methodName);
+
+  const argParsing = paramTypes.map((type, i) =>
+    `        ${type} _a${i} = ${javaParseExpr(type, `_lines[${i}]`)};`
+  ).join('\n');
+
+  const argList = paramTypes.map((_, i) => `_a${i}`).join(', ');
+  const isStatic = studentCode.includes(`public static`) && studentCode.includes(methodName);
+  const callExpr = isStatic
+    ? `Solution.${methodName}(${argList})`
+    : `new Solution().${methodName}(${argList})`;
+
+  const printResult = returnType === 'void'
+    ? `        ${callExpr};`
+    : `        ${returnType} _res = ${callExpr};\n        System.out.println(${javaFormatExpr(returnType, '_res')});`;
+
+  // Strip existing main method from student code
+  const strippedCode = studentCode.replace(
+    /public\s+static\s+void\s+main\s*\([^)]*\)\s*\{[^}]*(?:\{[^}]*\}[^}]*)*\}/g,
+    ''
+  );
+
+  return `
+import java.util.*;
+import java.util.stream.*;
+
+${strippedCode}
+
+class Main {
+    static int[] _parseIntArr(String s) {
+        s = s.trim().replaceAll("[\\\\[\\\\]()]", "");
+        if (s.isEmpty()) return new int[0];
+        return Arrays.stream(s.split(",")).map(String::trim).mapToInt(Integer::parseInt).toArray();
+    }
+    static List<Integer> _parseIntList(String s) {
+        int[] a = _parseIntArr(s); List<Integer> r = new ArrayList<>();
+        for (int v : a) r.add(v); return r;
+    }
+    static String[] _parseStrArr(String s) {
+        s = s.trim().replaceAll("[\\\\[\\\\]()]", "");
+        if (s.isEmpty()) return new String[0];
+        return Arrays.stream(s.split(",")).map(x -> x.trim().replaceAll("^\\"|\\"$","")).toArray(String[]::new);
+    }
+    static List<String> _parseStrList(String s) {
+        return Arrays.asList(_parseStrArr(s));
+    }
+    static int[][] _parseInt2D(String s) {
+        s = s.trim();
+        if (s.startsWith("[")) s = s.substring(1);
+        if (s.endsWith("]")) s = s.substring(0, s.length()-1);
+        List<int[]> rows = new ArrayList<>();
+        int depth = 0; StringBuilder cur = new StringBuilder();
+        for (char c : s.toCharArray()) {
+            if (c == '[') { depth++; cur.append(c); }
+            else if (c == ']') { depth--; cur.append(c); if (depth == 0) { rows.add(_parseIntArr(cur.toString())); cur = new StringBuilder(); } }
+            else if (c == ',' && depth == 0) { continue; }
+            else { cur.append(c); }
+        }
+        return rows.toArray(new int[0][]);
+    }
+    static List<List<Integer>> _parseInt2DList(String s) {
+        int[][] a = _parseInt2D(s); List<List<Integer>> r = new ArrayList<>();
+        for (int[] row : a) { List<Integer> lr = new ArrayList<>(); for (int v : row) lr.add(v); r.add(lr); }
+        return r;
+    }
+    public static void main(String[] args) throws Exception {
+        Scanner _sc = new Scanner(System.in);
+        List<String> _ll = new ArrayList<>();
+        while (_sc.hasNextLine()) { String _l = _sc.nextLine().trim(); if (!_l.isEmpty()) _ll.add(_l); }
+        String[] _lines = _ll.toArray(new String[0]);
+${printResult}
+    }
+}
+`.trim();
+}
+
+
+/* ═══════════════════════════════════════════════
+ * C++ wrapper
+ * ═══════════════════════════════════════════════ */
+
+function extractCppFunctionName(code: string): string | null {
+  // Match free functions or methods inside class Solution
+  const matches = [...code.matchAll(/(?:^|\s)(?:\w+(?:<[^>]*>)?(?:\s*[*&])?)\s+(\w+)\s*\([^)]*\)\s*\{/gm)];
+  const filtered = matches.filter(m => m[1] !== 'main' && m[1] !== 'Main');
+  if (filtered.length === 0) return null;
+  return filtered[filtered.length - 1][1];
+}
+
+function extractCppParamTypes(code: string, fn: string): string[] {
+  const escaped = fn.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = code.match(new RegExp(`(?:\\w+(?:<[^>]*>)?(?:\\s*[*&])?)\\s+${escaped}\\s*\\(([^)]*)\\)`));
+  if (!match || !match[1].trim()) return [];
+  return match[1].split(',').map(p => {
+    const parts = p.trim().split(/\s+/);
+    // type might be multi-word like "vector<int>"
+    return parts.length >= 2 ? parts.slice(0, -1).join(' ') : 'int';
+  });
+}
+
+function extractCppReturnType(code: string, fn: string): string {
+  const escaped = fn.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = code.match(new RegExp(`(\\w+(?:<[^>]*>)?(?:\\s*[*&])?)\\s+${escaped}\\s*\\(`));
+  return match ? match[1].trim() : 'void';
+}
+
+function buildCppWrapper(studentCode: string, functionName: string): string {
+  const paramTypes = extractCppParamTypes(studentCode, functionName);
+  const returnType = extractCppReturnType(studentCode, functionName);
+  const isInClass = /class\s+Solution\s*\{/.test(studentCode);
+
+  // Strip existing includes, using namespace, and main()
+  const strippedCode = studentCode
+    .replace(/^#include\s+.*$/gm, '')
+    .replace(/^using\s+namespace\s+.*$/gm, '')
+    .replace(/int\s+main\s*\([^)]*\)\s*\{[^}]*(?:\{[^}]*\}[^}]*)*\}/g, '')
+    .trim();
+
+  // Generate parsing code for each parameter
+  const argDecls = paramTypes.map((type, i) => {
+    const t = type.replace(/\s/g, '').replace(/&/g, '');
+    if (t === 'int') return `    int _a${i}; { string _l; getline(cin, _l); _a${i} = stoi(_l); }`;
+    if (t === 'long' || t === 'longlong') return `    long long _a${i}; { string _l; getline(cin, _l); _a${i} = stoll(_l); }`;
+    if (t === 'double') return `    double _a${i}; { string _l; getline(cin, _l); _a${i} = stod(_l); }`;
+    if (t === 'string') return `    string _a${i}; { getline(cin, _a${i}); while(!_a${i}.empty()&&(_a${i}.front()==\'"\'||_a${i}.front()==\' \'))_a${i}.erase(0,1); while(!_a${i}.empty()&&(_a${i}.back()==\'"\'||_a${i}.back()==\' \'))_a${i}.pop_back(); }`;
+    if (t === 'bool') return `    bool _a${i}; { string _l; getline(cin, _l); for(auto&c:_l)c=tolower(c); _a${i}=(_l.find("true")!=string::npos||_l=="1"); }`;
+    if (t === 'vector<int>') return `    vector<int> _a${i} = _parseVecInt();`;
+    if (t === 'vector<string>') return `    vector<string> _a${i} = _parseVecStr();`;
+    if (t === 'vector<vector<int>>') return `    vector<vector<int>> _a${i} = _parseVec2D();`;
+    return `    string _a${i}; getline(cin, _a${i});`;
+  }).join('\n');
+
+  const argList = paramTypes.map((_, i) => `_a${i}`).join(', ');
+  const callExpr = isInClass
+    ? `Solution().${functionName}(${argList})`
+    : `${functionName}(${argList})`;
+
+  const outputCode = returnType === 'void'
+    ? `    ${callExpr};`
+    : `    auto _res = ${callExpr};\n    _printResult(_res);`;
+
+  return `
+#include <bits/stdc++.h>
+using namespace std;
+
+// ---- helpers ----
+vector<int> _parseVecInt() {
+    string _l; getline(cin, _l);
+    vector<int> _r;
+    string _t;
+    for (char c : _l) {
+        if (isdigit(c) || c == '-') _t += c;
+        else if (!_t.empty()) { _r.push_back(stoi(_t)); _t.clear(); }
+    }
+    if (!_t.empty()) _r.push_back(stoi(_t));
+    return _r;
+}
+vector<string> _parseVecStr() {
+    string _l; getline(cin, _l);
+    vector<string> _r;
+    string _t; bool inStr = false;
+    for (char c : _l) {
+        if (c == '"') { if (inStr) { _r.push_back(_t); _t.clear(); } inStr = !inStr; }
+        else if (inStr) _t += c;
+    }
+    return _r;
+}
+vector<vector<int>> _parseVec2D() {
+    string _l; getline(cin, _l);
+    vector<vector<int>> _r;
+    int depth = 0; string _t;
+    for (char c : _l) {
+        if (c == '[') { depth++; if (depth == 2) _t.clear(); }
+        else if (c == ']') { depth--; if (depth == 1 && !_t.empty()) { vector<int> row; string n; for (char x : _t) { if (isdigit(x)||x=='-') n+=x; else if(!n.empty()){row.push_back(stoi(n));n.clear();}} if(!n.empty())row.push_back(stoi(n)); _r.push_back(row); _t.clear(); } }
+        else if (depth >= 2) _t += c;
+    }
+    return _r;
+}
+template<typename T> void _printResult(const vector<T>& v) { cout << "["; for (int i=0;i<(int)v.size();i++){if(i)cout<<", ";cout<<v[i];}cout<<"]"<<endl; }
+template<typename T> void _printResult(const vector<vector<T>>& v) { cout << "["; for(int i=0;i<(int)v.size();i++){if(i)cout<<", ";_printResult(v[i]);}cout<<"]"<<endl; }
+void _printResult(bool v) { cout << (v ? "true" : "false") << endl; }
+void _printResult(const string& v) { cout << v << endl; }
+template<typename T> void _printResult(T v) { cout << v << endl; }
+
+// ---- student code ----
+${strippedCode}
+
+// ---- driver ----
+int main() {
+${argDecls}
+${outputCode}
+    return 0;
+}
+`.trim();
 }
