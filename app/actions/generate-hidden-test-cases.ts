@@ -64,11 +64,16 @@ export async function generateHiddenTestCases(
   questionText: string,
   count: number = 3,
   sampleTestCases?: Array<{ input: string; output: string }>,
-) {
+): Promise<{
+  success: boolean;
+  cases?: GeneratedCase[];
+  correctedSamples?: Array<{ input: string; output: string }>;
+  error?: string;
+}> {
   try {
     const trimmed = (questionText || '').trim();
     if (!trimmed) {
-      return { success: false as const, error: 'Question text is required.' };
+      return { success: false, error: 'Question text is required.' };
     }
 
     const requestedCount = Math.min(Math.max(count, 2), 6);
@@ -82,44 +87,45 @@ export async function generateHiddenTestCases(
       userContent += `\n\nKnown sample test cases (your reference solution MUST produce these exact outputs for these inputs):\n${samplesStr}`;
     }
 
-    // Try up to 3 times with increasing temperature to get a correct ref solution
+    // Try up to 3 times with increasing temperature
     const temperatures = [0.2, 0.4, 0.7];
     for (let attempt = 0; attempt < temperatures.length; attempt++) {
-      const result = await tryGenerateWithRefSolution(
+      const result = await tryGenerateWithDualValidation(
         userContent, requestedCount, trimmed,
         sampleTestCases, temperatures[attempt],
       );
-      if (!result) {
-        await new Promise((r) => setTimeout(r, 500));
-        continue;
-      }
-
-      // Cross-validate: generate a SECOND ref solution and verify outputs agree
-      const crossResult = await crossValidate(
-        trimmed, sampleTestCases, result,
-      );
-      if (crossResult) return { success: true as const, cases: crossResult };
-
-      // Cross-validation failed — the outputs may be wrong, try again
+      if (result) return { success: true, ...result };
       await new Promise((r) => setTimeout(r, 500));
     }
 
-    // All attempts failed — fall back to Groq-only generation (with validation)
+    // All attempts failed — fall back to Groq-only generation
     return await fallbackGenerate(trimmed, requestedCount, sampleTestCases);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to generate hidden test cases.';
-    return { success: false as const, error: message };
+    return { success: false, error: message };
   }
 }
 
-async function tryGenerateWithRefSolution(
+/**
+ * Generate hidden test cases with dual-solution validation.
+ *
+ * Strategy:
+ * 1. Generate ref solution A → extract inputs → run against sample inputs
+ * 2. Generate ref solution B (independent) → run against same sample inputs
+ * 3. If A and B AGREE on sample inputs → they're both correct
+ *    (even if stored sample outputs are wrong — auto-correct them)
+ * 4. Generate hidden outputs using validated ref solution
+ * 5. Cross-validate hidden outputs with second solution
+ */
+async function tryGenerateWithDualValidation(
   userContent: string,
   requestedCount: number,
   questionText: string,
   sampleTestCases: Array<{ input: string; output: string }> | undefined,
   temperature: number,
-): Promise<GeneratedCase[] | null> {
+): Promise<{ cases: GeneratedCase[]; correctedSamples?: Array<{ input: string; output: string }> } | null> {
   try {
+    // ── Step 1: Generate primary ref solution + test inputs ──
     const completion = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       temperature,
@@ -143,51 +149,20 @@ async function tryGenerateWithRefSolution(
 
     if (!refSolution || testInputs.length === 0) return null;
 
-    // Detect if Groq split function arguments into separate testInput entries
-    const funcName = extractFunctionName(refSolution, 71);
-    const paramCount = funcName ? extractPythonParamCount(refSolution, funcName) : 0;
-    if (paramCount > 1) {
-      const allSingleLine = testInputs.every(
-        (inp) => inp.split('\n').filter((l) => l.trim()).length === 1
-      );
-      if (allSingleLine && testInputs.length >= paramCount) {
-        const merged: string[] = [];
-        for (let i = 0; i + paramCount - 1 < testInputs.length; i += paramCount) {
-          merged.push(testInputs.slice(i, i + paramCount).join('\n'));
-        }
-        testInputs = merged;
-      }
-    }
-    // Repair: ensure each input has exactly paramCount lines
-    if (paramCount > 0) {
-      testInputs = testInputs.map((inp) => {
-        const lines = inp.split('\n').filter((l) => l.trim());
-        if (lines.length > paramCount) {
-          // Too many lines — combine extra into last param as nested list
-          const firstLines = lines.slice(0, paramCount - 1);
-          const restLines = lines.slice(paramCount - 1);
-          const allBracketed = restLines.every((l) => l.trim().startsWith('['));
-          if (allBracketed) {
-            const combined = '[' + restLines.map((l) => l.trim()).join(', ') + ']';
-            return [...firstLines, combined].join('\n');
-          }
-        }
-        return inp;
-      });
-    }
+    // Fix test inputs format
+    testInputs = repairTestInputs(refSolution, testInputs);
     testInputs = testInputs.slice(0, requestedCount);
 
-    const wrappedCode = wrapCode(refSolution, 71);
+    const wrappedA = wrapCode(refSolution, 71);
 
-    // Validate: run ref solution against ALL sample test cases
+    // ── Step 2: Run primary ref against sample inputs ──
+    const sampleOutputsA: string[] = [];
     if (sampleTestCases && sampleTestCases.length > 0) {
       for (const sample of sampleTestCases) {
         try {
-          const sampleResult = await runCode(wrappedCode, 71, sample.input);
-          if (!sampleResult.ok) return null; // runtime error → reject
-          const actualTokens = normalizeTokens(sampleResult.stdout);
-          const expectedTokens = normalizeTokens(sample.output);
-          if (actualTokens !== expectedTokens) return null; // wrong answer → reject
+          const sr = await runCode(wrappedA, 71, sample.input);
+          if (!sr.ok) return null; // runtime error → solution is broken
+          sampleOutputsA.push(normalizeTokens(sr.stdout));
         } catch {
           return null;
         }
@@ -195,42 +170,7 @@ async function tryGenerateWithRefSolution(
       }
     }
 
-    // Ref solution passed ALL samples — now generate hidden case outputs
-    const cases: GeneratedCase[] = [];
-
-    for (const input of testInputs) {
-      try {
-        const result = await runCode(wrappedCode, 71, input);
-        if (result.ok && result.stdout.length > 0) {
-          // Normalize output to space-separated tokens (consistent format)
-          const normalized = normalizeTokens(result.stdout);
-          cases.push({ input, output: normalized });
-        }
-      } catch {
-        // Skip failed executions
-      }
-      await new Promise((r) => setTimeout(r, 600));
-    }
-
-    if (cases.length === 0) return null;
-
-    return cases;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Cross-validate hidden test case outputs by generating a SECOND independent
- * reference solution and verifying both solutions agree on all outputs.
- * Returns the validated cases if they agree, or null if they disagree.
- */
-async function crossValidate(
-  questionText: string,
-  sampleTestCases: Array<{ input: string; output: string }> | undefined,
-  primaryCases: GeneratedCase[],
-): Promise<GeneratedCase[] | null> {
-  try {
+    // ── Step 3: Generate SECOND independent ref solution ──
     const crossPrompt = `You are a coding expert. Write a CORRECT Python function that solves this problem.
 
 RULES:
@@ -240,80 +180,157 @@ RULES:
 4. ONLY function definitions. NO if __name__ block, NO input() calls.
 5. The function name and parameter names MUST exactly match the question.
 6. Use the SIMPLEST correct approach (brute force is fine for validation).
-7. If the problem asks for range sum queries, use prefix sums or simple iteration — do NOT implement MO's Algorithm or any sorting-based approach that reorders queries.`;
+7. For range queries (sum, min, max, count), use simple iteration: for i in range(L, R+1).
+   Do NOT implement MO's Algorithm, segment trees, or any approach that reorders queries.
+8. The function MUST return/print results in the ORIGINAL input order.`;
 
-    let userContent = `Question:\n${questionText}`;
-    if (sampleTestCases && sampleTestCases.length > 0) {
-      const samplesStr = sampleTestCases
-        .map((tc, i) => `Sample ${i + 1}: Input: ${tc.input} → Output: ${tc.output}`)
-        .join('\n');
-      userContent += `\n\nSample test cases (your solution MUST produce these):\n${samplesStr}`;
-    }
-
-    const completion = await groq.chat.completions.create({
+    const crossCompletion = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       temperature: 0.1,
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: crossPrompt },
-        { role: 'user', content: userContent },
+        { role: 'user', content: `Question:\n${questionText}` },
       ],
     });
 
-    const raw = completion.choices[0]?.message?.content || '{}';
-    const parsed = JSON.parse(raw) as { referenceSolution?: string };
-    const crossSolution = (parsed.referenceSolution || '').trim();
+    const crossRaw = crossCompletion.choices[0]?.message?.content || '{}';
+    const crossParsed = JSON.parse(crossRaw) as { referenceSolution?: string };
+    const crossSolution = (crossParsed.referenceSolution || '').trim();
     if (!crossSolution) return null;
 
-    const wrappedCross = wrapCode(crossSolution, 71);
+    const wrappedB = wrapCode(crossSolution, 71);
 
-    // First validate cross-solution against sample test cases
+    // ── Step 4: Run second ref against same sample inputs ──
+    let solutionsAgreeOnSamples = true;
+    let correctedSamples: Array<{ input: string; output: string }> | undefined;
+
     if (sampleTestCases && sampleTestCases.length > 0) {
+      const sampleOutputsB: string[] = [];
       for (const sample of sampleTestCases) {
         try {
-          const sr = await runCode(wrappedCross, 71, sample.input);
-          if (!sr.ok) return null;
-          if (normalizeTokens(sr.stdout) !== normalizeTokens(sample.output)) return null;
+          const sr = await runCode(wrappedB, 71, sample.input);
+          if (!sr.ok) { solutionsAgreeOnSamples = false; break; }
+          sampleOutputsB.push(normalizeTokens(sr.stdout));
         } catch {
-          return null;
+          solutionsAgreeOnSamples = false;
+          break;
         }
         await new Promise((r) => setTimeout(r, 600));
       }
+
+      if (solutionsAgreeOnSamples && sampleOutputsA.length === sampleOutputsB.length) {
+        // Check if both solutions agree with each other
+        for (let i = 0; i < sampleOutputsA.length; i++) {
+          if (sampleOutputsA[i] !== sampleOutputsB[i]) {
+            solutionsAgreeOnSamples = false;
+            break;
+          }
+        }
+      } else {
+        solutionsAgreeOnSamples = false;
+      }
+
+      if (!solutionsAgreeOnSamples) return null; // solutions disagree → can't trust either
+
+      // Both solutions agree — check if stored samples need correction
+      let samplesNeedCorrection = false;
+      for (let i = 0; i < sampleTestCases.length; i++) {
+        const storedTokens = normalizeTokens(sampleTestCases[i].output);
+        if (storedTokens !== sampleOutputsA[i]) {
+          samplesNeedCorrection = true;
+          break;
+        }
+      }
+
+      if (samplesNeedCorrection) {
+        correctedSamples = sampleTestCases.map((tc, i) => ({
+          input: tc.input,
+          output: sampleOutputsA[i],
+        }));
+      }
     }
 
-    // Cross-solution passes samples — now verify it agrees on all hidden inputs
-    const validatedCases: GeneratedCase[] = [];
-    for (const tc of primaryCases) {
+    // ── Step 5: Generate hidden case outputs using primary ref ──
+    const cases: GeneratedCase[] = [];
+
+    for (const input of testInputs) {
       try {
-        const cr = await runCode(wrappedCross, 71, tc.input);
-        if (!cr.ok) continue;
-        const crossTokens = normalizeTokens(cr.stdout);
-        const primaryTokens = normalizeTokens(tc.output);
-        if (crossTokens === primaryTokens) {
-          validatedCases.push(tc);
+        const resultA = await runCode(wrappedA, 71, input);
+        if (!resultA.ok || !resultA.stdout.length) continue;
+
+        // Cross-validate with second solution
+        const resultB = await runCode(wrappedB, 71, input);
+        if (!resultB.ok) continue;
+
+        const outputA = normalizeTokens(resultA.stdout);
+        const outputB = normalizeTokens(resultB.stdout);
+
+        // Only include test case if both solutions agree
+        if (outputA === outputB) {
+          cases.push({ input, output: outputA });
         }
-        // If they disagree, skip this test case (output is unreliable)
       } catch {
-        continue;
+        // Skip
       }
       await new Promise((r) => setTimeout(r, 600));
     }
 
-    // Need at least half the cases to agree
-    if (validatedCases.length < Math.ceil(primaryCases.length / 2)) return null;
+    if (cases.length === 0) return null;
 
-    return validatedCases;
+    return { cases, correctedSamples };
   } catch {
-    // Cross-validation failed — return null to try again
     return null;
   }
+}
+
+/** Fix common AI issues with test inputs */
+function repairTestInputs(refSolution: string, testInputs: string[]): string[] {
+  const funcName = extractFunctionName(refSolution, 71);
+  const paramCount = funcName ? extractPythonParamCount(refSolution, funcName) : 0;
+
+  if (paramCount > 1) {
+    const allSingleLine = testInputs.every(
+      (inp) => inp.split('\n').filter((l) => l.trim()).length === 1
+    );
+    if (allSingleLine && testInputs.length >= paramCount) {
+      const merged: string[] = [];
+      for (let i = 0; i + paramCount - 1 < testInputs.length; i += paramCount) {
+        merged.push(testInputs.slice(i, i + paramCount).join('\n'));
+      }
+      testInputs = merged;
+    }
+  }
+
+  if (paramCount > 0) {
+    testInputs = testInputs.map((inp) => {
+      const lines = inp.split('\n').filter((l) => l.trim());
+      if (lines.length > paramCount) {
+        const firstLines = lines.slice(0, paramCount - 1);
+        const restLines = lines.slice(paramCount - 1);
+        const allBracketed = restLines.every((l) => l.trim().startsWith('['));
+        if (allBracketed) {
+          const combined = '[' + restLines.map((l) => l.trim()).join(', ') + ']';
+          return [...firstLines, combined].join('\n');
+        }
+      }
+      return inp;
+    });
+  }
+
+  return testInputs;
 }
 
 async function fallbackGenerate(
   questionText: string,
   count: number,
   sampleTestCases?: Array<{ input: string; output: string }>,
-) {
+): Promise<{
+  success: boolean;
+  cases?: GeneratedCase[];
+  correctedSamples?: Array<{ input: string; output: string }>;
+  error?: string;
+}> {
   const systemPrompt = `You generate hidden coding test cases with expected outputs.
 
 CRITICAL RULES:

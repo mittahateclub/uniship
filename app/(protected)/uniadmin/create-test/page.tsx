@@ -260,17 +260,26 @@ export default function CreateTestPage() {
       const sampleCases = (q.sampleTestCases || []).filter(tc => tc.input.trim() && tc.output.trim()).map(tc => ({ input: tc.input, output: tc.output }));
       const result = await generateTestCasesForQuestion(fullText, 4, sampleCases);
       if (!result.success) {
-        setManualStatus({ type: 'error', message: result.error });
+        setManualStatus({ type: 'error', message: result.error || 'Failed to generate test cases.' });
         return;
       }
       setPracticeItems(prev => prev.map(existing => {
         if (existing.id !== qId) return existing;
-        return {
-          ...existing,
-          hiddenTestCases: result.cases.map(c => ({ id: puid(), input: c.input, output: c.output })),
+        const updates: Partial<typeof existing> = {
+          hiddenTestCases: (result.cases || []).map(c => ({ id: puid(), input: c.input, output: c.output })),
         };
+        // Auto-correct sample outputs if dual-validation found them wrong
+        if (result.correctedSamples) {
+          updates.sampleTestCases = result.correctedSamples.map((c, i) => ({
+            id: existing.sampleTestCases[i]?.id || puid(),
+            input: c.input,
+            output: c.output,
+          }));
+        }
+        return { ...existing, ...updates };
       }));
-      setManualStatus({ type: 'success', message: `Generated ${result.cases.length} hidden test cases.` });
+      const correctionNote = result.correctedSamples ? ' (sample outputs were auto-corrected)' : '';
+      setManualStatus({ type: 'success', message: `Generated ${(result.cases || []).length} hidden test cases.${correctionNote}` });
     } catch {
       setManualStatus({ type: 'error', message: 'Failed to generate test cases.' });
     } finally {
@@ -487,11 +496,14 @@ export default function CreateTestPage() {
       setAiGeneratingQuestionId(questionId);
       setManualStatus({ type: 'info', message: 'Groq is scanning the question and generating hidden test cases...' });
 
-      const result = await generateHiddenTestCases(question.questionText.trim(), 3, (question.testCases || []).filter(tc => tc.input.trim() && tc.output.trim()));
+      const sampleCases = (question.testCases || []).filter(tc => tc.input.trim() && tc.output.trim());
+      const result = await generateHiddenTestCases(question.questionText.trim(), 3, sampleCases);
       if (!result.success || !result.cases) {
         setManualStatus({ type: 'error', message: result.error || 'Could not generate hidden test cases.' });
         return;
       }
+
+      const generatedCases = result.cases;
 
       setPracticeQuestions(prev => ({
         ...prev,
@@ -499,7 +511,7 @@ export default function CreateTestPage() {
           if (q.id !== questionId) return q;
           return {
             ...q,
-            testCases: result.cases.map((c, idx) => ({
+            testCases: generatedCases.map((c, idx) => ({
               id: `${questionId}-ai-${Date.now()}-${idx}`,
               input: c.input,
               output: c.output,
@@ -508,7 +520,8 @@ export default function CreateTestPage() {
         }),
       }));
 
-      setManualStatus({ type: 'success', message: `Generated ${result.cases.length} hidden test cases with expected outputs.` });
+      const correctionNote = result.correctedSamples ? ' (sample outputs were auto-corrected — re-save to apply)' : '';
+      setManualStatus({ type: 'success', message: `Generated ${generatedCases.length} hidden test cases with expected outputs.${correctionNote}` });
     } catch (error: any) {
       setManualStatus({ type: 'error', message: error?.message || 'Failed to generate hidden test cases.' });
     } finally {

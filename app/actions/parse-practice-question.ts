@@ -154,11 +154,16 @@ export async function generateTestCasesForQuestion(
   questionText: string,
   count: number = 4,
   sampleTestCases?: Array<{ input: string; output: string }>,
-) {
+): Promise<{
+  success: boolean;
+  cases?: Array<{ input: string; output: string }>;
+  correctedSamples?: Array<{ input: string; output: string }>;
+  error?: string;
+}> {
   try {
     const trimmed = (questionText || '').trim();
     if (!trimmed) {
-      return { success: false as const, error: 'Question text is required.' };
+      return { success: false, error: 'Question text is required.' };
     }
 
     const requestedCount = Math.min(Math.max(count, 2), 8);
@@ -171,13 +176,13 @@ export async function generateTestCasesForQuestion(
       userContent += `\n\nKnown sample test cases (your reference solution MUST produce these exact outputs for these inputs):\n${samplesStr}`;
     }
 
-    // Try up to 3 times with increasing temperature to get a correct ref solution
+    // Try up to 3 times with increasing temperature
     const temperatures = [0.2, 0.4, 0.7];
     for (let attempt = 0; attempt < temperatures.length; attempt++) {
-      const result = await tryGenerateWithRef(
-        userContent, requestedCount, sampleTestCases, temperatures[attempt],
+      const result = await tryGenerateWithDualRef(
+        userContent, requestedCount, trimmed, sampleTestCases, temperatures[attempt],
       );
-      if (result) return { success: true as const, cases: result };
+      if (result) return { success: true, ...result };
       await new Promise((r) => setTimeout(r, 500));
     }
 
@@ -185,17 +190,19 @@ export async function generateTestCasesForQuestion(
     return await fallbackGenerateTestCases(trimmed, requestedCount);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to generate test cases.';
-    return { success: false as const, error: message };
+    return { success: false, error: message };
   }
 }
 
-async function tryGenerateWithRef(
+async function tryGenerateWithDualRef(
   userContent: string,
   requestedCount: number,
+  questionText: string,
   sampleTestCases: Array<{ input: string; output: string }> | undefined,
   temperature: number,
-): Promise<Array<{ input: string; output: string }> | null> {
+): Promise<{ cases: Array<{ input: string; output: string }>; correctedSamples?: Array<{ input: string; output: string }> } | null> {
   try {
+    // ── Generate primary ref solution + test inputs ──
     const completion = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       temperature,
@@ -219,7 +226,7 @@ async function tryGenerateWithRef(
 
     if (!refSolution || testInputs.length === 0) return null;
 
-    // Detect if Groq split function arguments into separate testInput entries
+    // Fix test inputs format
     const funcName = extractFunctionName(refSolution, 71);
     const paramCount = funcName ? extractPythonParamCount(refSolution, funcName) : 0;
     if (paramCount > 1) {
@@ -234,7 +241,6 @@ async function tryGenerateWithRef(
         testInputs = merged;
       }
     }
-    // Repair: ensure each input has exactly paramCount lines
     if (paramCount > 0) {
       testInputs = testInputs.map((inp) => {
         const lines = inp.split('\n').filter((l) => l.trim());
@@ -252,17 +258,16 @@ async function tryGenerateWithRef(
     }
     testInputs = testInputs.slice(0, requestedCount);
 
-    const wrappedCode = wrapCode(refSolution, 71);
+    const wrappedA = wrapCode(refSolution, 71);
 
-    // Validate: run ref solution against ALL sample test cases
+    // ── Run primary ref against sample inputs ──
+    const sampleOutputsA: string[] = [];
     if (sampleTestCases && sampleTestCases.length > 0) {
       for (const sample of sampleTestCases) {
         try {
-          const sampleResult = await runCode(wrappedCode, 71, sample.input);
-          if (!sampleResult.ok) return null; // runtime error → reject
-          const actualTokens = normalizeTokens(sampleResult.stdout);
-          const expectedTokens = normalizeTokens(sample.output);
-          if (actualTokens !== expectedTokens) return null; // wrong answer → reject
+          const sr = await runCode(wrappedA, 71, sample.input);
+          if (!sr.ok) return null;
+          sampleOutputsA.push(normalizeTokens(sr.stdout));
         } catch {
           return null;
         }
@@ -270,25 +275,102 @@ async function tryGenerateWithRef(
       }
     }
 
-    // Ref solution passed ALL samples — now generate test case outputs
+    // ── Generate SECOND independent ref solution ──
+    const crossPrompt = `You are a coding expert. Write a CORRECT Python function that solves this problem.
+
+RULES:
+1. Output valid JSON ONLY. No markdown.
+2. Return: {"referenceSolution": "def func_name(...):\\n    ..."}
+3. The function MUST be correct. Double-check edge cases.
+4. ONLY function definitions. NO if __name__ block, NO input() calls.
+5. The function name and parameter names MUST exactly match the question.
+6. Use the SIMPLEST correct approach (brute force is fine for validation).
+7. For range queries (sum, min, max, count), use simple iteration: for i in range(L, R+1).
+   Do NOT implement MO's Algorithm, segment trees, or any approach that reorders queries.
+8. The function MUST return/print results in the ORIGINAL input order.`;
+
+    const crossCompletion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.1,
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: crossPrompt },
+        { role: 'user', content: `Question:\n${questionText}` },
+      ],
+    });
+
+    const crossRaw = crossCompletion.choices[0]?.message?.content || '{}';
+    const crossParsed = JSON.parse(crossRaw) as { referenceSolution?: string };
+    const crossSolution = (crossParsed.referenceSolution || '').trim();
+    if (!crossSolution) return null;
+
+    const wrappedB = wrapCode(crossSolution, 71);
+
+    // ── Validate: both solutions must agree on sample inputs ──
+    let correctedSamples: Array<{ input: string; output: string }> | undefined;
+
+    if (sampleTestCases && sampleTestCases.length > 0) {
+      const sampleOutputsB: string[] = [];
+      let agreesOnSamples = true;
+      for (const sample of sampleTestCases) {
+        try {
+          const sr = await runCode(wrappedB, 71, sample.input);
+          if (!sr.ok) { agreesOnSamples = false; break; }
+          sampleOutputsB.push(normalizeTokens(sr.stdout));
+        } catch {
+          agreesOnSamples = false;
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 600));
+      }
+
+      if (!agreesOnSamples || sampleOutputsA.length !== sampleOutputsB.length) return null;
+      for (let i = 0; i < sampleOutputsA.length; i++) {
+        if (sampleOutputsA[i] !== sampleOutputsB[i]) return null;
+      }
+
+      // Check if samples need correction
+      let needsCorrection = false;
+      for (let i = 0; i < sampleTestCases.length; i++) {
+        if (normalizeTokens(sampleTestCases[i].output) !== sampleOutputsA[i]) {
+          needsCorrection = true;
+          break;
+        }
+      }
+      if (needsCorrection) {
+        correctedSamples = sampleTestCases.map((tc, i) => ({
+          input: tc.input,
+          output: sampleOutputsA[i],
+        }));
+      }
+    }
+
+    // ── Generate test case outputs, cross-validated ──
     const cases: Array<{ input: string; output: string }> = [];
 
     for (const input of testInputs) {
       try {
-        const result = await runCode(wrappedCode, 71, input);
-        if (result.ok && result.stdout.length > 0) {
-          // Normalize output to space-separated tokens (consistent format)
-          cases.push({ input, output: normalizeTokens(result.stdout) });
+        const resultA = await runCode(wrappedA, 71, input);
+        if (!resultA.ok || !resultA.stdout.length) continue;
+
+        const resultB = await runCode(wrappedB, 71, input);
+        if (!resultB.ok) continue;
+
+        const outputA = normalizeTokens(resultA.stdout);
+        const outputB = normalizeTokens(resultB.stdout);
+
+        if (outputA === outputB) {
+          cases.push({ input, output: outputA });
         }
       } catch {
-        // Skip failed executions
+        // Skip
       }
       await new Promise((r) => setTimeout(r, 600));
     }
 
     if (cases.length === 0) return null;
 
-    return cases;
+    return { cases, correctedSamples };
   } catch {
     return null;
   }
