@@ -342,7 +342,7 @@ export default function Navbar() {
             className={`flex items-center overflow-hidden rounded-md transition-colors duration-150 hover:bg-[var(--bg-surface)] mx-2 ${collapsed ? 'justify-center w-full py-1' : 'gap-2.5 px-2 py-1.5 w-full'}`}
           >
             <Image src="/logo.png" alt="Uniship" width={collapsed ? 48 : 54} height={collapsed ? 48 : 54} className="shrink-0 object-contain" />
-            {!collapsed && <span className="text-[14px] font-bold tracking-[0.16em] text-[var(--text-primary)] whitespace-nowrap">UNISHIP</span>}
+            {!collapsed && <span className="text-[21px] font-bold tracking-[0.16em] text-[var(--text-primary)] whitespace-nowrap self-center leading-none pt-[6px]">UNISHIP</span>}
           </Link>
         </div>
 

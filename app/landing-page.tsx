@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firestore';
 import Link from 'next/link';
+import Image from 'next/image';
 import { DM_Sans } from 'next/font/google';
 
 const dmSans = DM_Sans({
@@ -336,14 +337,8 @@ export default function Home() {
     <div className={`${dmSans.variable} landing-root`}>
       <nav>
         <div className="nav-logo">
-          <div className="icon">
-            <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 3L2 8l10 5 10-5-10-5z" />
-              <path d="M2 8v6" />
-              <path d="M6 10.5v5c0 1.657 2.686 3 6 3s6-1.343 6-3v-5" />
-            </svg>
-          </div>
-          Uniship
+          <Image src="/logo.png" alt="Uniship" width={54} height={54} className="nav-logo-img" />
+          <span className="nav-logo-text">UNISHIP</span>
         </div>
         <div className="nav-right">
           <div className="nav-links">
@@ -648,14 +643,8 @@ export default function Home() {
 
       <footer>
         <div className="nav-logo">
-          <div className="icon">
-            <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 3L2 8l10 5 10-5-10-5z" />
-              <path d="M2 8v6" />
-              <path d="M6 10.5v5c0 1.657 2.686 3 6 3s6-1.343 6-3v-5" />
-            </svg>
-          </div>
-          Uniship
+          <Image src="/logo.png" alt="Uniship" width={48} height={48} className="nav-logo-img" />
+          <span className="nav-logo-text">UNISHIP</span>
         </div>
         <div className="footer-links">
           <a href="#" onClick={(e) => e.preventDefault()}>Privacy</a>
@@ -750,23 +739,22 @@ export default function Home() {
           font-weight: 800;
           font-size: 1.2rem;
           letter-spacing: -0.02em;
+          line-height: 1;
         }
 
-        .nav-logo .icon {
-          width: 34px;
-          height: 34px;
-          background: var(--bg-card2);
-          border-radius: 8px;
-          border: 1px solid var(--border);
-          display: grid;
-          place-items: center;
-          font-size: 16px;
+        .nav-logo-img {
+          object-fit: contain;
+          flex-shrink: 0;
         }
 
-        .nav-logo .icon svg {
-          width: 17px;
-          height: 17px;
-          stroke: var(--orange);
+        .nav-logo-text {
+          font-size: 1.5rem;
+          font-weight: 800;
+          letter-spacing: 0.14em;
+          color: var(--text);
+          align-self: center;
+          padding-top: 0.35em;
+          line-height: 1;
         }
 
         .nav-links {
