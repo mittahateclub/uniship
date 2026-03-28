@@ -7,8 +7,21 @@ import { db } from '@/lib/firebase';
 import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import {
   Play, CloudUpload, ChevronDown, Code2, Clock, CheckCircle2, XCircle,
-  BookOpen, ArrowLeft, AlertTriangle, Terminal, Sparkles, Loader2,
+  BookOpen, ArrowLeft, AlertTriangle, Terminal, Loader2,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
+
+/* ── Monaco language mapping ── */
+const MONACO_LANG: Record<string, string> = {
+  'Python3': 'python',
+  'JavaScript': 'javascript',
+  'Java': 'java',
+  'C++': 'cpp',
+  'C': 'c',
+  'TypeScript': 'typescript',
+};
 
 /* ── Language IDs matching Judge0 ── */
 const LANG_IDS: Record<string, number> = {
@@ -79,7 +92,7 @@ export default function PracticeSolvePage() {
 
   // Tabs
   const [leftTab, setLeftTab] = useState<'description' | 'submissions'>('description');
-  const [consoleTab, setConsoleTab] = useState<'testcases' | 'result' | 'ai'>('testcases');
+  const [consoleTab, setConsoleTab] = useState<'testcases' | 'result'>('testcases');
   const [activeTestCase, setActiveTestCase] = useState(0);
 
   // Execution
@@ -90,11 +103,7 @@ export default function PracticeSolvePage() {
     verdict: string; passed: number; total: number;
   } | null>(null);
 
-  // AI
-  const [aiFeedback, setAiFeedback] = useState<string | null>(null);
-  const [isFetchingAi, setIsFetchingAi] = useState(false);
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Load problem
   useEffect(() => {
@@ -129,19 +138,7 @@ export default function PracticeSolvePage() {
     setSubmitVerdict(null);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      const el = e.currentTarget;
-      const start = el.selectionStart;
-      const end = el.selectionEnd;
-      const newCode = code.substring(0, start) + '    ' + code.substring(end);
-      setCode(newCode);
-      requestAnimationFrame(() => {
-        el.selectionStart = el.selectionEnd = start + 4;
-      });
-    }
-  };
+
 
   const executeCode = useCallback(async (isSubmit: boolean) => {
     if (!problem) return;
@@ -216,38 +213,7 @@ export default function PracticeSolvePage() {
     }
   }, [problem, code, language, user]);
 
-  const handleAiHint = async () => {
-    if (!problem) return;
-    setIsFetchingAi(true);
-    setConsoleTab('ai');
-    setAiFeedback(null);
 
-    try {
-      const response = await fetch('/api/compile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          source_code: `// AI HINT REQUEST - DO NOT EXECUTE\n// Problem: ${problem.title}\n// Code:\n${code}`,
-          language_id: LANG_IDS[language] || 71,
-          mode: 'run',
-          stdin: '',
-        }),
-      });
-      // We can't actually use compile for AI hints — use a simple approach instead
-      setAiFeedback(
-        `💡 **Hints for "${problem.title}"**\n\n` +
-        `• Read the problem constraints carefully — they often hint at the expected time complexity.\n` +
-        `• Consider edge cases: empty input, single element, duplicates.\n` +
-        `• Think about which data structure would make lookups efficient.\n` +
-        (problem.constraints.length > 0 ? `\n**Constraints:** ${problem.constraints.join(', ')}` : '') +
-        `\n\n*Try breaking the problem into smaller subproblems.*`
-      );
-    } catch {
-      setAiFeedback('Unable to generate hints at this time.');
-    } finally {
-      setIsFetchingAi(false);
-    }
-  };
 
   // Keyboard shortcut: Ctrl/Cmd + Enter to run, Ctrl/Cmd + Shift + Enter to submit
   useEffect(() => {
@@ -465,14 +431,34 @@ export default function PracticeSolvePage() {
                 <span>Judge0</span>
               </div>
             </div>
-            <textarea
-              ref={textareaRef}
+            <MonacoEditor
+              height="100%"
+              language={MONACO_LANG[language] || 'plaintext'}
+              theme="vs-dark"
               value={code}
-              onChange={e => setCode(e.target.value)}
-              onKeyDown={handleKeyDown}
-              spellCheck={false}
-              className="flex-1 bg-transparent text-[var(--text-primary)] p-4 font-mono text-[13px] resize-none focus:outline-none custom-scrollbar whitespace-pre leading-relaxed"
-              style={{ tabSize: 4 }}
+              onChange={(v) => setCode(v || '')}
+              options={{
+                fontSize: 13,
+                fontFamily: 'JetBrains Mono, Fira Code, Menlo, Monaco, monospace',
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+                tabSize: 4,
+                padding: { top: 12, bottom: 12 },
+                lineNumbersMinChars: 3,
+                renderLineHighlight: 'line',
+                cursorBlinking: 'smooth',
+                smoothScrolling: true,
+                contextmenu: false,
+                quickSuggestions: false,
+                suggestOnTriggerCharacters: false,
+                parameterHints: { enabled: false },
+                wordBasedSuggestions: 'off',
+                codeLens: false,
+                inlayHints: { enabled: 'off' },
+                hover: { enabled: false },
+                lightbulb: { enabled: 'off' as unknown as undefined },
+              }}
             />
           </div>
 
@@ -496,12 +482,7 @@ export default function PracticeSolvePage() {
                     : <XCircle size={11} className="text-[#F54E00]" />
                 )}
               </button>
-              <button
-                onClick={handleAiHint}
-                className={`px-3 py-2 transition-colors flex items-center gap-1 ${consoleTab === 'ai' ? 'text-purple-400' : 'text-purple-500/40'}`}
-              >
-                <Sparkles size={11} /> Hints
-              </button>
+
             </div>
 
             {/* Test case selector tabs */}
@@ -616,19 +597,7 @@ export default function PracticeSolvePage() {
                 )
               )}
 
-              {consoleTab === 'ai' && (
-                <div className="text-[12px] text-[var(--text-secondary)] leading-relaxed">
-                  {isFetchingAi ? (
-                    <div className="flex items-center gap-2 text-[var(--text-faint)]">
-                      <Loader2 size={14} className="animate-spin" /> Generating hints...
-                    </div>
-                  ) : aiFeedback ? (
-                    <pre className="whitespace-pre-wrap font-sans">{aiFeedback}</pre>
-                  ) : (
-                    <p className="text-[var(--text-faint)] italic">Click &quot;Hints&quot; tab to get problem-solving tips.</p>
-                  )}
-                </div>
-              )}
+
             </div>
           </div>
         </div>
