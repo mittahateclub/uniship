@@ -56,7 +56,7 @@ export default function TestsPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !user) router.push('/login');
+    if (!authLoading && !user) router.push('/');
   }, [user, authLoading, router]);
 
   useEffect(() => {

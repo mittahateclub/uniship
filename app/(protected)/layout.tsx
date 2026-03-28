@@ -18,7 +18,7 @@ export default function ProtectedLayout({
   const roleLabel = role === 'super_admin' ? 'Super Admin' : role === 'university_admin' ? 'Uni Admin' : 'Student';
 
   const handleLogout = async () => {
-    try { await logout(); router.push('/login'); } catch {}
+    try { await logout(); router.push('/'); } catch {}
   };
 
   return (
@@ -26,7 +26,7 @@ export default function ProtectedLayout({
       <Navbar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top bar */}
-        <div className="h-12 bg-[var(--bg-primary)] border-b border-[var(--border-subtle)] flex items-center shrink-0 px-5 gap-4">
+        <div className="h-14 bg-[var(--bg-primary)] border-b border-[var(--border-subtle)] flex items-center shrink-0 px-5 gap-4">
           {/* Search — centered */}
           <div className="flex-1 flex justify-center">
             <button

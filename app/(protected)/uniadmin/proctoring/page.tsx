@@ -78,7 +78,7 @@ export default function ProctorDashboard() {
 
   // Get admin's universityId
   useEffect(() => {
-    if (!authLoading && !user) { router.push('/login'); return; }
+    if (!authLoading && !user) { router.push('/'); return; }
     if (!user) return;
     (async () => {
       const userDoc = await getDoc(doc(db, 'users', user.uid));

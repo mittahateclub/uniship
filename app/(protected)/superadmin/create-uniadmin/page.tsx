@@ -35,7 +35,7 @@ export default function CreateUniadminPage() {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    if (!loading && !user) router.push('/login');
+    if (!loading && !user) router.push('/');
   }, [user, loading, router]);
 
   useEffect(() => {

@@ -16,7 +16,7 @@ export default function UniadminProfilePage() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    if (!loading && !user) router.push('/login');
+    if (!loading && !user) router.push('/');
   }, [user, loading, router]);
 
   useEffect(() => {

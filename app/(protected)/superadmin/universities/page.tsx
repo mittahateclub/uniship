@@ -30,7 +30,7 @@ export default function ManageUniversitiesPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!loading && !user) router.push('/login');
+    if (!loading && !user) router.push('/');
   }, [user, loading, router]);
 
   async function fetchUniversities() {

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   LayoutDashboard,
   FileText,
@@ -25,8 +26,8 @@ import {
   CalendarPlus,
   ShieldCheck,
   UserPlus,
-  PanelLeftClose,
-  PanelLeftOpen,
+  ChevronLeft,
+  ChevronRight,
   Award,
   FolderKanban,
   BookOpen,
@@ -68,7 +69,6 @@ const userNavLinks: NavLink[] = [
   { href: '/user/practice', label: 'Practice', icon: Code, group: 'Prepare' },
   { href: '/user/resume', label: 'AI Resume Builder', icon: Sparkles, group: 'Prepare' },
   { href: '/user/results', label: 'Results', icon: BarChart3, group: 'Track' },
-  { href: '/user/analysis', label: 'Analysis', icon: TrendingUp, group: 'Track' },
   { href: '/user/profile', label: 'Profile', icon: User, group: 'Track' },
 ];
 
@@ -98,7 +98,6 @@ const userSearchItems: SearchableItem[] = [
   { href: '/user/internships', label: 'College Space', desc: 'Events, internships & opportunities', icon: Briefcase, category: 'Pages' },
   { href: '/user/applications', label: 'Applications', desc: 'Track your submissions', icon: ClipboardCheck, category: 'Pages' },
   { href: '/user/results', label: 'Results', desc: 'View scores & performance', icon: BarChart3, category: 'Pages' },
-  { href: '/user/analysis', label: 'Analysis', desc: 'Personal growth, speed and reliability metrics', icon: TrendingUp, category: 'Pages' },
   { href: '/user/calendar', label: 'Calendar', desc: 'Upcoming events & deadlines', icon: Calendar, category: 'Pages' },
   { href: '/user/profile', label: 'Profile', desc: 'Account settings & details', icon: User, category: 'Pages' },
   { href: '/user/resume', label: 'AI Resume Builder', desc: 'AI-powered resume editor', icon: Sparkles, category: 'Pages' },
@@ -121,7 +120,6 @@ const userSearchItems: SearchableItem[] = [
   { href: '/user/dashboard#stats', label: 'Pending Tests', desc: 'Tests waiting to be taken', icon: FileText, category: 'Dashboard' },
   { href: '/user/dashboard#stats', label: 'Upcoming Events', desc: 'Scheduled events count', icon: Calendar, category: 'Dashboard' },
   { href: '/user/dashboard#stats', label: 'Average Score', desc: 'Overall test performance', icon: BarChart3, category: 'Dashboard' },
-  { href: '/user/analysis', label: 'Performance Trends', desc: 'Accuracy trends by section and speed', icon: TrendingUp, category: 'Dashboard' },
   // College Space — In-page sections
   { href: '/user/internships#listings', label: 'Browse Listings', desc: 'All posted opportunities', icon: Building2, category: 'College Space' },
   { href: '/user/internships#listings', label: 'Saved Items', desc: 'Your saved events & opportunities', icon: Star, category: 'College Space' },
@@ -131,7 +129,6 @@ const userSearchItems: SearchableItem[] = [
   { href: '/user/internships', label: 'Browse College Space', desc: 'Events & opportunities', icon: Search, category: 'Actions' },
   { href: '/user/applications', label: 'Check Application Status', desc: 'View pending & accepted', icon: ClipboardCheck, category: 'Actions' },
   { href: '/user/calendar', label: 'View Upcoming Events', desc: 'See scheduled dates', icon: Calendar, category: 'Actions' },
-  { href: '/user/analysis', label: 'Open My Analysis', desc: 'Review strengths and improvement areas', icon: TrendingUp, category: 'Actions' },
 ];
 
 const uniadminSearchItems: SearchableItem[] = [
@@ -326,7 +323,7 @@ export default function Navbar() {
   };
 
   const handleLogout = async () => {
-    try { await logout(); router.push('/login'); } catch {}
+    try { await logout(); router.push('/'); } catch {}
   };
 
   const isActive = (href: string) => pathname === href || pathname?.startsWith(href + '/');
@@ -336,13 +333,28 @@ export default function Navbar() {
   return (
     <>
       {/* ═══ Left Sidebar ═══ */}
-      <aside className={`h-screen bg-[var(--bg-elevated)] border-r border-[var(--border-subtle)] flex flex-col transition-all duration-150 ease-out shrink-0 sticky top-0 ${collapsed ? 'w-[52px]' : 'w-[220px]'}`}>
+      <aside className={`h-screen bg-[var(--bg-elevated)] border-r border-[var(--border-subtle)] flex flex-col transition-all duration-200 ease-out shrink-0 sticky top-0 ${collapsed ? 'w-[56px]' : 'w-[240px]'}`}>
         {/* Logo */}
-        <div className="h-12 flex items-center px-3 border-b border-[var(--border-subtle)] shrink-0">
-          <Link href="/" className="flex items-center gap-2 overflow-hidden">
-            <GraduationCap size={20} className="text-[#F54E00] shrink-0" />
-            {!collapsed && <span className="text-[13px] font-bold text-[var(--text-primary)] tracking-tight whitespace-nowrap">UNISHIP</span>}
+        <div className="h-14 flex items-center border-b border-[var(--border-subtle)] shrink-0">
+          <Link
+            href="/"
+            className={`flex items-center overflow-hidden rounded-md transition-colors duration-150 hover:bg-[var(--bg-surface)] mx-2 ${collapsed ? 'justify-center w-full py-1' : 'gap-2.5 px-2 py-1.5 w-full'}`}
+          >
+            <Image src="/logo.png" alt="Uniship" width={collapsed ? 32 : 36} height={collapsed ? 32 : 36} className="shrink-0 object-contain" />
+            {!collapsed && <span className="text-[14px] font-bold tracking-[0.16em] text-[var(--text-primary)] whitespace-nowrap">UNISHIP</span>}
           </Link>
+        </div>
+
+        {/* Collapse/Expand toggle — right-aligned below logo */}
+        <div className="flex justify-end px-1 py-1 shrink-0">
+          <button
+            onClick={() => setCollapsed(c => !c)}
+            className="sidebar-toggle"
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={collapsed ? 'Expand' : 'Collapse'}
+          >
+            {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+          </button>
         </div>
 
 
@@ -382,17 +394,6 @@ export default function Navbar() {
             });
           })()}
         </nav>
-
-        {/* Bottom section */}
-        <div className="border-t border-[var(--border-subtle)] p-2 shrink-0">
-          <button
-            onClick={() => setCollapsed(c => !c)}
-            className={`flex items-center gap-2 w-full rounded text-[12px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] transition-all duration-150 ${collapsed ? 'justify-center p-2' : 'px-2.5 py-1.5'}`}
-          >
-            {collapsed ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />}
-            {!collapsed && <span>Collapse</span>}
-          </button>
-        </div>
       </aside>
 
       {/* ═══ Command-K Modal ═══ */}

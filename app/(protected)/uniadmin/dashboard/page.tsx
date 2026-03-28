@@ -19,7 +19,7 @@ export default function UniAdminDashboard() {
   const [stats, setStats] = useState({ activeTests: 0, totalStudents: 0, upcomingEvents: 0 });
 
   useEffect(() => {
-    if (!loading && !user) router.push('/login');
+    if (!loading && !user) router.push('/');
   }, [user, loading, router]);
 
   useEffect(() => {

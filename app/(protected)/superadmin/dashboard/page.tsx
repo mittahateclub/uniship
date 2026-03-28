@@ -14,7 +14,7 @@ export default function SuperadminDashboard() {
   const [stats, setStats] = useState({ totalUniadmins: 0, totalStudents: 0, totalUniversities: 0 });
 
   useEffect(() => {
-    if (!loading && !user) router.push('/login');
+    if (!loading && !user) router.push('/');
   }, [user, loading, router]);
 
   useEffect(() => {

@@ -5,7 +5,8 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
-import { GraduationCap, Mail, Lock, ArrowRight } from 'lucide-react';
+import { Mail, Lock, ArrowRight } from 'lucide-react';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -47,12 +48,29 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] p-4">
-      <div className="w-full max-w-sm animate-fade-in">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-[var(--bg-primary)]">
+      {/* Background grid */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        backgroundImage: 'linear-gradient(var(--border-subtle) 1px, transparent 1px), linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px)',
+        backgroundSize: '48px 48px',
+        opacity: 0.4,
+      }} />
+      {/* Radial fade from center */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        background: 'radial-gradient(ellipse 70% 60% at 50% 50%, transparent 0%, var(--bg-primary) 100%)',
+      }} />
+
+
+      <div className="w-full max-w-sm animate-fade-in relative z-10">
+        {/* Orange glow tightly around the card */}
+        <div className="absolute inset-0 -z-10 pointer-events-none" style={{
+          background: 'radial-gradient(ellipse 90% 80% at 50% 60%, rgba(245,78,0,0.18) 0%, transparent 70%)',
+          filter: 'blur(24px)',
+        }} />
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-10 h-10 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded mb-4">
-            <GraduationCap size={20} className="text-[#F54E00]" />
+          <div className="flex justify-center mb-6">
+            <Image src="/logo.png" alt="Uniship" width={210} height={58} className="object-contain w-auto" style={{ maxHeight: 58 }} />
           </div>
           <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Welcome back</h1>
           <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Sign in to your Uniship account</p>
