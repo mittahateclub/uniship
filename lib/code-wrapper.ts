@@ -630,7 +630,8 @@ ${printResult}
 
 function extractCppFunctionName(code: string): string | null {
   // Match free functions or methods inside class Solution
-  const matches = [...code.matchAll(/(?:^|\s)(?:\w+(?:<[^>]*>)?(?:\s*[*&])?)\s+(\w+)\s*\([^)]*\)\s*\{/gm)];
+  // [\w:]+ handles std::vector etc, (?:const\s+)? handles const qualifiers
+  const matches = [...code.matchAll(/(?:^|\s)(?:(?:const\s+)?[\w:]+(?:<[^>]*>)?(?:\s*[*&])?)\s+(\w+)\s*\([^)]*\)\s*\{/gm)];
   const filtered = matches.filter(m => m[1] !== 'main' && m[1] !== 'Main');
   if (filtered.length === 0) return null;
   return filtered[filtered.length - 1][1];
@@ -638,18 +639,18 @@ function extractCppFunctionName(code: string): string | null {
 
 function extractCppParamTypes(code: string, fn: string): string[] {
   const escaped = fn.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const match = code.match(new RegExp(`(?:\\w+(?:<[^>]*>)?(?:\\s*[*&])?)\\s+${escaped}\\s*\\(([^)]*)\\)`));
+  const match = code.match(new RegExp(`(?:(?:const\\s+)?[\\w:]+(?:<[^>]*>)?(?:\\s*[*&])?)\\s+${escaped}\\s*\\(([^)]*)\\)`));
   if (!match || !match[1].trim()) return [];
   return match[1].split(',').map(p => {
     const parts = p.trim().split(/\s+/);
-    // type might be multi-word like "vector<int>"
+    // type might be multi-word like "const vector<int>&"
     return parts.length >= 2 ? parts.slice(0, -1).join(' ') : 'int';
   });
 }
 
 function extractCppReturnType(code: string, fn: string): string {
   const escaped = fn.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const match = code.match(new RegExp(`(\\w+(?:<[^>]*>)?(?:\\s*[*&])?)\\s+${escaped}\\s*\\(`));
+  const match = code.match(new RegExp(`((?:const\\s+)?[\\w:]+(?:<[^>]*>)?(?:\\s*[*&])?)\\s+${escaped}\\s*\\(`));
   return match ? match[1].trim() : 'void';
 }
 
@@ -678,7 +679,7 @@ function buildCppWrapper(studentCode: string, functionName: string, languageId: 
 
   // Generate parsing code for each param using _lines[_idx++]
   const argDecls = paramTypes.map((type, i) => {
-    const t = type.replace(/\s/g, '').replace(/&/g, '');
+    const t = type.replace(/\s/g, '').replace(/&/g, '').replace(/std::/g, '').replace(/^const/, '');
     if (t === 'int') return `    int _a${i} = stoi(_lines[_idx++]);`;
     if (t === 'long' || t === 'longlong') return `    long long _a${i} = stoll(_lines[_idx++]);`;
     if (t === 'double') return `    double _a${i} = stod(_lines[_idx++]);`;
@@ -788,7 +789,7 @@ function buildCWrapper(
 ): string {
   // Map C++ types to C equivalents
   const cType = (t: string): string => {
-    const n = t.replace(/\s/g, '').replace(/&/g, '');
+    const n = t.replace(/\s/g, '').replace(/&/g, '').replace(/std::/g, '').replace(/^const/, '');
     if (n === 'int') return 'int';
     if (n === 'long' || n === 'longlong') return 'long long';
     if (n === 'double') return 'double';
@@ -800,7 +801,7 @@ function buildCWrapper(
   };
 
   const argDecls = paramTypes.map((type, i) => {
-    const t = type.replace(/\s/g, '').replace(/&/g, '');
+    const t = type.replace(/\s/g, '').replace(/&/g, '').replace(/std::/g, '').replace(/^const/, '');
     if (t === 'int') return `    int _a${i} = atoi(_lines[_idx++]);`;
     if (t === 'long' || t === 'longlong') return `    long long _a${i} = atoll(_lines[_idx++]);`;
     if (t === 'double') return `    double _a${i} = atof(_lines[_idx++]);`;
@@ -812,13 +813,13 @@ function buildCWrapper(
   // For C functions, we often need to pass array sizes
   const argListParts: string[] = [];
   paramTypes.forEach((type, i) => {
-    const t = type.replace(/\s/g, '').replace(/&/g, '');
+    const t = type.replace(/\s/g, '').replace(/&/g, '').replace(/std::/g, '').replace(/^const/, '');
     argListParts.push(`_a${i}`);
     if (t === 'int*' || t === 'vector<int>') argListParts.push(`_sz${i}`);
   });
   const cCallExpr = `${functionName}(${argListParts.join(', ')})`;
 
-  const rt = returnType.replace(/\s/g, '').replace(/&/g, '');
+  const rt = returnType.replace(/\s/g, '').replace(/&/g, '').replace(/std::/g, '').replace(/^const/, '');
   let outputCode: string;
   if (rt === 'void') {
     outputCode = `    ${cCallExpr};`;
