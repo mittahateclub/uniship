@@ -4,70 +4,86 @@ import { groq } from "@/lib/groq";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
-const SYSTEM_PROMPT = `You are a strict Markdown-to-JSON conversion agent.
+const SYSTEM_PROMPT = `You are a strict Markdown-to-JSON conversion agent for test/exam papers.
 
-Your ONLY task is to convert the given markdown document into a valid, well-structured JSON object.
+Your task is to convert the given markdown document into structured JSON. The test paper may contain up to THREE types of sections:
 
-Rules you MUST follow:
-1. Output ONLY valid JSON. Do NOT include explanations, comments, markdown, or extra text.
-2. Preserve ALL information from the markdown faithfully. Do NOT summarize, rephrase, or omit content.
-3. Maintain the original hierarchy and section numbering in JSON keys.
-4. Use clear, consistent, and predictable key names.
-5. Convert headings into nested JSON objects.
-6. Convert bullet points into JSON arrays.
-7. Convert numbered lists into ordered JSON arrays.
-8. Preserve mathematical expressions as plain strings.
-9. Preserve code blocks, input/output examples, and diagrams as strings.
-10. Preserve sample test cases exactly as written.
-11. If a section repeats across problems (e.g., Function Description, Constraints, Input Format), keep the same key names everywhere.
-12. Use camelCase for all JSON keys.
-13. Arrays must contain objects when structured data exists.
-14. Strings must remain strings — do NOT infer data types.
-15. Do NOT invent fields that do not exist in the markdown.
-16. Do NOT remove redundancy if it exists in the source.
+1. **Aptitude Questions** — text-based questions with a correct answer (e.g. math, reasoning, data interpretation)
+2. **Coding MCQs** — multiple choice questions about programming with 4 options (A, B, C, D)
+3. **Live Coding Questions** — full coding problems with test cases, input/output format
 
-Expected top-level JSON structure:
+Detect which sections exist in the document and classify each question accordingly.
+
+Rules:
+1. Output ONLY valid JSON. No markdown, comments, or extra text.
+2. Preserve ALL information faithfully.
+3. Use camelCase for all JSON keys.
+4. Detect question types by content: if it has options A/B/C/D about code → "mcq". If it's a math/reasoning question → "aptitude". If it has input format, output format, test cases → "coding".
+
+Expected JSON structure:
 {
   "metadata": {
     "difficultyLevels": [],
     "totalProblems": number
   },
-  "problems": [
+  "sections": [
     {
-      "section": "string",
-      "difficulty": "EASY | MEDIUM | HARD | COMPLEX",
-      "title": "string",
-      "questionDescription": "string",
-      "functionDescription": {
-        "name": "string",
-        "parameters": [],
-        "return": "string"
-      },
-      "constraints": [],
-      "inputFormat": "string",
-      "outputFormat": "string",
-      "sampleTestCases": [
+      "type": "aptitude",
+      "title": "Section 1: Aptitude",
+      "questions": [
         {
-          "input": "string",
-          "output": "string",
-          "explanation": "string"
+          "questionText": "Full question text",
+          "correctAnswer": "The answer",
+          "explanation": "Explanation if provided, otherwise empty string"
         }
-      ],
-      "hiddenTestCases": [
+      ]
+    },
+    {
+      "type": "mcq",
+      "title": "Section 2: Coding MCQs",
+      "questions": [
         {
-          "input": "string",
-          "output": "string"
+          "questionText": "Question text including any code",
+          "options": ["A. option1", "B. option2", "C. option3", "D. option4"],
+          "correctAnswer": "B",
+          "explanation": "Explanation if provided"
+        }
+      ]
+    },
+    {
+      "type": "coding",
+      "title": "Section 3: Live Coding",
+      "questions": [
+        {
+          "title": "Problem title",
+          "questionDescription": "Full problem statement",
+          "difficulty": "EASY | MEDIUM | HARD",
+          "functionName": "functionName",
+          "constraints": [],
+          "inputFormat": "string",
+          "outputFormat": "string",
+          "sampleTestCases": [
+            { "input": "string", "output": "string", "explanation": "string" }
+          ],
+          "hiddenTestCases": [
+            { "input": "string", "output": "string" }
+          ],
+          "referenceSolution": "Complete Python solution if provided, otherwise empty string",
+          "starterCode": {}
         }
       ]
     }
-  ]
+  ],
+  "problems": []
 }
 
-If any content is ambiguous, represent it exactly as text rather than guessing.
-
-If the markdown contains multiple problems, convert ALL of them into the JSON array.
-
-Failure to follow these rules is considered an incorrect response.`;
+IMPORTANT:
+- If the document only has coding problems (no clear sections), put them ALL in a coding section AND also in the top-level "problems" array for backward compatibility.
+- The "problems" array should contain the legacy format for backward compatibility with existing code.
+- If sections are clearly labeled in the document, use those labels.
+- If answers are provided in the document, include them. If not, leave correctAnswer empty.
+- For coding problems without explicit hidden test cases, set hiddenTestCases to an empty array.
+- Preserve code formatting using \\n for newlines in strings.`;
 
 export async function processTestDocument(formData: FormData, userId: string, universityId: string, options?: { title?: string; description?: string; duration?: number; category?: string; totalQuestions?: number; examStart?: string; examEnd?: string }) {
   try {

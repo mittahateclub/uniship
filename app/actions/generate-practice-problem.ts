@@ -208,19 +208,27 @@ async function attemptGenerate(prompt: string): Promise<ProblemResult> {
   };
 }
 
-export async function generatePracticeProblem(topic: string): Promise<ProblemResult> {
+export async function generatePracticeProblem(
+  topic: string,
+  options?: { title?: string; difficulty?: string },
+): Promise<ProblemResult> {
   if (!topic.trim()) {
     return { success: false, error: 'Topic is required.' };
   }
 
   try {
-    let prompt = `Create a coding problem for: ${topic}`;
+    const hints: string[] = [];
+    if (options?.title?.trim()) hints.push(`Use this exact title: "${options.title.trim()}"`);
+    if (options?.difficulty) hints.push(`The difficulty MUST be: ${options.difficulty}`);
+    const hintSuffix = hints.length ? `\n\nAdditional requirements:\n${hints.join('\n')}` : '';
+
+    let prompt = `Create a coding problem for: ${topic}${hintSuffix}`;
     if (URL_REGEX.test(topic.trim())) {
       const pageText = await fetchPageText(topic.trim());
       if (!pageText) {
         return { success: false, error: 'Could not fetch the URL. Check the link and try again.' };
       }
-      prompt = `Create a coding problem based on the following article content:\n\n${pageText}`;
+      prompt = `Create a coding problem based on the following article content:\n\n${pageText}${hintSuffix}`;
     }
 
     let lastResult: ProblemResult = { success: false, error: 'Generation failed.' };

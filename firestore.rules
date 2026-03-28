@@ -179,6 +179,12 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // --- Practice Pins (student bookmarks) ---
+    match /practice_pins/{pinId} {
+      allow read, create: if isAuthenticated() && request.auth.uid == (resource == null ? request.resource.data.userId : resource.data.userId);
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

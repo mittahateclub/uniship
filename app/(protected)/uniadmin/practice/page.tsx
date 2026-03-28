@@ -10,6 +10,7 @@ import { generatePracticeProblem } from '@/app/actions/generate-practice-problem
 import {
   Sparkles, Plus, Trash2, ChevronDown, ChevronUp, Code2, Clock,
   CheckCircle2, AlertTriangle, BookOpen, Keyboard, Eye, EyeOff, Pencil,
+  CalendarClock,
 } from 'lucide-react';
 
 interface TestCase {
@@ -32,6 +33,7 @@ interface PracticeProblem {
   universityId: string;
   createdBy: string;
   createdAt: { seconds: number } | null;
+  visibleUntil: { seconds: number } | null;
 }
 
 const DIFFICULTY_COLORS: Record<string, string> = {
@@ -39,6 +41,16 @@ const DIFFICULTY_COLORS: Record<string, string> = {
   Medium: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
   Hard: 'bg-red-500/10 text-red-400 border-red-500/20',
 };
+
+// 30-minute time slots in 12-hour format
+const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
+  const h = Math.floor(i / 2);
+  const m = i % 2 === 0 ? '00' : '30';
+  const hh = String(h).padStart(2, '0');
+  const period = h < 12 ? 'AM' : 'PM';
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return { value: `${hh}:${m}`, label: `${h12}:${m} ${period}` };
+});
 
 const STARTER_TEMPLATES: Record<string, (fn: string) => string> = {
   'Python3': (fn) => `class Solution:\n    def ${fn}(self):\n        pass`,
@@ -67,6 +79,7 @@ function emptyProblem() {
       { input: '', expectedOutput: '', isHidden: false },
       { input: '', expectedOutput: '', isHidden: true },
     ],
+    visibleUntil: '',
   };
 }
 
@@ -81,6 +94,9 @@ export default function AdminPracticePage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [createMode, setCreateMode] = useState<'ai' | 'manual'>('ai');
   const [aiTopic, setAiTopic] = useState('');
+  const [aiTitle, setAiTitle] = useState('');
+  const [aiDifficulty, setAiDifficulty] = useState('Medium');
+  const [aiVisibleUntil, setAiVisibleUntil] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [status, setStatus] = useState<{ type: string; message: string }>({ type: '', message: '' });
 
@@ -114,15 +130,18 @@ export default function AdminPracticePage() {
     setIsGenerating(true);
     setStatus({ type: 'info', message: 'AI is generating the problem...' });
     try {
-      const result = await generatePracticeProblem(aiTopic);
+      const result = await generatePracticeProblem(aiTopic, {
+        title: aiTitle.trim() || undefined,
+        difficulty: aiDifficulty,
+      });
       if (!result.success || !result.problem) {
         setStatus({ type: 'error', message: result.error || 'Generation failed.' });
         return;
       }
       const p = result.problem;
       setForm({
-        title: p.title,
-        difficulty: p.difficulty,
+        title: aiTitle.trim() || p.title,
+        difficulty: aiDifficulty || p.difficulty,
         description: p.description,
         functionName: p.functionName,
         constraints: p.constraints.length ? p.constraints : [''],
@@ -139,6 +158,7 @@ export default function AdminPracticePage() {
           expectedOutput: tc.expectedOutput,
           isHidden: tc.isHidden,
         })),
+        visibleUntil: aiVisibleUntil,
       });
       setCreateMode('manual');
       setStatus({ type: 'success', message: 'Problem generated! Review and edit below, then publish.' });
@@ -188,6 +208,7 @@ export default function AdminPracticePage() {
         universityId,
         createdBy: user.uid,
         createdAt: serverTimestamp(),
+        visibleUntil: form.visibleUntil ? new Date(form.visibleUntil) : null,
       });
 
       setProblems(prev => [{
@@ -204,11 +225,15 @@ export default function AdminPracticePage() {
         universityId,
         createdBy: user.uid,
         createdAt: { seconds: Math.floor(Date.now() / 1000) },
+        visibleUntil: form.visibleUntil ? { seconds: Math.floor(new Date(form.visibleUntil).getTime() / 1000) } : null,
       }, ...prev]);
 
       setForm(emptyProblem());
       setMode('list');
       setAiTopic('');
+      setAiTitle('');
+      setAiDifficulty('Medium');
+      setAiVisibleUntil('');
       setStatus({ type: 'success', message: `Published "${form.title.trim()}" successfully!` });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to publish.';
@@ -243,6 +268,7 @@ export default function AdminPracticePage() {
         'C++': problem.starterCode?.['C++'] || '',
       },
       testCases: problem.testCases.length ? problem.testCases : [{ input: '', expectedOutput: '', isHidden: false }],
+      visibleUntil: problem.visibleUntil ? new Date(problem.visibleUntil.seconds * 1000).toISOString().slice(0, 16) : '',
     });
     setMode('edit');
     setStatus({ type: '', message: '' });
@@ -277,9 +303,14 @@ export default function AdminPracticePage() {
         outputFormat: form.outputFormat.trim(),
         starterCode,
         testCases: validTestCases,
+        visibleUntil: form.visibleUntil ? new Date(form.visibleUntil) : null,
       };
       await updateDoc(doc(db, 'practice_problems', editingId), updateData);
-      setProblems(prev => prev.map(p => p.id === editingId ? { ...p, ...updateData } : p));
+      setProblems(prev => prev.map(p => p.id === editingId ? {
+        ...p,
+        ...updateData,
+        visibleUntil: form.visibleUntil ? { seconds: Math.floor(new Date(form.visibleUntil).getTime() / 1000) } : null,
+      } : p));
       setMode('list');
       setEditingId(null);
       setForm(emptyProblem());
@@ -350,6 +381,23 @@ export default function AdminPracticePage() {
                       <span className="text-[11px] text-[var(--text-faint)]">
                         fn: <code className="text-[var(--text-secondary)]">{p.functionName}</code>
                       </span>
+                      {p.visibleUntil ? (
+                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded flex items-center gap-1 ${
+                          p.visibleUntil.seconds * 1000 < Date.now()
+                            ? 'bg-red-500/10 text-red-400'
+                            : 'bg-teal-500/10 text-teal-400'
+                        }`}>
+                          <CalendarClock size={9} />
+                          {p.visibleUntil.seconds * 1000 < Date.now()
+                            ? 'Expired'
+                            : `Until ${new Date(p.visibleUntil.seconds * 1000).toLocaleDateString()}`
+                          }
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--bg-surface)] text-[var(--text-faint)]">
+                          Always visible
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -402,28 +450,94 @@ export default function AdminPracticePage() {
 
           {/* AI Input */}
           {createMode === 'ai' && mode !== 'edit' && (
-            <div className="window p-5 space-y-3">
-              <label className="text-[12px] font-medium text-[var(--text-secondary)]">Topic or Problem Description</label>
-              <div className="flex gap-2">
-                <input
-                  value={aiTopic}
-                  onChange={e => setAiTopic(e.target.value)}
-                  placeholder="e.g. Two Sum, Binary Search Tree Traversal, Dynamic Programming..."
-                  className="flex-1 px-3 py-2 text-[13px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--border-active)] transition-colors"
-                  onKeyDown={e => e.key === 'Enter' && handleAIGenerate()}
-                />
-                <button
-                  onClick={handleAIGenerate}
-                  disabled={isGenerating || !aiTopic.trim()}
-                  className="btn-primary text-[12px] px-4 py-2 flex items-center gap-1.5 disabled:opacity-50"
-                >
-                  <Sparkles size={13} />
-                  {isGenerating ? 'Generating...' : 'Generate'}
-                </button>
+            <div className="window p-5 space-y-4">
+              {/* Pre-set fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-medium text-[var(--text-secondary)] mb-1 block">Question Name (optional)</label>
+                  <input
+                    value={aiTitle}
+                    onChange={e => setAiTitle(e.target.value)}
+                    placeholder="e.g. Two Sum Challenge"
+                    className="w-full px-3 py-2 text-[13px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--border-active)]"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-medium text-[var(--text-secondary)] mb-1 block">Difficulty Level</label>
+                  <select
+                    value={aiDifficulty}
+                    onChange={e => setAiDifficulty(e.target.value)}
+                    className="w-full px-3 py-2 text-[13px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-active)]"
+                  >
+                    <option>Easy</option>
+                    <option>Medium</option>
+                    <option>Hard</option>
+                  </select>
+                </div>
               </div>
-              <p className="text-[11px] text-[var(--text-faint)]">
-                AI will create a full problem with description, starter code, and test cases. You can review and edit before publishing.
-              </p>
+              <div>
+                <label className="text-[11px] font-medium text-[var(--text-secondary)] mb-1 flex items-center gap-1">
+                  <CalendarClock size={11} /> Visible Until (optional)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="date"
+                    value={aiVisibleUntil.split('T')[0] || ''}
+                    onChange={e => {
+                      const date = e.target.value;
+                      const time = aiVisibleUntil.split('T')[1] || '23:30';
+                      setAiVisibleUntil(date ? `${date}T${time}` : '');
+                    }}
+                    className="flex-1 px-3 py-2 text-[13px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-active)]"
+                  />
+                  <select
+                    value={TIME_OPTIONS.some(o => o.value === aiVisibleUntil.split('T')[1]) ? aiVisibleUntil.split('T')[1] : '23:30'}
+                    onChange={e => {
+                      const date = aiVisibleUntil.split('T')[0] || '';
+                      setAiVisibleUntil(date ? `${date}T${e.target.value}` : '');
+                    }}
+                    disabled={!aiVisibleUntil.split('T')[0]}
+                    className="w-36 px-3 py-2 text-[13px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-active)] disabled:opacity-40"
+                  >
+                    {TIME_OPTIONS.map(t => (
+                      <option key={t.value} value={t.value}>{t.label}</option>
+                    ))}
+                  </select>
+                  {aiVisibleUntil && (
+                    <button
+                      onClick={() => setAiVisibleUntil('')}
+                      className="text-[11px] text-[#F54E00] font-medium hover:underline whitespace-nowrap"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <p className="text-[10px] text-[var(--text-faint)] mt-0.5">Leave blank for no expiry</p>
+              </div>
+
+              <div>
+                <label className="text-[12px] font-medium text-[var(--text-secondary)] mb-1 block">Topic or Problem Link</label>
+                <div className="flex gap-2">
+                  <input
+                    value={aiTopic}
+                    onChange={e => setAiTopic(e.target.value)}
+                    placeholder="e.g. Two Sum, Binary Search Tree Traversal, or paste a URL..."
+                    className="flex-1 px-3 py-2 text-[13px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--border-active)] transition-colors"
+                    onKeyDown={e => e.key === 'Enter' && handleAIGenerate()}
+                  />
+                  <button
+                    onClick={handleAIGenerate}
+                    disabled={isGenerating || !aiTopic.trim()}
+                    className="btn-primary text-[12px] px-4 py-2 flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <Sparkles size={13} />
+                    {isGenerating ? 'Generating...' : 'Generate'}
+                  </button>
+                </div>
+                <p className="text-[11px] text-[var(--text-faint)] mt-1">
+                  AI will create a full problem with description, starter code, and test cases. You can review and edit before publishing.
+                </p>
+              </div>
             </div>
           )}
 
@@ -463,6 +577,49 @@ export default function AdminPracticePage() {
                       className="w-full px-3 py-2 text-[13px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--border-active)] font-mono"
                     />
                   </div>
+                </div>
+
+                {/* Visible Until */}
+                <div>
+                  <label className="text-[11px] font-medium text-[var(--text-secondary)] mb-1 flex items-center gap-1">
+                    <CalendarClock size={11} /> Visible Until
+                  </label>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="date"
+                      value={form.visibleUntil.split('T')[0] || ''}
+                      onChange={e => {
+                        const date = e.target.value;
+                        const time = form.visibleUntil.split('T')[1] || '23:30';
+                        setForm({ ...form, visibleUntil: date ? `${date}T${time}` : '' });
+                      }}
+                      className="flex-1 px-3 py-2 text-[13px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-active)]"
+                    />
+                    <select
+                      value={TIME_OPTIONS.some(o => o.value === form.visibleUntil.split('T')[1]) ? form.visibleUntil.split('T')[1] : '23:30'}
+                      onChange={e => {
+                        const date = form.visibleUntil.split('T')[0] || '';
+                        setForm({ ...form, visibleUntil: date ? `${date}T${e.target.value}` : '' });
+                      }}
+                      disabled={!form.visibleUntil.split('T')[0]}
+                      className="w-36 px-3 py-2 text-[13px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-active)] disabled:opacity-40"
+                    >
+                      {TIME_OPTIONS.map(t => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                      ))}
+                    </select>
+                    {form.visibleUntil && (
+                      <button
+                        onClick={() => setForm({ ...form, visibleUntil: '' })}
+                        className="text-[11px] text-[#F54E00] font-medium hover:underline whitespace-nowrap"
+                      >
+                        Clear expiry
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-[var(--text-faint)] mt-0.5">
+                    Students will not see this problem after this date/time. Leave blank for no expiry.
+                  </p>
                 </div>
 
                 <div>
