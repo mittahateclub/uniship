@@ -16,9 +16,10 @@ Detect which sections exist in the document and classify each question according
 
 Rules:
 1. Output ONLY valid JSON. No markdown, comments, or extra text.
-2. Preserve ALL information faithfully.
+2. Preserve ALL information faithfully — every question, every option, every answer, every test case.
 3. Use camelCase for all JSON keys.
-4. Detect question types by content: if it has options A/B/C/D about code → "mcq". If it's a math/reasoning question → "aptitude". If it has input format, output format, test cases → "coding".
+4. Detect question types by content: if it has options A/B/C/D about code → "mcq". If it's a math/reasoning question with a short textual answer → "aptitude". If it has input format, output format, test cases → "coding".
+5. If sections are labeled in the document (e.g. "Section 1 — Aptitude"), use those labels to classify questions.
 
 Expected JSON structure:
 {
@@ -32,9 +33,9 @@ Expected JSON structure:
       "title": "Section 1: Aptitude",
       "questions": [
         {
-          "questionText": "Full question text",
+          "questionDescription": "Full question text",
           "correctAnswer": "The answer",
-          "explanation": "Explanation if provided, otherwise empty string"
+          "difficulty": "EASY"
         }
       ]
     },
@@ -43,10 +44,10 @@ Expected JSON structure:
       "title": "Section 2: Coding MCQs",
       "questions": [
         {
-          "questionText": "Question text including any code",
-          "options": ["A. option1", "B. option2", "C. option3", "D. option4"],
+          "questionDescription": "Question text including any code snippets",
+          "options": ["6", "8", "9", "Error"],
           "correctAnswer": "B",
-          "explanation": "Explanation if provided"
+          "difficulty": "EASY"
         }
       ]
     },
@@ -57,32 +58,31 @@ Expected JSON structure:
         {
           "title": "Problem title",
           "questionDescription": "Full problem statement",
-          "difficulty": "EASY | MEDIUM | HARD",
-          "functionName": "functionName",
+          "difficulty": "EASY",
+          "functionName": "",
           "constraints": [],
           "inputFormat": "string",
           "outputFormat": "string",
           "sampleTestCases": [
-            { "input": "string", "output": "string", "explanation": "string" }
+            { "input": "string", "output": "string" }
           ],
           "hiddenTestCases": [
             { "input": "string", "output": "string" }
-          ],
-          "referenceSolution": "Complete Python solution if provided, otherwise empty string",
-          "starterCode": {}
+          ]
         }
       ]
     }
-  ],
-  "problems": []
+  ]
 }
 
-IMPORTANT:
-- If the document only has coding problems (no clear sections), put them ALL in a coding section AND also in the top-level "problems" array for backward compatibility.
-- The "problems" array should contain the legacy format for backward compatibility with existing code.
-- If sections are clearly labeled in the document, use those labels.
-- If answers are provided in the document, include them. If not, leave correctAnswer empty.
-- For coding problems without explicit hidden test cases, set hiddenTestCases to an empty array.
+CRITICAL:
+- ALL question types MUST use "questionDescription" for the question text (not "questionText").
+- For MCQ options, store ONLY the option text without the letter prefix (e.g. ["6", "8", "9", "Error"] not ["A. 6", "B. 8", ...]).
+- The correctAnswer for MCQs must be the letter (A, B, C, or D).
+- If the document only has coding problems (no clear sections), put them in a single coding section.
+- You MUST include ALL questions from ALL sections. Do not skip any.
+- If answers are provided in the document, always include them.
+- For coding problems, separate visible (sample) test cases from hidden test cases. If not explicitly labeled, put the first 1-2 in sampleTestCases and the rest in hiddenTestCases.
 - Preserve code formatting using \\n for newlines in strings.`;
 
 export async function processTestDocument(formData: FormData, userId: string, universityId: string, options?: { title?: string; description?: string; duration?: number; category?: string; totalQuestions?: number; examStart?: string; examEnd?: string }) {
@@ -201,27 +201,49 @@ export async function processTestDocument(formData: FormData, userId: string, un
     console.log('Parsed data structure:', JSON.stringify(parsedData, null, 2).slice(0, 500));
 
     // 6. Validate the parsed data
-    if (!parsedData.problems || !Array.isArray(parsedData.problems) || parsedData.problems.length === 0) {
-      throw new Error('No problems were extracted from the document');
+    const sections: any[] = parsedData.sections && Array.isArray(parsedData.sections) ? parsedData.sections : [];
+
+    if (sections.length === 0) {
+      throw new Error('No sections were extracted from the document');
     }
 
-    console.log('Extracted', parsedData.problems.length, 'problems');
+    // Count total questions across all sections
+    let totalQuestionCount = 0;
+    for (const section of sections) {
+      totalQuestionCount += (section.questions || []).length;
+    }
 
-    // 7. Save to Firestore in the expected format
-    const problemCount = parsedData.problems.length;
+    if (totalQuestionCount === 0) {
+      throw new Error('No questions were extracted from any section');
+    }
+
+    // Build legacy problems array from coding sections for backward compatibility
+    const codingProblems: any[] = [];
+    for (const section of sections) {
+      if (section.type === 'coding') {
+        for (const q of section.questions || []) {
+          codingProblems.push(q);
+        }
+      }
+    }
+
+    console.log('Extracted', totalQuestionCount, 'questions total across', sections.length, 'sections');
+
+    // 7. Save to Firestore
     const docRef = await addDoc(collection(db, "tests"), {
       title: options?.title || file.name.replace(/\.pdf$/i, ''),
       description: options?.description || '',
       duration: options?.duration || 60,
       category: options?.category || 'General',
-      totalQuestions: options?.totalQuestions || problemCount,
+      totalQuestions: options?.totalQuestions || totalQuestionCount,
       examStart: options?.examStart || null,
       examEnd: options?.examEnd || null,
       metadata: parsedData.metadata || {
         difficultyLevels: [],
-        totalProblems: problemCount
+        totalProblems: totalQuestionCount
       },
-      problems: parsedData.problems,
+      sections,
+      problems: codingProblems,
       universityId,
       createdBy: userId,
       createdAt: serverTimestamp(),
@@ -234,7 +256,7 @@ export async function processTestDocument(formData: FormData, userId: string, un
     return { 
       success: true, 
       id: docRef.id,
-      problemCount: parsedData.problems.length 
+      problemCount: totalQuestionCount 
     };
   } catch (error: any) {
     console.error("Test Pipeline Error:", error);

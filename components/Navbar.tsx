@@ -19,7 +19,6 @@ import {
   PenTool,
   Download,
   GraduationCap,
-  PlusCircle,
   Settings,
   Database,
   TrendingUp,
@@ -39,7 +38,6 @@ import {
   Linkedin,
   Camera,
   Code,
-  Cpu,
   MapPin,
   Clock,
   Building2,
@@ -76,8 +74,7 @@ const userNavLinks: NavLink[] = [
 
 const uniadminNavLinks: NavLink[] = [
   { href: '/uniadmin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/uniadmin/create-test', label: 'Create Test', icon: PlusCircle },
-  { href: '/uniadmin/tests', label: 'Tests', icon: FileText },
+  { href: '/uniadmin/create-test', label: 'Tests', icon: FileText },
   { href: '/uniadmin/practice', label: 'Practice', icon: Code },
   { href: '/uniadmin/proctoring', label: 'Proctoring', icon: ShieldCheck },
   { href: '/uniadmin/create-event', label: 'Create Event', icon: CalendarPlus },
@@ -140,8 +137,7 @@ const userSearchItems: SearchableItem[] = [
 const uniadminSearchItems: SearchableItem[] = [
   // Pages
   { href: '/uniadmin/dashboard', label: 'Dashboard', desc: 'Admin overview & stats', icon: LayoutDashboard, category: 'Pages' },
-  { href: '/uniadmin/create-test', label: 'Create Test', desc: 'Build new assessment', icon: PlusCircle, category: 'Pages' },
-  { href: '/uniadmin/tests', label: 'Tests', desc: 'Manage all assessments', icon: FileText, category: 'Pages' },
+  { href: '/uniadmin/create-test', label: 'Tests', desc: 'Upload & manage assessments', icon: FileText, category: 'Pages' },
   { href: '/uniadmin/create-event', label: 'Create Event', desc: 'Schedule an event', icon: CalendarPlus, category: 'Pages' },
   { href: '/uniadmin/create-account', label: 'Create Account', desc: 'Add student account', icon: UserPlus, category: 'Pages' },
   { href: '/uniadmin/student-database', label: 'Student Database', desc: 'Browse all students', icon: Database, category: 'Pages' },
@@ -153,8 +149,7 @@ const uniadminSearchItems: SearchableItem[] = [
   { href: '/uniadmin/dashboard#stats', label: 'Total Students', desc: 'Number of registered students', icon: User, category: 'Dashboard' },
   { href: '/uniadmin/dashboard#stats', label: 'Upcoming Events', desc: 'Scheduled university events', icon: Calendar, category: 'Dashboard' },
   // Create Test — In-page sections
-  { href: '/uniadmin/create-test#generator', label: 'AI Test Generator', desc: 'Generate test from PDF with AI', icon: Cpu, category: 'Create Test' },
-  { href: '/uniadmin/create-test#generator', label: 'Upload PDF', desc: 'Upload document for test generation', icon: Upload, category: 'Create Test' },
+  { href: '/uniadmin/create-test', label: 'Upload PDF', desc: 'Upload test document for parsing', icon: Upload, category: 'Tests' },
   // Create Event — In-page sections
   { href: '/uniadmin/create-event#form', label: 'Event Title', desc: 'Set event name', icon: CalendarPlus, category: 'Create Event' },
   { href: '/uniadmin/create-event#form', label: 'Event Type', desc: 'Workshop, seminar, or other', icon: Star, category: 'Create Event' },
@@ -171,10 +166,10 @@ const uniadminSearchItems: SearchableItem[] = [
   { href: '/uniadmin/profile#account-details', label: 'Admin Name', desc: 'Full name setting', icon: User, category: 'Admin Profile' },
   { href: '/uniadmin/profile#account-details', label: 'Admin Phone', desc: 'Contact phone number', icon: Phone, category: 'Admin Profile' },
   // Actions
-  { href: '/uniadmin/create-test', label: 'New Assessment', desc: 'Create a new test for students', icon: PlusCircle, category: 'Actions' },
+  { href: '/uniadmin/create-test', label: 'New Assessment', desc: 'Upload a new test PDF', icon: Upload, category: 'Actions' },
   { href: '/uniadmin/create-event', label: 'Schedule Event', desc: 'Add a new event or deadline', icon: CalendarPlus, category: 'Actions' },
   { href: '/uniadmin/create-account', label: 'Add Student', desc: 'Register a new student', icon: UserPlus, category: 'Actions' },
-  { href: '/uniadmin/tests', label: 'Review Submissions', desc: 'Grade & review test results', icon: FileText, category: 'Actions' },
+  { href: '/uniadmin/create-test', label: 'Review Submissions', desc: 'Grade & review test results', icon: FileText, category: 'Actions' },
   { href: '/uniadmin/student-database', label: 'Search Students', desc: 'Find student by name or ID', icon: Search, category: 'Actions' },
   { href: '/uniadmin/proctoring', label: 'Monitor Exams', desc: 'Live proctoring dashboard', icon: ShieldCheck, category: 'Actions' },
 ];

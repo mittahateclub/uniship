@@ -27,12 +27,28 @@ interface Problem {
   functionName?: string;
   inputType?: string;
   outputType?: string;
+  options?: string[];
 }
+
+interface Section {
+  type: 'aptitude' | 'mcq' | 'coding';
+  title: string;
+  questions: Problem[];
+}
+
+interface FlatQuestion extends Problem {
+  _sectionType: 'aptitude' | 'mcq' | 'coding';
+  _sectionTitle: string;
+  _sectionIndex: number;
+  _originalIndex: number; // index within its section
+}
+
 interface TestData {
   sourceFileName: string;
   title?: string;
   duration?: number;
   problems: Problem[];
+  sections?: Section[];
   universityId: string;
   published: boolean;
   createdAt: string;
@@ -95,8 +111,10 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
     attemptedQuestions: number;
     percentage: number;
     mode: 'auto' | 'attempted';
+    resultId: string;
   } | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [flatQuestions, setFlatQuestions] = useState<FlatQuestion[]>([]);
 
   // Proctoring state
   const [violations, setViolations] = useState<Violation[]>([]);
@@ -145,16 +163,53 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         const docSnap = await getDoc(doc(db, 'tests', id));
         if (docSnap.exists()) {
           const data = docSnap.data() as TestData;
-          // Stash hidden test cases in a ref (not visible in React state / devtools)
-          hiddenCasesRef.current = (data.problems || []).map(
-            (p) => (p.hiddenTestCases || [])
-          );
-          // Strip hidden cases from the state exposed to the client
+
+          // Build flat question list from sections or legacy problems
+          const flat: FlatQuestion[] = [];
+          const allHiddenCases: Array<Array<{ input: string; output: string }>> = [];
+
+          if (data.sections && data.sections.length > 0) {
+            data.sections.forEach((section, sIdx) => {
+              (section.questions || []).forEach((q, qIdx) => {
+                allHiddenCases.push(q.hiddenTestCases || []);
+                flat.push({
+                  ...q,
+                  hiddenTestCases: undefined, // strip from state
+                  _sectionType: section.type,
+                  _sectionTitle: section.title,
+                  _sectionIndex: sIdx,
+                  _originalIndex: qIdx,
+                });
+              });
+            });
+          } else {
+            // Legacy: all problems are coding
+            (data.problems || []).forEach((p, idx) => {
+              allHiddenCases.push(p.hiddenTestCases || []);
+              flat.push({
+                ...p,
+                hiddenTestCases: undefined,
+                _sectionType: 'coding',
+                _sectionTitle: 'Coding',
+                _sectionIndex: 0,
+                _originalIndex: idx,
+              });
+            });
+          }
+
+          hiddenCasesRef.current = allHiddenCases;
+
+          // Build sanitized TestData (strip hidden cases from problems too)
           const sanitized: TestData = {
             ...data,
-            problems: data.problems.map(({ hiddenTestCases: _h, ...rest }) => rest),
+            problems: (data.problems || []).map(({ hiddenTestCases: _h, ...rest }) => rest),
+            sections: data.sections?.map(s => ({
+              ...s,
+              questions: s.questions.map(({ hiddenTestCases: _h, ...rest }) => rest),
+            })),
           };
           setTest(sanitized);
+          setFlatQuestions(flat);
           if (data.duration) setTimeLeft(data.duration * 60);
         }
       } catch (error) {
@@ -170,7 +225,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
   // ── Submit handler ──
   const doSubmit = useCallback(async (reason: string) => {
-    if (submittedRef.current || !test || !user) return;
+    if (submittedRef.current || !test || !user || flatQuestions.length === 0) return;
     submittedRef.current = true;
 
     // Stop media
@@ -184,6 +239,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       let gradable = 0;
       const questionEvaluations: Array<{
         index: number;
+        sectionType: string;
         verdict: QuestionVerdict;
         passed: number;
         total: number;
@@ -191,27 +247,66 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         usedHiddenCases: boolean;
       }> = [];
 
-      for (let index = 0; index < test.problems.length; index += 1) {
-        const problem = test.problems[index];
+      for (let index = 0; index < flatQuestions.length; index += 1) {
+        const question = flatQuestions[index];
         const answer = (answers[index] || '').trim();
+
         if (!answer) {
           questionEvaluations.push({
             index,
+            sectionType: question._sectionType,
             verdict: 'UNANSWERED',
             passed: 0,
-            total: 0,
+            total: question._sectionType === 'coding' ? (hiddenCasesRef.current[index] || []).length || (question.sampleTestCases || []).length : 1,
             failedCase: null,
-            usedHiddenCases: (hiddenCasesRef.current[index] || []).length > 0,
+            usedHiddenCases: false,
           });
           continue;
         }
 
+        // ── Aptitude: text comparison ──
+        if (question._sectionType === 'aptitude') {
+          gradable += 1;
+          const correct = (question.correctAnswer || '').trim().toLowerCase();
+          const isCorrect = correct.length > 0 && answer.toLowerCase() === correct;
+          if (isCorrect) score += 1;
+          questionEvaluations.push({
+            index,
+            sectionType: 'aptitude',
+            verdict: isCorrect ? 'AC' : (correct.length > 0 ? 'WA' : 'UNGRADED'),
+            passed: isCorrect ? 1 : 0,
+            total: 1,
+            failedCase: null,
+            usedHiddenCases: false,
+          });
+          continue;
+        }
+
+        // ── MCQ: letter comparison ──
+        if (question._sectionType === 'mcq') {
+          gradable += 1;
+          const correct = (question.correctAnswer || '').trim().toUpperCase();
+          const isCorrect = correct.length > 0 && answer.toUpperCase() === correct;
+          if (isCorrect) score += 1;
+          questionEvaluations.push({
+            index,
+            sectionType: 'mcq',
+            verdict: isCorrect ? 'AC' : (correct.length > 0 ? 'WA' : 'UNGRADED'),
+            passed: isCorrect ? 1 : 0,
+            total: 1,
+            failedCase: null,
+            usedHiddenCases: false,
+          });
+          continue;
+        }
+
+        // ── Coding: compiler evaluation ──
         const hiddenCases = (hiddenCasesRef.current[index] || []).map((tc) => ({
           input: tc.input,
           expectedOutput: tc.output,
           isHidden: true,
         }));
-        const sampleCases = (problem.sampleTestCases || []).map((tc: any) => ({
+        const sampleCases = (question.sampleTestCases || []).map((tc: { input: string; output: string }) => ({
           input: tc.input,
           expectedOutput: tc.output,
           isHidden: false,
@@ -221,6 +316,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         if (casesForScoring.length === 0) {
           questionEvaluations.push({
             index,
+            sectionType: 'coding',
             verdict: 'UNGRADED',
             passed: 0,
             total: 0,
@@ -242,7 +338,6 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               language_id: questionLanguages[index] || 71,
               testCases: casesForScoring,
               memoryLimitKb: 262144,
-    
             }),
           });
 
@@ -250,6 +345,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           if (!compileRes.ok || compileData.error) {
             questionEvaluations.push({
               index,
+              sectionType: 'coding',
               verdict: 'RE',
               passed: 0,
               total: casesForScoring.length,
@@ -266,6 +362,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
           questionEvaluations.push({
             index,
+            sectionType: 'coding',
             verdict,
             passed: compileData.summary?.passed ?? 0,
             total: compileData.summary?.total ?? casesForScoring.length,
@@ -273,9 +370,9 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
             usedHiddenCases: hiddenCases.length > 0,
           });
         } catch {
-          // Ignore compiler failures here; unanswered/failed compiler runs are counted as incorrect.
           questionEvaluations.push({
             index,
+            sectionType: 'coding',
             verdict: 'RE',
             passed: 0,
             total: casesForScoring.length,
@@ -287,10 +384,22 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
       const mode: 'auto' | 'attempted' = gradable > 0 ? 'auto' : 'attempted';
       const finalScore = mode === 'auto' ? score : attemptedQuestions;
-      const totalQuestions = test.problems.length;
+      const totalQuestions = flatQuestions.length;
       const percentage = totalQuestions > 0 ? Math.round((finalScore / totalQuestions) * 1000) / 10 : 0;
 
-      await addDoc(collection(db, 'test_results'), {
+      // Build question snapshots for post-test review
+      const questionSnapshots = flatQuestions.map((q, index) => ({
+        questionDescription: q.questionDescription,
+        sectionType: q._sectionType,
+        sectionTitle: q._sectionTitle,
+        options: q.options || null,
+        correctAnswer: q.correctAnswer || null,
+        sampleTestCases: q.sampleTestCases || null,
+        studentAnswer: (answers[index] || '').trim(),
+        difficulty: q.difficulty || null,
+      }));
+
+      const resultDocRef = await addDoc(collection(db, 'test_results'), {
         testId: id,
         testTitle: test.title || test.sourceFileName,
         userId: user.uid,
@@ -298,10 +407,11 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         answers,
         attemptedQuestions,
         score: finalScore,
-        totalQuestions: test.problems.length,
+        totalQuestions,
         percentage,
         scoringMode: mode,
         questionEvaluations,
+        questionSnapshots,
         submittedAt: serverTimestamp(),
         universityId: test.universityId,
         sessionId: sessionIdRef.current,
@@ -318,6 +428,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         attemptedQuestions,
         percentage,
         mode,
+        resultId: resultDocRef.id,
       });
       setSubmitReason(reason);
       setPhase('submitted');
@@ -326,7 +437,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       console.error('Error submitting test:', error);
       submittedRef.current = false;
     }
-  }, [test, user, answers, id, violations, questionLanguages]);
+  }, [test, user, answers, id, violations, questionLanguages, flatQuestions]);
 
   // ── Add violation ──
   const addViolation = useCallback((type: string, severity: 'low' | 'medium' | 'high', userMessage: string) => {
@@ -562,10 +673,11 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   // ── Run code against compiler ──
   const runCode = async () => {
     const code = answers[currentQuestion];
-    if (!code?.trim() || compiling || !test) return;
+    if (!code?.trim() || compiling || !test || flatQuestions.length === 0) return;
+    const question = flatQuestions[currentQuestion];
+    if (question._sectionType !== 'coding') return;
 
-    const problemData = test.problems[currentQuestion];
-    const sampleInput = problemData?.sampleTestCases?.[0]?.input || '';
+    const sampleInput = question.sampleTestCases?.[0]?.input || '';
     const effectiveStdin = codeStdin.trim().length > 0 ? codeStdin : sampleInput;
     if (!codeStdin.trim() && sampleInput.trim()) {
       setCodeStdin(sampleInput);
@@ -613,28 +725,29 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
   const submitCode = async () => {
     const code = answers[currentQuestion];
-    if (!code?.trim() || judgeSubmitting || compiling || !test) return;
+    if (!code?.trim() || judgeSubmitting || compiling || !test || flatQuestions.length === 0) return;
+    const question = flatQuestions[currentQuestion];
+    if (question._sectionType !== 'coding') return;
 
-    const problemData = test.problems[currentQuestion];
     let hiddenCases = (hiddenCasesRef.current[currentQuestion] || []).map((tc) => ({
       input: tc.input,
       expectedOutput: tc.output,
       isHidden: true,
     }));
-    let fallbackSampleCases = (problemData.sampleTestCases || []).map((tc) => ({
+    let fallbackSampleCases = (question.sampleTestCases || []).map((tc) => ({
       input: tc.input,
       expectedOutput: tc.output,
       isHidden: false,
     }));
 
     const fallbackExpectedOutput =
-      (problemData.expectedOutput || '').trim() ||
-      (problemData.sampleTestCases?.[0]?.output || '').trim();
+      (question.expectedOutput || '').trim() ||
+      (question.sampleTestCases?.[0]?.output || '').trim();
 
     if (hiddenCases.length === 0 && fallbackSampleCases.length === 0 && fallbackExpectedOutput) {
       fallbackSampleCases = [
         {
-          input: problemData.sampleTestCases?.[0]?.input || codeStdin || '',
+          input: question.sampleTestCases?.[0]?.input || codeStdin || '',
           expectedOutput: fallbackExpectedOutput,
           isHidden: false,
         },
@@ -691,7 +804,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
     }
   };
 
-  const handleNext = () => { if (test && currentQuestion < test.problems.length - 1) setCurrentQuestion(p => p + 1); };
+  const handleNext = () => { if (flatQuestions.length > 0 && currentQuestion < flatQuestions.length - 1) setCurrentQuestion(p => p + 1); };
   const handlePrevious = () => { if (currentQuestion > 0) setCurrentQuestion(p => p - 1); };
   const formatTime = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 
@@ -706,7 +819,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   // Loading
   if (phase === 'loading') return <div className="flex items-center justify-center py-24"><div className="loading-dots"><span /><span /><span /></div></div>;
   if (!test) return <div className="flex items-center justify-center py-24 text-[var(--text-tertiary)]">Test not found.</div>;
-  if (!test.problems?.length) return <div className="flex items-center justify-center py-24 text-[var(--text-tertiary)]">No problems found.</div>;
+  if (flatQuestions.length === 0) return <div className="flex items-center justify-center py-24 text-[var(--text-tertiary)]">No problems found.</div>;
 
   // ── Submitted screen ──
   if (phase === 'submitted') {
@@ -761,6 +874,11 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           )}
 
           <div className="flex items-center justify-center gap-3">
+            {resultSummary?.resultId && (
+              <button onClick={() => router.push(`/user/results/review/${resultSummary.resultId}`)} className="btn-secondary px-6 py-2.5 text-[13px]">
+                Review Questions
+              </button>
+            )}
             <button onClick={() => router.push('/user/results')} className="btn-primary px-6 py-2.5 text-[13px]">
               View Results
             </button>
@@ -881,7 +999,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           </div>
 
           <div className="flex items-center gap-4 mb-6 text-[13px] text-[var(--text-secondary)]">
-            <span className="flex items-center gap-1.5"><Eye size={14} className="text-[var(--text-faint)]" /> {test.problems.length} questions</span>
+            <span className="flex items-center gap-1.5"><Eye size={14} className="text-[var(--text-faint)]" /> {flatQuestions.length} questions</span>
             {test.duration && <span className="flex items-center gap-1.5"><Clock size={14} className="text-[var(--text-faint)]" /> {test.duration} min</span>}
           </div>
 
@@ -936,10 +1054,13 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   }
 
   // ── Active test ──
-  const problem = test.problems[currentQuestion];
-  const answeredCount = test.problems.reduce((count, _p, idx) => (
+  const currentQ = flatQuestions[currentQuestion];
+  const answeredCount = flatQuestions.reduce((count, _p, idx) => (
     (answers[idx] || '').trim().length > 0 ? count + 1 : count
   ), 0);
+  const isCoding = currentQ._sectionType === 'coding';
+  const isMcq = currentQ._sectionType === 'mcq';
+  const sectionColorMap = { aptitude: '#14B8A6', mcq: '#F59E0B', coding: '#5E6AD2' };
 
   return (
     <div className="fixed inset-0 z-[9999] bg-[var(--bg-primary)] overflow-y-auto animate-fade-in select-none" style={{ userSelect: 'none' }}>
@@ -1064,206 +1185,270 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       {/* Main content */}
       <div className="max-w-4xl mx-auto pt-14 pb-8 px-4">
         <div className="mb-5 flex items-center justify-between">
-          <p className="text-[var(--text-tertiary)] text-[13px]">
-            Question {currentQuestion + 1} of {test.problems.length}
-          </p>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded" style={{ background: `${sectionColorMap[currentQ._sectionType]}20`, color: sectionColorMap[currentQ._sectionType] }}>
+              {currentQ._sectionTitle}
+            </span>
+            <p className="text-[var(--text-tertiary)] text-[13px]">
+              Question {currentQuestion + 1} of {flatQuestions.length}
+            </p>
+          </div>
           <span className="text-[11px] text-[var(--text-faint)]">
-            {answeredCount}/{test.problems.length} answered
+            {answeredCount}/{flatQuestions.length} answered
           </span>
         </div>
 
         <div className="window p-6 sm:p-8 mb-5">
           <div className="flex justify-between items-start mb-5">
             <div className="flex items-center gap-2">
-              <span className="inline-block bg-[#F54E00] text-white px-2.5 py-0.5 text-[11px] font-bold uppercase rounded">
-                {problem.difficulty || 'Problem'} {currentQuestion + 1}
+              <span className="inline-block text-white px-2.5 py-0.5 text-[11px] font-bold uppercase rounded" style={{ background: sectionColorMap[currentQ._sectionType] }}>
+                {currentQ._sectionType === 'aptitude' ? 'Aptitude' : currentQ._sectionType === 'mcq' ? 'MCQ' : currentQ.difficulty || 'Coding'} {currentQuestion + 1}
               </span>
-              {problem.topic && (
+              {currentQ.topic && (
                 <span className="inline-block bg-[var(--bg-surface)] text-[var(--text-secondary)] px-2.5 py-0.5 text-[11px] font-medium rounded border border-[var(--border-subtle)]">
-                  {problem.topic}
+                  {currentQ.topic}
                 </span>
               )}
             </div>
           </div>
           
           <h2 className="text-base font-medium mb-5 leading-relaxed text-[var(--text-primary)]">
-            {problem.questionDescription}
+            {currentQ.questionDescription}
           </h2>
+
+          {/* MCQ Options */}
+          {isMcq && currentQ.options && currentQ.options.length > 0 && (
+            <div className="mt-4 space-y-2">
+              {currentQ.options.map((option, oIdx) => {
+                const letter = String.fromCharCode(65 + oIdx); // A, B, C, D...
+                const selected = (answers[currentQuestion] || '').toUpperCase() === letter;
+                return (
+                  <button
+                    key={oIdx}
+                    type="button"
+                    onClick={() => setAnswers({ ...answers, [currentQuestion]: letter })}
+                    className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-lg border transition-all text-[13px] ${
+                      selected
+                        ? 'border-[#5E6AD2] bg-[#5E6AD2]/10 text-[var(--text-primary)]'
+                        : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:border-[var(--border-active)] hover:bg-[var(--bg-surface)]'
+                    }`}
+                  >
+                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0 ${
+                      selected ? 'bg-[#5E6AD2] text-white' : 'bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-tertiary)]'
+                    }`}>
+                      {letter}
+                    </span>
+                    <span>{option}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
           
-          {problem.sampleTestCases && problem.sampleTestCases.length > 0 && (
+          {/* Sample test cases — coding only */}
+          {isCoding && currentQ.sampleTestCases && currentQ.sampleTestCases.length > 0 && (
             <div className="mt-5 space-y-2">
               <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Sample Test Case:</p>
               <pre className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-4 rounded text-sm text-[#4CAF50] overflow-x-auto font-mono">
-                <div className="mb-2"><span className="text-[var(--text-faint)]">Input:</span> {problem.sampleTestCases[0].input}</div>
-                <div><span className="text-[var(--text-faint)]">Output:</span> {problem.sampleTestCases[0].output}</div>
+                <div className="mb-2"><span className="text-[var(--text-faint)]">Input:</span> {currentQ.sampleTestCases[0].input}</div>
+                <div><span className="text-[var(--text-faint)]">Output:</span> {currentQ.sampleTestCases[0].output}</div>
               </pre>
             </div>
           )}
 
-          {problem.constraints && problem.constraints.length > 0 && (
+          {currentQ.constraints && currentQ.constraints.length > 0 && (
             <div className="mt-5">
               <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-2">Constraints:</p>
               <ul className="list-disc list-inside text-sm space-y-1">
-                {problem.constraints.map((c, i) => <li key={i} className="text-[var(--text-tertiary)]">{c}</li>)}
+                {currentQ.constraints.map((c, i) => <li key={i} className="text-[var(--text-tertiary)]">{c}</li>)}
               </ul>
             </div>
           )}
 
-          {problem.hints && problem.hints.length > 0 && (
+          {currentQ.hints && currentQ.hints.length > 0 && (
             <div className="mt-5">
               <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-2">Hints:</p>
               <ul className="list-disc list-inside text-sm space-y-1">
-                {problem.hints.map((h, i) => <li key={i} className="text-[var(--text-tertiary)]">{h}</li>)}
+                {currentQ.hints.map((h, i) => <li key={i} className="text-[var(--text-tertiary)]">{h}</li>)}
               </ul>
             </div>
           )}
         </div>
 
-        {/* Answer */}
-        <div className="window p-5 mb-5">
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-semibold text-[var(--text-primary)]">Your Solution:</label>
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <select
-                  value={selectedLang}
-                  onChange={e => {
-                    const lang = Number(e.target.value);
-                    setSelectedLang(lang);
-                    setQuestionLanguages(prev => ({ ...prev, [currentQuestion]: lang }));
-                  }}
-                  className="appearance-none bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-1.5 pr-7 text-[12px] text-[var(--text-primary)] font-medium focus:outline-none focus:border-[#5E6AD2] cursor-pointer"
-                >
-                  <option value={71}>Python 3</option>
-                  <option value={62}>Java</option>
-                  <option value={54}>C++</option>
-                  <option value={50}>C</option>
-                  <option value={63}>JavaScript</option>
-                  <option value={74}>TypeScript</option>
-                  <option value={51}>C#</option>
-                  <option value={72}>Ruby</option>
-                  <option value={60}>Go</option>
-                  <option value={73}>Rust</option>
-                  <option value={78}>Kotlin</option>
-                  <option value={76}>SQL</option>
-                  <option value={68}>PHP</option>
-                  <option value={85}>Dart</option>
-                </select>
-                <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-faint)] pointer-events-none" />
-              </div>
-              <button
-                onClick={runCode}
-                disabled={!answers[currentQuestion]?.trim() || compiling}
-                className="flex items-center gap-1.5 bg-[#4CAF50] hover:bg-[#43A047] text-white px-3 py-1.5 rounded text-[12px] font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                {compiling ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
-                {compiling ? 'Running...' : 'Run Code'}
-              </button>
-              <button
-                onClick={submitCode}
-                disabled={!answers[currentQuestion]?.trim() || judgeSubmitting || compiling}
-                className="flex items-center gap-1.5 bg-[#5E6AD2] hover:bg-[#4C5ABF] text-white px-3 py-1.5 rounded text-[12px] font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                {judgeSubmitting ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
-                {judgeSubmitting ? 'Submitting...' : 'Submit Code'}
-              </button>
-            </div>
-          </div>
-          <div className="rounded-lg overflow-hidden border border-[var(--border-subtle)]">
-            <Editor
-              height="280px"
-              language={LANG_MONACO[selectedLang] || 'plaintext'}
-              theme="vs-dark"
+        {/* Answer — Aptitude */}
+        {currentQ._sectionType === 'aptitude' && (
+          <div className="window p-5 mb-5">
+            <label className="text-sm font-semibold text-[var(--text-primary)] mb-2 block">Your Answer:</label>
+            <input
+              type="text"
               value={answers[currentQuestion] || ''}
-              onChange={(val) => setAnswers({ ...answers, [currentQuestion]: val || '' })}
-              options={{
-                minimap: { enabled: false },
-                fontSize: 14,
-                lineNumbers: 'on',
-                scrollBeyondLastLine: false,
-                automaticLayout: true,
-                tabSize: 4,
-                wordWrap: 'on',
-                padding: { top: 12 },
-                renderLineHighlight: 'line',
-                cursorBlinking: 'smooth',
-                smoothScrolling: true,
-                contextmenu: false,
-                domReadOnly: false,
-              }}
+              onChange={e => setAnswers({ ...answers, [currentQuestion]: e.target.value })}
+              placeholder="Type your answer..."
+              className="w-full px-4 py-3 text-[14px] rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--border-active)] transition-colors"
             />
+            <p className="text-xs text-[var(--text-faint)] mt-2">{answers[currentQuestion] ? 'Answer saved' : 'No answer provided yet'}</p>
           </div>
-          <p className="text-xs text-[var(--text-faint)] mt-2">{answers[currentQuestion] ? 'Answer saved' : 'No answer provided yet'}</p>
+        )}
 
-          {/* Stdin input */}
-          <div className="mt-3">
-            <label className="block text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-widest mb-1.5">Input (stdin)</label>
-            <textarea
-              value={codeStdin}
-              onChange={e => setCodeStdin(e.target.value)}
-              placeholder="Optional: provide input for your program..."
-              className="w-full h-16 p-3 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded font-mono text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[#5E6AD2] focus:outline-none transition-colors resize-none"
-            />
+        {/* Answer — MCQ (already handled via option buttons above, just show status) */}
+        {isMcq && (
+          <div className="window p-5 mb-5">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-semibold text-[var(--text-primary)]">Selected Answer:</label>
+              <span className={`text-[13px] font-bold ${answers[currentQuestion] ? 'text-[#5E6AD2]' : 'text-[var(--text-faint)]'}`}>
+                {answers[currentQuestion] ? `Option ${answers[currentQuestion]}` : 'None selected'}
+              </span>
+            </div>
           </div>
+        )}
 
-          {/* Output terminal */}
-          {(codeOutput !== null || codeError !== null || compiling) && (
+        {/* Answer — Coding */}
+        {isCoding && (
+          <div className="window p-5 mb-5">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-semibold text-[var(--text-primary)]">Your Solution:</label>
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <select
+                    value={selectedLang}
+                    onChange={e => {
+                      const lang = Number(e.target.value);
+                      setSelectedLang(lang);
+                      setQuestionLanguages(prev => ({ ...prev, [currentQuestion]: lang }));
+                    }}
+                    className="appearance-none bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-1.5 pr-7 text-[12px] text-[var(--text-primary)] font-medium focus:outline-none focus:border-[#5E6AD2] cursor-pointer"
+                  >
+                    <option value={71}>Python 3</option>
+                    <option value={62}>Java</option>
+                    <option value={54}>C++</option>
+                    <option value={50}>C</option>
+                    <option value={63}>JavaScript</option>
+                    <option value={74}>TypeScript</option>
+                    <option value={51}>C#</option>
+                    <option value={72}>Ruby</option>
+                    <option value={60}>Go</option>
+                    <option value={73}>Rust</option>
+                    <option value={78}>Kotlin</option>
+                    <option value={76}>SQL</option>
+                    <option value={68}>PHP</option>
+                    <option value={85}>Dart</option>
+                  </select>
+                  <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-faint)] pointer-events-none" />
+                </div>
+                <button
+                  onClick={runCode}
+                  disabled={!answers[currentQuestion]?.trim() || compiling}
+                  className="flex items-center gap-1.5 bg-[#4CAF50] hover:bg-[#43A047] text-white px-3 py-1.5 rounded text-[12px] font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  {compiling ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
+                  {compiling ? 'Running...' : 'Run Code'}
+                </button>
+                <button
+                  onClick={submitCode}
+                  disabled={!answers[currentQuestion]?.trim() || judgeSubmitting || compiling}
+                  className="flex items-center gap-1.5 bg-[#5E6AD2] hover:bg-[#4C5ABF] text-white px-3 py-1.5 rounded text-[12px] font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  {judgeSubmitting ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
+                  {judgeSubmitting ? 'Submitting...' : 'Submit Code'}
+                </button>
+              </div>
+            </div>
+            <div className="rounded-lg overflow-hidden border border-[var(--border-subtle)]">
+              <Editor
+                height="280px"
+                language={LANG_MONACO[selectedLang] || 'plaintext'}
+                theme="vs-dark"
+                value={answers[currentQuestion] || ''}
+                onChange={(val) => setAnswers({ ...answers, [currentQuestion]: val || '' })}
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 14,
+                  lineNumbers: 'on',
+                  scrollBeyondLastLine: false,
+                  automaticLayout: true,
+                  tabSize: 4,
+                  wordWrap: 'on',
+                  padding: { top: 12 },
+                  renderLineHighlight: 'line',
+                  cursorBlinking: 'smooth',
+                  smoothScrolling: true,
+                  contextmenu: false,
+                  domReadOnly: false,
+                }}
+              />
+            </div>
+            <p className="text-xs text-[var(--text-faint)] mt-2">{answers[currentQuestion] ? 'Answer saved' : 'No answer provided yet'}</p>
+
+            {/* Stdin input */}
             <div className="mt-3">
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-1.5">
-                  <Terminal size={12} className="text-[var(--text-faint)]" />
-                  <span className="text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Output</span>
-                </div>
-                {compileTime && (
-                  <div className="flex items-center gap-3 text-[10px] text-[var(--text-faint)]">
-                    <span>Time: {compileTime}s</span>
-                    {compileMemory && <span>Memory: {compileMemory}</span>}
-                  </div>
-                )}
-              </div>
-              <div className="bg-[#0D1117] border border-[var(--border-subtle)] rounded p-4 min-h-[60px] max-h-48 overflow-auto">
-                {compiling ? (
-                  <div className="flex items-center gap-2 text-[var(--text-faint)] text-[12px]">
-                    <Loader2 size={14} className="animate-spin" />
-                    <span>Compiling and executing...</span>
-                  </div>
-                ) : codeError ? (
-                  <pre className="text-[#F87171] text-[12px] font-mono whitespace-pre-wrap">{codeError}</pre>
-                ) : (
-                  <pre className="text-[#4ADE80] text-[12px] font-mono whitespace-pre-wrap">{codeOutput}</pre>
-                )}
-              </div>
+              <label className="block text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-widest mb-1.5">Input (stdin)</label>
+              <textarea
+                value={codeStdin}
+                onChange={e => setCodeStdin(e.target.value)}
+                placeholder="Optional: provide input for your program..."
+                className="w-full h-16 p-3 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded font-mono text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[#5E6AD2] focus:outline-none transition-colors resize-none"
+              />
             </div>
-          )}
 
-          {judgeSummary && (
-            <div className="mt-3 rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Submission Verdict</span>
-                <span className={`text-[12px] font-bold ${judgeSummary.verdict === 'AC' ? 'text-[#4CAF50]' : judgeSummary.verdict === 'WA' ? 'text-[#F54E00]' : 'text-[#DC2626]'}`}>
-                  {judgeSummary.verdict}
-                </span>
-              </div>
-              <p className="text-[12px] text-[var(--text-secondary)]">
-                Passed {judgeSummary.passed} / {judgeSummary.total} test cases
-                {judgeSummary.failedCase ? ` (failed at case #${judgeSummary.failedCase})` : ''}
-              </p>
-              {judgeCaseResults && judgeCaseResults.length > 0 && (
-                <div className="mt-2 space-y-1.5">
-                  {judgeCaseResults.map((c) => (
-                    <div key={c.caseNumber} className="flex items-start justify-between gap-3 text-[11px]">
-                      <span className="text-[var(--text-tertiary)]">Case {c.caseNumber}</span>
-                      <span className={`font-bold ${c.statusCode === 'AC' ? 'text-[#4CAF50]' : c.statusCode === 'WA' ? 'text-[#F54E00]' : 'text-[#DC2626]'}`}>{c.statusCode}</span>
+            {/* Output terminal */}
+            {(codeOutput !== null || codeError !== null || compiling) && (
+              <div className="mt-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <Terminal size={12} className="text-[var(--text-faint)]" />
+                    <span className="text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Output</span>
+                  </div>
+                  {compileTime && (
+                    <div className="flex items-center gap-3 text-[10px] text-[var(--text-faint)]">
+                      <span>Time: {compileTime}s</span>
+                      {compileMemory && <span>Memory: {compileMemory}</span>}
                     </div>
-                  ))}
+                  )}
                 </div>
-              )}
-              {judgeCaseResults?.find((c) => c.stderr)?.stderr && (
-                <pre className="mt-2 text-[#F87171] text-[11px] font-mono whitespace-pre-wrap">{judgeCaseResults.find((c) => c.stderr)?.stderr}</pre>
-              )}
-            </div>
-          )}
-        </div>
+                <div className="bg-[#0D1117] border border-[var(--border-subtle)] rounded p-4 min-h-[60px] max-h-48 overflow-auto">
+                  {compiling ? (
+                    <div className="flex items-center gap-2 text-[var(--text-faint)] text-[12px]">
+                      <Loader2 size={14} className="animate-spin" />
+                      <span>Compiling and executing...</span>
+                    </div>
+                  ) : codeError ? (
+                    <pre className="text-[#F87171] text-[12px] font-mono whitespace-pre-wrap">{codeError}</pre>
+                  ) : (
+                    <pre className="text-[#4ADE80] text-[12px] font-mono whitespace-pre-wrap">{codeOutput}</pre>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {judgeSummary && (
+              <div className="mt-3 rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Submission Verdict</span>
+                  <span className={`text-[12px] font-bold ${judgeSummary.verdict === 'AC' ? 'text-[#4CAF50]' : judgeSummary.verdict === 'WA' ? 'text-[#F54E00]' : 'text-[#DC2626]'}`}>
+                    {judgeSummary.verdict}
+                  </span>
+                </div>
+                <p className="text-[12px] text-[var(--text-secondary)]">
+                  Passed {judgeSummary.passed} / {judgeSummary.total} test cases
+                  {judgeSummary.failedCase ? ` (failed at case #${judgeSummary.failedCase})` : ''}
+                </p>
+                {judgeCaseResults && judgeCaseResults.length > 0 && (
+                  <div className="mt-2 space-y-1.5">
+                    {judgeCaseResults.map((c) => (
+                      <div key={c.caseNumber} className="flex items-start justify-between gap-3 text-[11px]">
+                        <span className="text-[var(--text-tertiary)]">Case {c.caseNumber}</span>
+                        <span className={`font-bold ${c.statusCode === 'AC' ? 'text-[#4CAF50]' : c.statusCode === 'WA' ? 'text-[#F54E00]' : 'text-[#DC2626]'}`}>{c.statusCode}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {judgeCaseResults?.find((c) => c.stderr)?.stderr && (
+                  <pre className="mt-2 text-[#F87171] text-[11px] font-mono whitespace-pre-wrap">{judgeCaseResults.find((c) => c.stderr)?.stderr}</pre>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Navigation */}
         <div className="flex justify-between border-t border-[var(--border-subtle)] pt-5">
@@ -1277,7 +1462,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
             >
               Review & Submit
             </button>
-            {currentQuestion < test.problems.length - 1 && (
+            {currentQuestion < flatQuestions.length - 1 && (
               <button onClick={handleNext} className="btn-primary px-6 py-2.5 text-sm font-semibold">Next →</button>
             )}
           </div>
@@ -1287,23 +1472,31 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         <div className="mt-6 window p-5 mb-8">
           <h3 className="text-sm font-semibold mb-3">Question Status:</h3>
           <div className="flex flex-wrap gap-2">
-            {test.problems.map((_, idx) => (
+            {flatQuestions.map((q, idx) => (
               <button
                 key={idx}
                 onClick={() => setCurrentQuestion(idx)}
                 className={`w-9 h-9 rounded text-xs font-bold transition-all ${
-                  idx === currentQuestion ? 'bg-[#F54E00] text-white'
+                  idx === currentQuestion ? 'text-white'
                   : answers[idx] ? 'bg-[#4CAF50] text-white'
                   : 'bg-[var(--border-subtle)] text-[var(--text-tertiary)] hover:bg-[var(--border-active)]'
                 }`}
+                style={idx === currentQuestion ? { background: sectionColorMap[q._sectionType] } : undefined}
               >
                 {idx + 1}
               </button>
             ))}
           </div>
-          <p className="text-xs text-[var(--text-faint)] mt-3 tabular-nums">
-            Answered: {answeredCount} / {test.problems.length}
-          </p>
+          <div className="flex items-center gap-4 mt-3">
+            <p className="text-xs text-[var(--text-faint)] tabular-nums">
+              Answered: {answeredCount} / {flatQuestions.length}
+            </p>
+            <div className="flex items-center gap-3 text-[10px] text-[var(--text-faint)]">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#14B8A6]" /> Aptitude</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#F59E0B]" /> MCQ</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#5E6AD2]" /> Coding</span>
+            </div>
+          </div>
         </div>
 
         {reviewOpen && (
@@ -1313,7 +1506,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                 <div>
                   <h3 className="text-[15px] font-bold text-[var(--text-primary)]">Review Before Final Submission</h3>
                   <p className="text-[12px] text-[var(--text-tertiary)] mt-0.5">
-                    You answered {answeredCount} of {test.problems.length} questions.
+                    You answered {answeredCount} of {flatQuestions.length} questions.
                   </p>
                 </div>
                 <button
@@ -1326,7 +1519,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               </div>
 
               <div className="px-5 py-4 overflow-y-auto max-h-[55vh] space-y-2">
-                {test.problems.map((q, idx) => {
+                {flatQuestions.map((q, idx) => {
                   const answer = (answers[idx] || '').trim();
                   const answered = answer.length > 0;
                   return (
@@ -1340,15 +1533,24 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                       className="w-full text-left rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3 hover:border-[var(--border-active)] transition-colors"
                     >
                       <div className="flex items-center justify-between gap-3 mb-1">
-                        <p className="text-[12px] font-semibold text-[var(--text-primary)]">
-                          Q{idx + 1}. {q.questionDescription?.slice(0, 90) || 'Question'}{(q.questionDescription || '').length > 90 ? '...' : ''}
-                        </p>
-                        <span className={`text-[10px] font-bold uppercase tracking-widest ${answered ? 'text-[#4CAF50]' : 'text-[#F54E00]'}`}>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ background: `${sectionColorMap[q._sectionType]}20`, color: sectionColorMap[q._sectionType] }}>
+                            {q._sectionType}
+                          </span>
+                          <p className="text-[12px] font-semibold text-[var(--text-primary)]">
+                            Q{idx + 1}. {q.questionDescription?.slice(0, 80) || 'Question'}{(q.questionDescription || '').length > 80 ? '...' : ''}
+                          </p>
+                        </div>
+                        <span className={`text-[10px] font-bold uppercase tracking-widest shrink-0 ${answered ? 'text-[#4CAF50]' : 'text-[#F54E00]'}`}>
                           {answered ? 'Answered' : 'Unanswered'}
                         </span>
                       </div>
                       <p className="text-[11px] text-[var(--text-faint)]">
-                        {answered ? `${answer.slice(0, 120)}${answer.length > 120 ? '...' : ''}` : 'No answer provided yet.'}
+                        {answered
+                          ? q._sectionType === 'mcq'
+                            ? `Selected: Option ${answer}`
+                            : `${answer.slice(0, 120)}${answer.length > 120 ? '...' : ''}`
+                          : 'No answer provided yet.'}
                       </p>
                     </button>
                   );

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Trophy, CalendarDays, BarChart3, X } from 'lucide-react';
+import { Trophy, CalendarDays, BarChart3, X, Eye } from 'lucide-react';
 
 interface Problem {
   questionDescription?: string;
@@ -334,6 +334,13 @@ export default function ResultsPage() {
                           <BarChart3 size={11} />
                           View analysis
                         </button>
+                        <a
+                          href={`/user/results/review/${result.id}`}
+                          className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-[#5E6AD2] hover:text-[#7C86E8] transition-colors"
+                        >
+                          <Eye size={11} />
+                          Review questions
+                        </a>
                         {result.scoringMode === 'attempted' && (
                           <span className="block text-[10px] text-[var(--text-faint)] mt-0.5">attempt-based</span>
                         )}
