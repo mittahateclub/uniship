@@ -69,6 +69,7 @@ const userNavLinks: NavLink[] = [
   { href: '/user/practice', label: 'Practice', icon: Code, group: 'Prepare' },
   { href: '/user/resume', label: 'AI Resume Builder', icon: Sparkles, group: 'Prepare' },
   { href: '/user/results', label: 'Results', icon: BarChart3, group: 'Track' },
+  { href: '/user/resume/download', label: 'Export Resume', icon: Download, group: 'Track' },
   { href: '/user/profile', label: 'Profile', icon: User, group: 'Track' },
 ];
 
