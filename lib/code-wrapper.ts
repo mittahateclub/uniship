@@ -53,6 +53,7 @@ export function extractPythonParamCount(code: string, functionName: string): num
 
 /* ── Python driver injected before student code ── */
 const UNIVERSAL_DRIVER = `
+from __future__ import annotations
 import sys as _sys
 import ast as _ast
 import io as _io
