@@ -10,6 +10,8 @@ interface AuthContextType {
   role: string | null;
   universityId: string | null;
   universityName: string | null;
+  userName: string | null;
+  userPhotoURL: string | null;
   loading: boolean;
   logout: () => Promise<void>;
 }
@@ -19,6 +21,8 @@ const AuthContext = createContext<AuthContextType>({
   role: null,
   universityId: null,
   universityName: null,
+  userName: null,
+  userPhotoURL: null,
   loading: true,
   logout: async () => {},
 });
@@ -30,6 +34,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<string | null>(null);
   const [universityId, setUniversityId] = useState<string | null>(null);
   const [universityName, setUniversityName] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [userPhotoURL, setUserPhotoURL] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,20 +49,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setRole(data.role || 'user');
             setUniversityId(data.universityId || null);
             setUniversityName(data.universityName || null);
+            setUserName(data.name || null);
+            setUserPhotoURL(data.photoURL || null);
           } else {
             setRole('user');
             setUniversityId(null);
             setUniversityName(null);
+            setUserName(null);
+            setUserPhotoURL(null);
           }
         } catch {
           setRole('user');
           setUniversityId(null);
           setUniversityName(null);
+          setUserName(null);
+          setUserPhotoURL(null);
         }
       } else {
         setRole(null);
         setUniversityId(null);
         setUniversityName(null);
+        setUserName(null);
+        setUserPhotoURL(null);
       }
       setLoading(false);
     });
@@ -69,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, universityId, universityName, loading, logout }}>
+    <AuthContext.Provider value={{ user, role, universityId, universityName, userName, userPhotoURL, loading, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -165,26 +165,33 @@ h1, h2, h3, h4, h5, h6 {
   outline-offset: 2px;
 }
 
-/* Sidebar toggle — orange pill inside sidebar, right-aligned */
+/* Sidebar toggle — orange arrow row at top of nav */
 .sidebar-toggle {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--accent-orange);
-  color: #000;
+  background: none;
+  border: none;
+  width: 100%;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
+  padding: 5px 10px 5px 10px;
+  margin-bottom: 6px;
+  color: var(--accent-orange);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   cursor: pointer;
-  transition: background 0.15s ease-out, box-shadow 0.15s ease-out, transform 0.15s ease-out;
-  box-shadow: 0 1px 4px rgba(245, 78, 0, 0.3);
-  border: none;
+  transition: color 0.15s ease-out, opacity 0.15s ease-out;
   flex-shrink: 0;
 }
+/* When collapsed the button only has an icon — center it */
+.sidebar-toggle:has(svg:only-child) {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
 .sidebar-toggle:hover {
-  background: var(--accent-orange-hover);
-  box-shadow: 0 2px 8px rgba(245, 78, 0, 0.5);
-  transform: scale(1.1);
+  color: var(--accent-orange-hover);
+  opacity: 0.85;
 }
 
 /* Window-style card */

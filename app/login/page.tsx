@@ -70,7 +70,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-6">
-            <Image src="/logo.png" alt="Uniship" width={210} height={58} className="object-contain w-auto" style={{ maxHeight: 58 }} />
+            <Image src="/logo.png" alt="Uniship" width={420} height={116} className="object-contain w-auto" style={{ maxHeight: 116 }} />
           </div>
           <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Welcome back</h1>
           <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Sign in to your Uniship account</p>

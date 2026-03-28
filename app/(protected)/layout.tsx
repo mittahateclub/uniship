@@ -3,8 +3,7 @@
 import React from "react";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Search, Command, LogOut } from "lucide-react";
+import { Search, Command } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function ProtectedLayout({
@@ -12,21 +11,14 @@ export default function ProtectedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const router = useRouter();
-  const { user, role, logout } = useAuth();
-
-  const roleLabel = role === 'super_admin' ? 'Super Admin' : role === 'university_admin' ? 'Uni Admin' : 'Student';
-
-  const handleLogout = async () => {
-    try { await logout(); router.push('/'); } catch {}
-  };
+  const { user, role, userName, userPhotoURL } = useAuth();
 
   return (
     <div className="flex h-screen bg-[var(--bg-primary)] overflow-hidden">
       <Navbar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top bar */}
-        <div className="h-14 bg-[var(--bg-primary)] border-b border-[var(--border-subtle)] flex items-center shrink-0 px-5 gap-4">
+        <div className="h-16 bg-[var(--bg-primary)] border-b border-[var(--border-subtle)] flex items-center shrink-0 px-5 gap-4">
           {/* Search — centered */}
           <div className="flex-1 flex justify-center">
             <button
@@ -48,21 +40,17 @@ export default function ProtectedLayout({
                 href={role === 'super_admin' ? '/superadmin/dashboard' : role === 'university_admin' ? '/uniadmin/profile' : '/user/profile'}
                 className="flex items-center gap-2 hover:opacity-80 transition-opacity duration-150"
               >
-                <div className="w-7 h-7 bg-[#F54E00] rounded-full flex items-center justify-center shrink-0">
-                  <span className="text-[11px] font-bold text-black">{user.email?.[0]?.toUpperCase()}</span>
-                </div>
+                {userPhotoURL ? (
+                  <img src={userPhotoURL} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
+                ) : (
+                  <div className="w-7 h-7 bg-[#F54E00] rounded-full flex items-center justify-center shrink-0">
+                    <span className="text-[11px] font-bold text-black">{(userName || user.email)?.[0]?.toUpperCase()}</span>
+                  </div>
+                )}
                 <div className="min-w-0 hidden lg:block">
-                  <p className="text-[12px] font-medium text-[var(--text-primary)] truncate leading-tight">{user.email?.split('@')[0]}</p>
-                  <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-wider leading-tight">{roleLabel}</p>
+                  <p className="text-[12px] font-medium text-[var(--text-primary)] truncate leading-tight">{userName || user.email?.split('@')[0]}</p>
                 </div>
               </Link>
-              <button
-                onClick={handleLogout}
-                className="p-1 rounded text-[var(--text-faint)] hover:text-[#F54E00] transition-colors duration-150"
-                title="Logout"
-              >
-                <LogOut size={14} />
-              </button>
             </div>
           )}
         </div>

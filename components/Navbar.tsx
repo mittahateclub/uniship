@@ -26,8 +26,8 @@ import {
   CalendarPlus,
   ShieldCheck,
   UserPlus,
-  ChevronLeft,
-  ChevronRight,
+  ArrowLeft,
+  ArrowRight,
   Award,
   FolderKanban,
   BookOpen,
@@ -335,32 +335,28 @@ export default function Navbar() {
       {/* ═══ Left Sidebar ═══ */}
       <aside className={`h-screen bg-[var(--bg-elevated)] border-r border-[var(--border-subtle)] flex flex-col transition-all duration-200 ease-out shrink-0 sticky top-0 ${collapsed ? 'w-[56px]' : 'w-[240px]'}`}>
         {/* Logo */}
-        <div className="h-14 flex items-center border-b border-[var(--border-subtle)] shrink-0">
+        <div className="h-16 flex items-center border-b border-[var(--border-subtle)] shrink-0">
           <Link
             href="/"
             className={`flex items-center overflow-hidden rounded-md transition-colors duration-150 hover:bg-[var(--bg-surface)] mx-2 ${collapsed ? 'justify-center w-full py-1' : 'gap-2.5 px-2 py-1.5 w-full'}`}
           >
-            <Image src="/logo.png" alt="Uniship" width={collapsed ? 32 : 36} height={collapsed ? 32 : 36} className="shrink-0 object-contain" />
+            <Image src="/logo.png" alt="Uniship" width={collapsed ? 48 : 54} height={collapsed ? 48 : 54} className="shrink-0 object-contain" />
             {!collapsed && <span className="text-[14px] font-bold tracking-[0.16em] text-[var(--text-primary)] whitespace-nowrap">UNISHIP</span>}
           </Link>
         </div>
 
-        {/* Collapse/Expand toggle — right-aligned below logo */}
-        <div className="flex justify-end px-1 py-1 shrink-0">
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto px-2 py-2">
+          {/* Collapse/Expand toggle — top of nav, above icons */}
           <button
             onClick={() => setCollapsed(c => !c)}
             className="sidebar-toggle"
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            title={collapsed ? 'Expand' : 'Collapse'}
           >
-            {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+            {collapsed
+              ? <ArrowRight size={15} strokeWidth={2.5} />
+              : <><ArrowLeft size={15} strokeWidth={2.5} /><span>Collapse</span></>}
           </button>
-        </div>
-
-
-
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-2 py-2">
           {(() => {
             let lastGroup = '';
             let isFirst = true;
@@ -394,6 +390,18 @@ export default function Navbar() {
             });
           })()}
         </nav>
+
+        {/* Logout — bottom of sidebar */}
+        <div className="border-t border-[var(--border-subtle)] px-2 py-2 shrink-0">
+          <button
+            onClick={handleLogout}
+            title={collapsed ? 'Logout' : undefined}
+            className={`flex items-center gap-2.5 rounded text-[13px] font-medium transition-all duration-150 w-full text-[var(--text-tertiary)] hover:text-[#F54E00] hover:bg-[var(--bg-surface)] border border-transparent ${collapsed ? 'justify-center p-2' : 'px-2.5 py-[7px]'}`}
+          >
+            <LogOut size={16} className="shrink-0" />
+            {!collapsed && <span>Logout</span>}
+          </button>
+        </div>
       </aside>
 
       {/* ═══ Command-K Modal ═══ */}
