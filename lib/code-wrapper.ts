@@ -784,24 +784,28 @@ function buildCWrapper(
   functionName: string,
   paramTypes: string[],
   returnType: string,
-  callExpr: string,
+  _callExpr: string,
   paramCount: number
 ): string {
-  // Map C++ types to C equivalents
-  const cType = (t: string): string => {
-    const n = t.replace(/\s/g, '').replace(/&/g, '').replace(/std::/g, '').replace(/^const/, '');
-    if (n === 'int') return 'int';
-    if (n === 'long' || n === 'longlong') return 'long long';
-    if (n === 'double') return 'double';
-    if (n === 'bool') return 'int';
-    if (n === 'char*' || n === 'string') return 'char*';
-    if (n === 'int*' || n === 'vector<int>') return 'int*';
-    if (n === 'int**' || n === 'vector<vector<int>>') return 'int**';
-    return 'char*';
-  };
+  // Normalize types
+  const normTypes = paramTypes.map(t =>
+    t.replace(/\s/g, '').replace(/&/g, '').replace(/std::/g, '').replace(/^const/, '')
+  );
 
-  const argDecls = paramTypes.map((type, i) => {
-    const t = type.replace(/\s/g, '').replace(/&/g, '').replace(/std::/g, '').replace(/^const/, '');
+  // Detect which int params are array-size params (int following int*)
+  // e.g. (int* nums, int numsSize) → numsSize is size of nums
+  const isSizeOf: (number | null)[] = normTypes.map(() => null);
+  for (let i = 1; i < normTypes.length; i++) {
+    if (normTypes[i] === 'int' && (normTypes[i - 1] === 'int*' || normTypes[i - 1] === 'vector<int>')) {
+      isSizeOf[i] = i - 1; // param i is the size of param i-1
+    }
+  }
+
+  // Build arg declarations — size params get assigned from parsed array size
+  const argDecls = normTypes.map((t, i) => {
+    if (isSizeOf[i] !== null) {
+      return `    int _a${i} = _sz${isSizeOf[i]};`;
+    }
     if (t === 'int') return `    int _a${i} = atoi(_lines[_idx++]);`;
     if (t === 'long' || t === 'longlong') return `    long long _a${i} = atoll(_lines[_idx++]);`;
     if (t === 'double') return `    double _a${i} = atof(_lines[_idx++]);`;
@@ -810,14 +814,11 @@ function buildCWrapper(
     return `    char* _a${i} = _lines[_idx++];`;
   }).join('\n');
 
-  // For C functions, we often need to pass array sizes
-  const argListParts: string[] = [];
-  paramTypes.forEach((type, i) => {
-    const t = type.replace(/\s/g, '').replace(/&/g, '').replace(/std::/g, '').replace(/^const/, '');
-    argListParts.push(`_a${i}`);
-    if (t === 'int*' || t === 'vector<int>') argListParts.push(`_sz${i}`);
-  });
-  const cCallExpr = `${functionName}(${argListParts.join(', ')})`;
+  // Build call — just pass all _a{i} in order, no extra size injection
+  const cCallExpr = `${functionName}(${normTypes.map((_, i) => `_a${i}`).join(', ')})`;
+
+  // Count how many actual input lines we need (exclude size-of params)
+  const inputParamCount = normTypes.filter((_, i) => isSizeOf[i] === null).length;
 
   const rt = returnType.replace(/\s/g, '').replace(/&/g, '').replace(/std::/g, '').replace(/^const/, '');
   let outputCode: string;
@@ -883,7 +884,7 @@ int main() {
     // Smart filter: skip size-prefix integers
     char* _lines[1024];
     int _lineCount = 0;
-    if (_numLines == ${paramCount}) {
+    if (_numLines == ${inputParamCount}) {
         for (int i = 0; i < _numLines; i++) _lines[i] = _allLines[i];
         _lineCount = _numLines;
     } else {
