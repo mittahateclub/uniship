@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import {
-  Play, CloudUpload, ChevronDown, Code2, Clock, CheckCircle2, XCircle,
+  Play, CloudUpload, ChevronDown, Clock, CheckCircle2, XCircle,
   BookOpen, ArrowLeft, AlertTriangle, Terminal, Loader2,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
@@ -259,13 +259,13 @@ export default function PracticeSolvePage() {
           >
             <ArrowLeft size={16} />
           </button>
-          <div className="flex items-center gap-2">
-            <Code2 size={16} className="text-[#5E6AD2]" />
-            <span className="text-[13px] font-bold text-[var(--text-primary)]">UniCode</span>
-          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <div className="text-[10px] text-[var(--text-faint)] flex items-center gap-2">
+            <kbd className="px-1 py-0.5 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[9px]">⌘↵</kbd> Run
+            <kbd className="px-1 py-0.5 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[9px]">⌘⇧↵</kbd> Submit
+          </div>
           <button
             onClick={() => executeCode(false)}
             disabled={isRunning || isSubmitting}
@@ -282,11 +282,6 @@ export default function PracticeSolvePage() {
             {isSubmitting ? <Loader2 size={13} className="animate-spin" /> : <CloudUpload size={13} />}
             Submit
           </button>
-        </div>
-
-        <div className="text-[10px] text-[var(--text-faint)] flex items-center gap-2">
-          <kbd className="px-1 py-0.5 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[9px]">⌘↵</kbd> Run
-          <kbd className="px-1 py-0.5 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[9px]">⌘⇧↵</kbd> Submit
         </div>
       </div>
 
