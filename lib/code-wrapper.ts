@@ -264,7 +264,8 @@ export function wrapCode(
   if (languageId === JS_ID || languageId === TS_ID) {
     const functionName = extractJsFunctionName(studentCode);
     if (!functionName) return studentCode;
-    return buildJsWrapper(studentCode, functionName);
+    const paramCount = extractJsParamCount(studentCode, functionName);
+    return buildJsWrapper(studentCode, functionName, paramCount);
   }
 
   if (languageId === JAVA_ID) {
@@ -325,7 +326,26 @@ function extractJsFunctionName(code: string): string | null {
   return all[all.length - 1][1];
 }
 
-function buildJsWrapper(studentCode: string, functionName: string): string {
+function extractJsParamCount(code: string, functionName: string): number {
+  const escaped = functionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // function name(a, b, c)
+  const fnDecl = code.match(new RegExp(`function\\s+${escaped}\\s*\\(([^)]*)\\)`));
+  if (fnDecl) {
+    const raw = fnDecl[1].trim();
+    if (!raw) return 0;
+    return raw.split(',').map(p => p.trim()).filter(p => p && !p.startsWith('...')).length;
+  }
+  // var/let/const name = function(a, b) OR (a, b) =>
+  const fnExpr = code.match(new RegExp(`(?:var|let|const)\\s+${escaped}\\s*=\\s*(?:function\\s*)?\\(([^)]*)\\)`));
+  if (fnExpr) {
+    const raw = fnExpr[1].trim();
+    if (!raw) return 0;
+    return raw.split(',').map(p => p.trim()).filter(p => p && !p.startsWith('...')).length;
+  }
+  return 0;
+}
+
+function buildJsWrapper(studentCode: string, functionName: string, paramCount: number): string {
   // Suppress student's console.log/error, include code, then driver
   return `
 // ---- suppress student output ----
@@ -342,18 +362,73 @@ console.log = _origLog;
 console.error = _origErr;
 const _inp = require('fs').readFileSync(0, 'utf8').trim();
 const _lines = _inp.split('\\n').filter(l => l.trim());
-const _args = _lines.map(function(_l) {
+
+function _parseLine(_l) {
   _l = _l.trim();
   try { return JSON.parse(_l); } catch(_e) {}
-  // Handle Python-style booleans/None
   if (_l === 'True') return true;
   if (_l === 'False') return false;
   if (_l === 'None') return null;
-  // Try number
   const _n = Number(_l);
   if (!isNaN(_n) && _l !== '') return _n;
   return _l;
-});
+}
+
+function _smartParse(_lines, _pc) {
+  const _parsed = _lines.map(_parseLine);
+  // Exact match: one line per arg
+  if (_parsed.length === _pc) return _parsed;
+
+  if (_parsed.length > _pc) {
+    // Filter out size-prefix lines (integer N followed by array of length N)
+    const _filtered = [];
+    for (let _i = 0; _i < _parsed.length; _i++) {
+      const _v = _parsed[_i];
+      if (typeof _v === 'number' && Number.isInteger(_v) && _v >= 0 && _i + 1 < _parsed.length) {
+        const _nxt = _parsed[_i + 1];
+        if (Array.isArray(_nxt) && _nxt.length === _v) {
+          continue; // skip size prefix
+        }
+      }
+      _filtered.push(_v);
+    }
+    // 2-arg function: arg1 + count N + N rows
+    if (_pc === 2 && _filtered.length >= 3 && typeof _filtered[1] === 'number' && Number.isInteger(_filtered[1])) {
+      const _n = _filtered[1];
+      if (_n === 0) return [_filtered[0], []];
+      if (_filtered.length >= 2 + _n) {
+        return [_filtered[0], _filtered.slice(2, 2 + _n)];
+      }
+    }
+    if (_filtered.length === _pc) return _filtered;
+    // Extra items: combine trailing into last arg
+    if (_filtered.length > _pc && _pc >= 1) {
+      const _first = _filtered.slice(0, _pc - 1);
+      const _rest = _filtered.slice(_pc - 1);
+      if (_rest.every(x => Array.isArray(x))) return [..._first, _rest];
+      if (_rest.every(x => typeof x === 'number')) return [..._first, _rest];
+      return _filtered.slice(0, _pc);
+    }
+  }
+
+  // Single line, multiple params: try space-separated
+  if (_parsed.length === 1 && _pc > 1) {
+    const _tks = _lines[0].trim().split(/\\s+/);
+    if (_tks.length === _pc) return _tks.map(_parseLine);
+  }
+
+  // Fewer lines, single param: collect all
+  if (_pc === 1) {
+    if (_parsed.length === 1) return [_parsed[0]];
+    if (_parsed.every(p => Array.isArray(p))) return [_parsed];
+    return [_parsed];
+  }
+
+  return _parsed.slice(0, _pc);
+}
+
+const _pc = ${paramCount};
+const _args = (_pc > 0) ? _smartParse(_lines, _pc) : _lines.map(_parseLine);
 const _res = ${functionName}(..._args);
 if (_res !== undefined && _res !== null) {
   if (typeof _res === 'boolean') _origLog(_res.toString());
