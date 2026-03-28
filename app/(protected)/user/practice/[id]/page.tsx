@@ -18,7 +18,7 @@ const LANG_IDS: Record<string, number> = {
   'Kotlin': 78,
 };
 
-const SUPPORTED_LANGS = ['Python3', 'JavaScript', 'Java', 'C++'];
+const SUPPORTED_LANGS = ['Python3', 'JavaScript', 'Java', 'C++', 'C'];
 
 const DIFFICULTY_COLORS: Record<string, string> = {
   Easy: 'text-teal-400',
@@ -31,6 +31,7 @@ const DEFAULT_STARTER: Record<string, (fn: string) => string> = {
   'JavaScript': (fn) => `/**\n * @return {any}\n */\nvar ${fn} = function() {\n    \n};\n`,
   'Java': (fn) => `class Solution {\n    public void ${fn}() {\n        \n    }\n}\n`,
   'C++': (fn) => `class Solution {\npublic:\n    void ${fn}() {\n        \n    }\n};\n`,
+  'C': (fn) => `#include <stdio.h>\n#include <stdlib.h>\n\nvoid ${fn}() {\n    \n}\n`,
 };
 
 interface TestCase {

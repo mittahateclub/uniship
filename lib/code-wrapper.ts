@@ -12,6 +12,7 @@ const JS_ID = 93;
 const TS_ID = 74;
 const JAVA_ID = 62;
 const CPP_ID = 54;
+const C_ID = 50;
 
 export function extractFunctionName(code: string, languageId: number): string | null {
   if (languageId === PYTHON3_ID) {
@@ -31,7 +32,7 @@ export function extractFunctionName(code: string, languageId: number): string | 
     return extractJavaMethodName(code);
   }
 
-  if (languageId === CPP_ID) {
+  if (languageId === CPP_ID || languageId === C_ID) {
     return extractCppFunctionName(code);
   }
 
@@ -270,10 +271,10 @@ export function wrapCode(
     return buildJavaWrapper(studentCode, methodName);
   }
 
-  if (languageId === CPP_ID) {
+  if (languageId === CPP_ID || languageId === C_ID) {
     const functionName = extractCppFunctionName(studentCode);
     if (!functionName) return studentCode;
-    return buildCppWrapper(studentCode, functionName);
+    return buildCppWrapper(studentCode, functionName, languageId);
   }
 
   return studentCode;
@@ -499,10 +500,6 @@ function buildJavaWrapper(studentCode: string, methodName: string): string {
   const paramTypes = extractJavaParamTypes(studentCode, methodName);
   const returnType = extractJavaReturnType(studentCode, methodName);
 
-  const argParsing = paramTypes.map((type, i) =>
-    `        ${type} _a${i} = ${javaParseExpr(type, `_lines[${i}]`)};`
-  ).join('\n');
-
   const argList = paramTypes.map((_, i) => `_a${i}`).join(', ');
   const isStatic = studentCode.includes(`public static`) && studentCode.includes(methodName);
   const callExpr = isStatic
@@ -518,6 +515,23 @@ function buildJavaWrapper(studentCode: string, methodName: string): string {
     /public\s+static\s+void\s+main\s*\([^)]*\)\s*\{[^}]*(?:\{[^}]*\}[^}]*)*\}/g,
     ''
   );
+
+  // Build arg parsing using a cursor (_idx) instead of static indices
+  const argParsing = paramTypes.map((type, i) => {
+    const t = type.replace(/\s/g, '');
+    if (t === 'int' || t === 'Integer') return `        int _a${i} = Integer.parseInt(_lines.get(_idx++).trim());`;
+    if (t === 'long' || t === 'Long') return `        long _a${i} = Long.parseLong(_lines.get(_idx++).trim());`;
+    if (t === 'double' || t === 'Double') return `        double _a${i} = Double.parseDouble(_lines.get(_idx++).trim());`;
+    if (t === 'boolean' || t === 'Boolean') return `        boolean _a${i} = _lines.get(_idx++).trim().equalsIgnoreCase("true");`;
+    if (t === 'String') return `        String _a${i} = _lines.get(_idx++).trim().replaceAll("^\\"|\\"$","");`;
+    if (t === 'int[]' || t === 'Integer[]') return `        int[] _a${i} = _parseIntArr(_lines.get(_idx++));`;
+    if (t === 'int[][]') return `        int[][] _a${i} = _parseMultiLine2D(_lines, _idx); _idx += _a${i}.length + 1;`;
+    if (t === 'String[]') return `        String[] _a${i} = _parseStrArr(_lines.get(_idx++));`;
+    if (t.includes('List<Integer>') && !t.includes('List<List')) return `        List<Integer> _a${i} = _parseIntList(_lines.get(_idx++));`;
+    if (t.includes('List<List<Integer>>')) return `        List<List<Integer>> _a${i} = _parseMultiLineList(_lines, _idx); _idx += _a${i}.size() + 1;`;
+    if (t.includes('List<String>')) return `        List<String> _a${i} = _parseStrList(_lines.get(_idx++));`;
+    return `        String _a${i} = _lines.get(_idx++).trim();`;
+  }).join('\n');
 
   return `
 import java.util.*;
@@ -540,9 +554,7 @@ class Main {
         if (s.isEmpty()) return new String[0];
         return Arrays.stream(s.split(",")).map(x -> x.trim().replaceAll("^\\"|\\"$","")).toArray(String[]::new);
     }
-    static List<String> _parseStrList(String s) {
-        return Arrays.asList(_parseStrArr(s));
-    }
+    static List<String> _parseStrList(String s) { return Arrays.asList(_parseStrArr(s)); }
     static int[][] _parseInt2D(String s) {
         s = s.trim();
         if (s.startsWith("[")) s = s.substring(1);
@@ -562,11 +574,49 @@ class Main {
         for (int[] row : a) { List<Integer> lr = new ArrayList<>(); for (int v : row) lr.add(v); r.add(lr); }
         return r;
     }
+    // Multi-line: integer count N, then N lines each containing an array
+    static int[][] _parseMultiLine2D(List<String> lines, int idx) {
+        int n = Integer.parseInt(lines.get(idx).trim());
+        int[][] r = new int[n][];
+        for (int i = 0; i < n; i++) r[i] = _parseIntArr(lines.get(idx + 1 + i));
+        return r;
+    }
+    static List<List<Integer>> _parseMultiLineList(List<String> lines, int idx) {
+        int n = Integer.parseInt(lines.get(idx).trim());
+        List<List<Integer>> r = new ArrayList<>();
+        for (int i = 0; i < n; i++) r.add(_parseIntList(lines.get(idx + 1 + i)));
+        return r;
+    }
+    // Smart line allocation: skip size-prefix integers
+    static List<String> _smartLines(List<String> raw, int paramCount) {
+        if (raw.size() == paramCount) return raw;
+        // Try skipping size prefixes
+        List<String> filtered = new ArrayList<>();
+        for (int i = 0; i < raw.size(); i++) {
+            String s = raw.get(i).trim();
+            try {
+                int n = Integer.parseInt(s);
+                if (n >= 0 && i + 1 < raw.size()) {
+                    String nxt = raw.get(i + 1).trim();
+                    if (nxt.startsWith("[") || nxt.startsWith("(")) {
+                        try {
+                            int[] arr = _parseIntArr(nxt);
+                            if (arr.length == n) continue;
+                        } catch (Exception e) {}
+                    }
+                }
+            } catch (Exception e) {}
+            filtered.add(raw.get(i));
+        }
+        return filtered;
+    }
     public static void main(String[] args) throws Exception {
         Scanner _sc = new Scanner(System.in);
-        List<String> _ll = new ArrayList<>();
-        while (_sc.hasNextLine()) { String _l = _sc.nextLine().trim(); if (!_l.isEmpty()) _ll.add(_l); }
-        String[] _lines = _ll.toArray(new String[0]);
+        List<String> _rawLines = new ArrayList<>();
+        while (_sc.hasNextLine()) { String _l = _sc.nextLine().trim(); if (!_l.isEmpty()) _rawLines.add(_l); }
+        List<String> _lines = _smartLines(_rawLines, ${paramTypes.length});
+        int _idx = 0;
+${argParsing}
 ${printResult}
     }
 }
@@ -603,10 +653,12 @@ function extractCppReturnType(code: string, fn: string): string {
   return match ? match[1].trim() : 'void';
 }
 
-function buildCppWrapper(studentCode: string, functionName: string): string {
+function buildCppWrapper(studentCode: string, functionName: string, languageId: number = CPP_ID): string {
+  const isC = languageId === C_ID;
   const paramTypes = extractCppParamTypes(studentCode, functionName);
   const returnType = extractCppReturnType(studentCode, functionName);
-  const isInClass = /class\s+Solution\s*\{/.test(studentCode);
+  const isInClass = !isC && /class\s+Solution\s*\{/.test(studentCode);
+  const paramCount = paramTypes.length;
 
   // Strip existing includes, using namespace, and main()
   const strippedCode = studentCode
@@ -615,24 +667,29 @@ function buildCppWrapper(studentCode: string, functionName: string): string {
     .replace(/int\s+main\s*\([^)]*\)\s*\{[^}]*(?:\{[^}]*\}[^}]*)*\}/g, '')
     .trim();
 
-  // Generate parsing code for each parameter
-  const argDecls = paramTypes.map((type, i) => {
-    const t = type.replace(/\s/g, '').replace(/&/g, '');
-    if (t === 'int') return `    int _a${i}; { string _l; getline(cin, _l); _a${i} = stoi(_l); }`;
-    if (t === 'long' || t === 'longlong') return `    long long _a${i}; { string _l; getline(cin, _l); _a${i} = stoll(_l); }`;
-    if (t === 'double') return `    double _a${i}; { string _l; getline(cin, _l); _a${i} = stod(_l); }`;
-    if (t === 'string') return `    string _a${i}; { getline(cin, _a${i}); while(!_a${i}.empty()&&(_a${i}.front()==\'"\'||_a${i}.front()==\' \'))_a${i}.erase(0,1); while(!_a${i}.empty()&&(_a${i}.back()==\'"\'||_a${i}.back()==\' \'))_a${i}.pop_back(); }`;
-    if (t === 'bool') return `    bool _a${i}; { string _l; getline(cin, _l); for(auto&c:_l)c=tolower(c); _a${i}=(_l.find("true")!=string::npos||_l=="1"); }`;
-    if (t === 'vector<int>') return `    vector<int> _a${i} = _parseVecInt();`;
-    if (t === 'vector<string>') return `    vector<string> _a${i} = _parseVecStr();`;
-    if (t === 'vector<vector<int>>') return `    vector<vector<int>> _a${i} = _parseVec2D();`;
-    return `    string _a${i}; getline(cin, _a${i});`;
-  }).join('\n');
-
   const argList = paramTypes.map((_, i) => `_a${i}`).join(', ');
   const callExpr = isInClass
     ? `Solution().${functionName}(${argList})`
     : `${functionName}(${argList})`;
+
+  if (isC) {
+    return buildCWrapper(strippedCode, functionName, paramTypes, returnType, callExpr, paramCount);
+  }
+
+  // Generate parsing code for each param using _lines[_idx++]
+  const argDecls = paramTypes.map((type, i) => {
+    const t = type.replace(/\s/g, '').replace(/&/g, '');
+    if (t === 'int') return `    int _a${i} = stoi(_lines[_idx++]);`;
+    if (t === 'long' || t === 'longlong') return `    long long _a${i} = stoll(_lines[_idx++]);`;
+    if (t === 'double') return `    double _a${i} = stod(_lines[_idx++]);`;
+    if (t === 'string') return `    string _a${i} = _lines[_idx++]; while(!_a${i}.empty()&&(_a${i}.front()==\'"\'||_a${i}.front()==\' \'))_a${i}.erase(0,1); while(!_a${i}.empty()&&(_a${i}.back()==\'"\'||_a${i}.back()==\' \'))_a${i}.pop_back();`;
+    if (t === 'bool') return `    string _bl${i}=_lines[_idx++]; for(auto&c:_bl${i})c=tolower(c); bool _a${i}=(_bl${i}.find("true")!=string::npos||_bl${i}=="1");`;
+    if (t === 'vector<int>') return `    vector<int> _a${i} = _parseVecInt(_lines[_idx++]);`;
+    if (t === 'vector<string>') return `    vector<string> _a${i} = _parseVecStr(_lines[_idx++]);`;
+    if (t === 'vector<vector<int>>') return `    vector<vector<int>> _a${i} = _parseVec2D(_lines[_idx++]);`;
+    if (t === 'vector<long>' || t === 'vector<longlong>') return `    vector<long long> _a${i} = _parseVecLong(_lines[_idx++]);`;
+    return `    string _a${i} = _lines[_idx++];`;
+  }).join('\n');
 
   const outputCode = returnType === 'void'
     ? `    ${callExpr};`
@@ -643,40 +700,55 @@ function buildCppWrapper(studentCode: string, functionName: string): string {
 using namespace std;
 
 // ---- helpers ----
-vector<int> _parseVecInt() {
-    string _l; getline(cin, _l);
-    vector<int> _r;
-    string _t;
-    for (char c : _l) {
-        if (isdigit(c) || c == '-') _t += c;
-        else if (!_t.empty()) { _r.push_back(stoi(_t)); _t.clear(); }
-    }
+vector<int> _parseVecInt(const string& _l) {
+    vector<int> _r; string _t;
+    for (char c : _l) { if (isdigit(c) || c == '-') _t += c; else if (!_t.empty()) { _r.push_back(stoi(_t)); _t.clear(); } }
     if (!_t.empty()) _r.push_back(stoi(_t));
     return _r;
 }
-vector<string> _parseVecStr() {
-    string _l; getline(cin, _l);
-    vector<string> _r;
-    string _t; bool inStr = false;
-    for (char c : _l) {
-        if (c == '"') { if (inStr) { _r.push_back(_t); _t.clear(); } inStr = !inStr; }
-        else if (inStr) _t += c;
-    }
+vector<long long> _parseVecLong(const string& _l) {
+    vector<long long> _r; string _t;
+    for (char c : _l) { if (isdigit(c) || c == '-') _t += c; else if (!_t.empty()) { _r.push_back(stoll(_t)); _t.clear(); } }
+    if (!_t.empty()) _r.push_back(stoll(_t));
     return _r;
 }
-vector<vector<int>> _parseVec2D() {
-    string _l; getline(cin, _l);
-    vector<vector<int>> _r;
-    int depth = 0; string _t;
+vector<string> _parseVecStr(const string& _l) {
+    vector<string> _r; string _t; bool inStr = false;
+    for (char c : _l) { if (c == '"') { if (inStr) { _r.push_back(_t); _t.clear(); } inStr = !inStr; } else if (inStr) _t += c; }
+    return _r;
+}
+vector<vector<int>> _parseVec2D(const string& _l) {
+    vector<vector<int>> _r; int depth = 0; string _t;
     for (char c : _l) {
         if (c == '[') { depth++; if (depth == 2) _t.clear(); }
-        else if (c == ']') { depth--; if (depth == 1 && !_t.empty()) { vector<int> row; string n; for (char x : _t) { if (isdigit(x)||x=='-') n+=x; else if(!n.empty()){row.push_back(stoi(n));n.clear();}} if(!n.empty())row.push_back(stoi(n)); _r.push_back(row); _t.clear(); } }
+        else if (c == ']') { depth--; if (depth == 1) { if(!_t.empty()){_r.push_back(_parseVecInt(_t));} else {_r.push_back({});} _t.clear(); } }
         else if (depth >= 2) _t += c;
     }
     return _r;
 }
+// Smart line filter: skip size-prefix integers
+vector<string> _smartLines(const vector<string>& raw, int paramCount) {
+    if ((int)raw.size() == paramCount) return raw;
+    vector<string> filtered;
+    for (int i = 0; i < (int)raw.size(); i++) {
+        string s = raw[i]; // already trimmed
+        bool skip = false;
+        try {
+            int n = stoi(s);
+            if (n >= 0 && i + 1 < (int)raw.size()) {
+                string nxt = raw[i+1];
+                if (!nxt.empty() && (nxt[0] == '[' || nxt[0] == '(')) {
+                    vector<int> arr = _parseVecInt(nxt);
+                    if ((int)arr.size() == n) skip = true;
+                }
+            }
+        } catch (...) {}
+        if (!skip) filtered.push_back(raw[i]);
+    }
+    return filtered;
+}
 template<typename T> void _printResult(const vector<T>& v) { cout << "["; for (int i=0;i<(int)v.size();i++){if(i)cout<<", ";cout<<v[i];}cout<<"]"<<endl; }
-template<typename T> void _printResult(const vector<vector<T>>& v) { cout << "["; for(int i=0;i<(int)v.size();i++){if(i)cout<<", ";_printResult(v[i]);}cout<<"]"<<endl; }
+template<typename T> void _printResult(const vector<vector<T>>& v) { cout << "["; for(int i=0;i<(int)v.size();i++){if(i)cout<<", ";cout<<"[";for(int j=0;j<(int)v[i].size();j++){if(j)cout<<", ";cout<<v[i][j];}cout<<"]";}cout<<"]"<<endl; }
 void _printResult(bool v) { cout << (v ? "true" : "false") << endl; }
 void _printResult(const string& v) { cout << v << endl; }
 template<typename T> void _printResult(T v) { cout << v << endl; }
@@ -686,6 +758,149 @@ ${strippedCode}
 
 // ---- driver ----
 int main() {
+    vector<string> _rawLines;
+    string _tmpLine;
+    while (getline(cin, _tmpLine)) {
+        // trim
+        size_t s = _tmpLine.find_first_not_of(" \\t\\r\\n");
+        size_t e = _tmpLine.find_last_not_of(" \\t\\r\\n");
+        if (s != string::npos) _rawLines.push_back(_tmpLine.substr(s, e - s + 1));
+    }
+    vector<string> _lines = _smartLines(_rawLines, ${paramCount});
+    int _idx = 0;
+${argDecls}
+${outputCode}
+    return 0;
+}
+`.trim();
+}
+
+/* ═══════════════════════════════════════════════
+ * C wrapper (plain C - no classes, no templates, no vectors)
+ * ═══════════════════════════════════════════════ */
+function buildCWrapper(
+  strippedCode: string,
+  functionName: string,
+  paramTypes: string[],
+  returnType: string,
+  callExpr: string,
+  paramCount: number
+): string {
+  // Map C++ types to C equivalents
+  const cType = (t: string): string => {
+    const n = t.replace(/\s/g, '').replace(/&/g, '');
+    if (n === 'int') return 'int';
+    if (n === 'long' || n === 'longlong') return 'long long';
+    if (n === 'double') return 'double';
+    if (n === 'bool') return 'int';
+    if (n === 'char*' || n === 'string') return 'char*';
+    if (n === 'int*' || n === 'vector<int>') return 'int*';
+    if (n === 'int**' || n === 'vector<vector<int>>') return 'int**';
+    return 'char*';
+  };
+
+  const argDecls = paramTypes.map((type, i) => {
+    const t = type.replace(/\s/g, '').replace(/&/g, '');
+    if (t === 'int') return `    int _a${i} = atoi(_lines[_idx++]);`;
+    if (t === 'long' || t === 'longlong') return `    long long _a${i} = atoll(_lines[_idx++]);`;
+    if (t === 'double') return `    double _a${i} = atof(_lines[_idx++]);`;
+    if (t === 'bool') return `    int _a${i} = (strstr(_lines[_idx], "true") != NULL || _lines[_idx][0] == '1'); _idx++;`;
+    if (t === 'int*' || t === 'vector<int>') return `    int _sz${i} = 0; int* _a${i} = _parseIntArr(_lines[_idx++], &_sz${i});`;
+    return `    char* _a${i} = _lines[_idx++];`;
+  }).join('\n');
+
+  // For C functions, we often need to pass array sizes
+  const argListParts: string[] = [];
+  paramTypes.forEach((type, i) => {
+    const t = type.replace(/\s/g, '').replace(/&/g, '');
+    argListParts.push(`_a${i}`);
+    if (t === 'int*' || t === 'vector<int>') argListParts.push(`_sz${i}`);
+  });
+  const cCallExpr = `${functionName}(${argListParts.join(', ')})`;
+
+  const rt = returnType.replace(/\s/g, '').replace(/&/g, '');
+  let outputCode: string;
+  if (rt === 'void') {
+    outputCode = `    ${cCallExpr};`;
+  } else if (rt === 'int') {
+    outputCode = `    printf("%d\\n", ${cCallExpr});`;
+  } else if (rt === 'long' || rt === 'longlong') {
+    outputCode = `    printf("%lld\\n", ${cCallExpr});`;
+  } else if (rt === 'double') {
+    outputCode = `    printf("%f\\n", ${cCallExpr});`;
+  } else if (rt === 'bool') {
+    outputCode = `    printf("%s\\n", ${cCallExpr} ? "true" : "false");`;
+  } else if (rt === 'char*' || rt === 'string') {
+    outputCode = `    printf("%s\\n", ${cCallExpr});`;
+  } else {
+    outputCode = `    printf("%d\\n", ${cCallExpr});`;
+  }
+
+  return `
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+// ---- helpers ----
+int* _parseIntArr(const char* s, int* outSize) {
+    int cap = 64, sz = 0;
+    int* arr = (int*)malloc(cap * sizeof(int));
+    const char* p = s;
+    while (*p) {
+        if (isdigit(*p) || (*p == '-' && isdigit(*(p+1)))) {
+            if (sz >= cap) { cap *= 2; arr = (int*)realloc(arr, cap * sizeof(int)); }
+            arr[sz++] = (int)strtol(p, (char**)&p, 10);
+        } else p++;
+    }
+    *outSize = sz;
+    return arr;
+}
+char* _trimLine(char* s) {
+    while (*s == ' ' || *s == '\\t' || *s == '\\r' || *s == '\\n') s++;
+    int len = strlen(s);
+    while (len > 0 && (s[len-1] == ' ' || s[len-1] == '\\t' || s[len-1] == '\\r' || s[len-1] == '\\n')) s[--len] = 0;
+    return s;
+}
+
+// ---- student code ----
+${strippedCode}
+
+// ---- driver ----
+int main() {
+    char _buf[65536];
+    char* _allLines[1024];
+    int _numLines = 0;
+    while (fgets(_buf, sizeof(_buf), stdin)) {
+        char* tr = _trimLine(_buf);
+        if (strlen(tr) > 0) {
+            _allLines[_numLines] = (char*)malloc(strlen(tr) + 1);
+            strcpy(_allLines[_numLines], tr);
+            _numLines++;
+        }
+    }
+    // Smart filter: skip size-prefix integers
+    char* _lines[1024];
+    int _lineCount = 0;
+    if (_numLines == ${paramCount}) {
+        for (int i = 0; i < _numLines; i++) _lines[i] = _allLines[i];
+        _lineCount = _numLines;
+    } else {
+        for (int i = 0; i < _numLines; i++) {
+            int skip = 0;
+            char* endp;
+            long val = strtol(_allLines[i], &endp, 10);
+            if (*endp == 0 && val >= 0 && i + 1 < _numLines) {
+                if (_allLines[i+1][0] == '[' || _allLines[i+1][0] == '(') {
+                    int sz = 0; int* tmp = _parseIntArr(_allLines[i+1], &sz);
+                    if (sz == (int)val) skip = 1;
+                    free(tmp);
+                }
+            }
+            if (!skip) _lines[_lineCount++] = _allLines[i];
+        }
+    }
+    int _idx = 0;
 ${argDecls}
 ${outputCode}
     return 0;
