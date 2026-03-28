@@ -52,6 +52,7 @@ interface NavLink {
   href: string;
   label: string;
   icon: React.ComponentType<{ size?: number; className?: string }>;
+  group?: string;
 }
 
 interface SearchableItem extends NavLink {
@@ -60,27 +61,26 @@ interface SearchableItem extends NavLink {
 }
 
 const userNavLinks: NavLink[] = [
-  { href: '/user/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/user/test-portal', label: 'Tests', icon: FileText },
-  { href: '/user/practice', label: 'Practice', icon: Code },
-  { href: '/user/internships', label: 'College Space', icon: Briefcase },
-  { href: '/user/applications', label: 'Applications', icon: ClipboardCheck },
-  { href: '/user/results', label: 'Results', icon: BarChart3 },
-  { href: '/user/analysis', label: 'Analysis', icon: TrendingUp },
-  { href: '/user/calendar', label: 'Calendar', icon: Calendar },
-  { href: '/user/resume', label: 'AI Resume Builder', icon: Sparkles },
-  { href: '/user/profile', label: 'Profile', icon: User },
+  { href: '/user/dashboard', label: 'Dashboard', icon: LayoutDashboard, group: 'Main' },
+  { href: '/user/internships', label: 'College Space', icon: Briefcase, group: 'Main' },
+  { href: '/user/applications', label: 'Applications', icon: ClipboardCheck, group: 'Main' },
+  { href: '/user/test-portal', label: 'Tests', icon: FileText, group: 'Prepare' },
+  { href: '/user/practice', label: 'Practice', icon: Code, group: 'Prepare' },
+  { href: '/user/resume', label: 'AI Resume Builder', icon: Sparkles, group: 'Prepare' },
+  { href: '/user/results', label: 'Results', icon: BarChart3, group: 'Track' },
+  { href: '/user/analysis', label: 'Analysis', icon: TrendingUp, group: 'Track' },
+  { href: '/user/profile', label: 'Profile', icon: User, group: 'Track' },
 ];
 
 const uniadminNavLinks: NavLink[] = [
-  { href: '/uniadmin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/uniadmin/create-test', label: 'Tests', icon: FileText },
-  { href: '/uniadmin/practice', label: 'Practice', icon: Code },
-  { href: '/uniadmin/proctoring', label: 'Proctoring', icon: ShieldCheck },
-  { href: '/uniadmin/create-event', label: 'Create Event', icon: CalendarPlus },
-  { href: '/uniadmin/create-account', label: 'Create Account', icon: UserPlus },
-  { href: '/uniadmin/student-database', label: 'Students', icon: Database },
-  { href: '/uniadmin/profile', label: 'Profile', icon: User },
+  { href: '/uniadmin/dashboard', label: 'Dashboard', icon: LayoutDashboard, group: 'Main' },
+  { href: '/uniadmin/create-test', label: 'Tests', icon: FileText, group: 'Manage' },
+  { href: '/uniadmin/practice', label: 'Practice', icon: Code, group: 'Manage' },
+  { href: '/uniadmin/proctoring', label: 'Proctoring', icon: ShieldCheck, group: 'Manage' },
+  { href: '/uniadmin/create-event', label: 'Create Event', icon: CalendarPlus, group: 'Manage' },
+  { href: '/uniadmin/create-account', label: 'Create Account', icon: UserPlus, group: 'Admin' },
+  { href: '/uniadmin/student-database', label: 'Students', icon: Database, group: 'Admin' },
+  { href: '/uniadmin/profile', label: 'Profile', icon: User, group: 'Admin' },
 ];
 
 const superadminNavLinks: NavLink[] = [
@@ -348,22 +348,39 @@ export default function Navbar() {
 
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              title={collapsed ? link.label : undefined}
-              className={`flex items-center gap-2.5 rounded text-[13px] font-medium transition-all duration-150 ${collapsed ? 'justify-center p-2' : 'px-2.5 py-[7px]'} ${
-                isActive(link.href)
-                  ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] border border-[var(--border-subtle)]'
-                  : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] border border-transparent'
-              }`}
-            >
-              <link.icon size={16} className="shrink-0" />
-              {!collapsed && <span className="truncate">{link.label}</span>}
-            </Link>
-          ))}
+        <nav className="flex-1 overflow-y-auto px-2 py-2">
+          {(() => {
+            let lastGroup = '';
+            let isFirst = true;
+            return navLinks.map((link) => {
+              const showHeader = link.group && link.group !== lastGroup;
+              const isFirstGroup = showHeader && isFirst;
+              if (showHeader) isFirst = false;
+              if (link.group) lastGroup = link.group;
+              return (
+                <React.Fragment key={link.href}>
+                  {showHeader && !collapsed && (
+                    <p className={`px-2.5 pb-1 text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)] ${isFirstGroup ? 'pt-1' : 'pt-4'}`}>
+                      {link.group}
+                    </p>
+                  )}
+                  {showHeader && collapsed && !isFirstGroup && <div className="my-2 mx-2 border-t border-[var(--border-subtle)]" />}
+                  <Link
+                    href={link.href}
+                    title={collapsed ? link.label : undefined}
+                    className={`flex items-center gap-2.5 rounded text-[13px] font-medium transition-all duration-150 ${collapsed ? 'justify-center p-2' : 'px-2.5 py-[7px]'} ${
+                      isActive(link.href)
+                        ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] border border-[var(--border-subtle)]'
+                        : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] border border-transparent'
+                    }`}
+                  >
+                    <link.icon size={16} className="shrink-0" />
+                    {!collapsed && <span className="truncate">{link.label}</span>}
+                  </Link>
+                </React.Fragment>
+              );
+            });
+          })()}
         </nav>
 
         {/* Bottom section */}

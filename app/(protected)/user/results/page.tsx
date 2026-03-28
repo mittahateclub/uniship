@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Trophy, CalendarDays, BarChart3, X, Eye } from 'lucide-react';
+import { Trophy, CalendarDays, BarChart3, X, Eye, TrendingUp, CheckCircle2, XCircle, Award } from 'lucide-react';
 
 interface Problem {
   questionDescription?: string;
@@ -285,73 +285,136 @@ export default function ResultsPage() {
           <p className="text-[var(--text-faint)] text-[12px] mt-1">Take a test and your results will show here.</p>
         </div>
       ) : (
-        <div className="window overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[var(--border-subtle)]">
-                  <th className="px-4 py-3 text-left text-[10px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Test Name</th>
-                  <th className="px-4 py-3 text-center text-[10px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Score</th>
-                  <th className="px-4 py-3 text-center text-[10px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Percentage</th>
-                  <th className="px-4 py-3 text-right text-[10px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((result) => {
-                  const score = getScore(result);
-                  const percentage = getPercentage(result).toFixed(1);
-                  const date = result.submittedAt?.toDate().toLocaleDateString() || 'N/A';
-                  const pct = Number(percentage);
-                  
-                  return (
-                    <tr key={result.id} className="border-b border-[var(--border-subtle)]/50 hover:bg-[#1a1a1a] transition-colors duration-150">
-                      <td className="px-4 py-3 text-[13px] font-medium text-[var(--text-primary)]">
-                        {result.testTitle}
-                      </td>
-                      <td className="px-4 py-3 text-center text-[13px] tabular-nums">
-                        <span className="font-bold text-[var(--text-primary)]">{score}</span>
-                        <span className="text-[var(--text-faint)]"> / {result.totalQuestions}</span>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={`inline-flex px-2 py-0.5 rounded text-[11px] font-bold tabular-nums ${
-                          pct >= 80 ? 'bg-[#4CAF50]/10 text-[#4CAF50]' :
-                          pct >= 60 ? 'bg-[#F1A82C]/10 text-[#F1A82C]' :
-                          'bg-[#F54E00]/10 text-[#F54E00]'
-                        }`}>
-                          {percentage}%
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right text-[12px] text-[var(--text-muted)] tabular-nums">
-                        <span className="flex items-center justify-end gap-1.5">
-                          <CalendarDays size={11} />
-                          {date}
-                        </span>
+        <>
+          {/* Summary Stats */}
+          {(() => {
+            const totalTests = results.length;
+            const avgPct = results.reduce((sum, r) => sum + getPercentage(r), 0) / totalTests;
+            const bestPct = Math.max(...results.map((r) => getPercentage(r)));
+            const bestResult = results.find((r) => getPercentage(r) === bestPct);
+            return (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                <div className="window p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#5E6AD2]/10 flex items-center justify-center">
+                      <Trophy size={14} className="text-[#5E6AD2]" />
+                    </div>
+                  </div>
+                  <p className="text-xl font-bold text-[var(--text-primary)] tabular-nums">{totalTests}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)] mt-0.5">Tests Taken</p>
+                </div>
+                <div className="window p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#4CAF50]/10 flex items-center justify-center">
+                      <TrendingUp size={14} className="text-[#4CAF50]" />
+                    </div>
+                  </div>
+                  <p className="text-xl font-bold text-[var(--text-primary)] tabular-nums">{avgPct.toFixed(1)}%</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)] mt-0.5">Average Score</p>
+                </div>
+                <div className="window p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#F1A82C]/10 flex items-center justify-center">
+                      <Award size={14} className="text-[#F1A82C]" />
+                    </div>
+                  </div>
+                  <p className="text-xl font-bold text-[var(--text-primary)] tabular-nums">{bestPct.toFixed(1)}%</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)] mt-0.5">Best Score</p>
+                </div>
+                <div className="window p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#F54E00]/10 flex items-center justify-center">
+                      <CheckCircle2 size={14} className="text-[#F54E00]" />
+                    </div>
+                  </div>
+                  <p className="text-xl font-bold text-[var(--text-primary)] tabular-nums leading-tight truncate" title={bestResult?.testTitle}>{bestResult?.testTitle || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)] mt-0.5">Top Test</p>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Result Cards */}
+          <div className="space-y-3">
+            {results.map((result) => {
+              const score = getScore(result);
+              const percentage = getPercentage(result).toFixed(1);
+              const date = result.submittedAt?.toDate?.()?.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) || 'N/A';
+              const pct = Number(percentage);
+
+              return (
+                <div key={result.id} className="window p-0 overflow-hidden">
+                  <div className="flex items-stretch">
+                    {/* Score indicator bar */}
+                    <div className={`w-1 shrink-0 ${
+                      pct >= 80 ? 'bg-[#4CAF50]' :
+                      pct >= 60 ? 'bg-[#F1A82C]' :
+                      'bg-[#F54E00]'
+                    }`} />
+
+                    <div className="flex-1 p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        {/* Left: Title + meta */}
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-[14px] font-semibold text-[var(--text-primary)] truncate">{result.testTitle}</h3>
+                          <div className="flex items-center gap-3 mt-1.5">
+                            <span className="flex items-center gap-1 text-[12px] text-[var(--text-tertiary)]">
+                              <CalendarDays size={11} className="text-[var(--text-faint)]" />
+                              {date}
+                            </span>
+                            {result.scoringMode === 'attempted' && (
+                              <span className="text-[10px] text-[var(--text-faint)] bg-[var(--bg-elevated)] px-1.5 py-0.5 rounded">attempt-based</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Right: Score + Percentage */}
+                        <div className="flex items-center gap-4 shrink-0">
+                          <div className="text-right">
+                            <p className="text-[11px] text-[var(--text-faint)] font-medium">Score</p>
+                            <p className="text-[15px] font-bold text-[var(--text-primary)] tabular-nums mt-0.5">
+                              {score}<span className="text-[var(--text-faint)] font-normal text-[12px]"> / {result.totalQuestions}</span>
+                            </p>
+                          </div>
+                          <div className={`w-[52px] h-[52px] rounded-full flex items-center justify-center border-2 ${
+                            pct >= 80 ? 'border-[#4CAF50] bg-[#4CAF50]/5' :
+                            pct >= 60 ? 'border-[#F1A82C] bg-[#F1A82C]/5' :
+                            'border-[#F54E00] bg-[#F54E00]/5'
+                          }`}>
+                            <span className={`text-[13px] font-bold tabular-nums ${
+                              pct >= 80 ? 'text-[#4CAF50]' :
+                              pct >= 60 ? 'text-[#F1A82C]' :
+                              'text-[#F54E00]'
+                            }`}>{percentage}%</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[var(--border-subtle)]/50">
                         <button
                           type="button"
                           onClick={() => loadAnalysis(result)}
-                          className="mt-1 inline-flex items-center gap-1 text-[11px] text-[#5E6AD2] hover:text-[#7C86E8] transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium text-[#5E6AD2] bg-[#5E6AD2]/8 hover:bg-[#5E6AD2]/15 transition-colors"
                         >
-                          <BarChart3 size={11} />
-                          View analysis
+                          <BarChart3 size={12} />
+                          View Analysis
                         </button>
                         <a
                           href={`/user/results/review/${result.id}`}
-                          className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-[#5E6AD2] hover:text-[#7C86E8] transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium text-[var(--text-tertiary)] bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]/80 transition-colors border border-[var(--border-subtle)]"
                         >
-                          <Eye size={11} />
-                          Review questions
+                          <Eye size={12} />
+                          Review Questions
                         </a>
-                        {result.scoringMode === 'attempted' && (
-                          <span className="block text-[10px] text-[var(--text-faint)] mt-0.5">attempt-based</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
+        </>
       )}
 
       {activeResult && (
