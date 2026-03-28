@@ -15,7 +15,8 @@ const CPP_ID = 54;
 
 export function extractFunctionName(code: string, languageId: number): string | null {
   if (languageId === PYTHON3_ID) {
-    const matches = [...code.matchAll(/^def\s+(\w+)\s*\(/gm)];
+    // Match both top-level and indented (class method) defs
+    const matches = [...code.matchAll(/^[ \t]*def\s+(\w+)\s*\(/gm)];
     if (matches.length === 0) return null;
     const publicFns = matches.filter(m => !m[1].startsWith('_'));
     if (publicFns.length > 0) return publicFns[publicFns.length - 1][1];
@@ -40,7 +41,7 @@ export function extractFunctionName(code: string, languageId: number): string | 
 export function extractPythonParamCount(code: string, functionName: string): number {
   if (!functionName) return 0;
   const escaped = functionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const match = code.match(new RegExp(`^def\\s+${escaped}\\s*\\(([^)]*)\\)`, 'm'));
+  const match = code.match(new RegExp(`^[ \\t]*def\\s+${escaped}\\s*\\(([^)]*)\\)`, 'm'));
   if (!match) return 0;
   const raw = match[1].trim();
   if (!raw) return 0;
@@ -299,11 +300,18 @@ function buildPythonWrapper(
     .replace(/^print\s*\(.*\)\s*$/gm, '')
     .trimEnd();
 
+  // Detect if function is inside a class (indented def with self param)
+  const classMatch = studentCode.match(/^class\s+(\w+)/m);
+  const isSelfMethod = new RegExp(`def\\s+${functionName}\\s*\\(\\s*self\\b`).test(studentCode);
+  const fnRef = (classMatch && isSelfMethod)
+    ? `${classMatch[1]}().${functionName}`
+    : functionName;
+
   const driver = [
     `print = _orig_print`,
     `_inp = _sys.stdin.read()`,
     `_args = _smart_parse(_inp, ${paramCount})`,
-    `_run_fn(${functionName}, _args, ${paramCount})`,
+    `_run_fn(${fnRef}, _args, ${paramCount})`,
   ].join('\n');
 
   return [UNIVERSAL_DRIVER, '', '# ---- student code ----', stripped, '', '# ---- driver ----', driver].join('\n');
