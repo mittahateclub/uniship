@@ -98,6 +98,9 @@ async function executeOnJudge0(
       if (!response.ok) continue;
       const data = await response.json();
 
+      // Internal Error (status 13) = sandbox/worker issue — try next URL
+      if (data.status?.id === 13) continue;
+
       return {
         stdout: data.stdout ? data.stdout.trim() : null,
         stderr: data.stderr || data.compile_output || null,
