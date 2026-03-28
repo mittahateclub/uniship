@@ -5,6 +5,31 @@ import { wrapCode } from '@/lib/code-wrapper';
 
 const JUDGE0_CE_URL = 'https://ce.judge0.com';
 
+const URL_REGEX = /^https?:\/\//i;
+
+async function fetchPageText(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ProblemBot/1.0)' },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    // Strip scripts, styles, and HTML tags to get plain text
+    const text = html
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&[a-z]+;/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    // Limit to ~6000 chars to stay within context window
+    return text.slice(0, 6000);
+  } catch {
+    return null;
+  }
+}
+
 const SYSTEM_PROMPT = `You are an expert algorithm problem creator. Given a topic or LeetCode-style prompt, create a complete coding problem WITH a working reference solution.
 
 Return ONLY valid JSON matching this exact structure:
@@ -95,10 +120,20 @@ export async function generatePracticeProblem(topic: string): Promise<{
   }
 
   try {
+    // If topic is a URL, fetch the page content first
+    let prompt = `Create a coding problem for: ${topic}`;
+    if (URL_REGEX.test(topic.trim())) {
+      const pageText = await fetchPageText(topic.trim());
+      if (!pageText) {
+        return { success: false, error: 'Could not fetch the URL. Check the link and try again.' };
+      }
+      prompt = `Create a coding problem based on the following article content:\n\n${pageText}`;
+    }
+
     const response = await groq.chat.completions.create({
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: `Create a coding problem for: ${topic}` },
+        { role: 'user', content: prompt },
       ],
       model: 'llama-3.3-70b-versatile',
       temperature: 0.3,
