@@ -1,8 +1,11 @@
 'use server';
 
 import { groq } from '@/lib/groq';
+import { wrapCode } from '@/lib/code-wrapper';
 
-const SYSTEM_PROMPT = `You are an expert algorithm problem creator. Given a topic or LeetCode-style prompt, create a complete coding problem.
+const JUDGE0_CE_URL = 'https://ce.judge0.com';
+
+const SYSTEM_PROMPT = `You are an expert algorithm problem creator. Given a topic or LeetCode-style prompt, create a complete coding problem WITH a working reference solution.
 
 Return ONLY valid JSON matching this exact structure:
 {
@@ -13,6 +16,7 @@ Return ONLY valid JSON matching this exact structure:
   "constraints": ["1 <= nums.length <= 10^4", "..."],
   "inputFormat": "Description of input format for stdin (one argument per line as Python literals)",
   "outputFormat": "Description of expected output format",
+  "referenceSolution": "A COMPLETE, CORRECT Python 3 solution as a standalone function. Must be a def function that returns the answer (not prints it). This will be executed to verify test cases.",
   "starterCode": {
     "Python3": "class Solution:\\n    def funcName(self, param1, param2):\\n        pass",
     "JavaScript": "var funcName = function(param1, param2) {\\n    \\n};",
@@ -20,20 +24,56 @@ Return ONLY valid JSON matching this exact structure:
     "C++": "class Solution {\\npublic:\\n    ReturnType funcName(Type1 p1, Type2 p2) {\\n        \\n    }\\n};"
   },
   "testCases": [
-    { "input": "line1\\nline2", "expectedOutput": "result", "isHidden": false },
-    { "input": "line1\\nline2", "expectedOutput": "result", "isHidden": false },
-    { "input": "line1\\nline2", "expectedOutput": "result", "isHidden": true },
-    { "input": "line1\\nline2", "expectedOutput": "result", "isHidden": true }
+    { "input": "line1\\nline2", "isHidden": false },
+    { "input": "line1\\nline2", "isHidden": false },
+    { "input": "line1\\nline2", "isHidden": true },
+    { "input": "line1\\nline2", "isHidden": true }
   ]
 }
 
 Rules:
 - Create at least 2 visible test cases and 2 hidden test cases.
 - Input format: each function argument on its own line as a Python literal (e.g. [2, 7, 11, 15]\\n9).
-- Expected output: the raw output as a single line (e.g. [0, 1]).
+- The referenceSolution MUST be a correct, runnable Python 3 function that solves the problem. It will be executed against test cases to compute expected outputs.
 - The problem description should be detailed and clear with examples.
 - Starter code must include proper type hints/signatures for each language.
-- Function names must be consistent across all languages.`;
+- Function names must be consistent across all languages.
+- Do NOT include expectedOutput in testCases — it will be computed by running your referenceSolution.`;
+
+async function executeOnJudge0(
+  source_code: string,
+  language_id: number,
+  stdin: string,
+): Promise<string | null> {
+  const selfHostedUrl = process.env.JUDGE0_API_URL;
+  const selfHostedToken = process.env.JUDGE0_AUTH_TOKEN;
+
+  const baseUrl = selfHostedUrl || JUDGE0_CE_URL;
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (selfHostedToken && selfHostedUrl) {
+    headers['X-Auth-Token'] = selfHostedToken;
+  }
+
+  const body = {
+    source_code,
+    language_id,
+    stdin,
+    cpu_time_limit: 10,
+    memory_limit: 256000,
+    wall_time_limit: 15,
+  };
+
+  const response = await fetch(
+    `${baseUrl}/submissions?base64_encoded=false&wait=true&fields=stdout,stderr,status`,
+    { method: 'POST', headers, body: JSON.stringify(body) },
+  );
+
+  if (!response.ok) return null;
+  const data = await response.json();
+
+  if (data.status?.id !== 3) return null; // Not Accepted
+  return (data.stdout || '').trim();
+}
 
 export async function generatePracticeProblem(topic: string): Promise<{
   success: boolean;
@@ -76,6 +116,51 @@ export async function generatePracticeProblem(topic: string): Promise<{
       return { success: false, error: 'AI returned incomplete problem data.' };
     }
 
+    if (!parsed.referenceSolution) {
+      return { success: false, error: 'AI did not provide a reference solution. Try again.' };
+    }
+
+    // ── Verify test cases by executing the reference solution ──
+    const refCode = parsed.referenceSolution as string;
+    const wrappedRef = wrapCode(refCode, 71, 'submit'); // Python3 = 71
+
+    const verifiedTestCases: Array<{ input: string; expectedOutput: string; isHidden: boolean }> = [];
+
+    for (const tc of parsed.testCases) {
+      const input = tc.input || '';
+      if (!input.trim()) continue;
+
+      const output = await executeOnJudge0(wrappedRef, 71, input);
+
+      if (output === null) {
+        // Reference solution failed on this input — skip this test case
+        continue;
+      }
+
+      verifiedTestCases.push({
+        input,
+        expectedOutput: output,
+        isHidden: !!tc.isHidden,
+      });
+    }
+
+    if (verifiedTestCases.length < 2) {
+      return {
+        success: false,
+        error: 'Reference solution failed to produce valid outputs. The AI may have generated buggy code. Try again.',
+      };
+    }
+
+    // Ensure at least 1 visible and 1 hidden
+    const hasVisible = verifiedTestCases.some(tc => !tc.isHidden);
+    const hasHidden = verifiedTestCases.some(tc => tc.isHidden);
+    if (!hasVisible && verifiedTestCases.length >= 2) {
+      verifiedTestCases[0].isHidden = false;
+    }
+    if (!hasHidden && verifiedTestCases.length >= 2) {
+      verifiedTestCases[verifiedTestCases.length - 1].isHidden = true;
+    }
+
     return {
       success: true,
       problem: {
@@ -87,11 +172,7 @@ export async function generatePracticeProblem(topic: string): Promise<{
         inputFormat: parsed.inputFormat || '',
         outputFormat: parsed.outputFormat || '',
         starterCode: parsed.starterCode || {},
-        testCases: (parsed.testCases || []).map((tc: { input?: string; expectedOutput?: string; isHidden?: boolean }) => ({
-          input: tc.input || '',
-          expectedOutput: tc.expectedOutput || '',
-          isHidden: !!tc.isHidden,
-        })),
+        testCases: verifiedTestCases,
       },
     };
   } catch (err) {
