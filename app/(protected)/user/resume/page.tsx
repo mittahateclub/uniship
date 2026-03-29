@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { collection, addDoc, serverTimestamp, getDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { generateTailoredResume } from './actions';
+import ATSScorePanel from './ats-score';
 import Link from 'next/link';
 
 interface ResumeData {
@@ -555,7 +556,8 @@ export default function ResumeBuilder() {
           </div>
 
           {/* ── RIGHT: Live Preview ── */}
-          <div className="xl:sticky xl:top-6">
+          <div className="xl:sticky xl:top-6 space-y-4">
+            <ATSScorePanel data={formData} keywords={keywords} />
             <div className="window overflow-hidden">
               <div className="bg-[var(--bg-elevated)] border-b border-[var(--border-subtle)] px-4 py-3 flex justify-between items-center">
                 <span className="text-xs font-semibold uppercase tracking-widest text-[var(--text-secondary)]">Live Preview</span>

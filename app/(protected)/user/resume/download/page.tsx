@@ -8,6 +8,7 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { db, storage } from '@/lib/firebase';
 import Link from 'next/link';
 import { FileText, ArrowLeft, Download, Pencil, X, Save, Upload, ExternalLink, Trash2 } from 'lucide-react';
+import ATSScorePanel from '../ats-score';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -30,6 +31,7 @@ interface ResumeData {
   uploadedFileUrl?: string;
   uploadedFileName?: string;
   uploadedFileType?: string;
+  keywords?: string[];
   updatedAt?: any;
 }
 
@@ -752,7 +754,10 @@ export default function DownloadResume() {
         )}
 
         {/* Preview */}
-        <div className={`flex-1 py-6 ${editOpen ? 'overflow-y-auto px-6' : 'flex justify-center px-4'}`}>
+        <div className={`flex-1 py-6 ${editOpen ? 'overflow-y-auto px-6' : 'flex flex-col items-center px-4'}`}>
+          <div className={`${editOpen ? 'max-w-[210mm] mx-auto' : 'w-fit'} mb-4`}>
+            <ATSScorePanel data={draft ?? selectedResume} keywords={(draft ?? selectedResume).keywords} compact />
+          </div>
           <div id="resume-pdf-container" className="mx-auto w-fit shadow-lg">
             {/* Always render the live draft so edits are reflected instantly */}
             <ResumePreview data={draft ?? selectedResume} />

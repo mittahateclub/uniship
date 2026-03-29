@@ -1,41 +1,46 @@
-[debug] [2026-03-28T22:37:27.048Z] ----------------------------------------------------------------------
-[debug] [2026-03-28T22:37:27.053Z] Command:       /usr/local/bin/node /usr/local/bin/firebase deploy --only hosting
-[debug] [2026-03-28T22:37:27.053Z] CLI Version:   15.5.1
-[debug] [2026-03-28T22:37:27.053Z] Platform:      darwin
-[debug] [2026-03-28T22:37:27.053Z] Node Version:  v22.16.0
-[debug] [2026-03-28T22:37:27.053Z] Time:          Sun Mar 29 2026 04:07:27 GMT+0530 (India Standard Time)
-[debug] [2026-03-28T22:37:27.053Z] ----------------------------------------------------------------------
+[debug] [2026-03-29T06:56:59.358Z] ----------------------------------------------------------------------
+[debug] [2026-03-29T06:56:59.364Z] Command:       /usr/local/bin/node /usr/local/bin/firebase deploy --only hosting
+[debug] [2026-03-29T06:56:59.365Z] CLI Version:   15.5.1
+[debug] [2026-03-29T06:56:59.365Z] Platform:      darwin
+[debug] [2026-03-29T06:56:59.365Z] Node Version:  v22.16.0
+[debug] [2026-03-29T06:56:59.365Z] Time:          Sun Mar 29 2026 12:26:59 GMT+0530 (India Standard Time)
+[debug] [2026-03-29T06:56:59.365Z] ----------------------------------------------------------------------
 [debug] 
-[debug] [2026-03-28T22:37:27.919Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
-[debug] [2026-03-28T22:37:27.919Z] > authorizing via signed-in user (dibzhost@gmail.com)
-[debug] [2026-03-28T22:37:27.919Z] [iam] checking project uniship-4c1a1 for permissions ["firebase.projects.get","firebasehosting.sites.update"]
-[debug] [2026-03-28T22:37:27.920Z] Checked if tokens are valid: true, expires at: 1774739041856
-[debug] [2026-03-28T22:37:27.920Z] Checked if tokens are valid: true, expires at: 1774739041856
-[debug] [2026-03-28T22:37:27.920Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions [none]
-[debug] [2026-03-28T22:37:27.920Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions  x-goog-user-project=uniship-4c1a1
-[debug] [2026-03-28T22:37:27.920Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
-[debug] [2026-03-28T22:37:29.491Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions 200
-[debug] [2026-03-28T22:37:29.492Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
-[debug] [2026-03-28T22:37:29.492Z] Checked if tokens are valid: true, expires at: 1774739041856
-[debug] [2026-03-28T22:37:29.492Z] Checked if tokens are valid: true, expires at: 1774739041856
-[debug] [2026-03-28T22:37:29.492Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1 [none]
-[debug] [2026-03-28T22:37:30.008Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1 200
-[debug] [2026-03-28T22:37:30.008Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1 {"projectId":"uniship-4c1a1","projectNumber":"1051779016295","displayName":"Dibz","name":"projects/uniship-4c1a1","resources":{"hostingSite":"uniship-4c1a1"},"state":"ACTIVE","etag":"1_bd6689a6-2e84-468e-9d17-2c08d756718f"}
-[debug] [2026-03-28T22:37:30.948Z] Checked if tokens are valid: true, expires at: 1774739041856
-[debug] [2026-03-28T22:37:30.948Z] Checked if tokens are valid: true, expires at: 1774739041856
-[debug] [2026-03-28T22:37:30.948Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites pageToken=&pageSize=10
-[debug] [2026-03-28T22:37:32.292Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites 200
-[debug] [2026-03-28T22:37:32.292Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites {"sites":[{"name":"projects/uniship-4c1a1/sites/uniship-4c1a1","defaultUrl":"https://uniship-4c1a1.web.app","type":"DEFAULT_SITE"}]}
-[debug] [2026-03-28T22:37:32.292Z] Checked if tokens are valid: true, expires at: 1774739041856
-[debug] [2026-03-28T22:37:32.292Z] Checked if tokens are valid: true, expires at: 1774739041856
-[debug] [2026-03-28T22:37:32.292Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites 
-[debug] [2026-03-28T22:37:32.990Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites 200
-[debug] [2026-03-28T22:37:32.991Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites {"sites":[{"name":"projects/uniship-4c1a1/sites/uniship-4c1a1","defaultUrl":"https://uniship-4c1a1.web.app","type":"DEFAULT_SITE"}]}
-[debug] [2026-03-28T22:37:32.991Z] Checked if tokens are valid: true, expires at: 1774739041856
-[debug] [2026-03-28T22:37:32.991Z] Checked if tokens are valid: true, expires at: 1774739041856
-[debug] [2026-03-28T22:37:32.992Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1/webApps/-/config [none]
-[debug] [2026-03-28T22:37:34.705Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1/webApps/-/config 200
-[debug] [2026-03-28T22:37:34.705Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1/webApps/-/config {"projectId":"uniship-4c1a1","storageBucket":"uniship-4c1a1.firebasestorage.app","apiKey":"AIzaSyDYAJnVYI7YDGlzqPUv6y5Qid8zhASKZXc","authDomain":"uniship-4c1a1.firebaseapp.com","messagingSenderId":"1051779016295","projectNumber":"1051779016295","version":"2"}
+[debug] [2026-03-29T06:57:00.215Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-03-29T06:57:00.215Z] > authorizing via signed-in user (dibzhost@gmail.com)
+[debug] [2026-03-29T06:57:00.215Z] [iam] checking project uniship-4c1a1 for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-03-29T06:57:00.216Z] Checked if tokens are valid: false, expires at: 1774741750974
+[debug] [2026-03-29T06:57:00.216Z] Checked if tokens are valid: false, expires at: 1774741750974
+[debug] [2026-03-29T06:57:00.216Z] > refreshing access token with scopes: []
+[debug] [2026-03-29T06:57:00.217Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-03-29T06:57:00.217Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-03-29T06:57:00.473Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-03-29T06:57:00.473Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-03-29T06:57:00.489Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions [none]
+[debug] [2026-03-29T06:57:00.489Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions  x-goog-user-project=uniship-4c1a1
+[debug] [2026-03-29T06:57:00.489Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-03-29T06:57:01.972Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions 200
+[debug] [2026-03-29T06:57:01.972Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-03-29T06:57:01.973Z] Checked if tokens are valid: true, expires at: 1774771019473
+[debug] [2026-03-29T06:57:01.973Z] Checked if tokens are valid: true, expires at: 1774771019473
+[debug] [2026-03-29T06:57:01.974Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1 [none]
+[debug] [2026-03-29T06:57:02.723Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1 200
+[debug] [2026-03-29T06:57:02.723Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1 {"projectId":"uniship-4c1a1","projectNumber":"1051779016295","displayName":"Dibz","name":"projects/uniship-4c1a1","resources":{"hostingSite":"uniship-4c1a1"},"state":"ACTIVE","etag":"1_bd6689a6-2e84-468e-9d17-2c08d756718f"}
+[debug] [2026-03-29T06:57:04.176Z] Checked if tokens are valid: true, expires at: 1774771019473
+[debug] [2026-03-29T06:57:04.179Z] Checked if tokens are valid: true, expires at: 1774771019473
+[debug] [2026-03-29T06:57:04.183Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites pageToken=&pageSize=10
+[debug] [2026-03-29T06:57:05.603Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites 200
+[debug] [2026-03-29T06:57:05.603Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites {"sites":[{"name":"projects/uniship-4c1a1/sites/uniship-4c1a1","defaultUrl":"https://uniship-4c1a1.web.app","type":"DEFAULT_SITE"}]}
+[debug] [2026-03-29T06:57:05.603Z] Checked if tokens are valid: true, expires at: 1774771019473
+[debug] [2026-03-29T06:57:05.603Z] Checked if tokens are valid: true, expires at: 1774771019473
+[debug] [2026-03-29T06:57:05.603Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites 
+[debug] [2026-03-29T06:57:06.329Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites 200
+[debug] [2026-03-29T06:57:06.330Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites {"sites":[{"name":"projects/uniship-4c1a1/sites/uniship-4c1a1","defaultUrl":"https://uniship-4c1a1.web.app","type":"DEFAULT_SITE"}]}
+[debug] [2026-03-29T06:57:06.330Z] Checked if tokens are valid: true, expires at: 1774771019473
+[debug] [2026-03-29T06:57:06.330Z] Checked if tokens are valid: true, expires at: 1774771019473
+[debug] [2026-03-29T06:57:06.330Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1/webApps/-/config [none]
+[debug] [2026-03-29T06:57:07.148Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1/webApps/-/config 200
+[debug] [2026-03-29T06:57:07.148Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1/webApps/-/config {"projectId":"uniship-4c1a1","storageBucket":"uniship-4c1a1.firebasestorage.app","apiKey":"AIzaSyDYAJnVYI7YDGlzqPUv6y5Qid8zhASKZXc","authDomain":"uniship-4c1a1.firebaseapp.com","messagingSenderId":"1051779016295","projectNumber":"1051779016295","version":"2"}
 [info] 
    Thank you for trying our early preview of Next.js support on Firebase Hosting.
    During the preview, support is best-effort and breaking changes can be expected. Proceed with caution.
@@ -47,11 +52,11 @@
 
    We'd love to learn from you. Express your interest in helping us shape the future of Firebase Hosting: https://goo.gle/41enW5X
 
-[debug] [2026-03-28T22:37:36.139Z] Checked if tokens are valid: true, expires at: 1774739041856
-[debug] [2026-03-28T22:37:36.139Z] Checked if tokens are valid: true, expires at: 1774739041856
-[debug] [2026-03-28T22:37:36.139Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 [none]
-[debug] [2026-03-28T22:37:36.736Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 200
-[debug] [2026-03-28T22:37:36.737Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 {"name":"projects/uniship-4c1a1/sites/uniship-4c1a1","defaultUrl":"https://uniship-4c1a1.web.app","type":"DEFAULT_SITE"}
+[debug] [2026-03-29T06:57:08.728Z] Checked if tokens are valid: true, expires at: 1774771019473
+[debug] [2026-03-29T06:57:08.728Z] Checked if tokens are valid: true, expires at: 1774771019473
+[debug] [2026-03-29T06:57:08.728Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 [none]
+[debug] [2026-03-29T06:57:09.354Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 200
+[debug] [2026-03-29T06:57:09.354Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 {"name":"projects/uniship-4c1a1/sites/uniship-4c1a1","defaultUrl":"https://uniship-4c1a1.web.app","type":"DEFAULT_SITE"}
 [info] ▲ Next.js 16.1.4 (Turbopack)
 
 [info] - Environments: .env.local
@@ -59,3 +64,89 @@
 
 [info]   Creating an optimized production build ...
 
+[info] ✓ Compiled successfully in 4.0s
+
+[info]   Running TypeScript ...
+
+[info]   Collecting page data using 7 workers ...
+
+[info]   Generating static pages using 7 workers (0/33) ...
+
+[info]   Generating static pages using 7 workers (8/33) 
+
+[info]   Generating static pages using 7 workers (16/33) 
+
+[info]   Generating static pages using 7 workers (24/33) 
+
+[info] ✓ Generating static pages using 7 workers (33/33) in 252.9ms
+
+[info]   Finalizing page optimization ...
+
+[info] 
+
+[info] Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/compile
+├ ○ /landing
+├ ○ /login
+├ ○ /superadmin/create-uniadmin
+├ ○ /superadmin/dashboard
+├ ○ /superadmin/manage-students
+├ ○ /superadmin/manage-uniadmins
+├ ○ /superadmin/universities
+├ ○ /uniadmin/analysis
+├ ○ /uniadmin/create-account
+├ ○ /uniadmin/create-event
+├ ○ /uniadmin/create-test
+├ ○ /uniadmin/dashboard
+├ ○ /uniadmin/manage
+├ ○ /uniadmin/practice
+├ ○ /uniadmin/proctoring
+├ ○ /uniadmin/profile
+├ ○ /uniadmin/student-database
+├ ƒ /uniadmin/students/view/[id]
+├ ○ /uniadmin/tests
+├ ƒ /uniadmin/tests/review/[id]
+├ ○ /user/applications
+├ ○ /user/calendar
+├ ○ /user/dashboard
+├ ○ /user/internships
+├ ƒ /user/internships/[id]
+├ ○ /user/practice
+├ ƒ /user/practice/[id]
+├ ○ /user/profile
+├ ○ /user/results
+├ ƒ /user/results/review/[id]
+├ ○ /user/resume
+├ ○ /user/resume/download
+├ ○ /user/test-portal
+└ ƒ /user/test-portal/[id]
+
+
+
+[info] ○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+
+[info] Building a Cloud Function to run this application. This is needed due to:
+[info]  • non-static component /(protected)/uniadmin/students/view/[id]/page
+[info]  • non-static component /(protected)/uniadmin/tests/review/[id]/page
+[info]  • non-static component /(protected)/user/internships/[id]/page
+[info]  • non-static component /(protected)/user/practice/[id]/page
+[info]  • non-static component /(protected)/user/results/review/[id]/page
+[debug] [2026-03-29T06:57:20.054Z]  • non-static component /(protected)/user/test-portal/[id]/page
+[debug] [2026-03-29T06:57:20.054Z]  • non-static component /api/compile/route
+[debug] [2026-03-29T06:57:20.054Z]  • route with server action /uniadmin/create-test
+[debug] [2026-03-29T06:57:20.054Z]  • route with server action /uniadmin/practice
+[debug] [2026-03-29T06:57:20.054Z]  • route with server action /user/resume
+[info]  • and 5 other reasons, use --debug to see more
+[info] 
+[debug] [2026-03-29T06:57:20.103Z] skipping /uniadmin/create-test due to server action
+[debug] [2026-03-29T06:57:20.103Z] skipping /uniadmin/practice due to server action
+[debug] [2026-03-29T06:57:20.104Z] skipping /user/resume due to server action
+[debug] [2026-03-29T06:57:20.428Z] Checked if tokens are valid: true, expires at: 1774771019473
+[debug] [2026-03-29T06:57:20.429Z] Checked if tokens are valid: true, expires at: 1774771019473
+[debug] [2026-03-29T06:57:20.429Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 [none]
+[debug] [2026-03-29T06:57:21.594Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 200
+[debug] [2026-03-29T06:57:21.594Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 {"name":"projects/uniship-4c1a1/sites/uniship-4c1a1","defaultUrl":"https://uniship-4c1a1.web.app","type":"DEFAULT_SITE"}
