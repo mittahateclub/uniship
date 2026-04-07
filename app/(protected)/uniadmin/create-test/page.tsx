@@ -10,7 +10,7 @@ import Link from 'next/link';
 import {
   Upload, FileText, Clock, Type, AlignLeft, Calendar,
   ChevronLeft, ChevronRight, Trash2, CheckCircle, XCircle,
-  Tag, Pencil, X, Save, ChevronDown, ChevronUp,
+  Tag, Pencil, X, Save, ChevronDown, ChevronUp, Copy, Check,
 } from 'lucide-react';
 
 export default function TestsPage() {
@@ -54,6 +54,14 @@ export default function TestsPage() {
   const [editCalendarMonth, setEditCalendarMonth] = useState(new Date().getMonth());
   const [editCalendarYear, setEditCalendarYear] = useState(new Date().getFullYear());
   const [saving, setSaving] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyLink = (testId: string) => {
+    const link = `${window.location.origin}/user/test-portal/${testId}`;
+    navigator.clipboard.writeText(link);
+    setCopiedId(testId);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/');
@@ -312,14 +320,27 @@ export default function TestsPage() {
             </div>
           )}
           {status.type === 'success' && createdTestId && (
-            <div className="mb-4">
+            <div className="mb-4 space-y-2">
               <button
                 type="button"
                 onClick={() => router.push(`/uniadmin/tests/review/${createdTestId}`)}
                 className="btn-primary text-[12px] px-3 py-1.5"
               >
-                Open Review & Approve
+                Open Review &amp; Approve
               </button>
+              <div className="flex items-center gap-2 mt-2">
+                <span className="flex-1 px-3 py-2 rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[12px] text-[var(--text-secondary)] font-mono truncate select-all">
+                  {`${typeof window !== 'undefined' ? window.location.origin : ''}/user/test-portal/${createdTestId}`}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => copyLink(createdTestId)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[12px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-active)] transition-colors shrink-0"
+                >
+                  {copiedId === createdTestId ? <Check size={13} className="text-[#4CAF50]" /> : <Copy size={13} />}
+                  {copiedId === createdTestId ? 'Copied!' : 'Copy Link'}
+                </button>
+              </div>
             </div>
           )}
 
@@ -567,6 +588,13 @@ export default function TestsPage() {
                   title="Edit schedule"
                 >
                   <Pencil size={14} />
+                </button>
+                <button
+                  onClick={() => copyLink(test.id)}
+                  className="p-2 rounded text-[var(--text-faint)] hover:text-[#4B8BBE] hover:bg-[#4B8BBE]/10 transition-colors duration-150"
+                  title="Copy student link"
+                >
+                  {copiedId === test.id ? <Check size={14} className="text-[#4CAF50]" /> : <Copy size={14} />}
                 </button>
                 <button
                   onClick={() => handleDelete(test.id)}

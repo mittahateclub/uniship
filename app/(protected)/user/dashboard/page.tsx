@@ -273,7 +273,7 @@ export default function UserDashboard() {
       `}</style>
 
       {/* ── Today's Events ── */}
-      <Link href="/user/calendar" className="group relative block overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 sm:p-5 mb-6 no-underline hover:border-[var(--border-active)] transition-all duration-200" style={{ textDecoration: 'none' }}>
+      <Link href="/user/calendar" className="group relative block overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 sm:p-5 mt-5 mb-6 no-underline hover:border-[var(--border-active)] transition-all duration-200" style={{ textDecoration: 'none' }}>
         {/* Calendar SVG art in blue */}
         <svg className="absolute right-0 top-0 h-full w-2/5 opacity-[0.12] text-[#00A8E1] pointer-events-none" viewBox="0 0 300 200" fill="none">
           <rect x="30" y="20" width="120" height="110" rx="8" stroke="currentColor" strokeWidth="2.5"/>
