@@ -813,3 +813,150 @@
 [debug] [2026-04-07T09:34:27.811Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v2/projects/uniship-4c1a1/locations/asia-east1/operations/operation-1775554375241-64edb77d0cdb3-33f09441-eb0943ba [none]
 [debug] [2026-04-07T09:34:28.229Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v2/projects/uniship-4c1a1/locations/asia-east1/operations/operation-1775554375241-64edb77d0cdb3-33f09441-eb0943ba 200
 [debug] [2026-04-07T09:34:28.230Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v2/projects/uniship-4c1a1/locations/asia-east1/operations/operation-1775554375241-64edb77d0cdb3-33f09441-eb0943ba {"name":"projects/uniship-4c1a1/locations/asia-east1/operations/operation-1775554375241-64edb77d0cdb3-33f09441-eb0943ba","metadata":{"@type":"type.googleapis.com/google.cloud.functions.v2.OperationMetadata","createTime":"2026-04-07T09:32:56.690112630Z","target":"projects/uniship-4c1a1/locations/asia-east1/functions/ssruniship4c1a1","verb":"update","cancelRequested":false,"apiVersion":"v2","requestResource":{"@type":"type.googleapis.com/google.cloud.functions.v2.Function","name":"projects/uniship-4c1a1/locations/asia-east1/functions/ssruniship4c1a1","buildConfig":{"runtime":"nodejs22","entryPoint":"ssruniship4c1a1","source":{"storageSource":{"bucket":"gcf-v2-sources-1051779016295-asia-east1","object":"ssruniship4c1a1/function-source.zip","generation":"1775554376634667"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"dockerRepository":"projects/uniship-4c1a1/locations/asia-east1/repositories/gcf-artifacts","sourceProvenance":{"resolvedStorageSource":{"bucket":"gcf-v2-sources-1051779016295-asia-east1","object":"ssruniship4c1a1/function-source.zip","generation":"1775547801480691"}},"dockerRegistry":"ARTIFACT_REGISTRY","serviceAccount":"projects/uniship-4c1a1/serviceAccounts/1051779016295-compute@developer.gserviceaccount.com","automaticUpdatePolicy":{}},"serviceConfig":{"service":"projects/uniship-4c1a1/locations/asia-east1/services/ssruniship4c1a1","timeoutSeconds":60,"environmentVariables":{"VERCEL_URL":"uniship-4c1a1.web.app","__FIREBASE_FRAMEWORKS_ENTRY__":"next.js","__FIREBASE_DEFAULTS__":"{\"config\":{\"projectId\":\"uniship-4c1a1\",\"storageBucket\":\"uniship-4c1a1.firebasestorage.app\",\"apiKey\":\"AIzaSyDYAJnVYI7YDGlzqPUv6y5Qid8zhASKZXc\",\"authDomain\":\"uniship-4c1a1.firebaseapp.com\",\"messagingSenderId\":\"1051779016295\",\"projectNumber\":\"1051779016295\",\"version\":\"2\"},\"_authTokenSyncURL\":\"/__session\"}","FIREBASE_CONFIG":"{\"projectId\":\"uniship-4c1a1\",\"storageBucket\":\"uniship-4c1a1.firebasestorage.app\"}","GCLOUD_PROJECT":"uniship-4c1a1","EVENTARC_CLOUD_EVENT_SOURCE":"projects/uniship-4c1a1/locations/asia-east1/services/ssruniship4c1a1","FUNCTION_TARGET":"ssruniship4c1a1","LOG_EXECUTION_ID":"true"},"ingressSettings":"ALLOW_ALL","uri":"https://ssruniship4c1a1-7ipz3chagq-de.a.run.app","serviceAccountEmail":"1051779016295-compute@developer.gserviceaccount.com","availableMemory":"256Mi","allTrafficOnLatestRevision":true,"revision":"ssruniship4c1a1-00015-nom","maxInstanceRequestConcurrency":80,"availableCpu":"1"},"state":"ACTIVE","labels":{"deployment-tool":"cli-firebase","firebase-functions-codebase":"firebase-frameworks-uniship-4c1a1","firebase-functions-hash":"d84d437eb3c10343d7aea23ff35fb5ccf149adeb"},"environment":"GEN_2","url":"https://asia-east1-uniship-4c1a1.cloudfunctions.net/ssruniship4c1a1","satisfiesPzi":true},"stages":[{"name":"BUILD","message":"Build in progress","state":"IN_PROGRESS","resource":"projects/1051779016295/locations/asia-east1/builds/4052bd63-fe2a-4630-b62e-d15a33617ce6","resourceUri":"https://console.cloud.google.com/cloud-build/builds;region=asia-east1/4052bd63-fe2a-4630-b62e-d15a33617ce6?project=1051779016295"},{"name":"SERVICE","state":"NOT_STARTED"}],"operationType":"UPDATE_FUNCTION","buildName":"projects/1051779016295/locations/asia-east1/builds/4052bd63-fe2a-4630-b62e-d15a33617ce6"},"done":false}
+[debug] [2026-04-07T09:41:56.511Z] ----------------------------------------------------------------------
+[debug] [2026-04-07T09:41:56.513Z] Command:       /usr/local/bin/node /usr/local/bin/firebase deploy --only hosting
+[debug] [2026-04-07T09:41:56.513Z] CLI Version:   15.5.1
+[debug] [2026-04-07T09:41:56.513Z] Platform:      darwin
+[debug] [2026-04-07T09:41:56.513Z] Node Version:  v22.16.0
+[debug] [2026-04-07T09:41:56.513Z] Time:          Tue Apr 07 2026 15:11:56 GMT+0530 (India Standard Time)
+[debug] [2026-04-07T09:41:56.513Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-04-07T09:41:57.357Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-04-07T09:41:57.358Z] > authorizing via signed-in user (dibzhost@gmail.com)
+[debug] [2026-04-07T09:41:57.358Z] [iam] checking project uniship-4c1a1 for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-04-07T09:41:57.358Z] Checked if tokens are valid: true, expires at: 1775557694655
+[debug] [2026-04-07T09:41:57.358Z] Checked if tokens are valid: true, expires at: 1775557694655
+[debug] [2026-04-07T09:41:57.359Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions [none]
+[debug] [2026-04-07T09:41:57.359Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions  x-goog-user-project=uniship-4c1a1
+[debug] [2026-04-07T09:41:57.359Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-04-07T09:41:58.765Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions 200
+[debug] [2026-04-07T09:41:58.765Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-04-07T09:41:58.765Z] Checked if tokens are valid: true, expires at: 1775557694655
+[debug] [2026-04-07T09:41:58.765Z] Checked if tokens are valid: true, expires at: 1775557694655
+[debug] [2026-04-07T09:41:58.766Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1 [none]
+[debug] [2026-04-07T09:41:59.463Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1 200
+[debug] [2026-04-07T09:41:59.463Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1 {"projectId":"uniship-4c1a1","projectNumber":"1051779016295","displayName":"Dibz","name":"projects/uniship-4c1a1","resources":{"hostingSite":"uniship-4c1a1"},"state":"ACTIVE","etag":"1_bd6689a6-2e84-468e-9d17-2c08d756718f"}
+[debug] [2026-04-07T09:42:00.296Z] Checked if tokens are valid: true, expires at: 1775557694655
+[debug] [2026-04-07T09:42:00.296Z] Checked if tokens are valid: true, expires at: 1775557694655
+[debug] [2026-04-07T09:42:00.296Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites pageToken=&pageSize=10
+[debug] [2026-04-07T09:42:01.510Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites 200
+[debug] [2026-04-07T09:42:01.510Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites {"sites":[{"name":"projects/uniship-4c1a1/sites/uniship-4c1a1","defaultUrl":"https://uniship-4c1a1.web.app","type":"DEFAULT_SITE"}]}
+[debug] [2026-04-07T09:42:01.511Z] Checked if tokens are valid: true, expires at: 1775557694655
+[debug] [2026-04-07T09:42:01.511Z] Checked if tokens are valid: true, expires at: 1775557694655
+[debug] [2026-04-07T09:42:01.511Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites 
+[debug] [2026-04-07T09:42:02.172Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites 200
+[debug] [2026-04-07T09:42:02.172Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites {"sites":[{"name":"projects/uniship-4c1a1/sites/uniship-4c1a1","defaultUrl":"https://uniship-4c1a1.web.app","type":"DEFAULT_SITE"}]}
+[debug] [2026-04-07T09:42:02.172Z] Checked if tokens are valid: true, expires at: 1775557694655
+[debug] [2026-04-07T09:42:02.172Z] Checked if tokens are valid: true, expires at: 1775557694655
+[debug] [2026-04-07T09:42:02.172Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1/webApps/-/config [none]
+[debug] [2026-04-07T09:42:02.808Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1/webApps/-/config 200
+[debug] [2026-04-07T09:42:02.808Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1/webApps/-/config {"projectId":"uniship-4c1a1","storageBucket":"uniship-4c1a1.firebasestorage.app","apiKey":"AIzaSyDYAJnVYI7YDGlzqPUv6y5Qid8zhASKZXc","authDomain":"uniship-4c1a1.firebaseapp.com","messagingSenderId":"1051779016295","projectNumber":"1051779016295","version":"2"}
+[info] 
+   Thank you for trying our early preview of Next.js support on Firebase Hosting.
+   During the preview, support is best-effort and breaking changes can be expected. Proceed with caution.
+   The integration is known to work with Next.js version 12 - 15.0. You may encounter errors.
+
+   Documentation: https://firebase.google.com/docs/hosting/frameworks/nextjs
+   File a bug: https://github.com/firebase/firebase-tools/issues/new?template=bug_report.md
+   Submit a feature request: https://github.com/firebase/firebase-tools/issues/new?template=feature_request.md
+
+   We'd love to learn from you. Express your interest in helping us shape the future of Firebase Hosting: https://goo.gle/41enW5X
+
+[debug] [2026-04-07T09:42:04.230Z] Checked if tokens are valid: true, expires at: 1775557694655
+[debug] [2026-04-07T09:42:04.230Z] Checked if tokens are valid: true, expires at: 1775557694655
+[debug] [2026-04-07T09:42:04.230Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 [none]
+[debug] [2026-04-07T09:42:04.811Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 200
+[debug] [2026-04-07T09:42:04.812Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 {"name":"projects/uniship-4c1a1/sites/uniship-4c1a1","defaultUrl":"https://uniship-4c1a1.web.app","type":"DEFAULT_SITE"}
+[info] ▲ Next.js 16.1.4 (Turbopack)
+
+[info] - Environments: .env.local
+
+
+[info]   Creating an optimized production build ...
+
+[info] ✓ Compiled successfully in 3.6s
+
+[info]   Running TypeScript ...
+
+[info]   Collecting page data using 7 workers ...
+
+[info]   Generating static pages using 7 workers (0/33) ...
+
+[info]   Generating static pages using 7 workers (8/33) 
+
+[info]   Generating static pages using 7 workers (16/33) 
+
+[info]   Generating static pages using 7 workers (24/33) 
+
+[info] ✓ Generating static pages using 7 workers (33/33) in 343.8ms
+
+[info]   Finalizing page optimization ...
+
+[info] 
+
+[info] Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/compile
+├ ○ /landing
+├ ○ /login
+├ ○ /superadmin/create-uniadmin
+├ ○ /superadmin/dashboard
+├ ○ /superadmin/manage-students
+├ ○ /superadmin/manage-uniadmins
+├ ○ /superadmin/universities
+├ ○ /uniadmin/analysis
+├ ○ /uniadmin/create-account
+├ ○ /uniadmin/create-event
+├ ○ /uniadmin/create-test
+├ ○ /uniadmin/dashboard
+├ ○ /uniadmin/manage
+├ ○ /uniadmin/practice
+├ ○ /uniadmin/proctoring
+├ ○ /uniadmin/profile
+├ ○ /uniadmin/student-database
+├ ƒ /uniadmin/students/view/[id]
+├ ○ /uniadmin/tests
+├ ƒ /uniadmin/tests/review/[id]
+├ ○ /user/applications
+├ ○ /user/calendar
+├ ○ /user/dashboard
+├ ○ /user/internships
+├ ƒ /user/internships/[id]
+├ ○ /user/practice
+├ ƒ /user/practice/[id]
+├ ○ /user/profile
+├ ○ /user/results
+├ ƒ /user/results/review/[id]
+├ ○ /user/resume
+├ ○ /user/resume/download
+├ ○ /user/test-portal
+└ ƒ /user/test-portal/[id]
+
+
+[info] 
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+
+[info] Building a Cloud Function to run this application. This is needed due to:
+[info]  • non-static component /(protected)/uniadmin/students/view/[id]/page
+[info]  • non-static component /(protected)/uniadmin/tests/review/[id]/page
+[info]  • non-static component /(protected)/user/internships/[id]/page
+[info]  • non-static component /(protected)/user/practice/[id]/page
+[info]  • non-static component /(protected)/user/results/review/[id]/page
+[debug] [2026-04-07T09:42:15.779Z]  • non-static component /(protected)/user/test-portal/[id]/page
+[debug] [2026-04-07T09:42:15.779Z]  • non-static component /api/compile/route
+[debug] [2026-04-07T09:42:15.779Z]  • route with server action /uniadmin/create-test
+[debug] [2026-04-07T09:42:15.779Z]  • route with server action /uniadmin/practice
+[debug] [2026-04-07T09:42:15.779Z]  • route with server action /user/resume
+[info]  • and 5 other reasons, use --debug to see more
+[info] 
+[debug] [2026-04-07T09:42:15.809Z] skipping /uniadmin/create-test due to server action
+[debug] [2026-04-07T09:42:15.809Z] skipping /uniadmin/practice due to server action
+[debug] [2026-04-07T09:42:15.809Z] skipping /user/resume due to server action
+[debug] [2026-04-07T09:42:15.957Z] Checked if tokens are valid: true, expires at: 1775557694655
+[debug] [2026-04-07T09:42:15.957Z] Checked if tokens are valid: true, expires at: 1775557694655
+[debug] [2026-04-07T09:42:15.957Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 [none]
+[debug] [2026-04-07T09:42:16.975Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 200
+[debug] [2026-04-07T09:42:16.976Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 {"name":"projects/uniship-4c1a1/sites/uniship-4c1a1","defaultUrl":"https://uniship-4c1a1.web.app","type":"DEFAULT_SITE"}

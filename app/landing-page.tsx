@@ -337,7 +337,7 @@ export default function Home() {
     <div className={`${dmSans.variable} landing-root`}>
       <nav>
         <div className="nav-logo">
-          <Image src="/logo.png" alt="Uniship" width={52} height={52} className="nav-logo-img" />
+          <Image src="/logo.png" alt="Uniship" width={94} height={94} className="nav-logo-img" />
           <span className="nav-logo-text">UNISHIP</span>
         </div>
         <div className="nav-right">
@@ -712,7 +712,7 @@ export default function Home() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 10px 36px;
+          padding: 6px 48px;
           background: linear-gradient(to bottom, rgba(10,10,10,0.95), rgba(10,10,10,0.7), transparent);
           backdrop-filter: blur(8px);
         }
@@ -744,12 +744,12 @@ export default function Home() {
         }
 
         .nav-logo-text {
-          font-size: 1.1rem;
+          font-size: 1.5rem;
           font-weight: 800;
           letter-spacing: 0.14em;
           color: var(--text);
           align-self: center;
-          padding-top: 0.2em;
+          padding-top: 0.35em;
           line-height: 1;
         }
 
@@ -774,7 +774,7 @@ export default function Home() {
           background: var(--orange);
           color: #fff;
           border: none;
-          padding: 7px 18px;
+          padding: 9px 22px;
           border-radius: 6px;
           font-family: var(--font-dm-sans), sans-serif;
           font-weight: 700;
@@ -1912,9 +1912,11 @@ export default function Home() {
         }
 
         @media (max-width: 768px) {
-          nav { padding: 10px 16px; }
-          .nav-cta-top { padding: 6px 14px; font-size: 0.75rem; }
-          .hero { padding: 100px 24px 60px; }
+          nav { padding: 18px 24px; }
+          .nav-links { display: none; }
+          .nav-right { margin-left: auto; }
+          .nav-cta-top { padding: 8px 16px; font-size: 0.75rem; }
+          .hero { padding: 120px 24px 60px; }
           .hero-layout { grid-template-columns: 1fr; }
           .hero-right { display: none; }
           .hero::after { left: 50%; transform: translateX(-50%); }
