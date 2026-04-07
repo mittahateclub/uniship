@@ -62,24 +62,23 @@ export default function LoginPage() {
 
 
       <div className="w-full max-w-sm animate-fade-in relative z-10">
-        {/* Orange glow tightly around the card */}
+        {/* Blue glow tightly around the card */}
         <div className="absolute inset-0 -z-10 pointer-events-none" style={{
-          background: 'radial-gradient(ellipse 90% 80% at 50% 60%, rgba(245,78,0,0.18) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse 90% 80% at 50% 60%, rgba(0,168,225,0.18) 0%, transparent 70%)',
           filter: 'blur(24px)',
         }} />
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-6">
-            <Image src="/logo.png" alt="Uniship" width={420} height={116} className="object-contain w-auto" style={{ maxHeight: 116 }} />
+        <div className="text-center mb-4">
+          <div className="flex justify-center -mb-10">
+            <Image src="/logo.png" alt="Uniship" width={1775} height={490} className="object-contain w-auto" style={{ maxHeight: 490 }} />
           </div>
-          <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Welcome back</h1>
-          <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Sign in to your Uniship account</p>
+          <p className="text-[var(--text-tertiary)] text-[13px] mt-0">Sign in to your Uniship account</p>
         </div>
 
         {/* Card */}
         <div className="bg-[var(--bg-surface)] rounded border border-[var(--border-subtle)] p-6">
           {error && (
-            <div className="bg-[#F54E00]/10 text-[#F54E00] px-3 py-2 rounded text-[13px] font-medium mb-5 border border-[#F54E00]/20">
+            <div className="bg-[#00A8E1]/10 text-[#00A8E1] px-3 py-2 rounded text-[13px] font-medium mb-5 border border-[#00A8E1]/20">
               {error}
             </div>
           )}
@@ -91,7 +90,7 @@ export default function LoginPage() {
                 <input
                   type="email"
                   placeholder="you@university.edu"
-                  className="w-full pl-9 pr-3 py-2 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#5E6AD2] transition-all duration-150 text-[13px]"
+                  className="w-full pl-9 pr-3 py-2 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#4B8BBE] transition-all duration-150 text-[13px]"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -105,7 +104,7 @@ export default function LoginPage() {
                 <input
                   type="password"
                   placeholder="••••••••"
-                  className="w-full pl-9 pr-3 py-2 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#5E6AD2] transition-all duration-150 text-[13px]"
+                  className="w-full pl-9 pr-3 py-2 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#4B8BBE] transition-all duration-150 text-[13px]"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -115,7 +114,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#F54E00] text-black font-bold py-2 rounded hover:brightness-110 transition-all duration-150 text-[13px] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2 uppercase tracking-wider"
+              className="w-full bg-[#00A8E1] text-white font-bold py-2 rounded hover:brightness-110 transition-all duration-150 text-[13px] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2 uppercase tracking-wider"
             >
               {isLoading ? (
                 <div className="loading-dots"><span /><span /><span /></div>

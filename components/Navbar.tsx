@@ -287,8 +287,8 @@ export default function Navbar() {
         const el = document.getElementById(hash);
         if (el) {
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          el.classList.add('ring-2', 'ring-[#F54E00]/40', 'rounded');
-          setTimeout(() => el.classList.remove('ring-2', 'ring-[#F54E00]/40', 'rounded'), 2000);
+          el.classList.add('ring-2', 'ring-[#00A8E1]/40', 'rounded');
+          setTimeout(() => el.classList.remove('ring-2', 'ring-[#00A8E1]/40', 'rounded'), 2000);
         }
       } else {
         router.push(path);
@@ -297,8 +297,8 @@ export default function Navbar() {
           const el = document.getElementById(hash);
           if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            el.classList.add('ring-2', 'ring-[#F54E00]/40', 'rounded');
-            setTimeout(() => el.classList.remove('ring-2', 'ring-[#F54E00]/40', 'rounded'), 2000);
+            el.classList.add('ring-2', 'ring-[#00A8E1]/40', 'rounded');
+            setTimeout(() => el.classList.remove('ring-2', 'ring-[#00A8E1]/40', 'rounded'), 2000);
           }
         };
         // Retry a few times since the page content may load async
@@ -334,15 +334,15 @@ export default function Navbar() {
   return (
     <>
       {/* ═══ Left Sidebar ═══ */}
-      <aside className={`h-screen bg-[var(--bg-elevated)] border-r border-[var(--border-subtle)] flex flex-col transition-all duration-200 ease-out shrink-0 sticky top-0 ${collapsed ? 'w-[56px]' : 'w-[240px]'}`}>
+      <aside className={`h-screen bg-[var(--bg-elevated)] border-r border-[var(--border-subtle)] flex flex-col transition-all duration-200 ease-out shrink-0 sticky top-0 ${collapsed ? 'w-[82px]' : 'w-[260px]'}`}>
         {/* Logo */}
         <div className="h-16 flex items-center border-b border-[var(--border-subtle)] shrink-0">
           <Link
             href="/"
-            className={`flex items-center overflow-hidden rounded-md transition-colors duration-150 hover:bg-[var(--bg-surface)] mx-2 ${collapsed ? 'justify-center w-full py-1' : 'gap-2.5 px-2 py-1.5 w-full'}`}
+            className={`flex items-center overflow-hidden rounded-md transition-colors duration-150 mx-2 ${collapsed ? 'justify-center w-full py-1' : 'gap-1 px-2 py-1.5 w-full'}`}
           >
-            <Image src="/logo.png" alt="Uniship" width={collapsed ? 48 : 54} height={collapsed ? 48 : 54} className="shrink-0 object-contain" />
-            {!collapsed && <span className="text-[21px] font-bold tracking-[0.16em] text-[var(--text-primary)] whitespace-nowrap self-center leading-none pt-[6px]">UNISHIP</span>}
+            <Image src="/logo.png" alt="Uniship" width={76} height={76} className="shrink-0 object-contain" />
+            {!collapsed && <span className="text-[17px] font-extrabold tracking-[0.14em] text-[var(--text-primary)] whitespace-nowrap self-center leading-none pt-[0.35em]">UNISHIP</span>}
           </Link>
         </div>
 
@@ -397,7 +397,7 @@ export default function Navbar() {
           <button
             onClick={handleLogout}
             title={collapsed ? 'Logout' : undefined}
-            className={`flex items-center gap-2.5 rounded text-[13px] font-medium transition-all duration-150 w-full text-[var(--text-tertiary)] hover:text-[#F54E00] hover:bg-[var(--bg-surface)] border border-transparent ${collapsed ? 'justify-center p-2' : 'px-2.5 py-[7px]'}`}
+            className={`flex items-center gap-2.5 rounded text-[13px] font-medium transition-all duration-150 w-full text-[var(--text-tertiary)] hover:text-[#DC2626] hover:bg-[#DC2626]/10 border border-transparent ${collapsed ? 'justify-center p-2' : 'px-2.5 py-[7px]'}`}
           >
             <LogOut size={16} className="shrink-0" />
             {!collapsed && <span>Logout</span>}
@@ -443,7 +443,7 @@ export default function Navbar() {
                                 : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]'
                             }`}
                           >
-                            <page.icon size={15} className={globalIndex === selectedIndex ? 'text-[#F54E00]' : 'text-[var(--text-faint)]'} />
+                            <page.icon size={15} className={globalIndex === selectedIndex ? 'text-[#00A8E1]' : 'text-[var(--text-faint)]'} />
                             <div className="flex-1 min-w-0">
                               <p className="text-[13px] font-medium truncate">{page.label}</p>
                               <p className="text-[11px] text-[var(--text-faint)] truncate">{page.desc}</p>

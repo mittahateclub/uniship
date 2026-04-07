@@ -154,7 +154,7 @@ export default function ManageUniversitiesPage() {
         <input
           type="text" placeholder="Search universities..."
           value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-          className="w-full pl-9 pr-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#5E6AD2] transition-all duration-150"
+          className="w-full pl-9 pr-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#4B8BBE] transition-all duration-150"
         />
       </div>
 
@@ -197,7 +197,7 @@ export default function ManageUniversitiesPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-3 mt-1 text-[12px] text-[var(--text-tertiary)]">
-                    <span className="font-mono text-[#F54E00]">{uni.code}</span>
+                    <span className="font-mono text-[#00A8E1]">{uni.code}</span>
                     {uni.domain && <span>· {uni.domain}</span>}
                     <span className="flex items-center gap-1"><Shield size={10} /> {uni.adminCount} admin{uni.adminCount !== 1 ? 's' : ''}</span>
                     <span className="flex items-center gap-1"><Users size={10} /> {uni.studentCount} student{uni.studentCount !== 1 ? 's' : ''}</span>
@@ -218,7 +218,7 @@ export default function ManageUniversitiesPage() {
                   </button>
                   <button
                     onClick={() => handleDelete(uni)}
-                    className="p-1.5 rounded text-[var(--text-faint)] hover:text-[#F54E00] hover:bg-[#F54E00]/10 transition-colors duration-150"
+                    className="p-1.5 rounded text-[var(--text-faint)] hover:text-[#00A8E1] hover:bg-[#00A8E1]/10 transition-colors duration-150"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -235,7 +235,7 @@ export default function ManageUniversitiesPage() {
           <div className="window w-full max-w-md p-6 animate-fade-in" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
-                <Building2 size={16} className="text-[#5E6AD2]" />
+                <Building2 size={16} className="text-[#4B8BBE]" />
                 <h2 className="text-[15px] font-bold text-[var(--text-primary)]">Register University</h2>
               </div>
               <button onClick={() => setShowCreate(false)} className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors">
@@ -244,7 +244,7 @@ export default function ManageUniversitiesPage() {
             </div>
 
             {error && (
-              <div className="mb-4 p-3 rounded bg-[#F54E00]/10 text-[#F54E00] border border-[#F54E00]/20 text-[13px] font-medium">{error}</div>
+              <div className="mb-4 p-3 rounded bg-[#00A8E1]/10 text-[#00A8E1] border border-[#00A8E1]/20 text-[13px] font-medium">{error}</div>
             )}
 
             <form onSubmit={handleCreate} className="space-y-4">
@@ -254,7 +254,7 @@ export default function ManageUniversitiesPage() {
                   type="text" required value={newUni.name}
                   onChange={e => setNewUni(p => ({ ...p, name: e.target.value }))}
                   placeholder="e.g., Harvard University"
-                  className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-faint)] text-[13px] focus:outline-none focus:border-[#5E6AD2] transition-all duration-150"
+                  className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-faint)] text-[13px] focus:outline-none focus:border-[#4B8BBE] transition-all duration-150"
                 />
               </div>
               <div>
@@ -263,7 +263,7 @@ export default function ManageUniversitiesPage() {
                   type="text" required value={newUni.code}
                   onChange={e => setNewUni(p => ({ ...p, code: e.target.value }))}
                   placeholder="e.g., HARV-001"
-                  className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-faint)] text-[13px] focus:outline-none focus:border-[#5E6AD2] transition-all duration-150 uppercase"
+                  className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-faint)] text-[13px] focus:outline-none focus:border-[#4B8BBE] transition-all duration-150 uppercase"
                 />
                 <p className="text-[10px] text-[var(--text-faint)] mt-1">Unique identifier. Used to link admins & students.</p>
               </div>
@@ -273,7 +273,7 @@ export default function ManageUniversitiesPage() {
                   type="text" value={newUni.domain}
                   onChange={e => setNewUni(p => ({ ...p, domain: e.target.value }))}
                   placeholder="e.g., harvard.edu"
-                  className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-faint)] text-[13px] focus:outline-none focus:border-[#5E6AD2] transition-all duration-150"
+                  className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-faint)] text-[13px] focus:outline-none focus:border-[#4B8BBE] transition-all duration-150"
                 />
               </div>
               <button type="submit" disabled={creating} className="btn-primary w-full mt-2">

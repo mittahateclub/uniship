@@ -109,7 +109,7 @@ export default function CreateUniadminPage() {
 
       <div className="window p-6">
         {error && (
-          <div className="mb-4 p-3 rounded bg-[#F54E00]/10 text-[#F54E00] border border-[#F54E00]/20 text-[13px] font-medium">{error}</div>
+          <div className="mb-4 p-3 rounded bg-[#00A8E1]/10 text-[#00A8E1] border border-[#00A8E1]/20 text-[13px] font-medium">{error}</div>
         )}
         {success && (
           <div className="mb-4 p-3 rounded bg-[#4CAF50]/10 text-[#4CAF50] border border-[#4CAF50]/20 text-[13px] font-medium">{success}</div>
@@ -123,11 +123,11 @@ export default function CreateUniadminPage() {
               <button
                 type="button"
                 onClick={() => setUniDropdownOpen(!uniDropdownOpen)}
-                className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-left focus:outline-none focus:border-[#5E6AD2] transition-all duration-150 flex items-center justify-between"
+                className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-left focus:outline-none focus:border-[#4B8BBE] transition-all duration-150 flex items-center justify-between"
               >
                 {selectedUni ? (
                   <div className="flex items-center gap-2 min-w-0">
-                    <Building2 size={13} className="text-[#F54E00] shrink-0" />
+                    <Building2 size={13} className="text-[#00A8E1] shrink-0" />
                     <span className="text-[var(--text-primary)] truncate">{selectedUni.name}</span>
                     <span className="text-[11px] font-mono text-[var(--text-faint)] shrink-0">{selectedUni.code}</span>
                     {selectedUni.verified ? (
@@ -152,7 +152,7 @@ export default function CreateUniadminPage() {
                       <input
                         type="text" placeholder="Search universities..."
                         value={uniSearch} onChange={e => setUniSearch(e.target.value)}
-                        className="w-full pl-7 pr-2 py-1.5 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#5E6AD2]"
+                        className="w-full pl-7 pr-2 py-1.5 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#4B8BBE]"
                         autoFocus
                       />
                     </div>
@@ -168,7 +168,7 @@ export default function CreateUniadminPage() {
                           key={uni.id} type="button"
                           onClick={() => { setSelectedUni(uni); setUniDropdownOpen(false); setUniSearch(''); }}
                           className={`w-full px-3 py-2.5 text-left hover:bg-[var(--bg-elevated)] transition-colors flex items-center gap-2 ${
-                            selectedUni?.id === uni.id ? 'bg-[#5E6AD2]/5' : ''
+                            selectedUni?.id === uni.id ? 'bg-[#4B8BBE]/5' : ''
                           }`}
                         >
                           <Building2 size={13} className="text-[var(--text-faint)] shrink-0" />
@@ -204,7 +204,7 @@ export default function CreateUniadminPage() {
                 type={f.type} name={f.name} placeholder={f.placeholder} required={f.required}
                 value={formData[f.name as keyof typeof formData]}
                 onChange={handleChange} disabled={submitting}
-                className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-faint)] text-[13px] focus:outline-none focus:border-[#5E6AD2] transition-all duration-150 disabled:opacity-50"
+                className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-faint)] text-[13px] focus:outline-none focus:border-[#4B8BBE] transition-all duration-150 disabled:opacity-50"
               />
             </div>
           ))}

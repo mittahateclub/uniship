@@ -215,8 +215,8 @@ export default function ProctorDashboard() {
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-1">
-          <div className="w-9 h-9 rounded-lg bg-[#5E6AD2]/10 flex items-center justify-center">
-            <Shield size={18} className="text-[#5E6AD2]" />
+          <div className="w-9 h-9 rounded-lg bg-[#4B8BBE]/10 flex items-center justify-center">
+            <Shield size={18} className="text-[#4B8BBE]" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Proctoring Dashboard</h1>
@@ -230,7 +230,7 @@ export default function ProctorDashboard() {
         <div className="window mb-6 overflow-hidden">
           <div className="px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Calendar size={14} className="text-[#5E6AD2]" />
+              <Calendar size={14} className="text-[#4B8BBE]" />
               <span className="text-[12px] font-bold text-[var(--text-primary)]">Upcoming in 24 Hours</span>
             </div>
             <span className="text-[10px] text-[var(--text-faint)]">{upcomingTests.length} test{upcomingTests.length !== 1 ? 's' : ''}</span>
@@ -247,9 +247,9 @@ export default function ProctorDashboard() {
               return (
                 <div key={test.id} className="px-4 py-3 flex items-center gap-3">
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                    isLive ? 'bg-[#4CAF50]/10' : 'bg-[#5E6AD2]/10'
+                    isLive ? 'bg-[#4CAF50]/10' : 'bg-[#4B8BBE]/10'
                   }`}>
-                    {isLive ? <Monitor size={14} className="text-[#4CAF50]" /> : <Clock size={14} className="text-[#5E6AD2]" />}
+                    {isLive ? <Monitor size={14} className="text-[#4CAF50]" /> : <Clock size={14} className="text-[#4B8BBE]" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -260,7 +260,7 @@ export default function ProctorDashboard() {
                           LIVE NOW
                         </span>
                       ) : (
-                        <span className="text-[9px] font-bold text-[#5E6AD2] bg-[#5E6AD2]/10 px-1.5 py-0.5 rounded shrink-0">
+                        <span className="text-[9px] font-bold text-[#4B8BBE] bg-[#4B8BBE]/10 px-1.5 py-0.5 rounded shrink-0">
                           {diffH > 0 ? `in ${diffH}h ${diffM}m` : `in ${diffM}m`}
                         </span>
                       )}
@@ -315,8 +315,8 @@ export default function ProctorDashboard() {
               <p className="text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-wider">Recent Submissions</p>
               <p className="text-2xl font-bold text-[var(--text-primary)] mt-1">{recentResults.length}</p>
             </div>
-            <div className="w-9 h-9 rounded-lg bg-[#5E6AD2]/10 flex items-center justify-center">
-              <CheckCircle2 size={16} className="text-[#5E6AD2]" />
+            <div className="w-9 h-9 rounded-lg bg-[#4B8BBE]/10 flex items-center justify-center">
+              <CheckCircle2 size={16} className="text-[#4B8BBE]" />
             </div>
           </div>
         </div>
@@ -372,7 +372,7 @@ export default function ProctorDashboard() {
                     key={session.id}
                     onClick={() => setSelectedSession(session)}
                     className={`w-full text-left px-4 py-3 border-b border-[var(--border-subtle)] last:border-0 transition-colors hover:bg-[var(--bg-elevated)] ${
-                      selectedSession?.id === session.id ? 'bg-[var(--bg-elevated)] border-l-2 border-l-[#5E6AD2]' : ''
+                      selectedSession?.id === session.id ? 'bg-[var(--bg-elevated)] border-l-2 border-l-[#4B8BBE]' : ''
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
@@ -435,14 +435,14 @@ export default function ProctorDashboard() {
                           {result.proctoring?.totalViolations > 0 && (
                             <>
                               <span className="w-px h-3 bg-[var(--border-subtle)]" />
-                              <span className="text-[#F54E00]">{result.proctoring.violationPoints} pts</span>
+                              <span className="text-[#00A8E1]">{result.proctoring.violationPoints} pts</span>
                             </>
                           )}
                         </div>
                         <button
                           onClick={() => allowReattempt(result)}
                           disabled={reattemptLoading === result.id}
-                          className="flex items-center gap-1 text-[10px] font-bold text-[#5E6AD2] hover:text-[#4C5ABF] transition-colors disabled:opacity-40"
+                          className="flex items-center gap-1 text-[10px] font-bold text-[#4B8BBE] hover:text-[#4C5ABF] transition-colors disabled:opacity-40"
                           title="Allow student to re-attempt this test"
                         >
                           <RotateCcw size={10} className={reattemptLoading === result.id ? 'animate-spin' : ''} />
@@ -504,7 +504,7 @@ export default function ProctorDashboard() {
                     <div className="max-w-[70%]">
                       <div className={`px-3 py-2 rounded-lg text-[13px] ${
                         msg.sender === 'proctor'
-                          ? 'bg-[#5E6AD2] text-white rounded-br-none'
+                          ? 'bg-[#4B8BBE] text-white rounded-br-none'
                           : 'bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-bl-none'
                       }`}>
                         {msg.message}
@@ -526,12 +526,12 @@ export default function ProctorDashboard() {
                   onChange={e => setChatInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
                   placeholder="Reply to student..."
-                  className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg px-4 py-2.5 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#5E6AD2] transition-colors"
+                  className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg px-4 py-2.5 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#4B8BBE] transition-colors"
                 />
                 <button
                   onClick={sendMessage}
                   disabled={!chatInput.trim()}
-                  className="px-4 py-2.5 rounded-lg bg-[#5E6AD2] text-white text-[13px] font-semibold disabled:opacity-40 transition-opacity flex items-center gap-2 hover:bg-[#4C5ABF]"
+                  className="px-4 py-2.5 rounded-lg bg-[#4B8BBE] text-white text-[13px] font-semibold disabled:opacity-40 transition-opacity flex items-center gap-2 hover:bg-[#4C5ABF]"
                 >
                   <Send size={14} />
                   Send
@@ -550,7 +550,7 @@ export default function ProctorDashboard() {
                 </p>
                 <div className="mt-6 grid grid-cols-3 gap-3">
                   <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg p-3 text-center">
-                    <MessageCircle size={16} className="mx-auto text-[#5E6AD2] mb-1" />
+                    <MessageCircle size={16} className="mx-auto text-[#4B8BBE] mb-1" />
                     <p className="text-[10px] text-[var(--text-faint)]">Reply to queries</p>
                   </div>
                   <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg p-3 text-center">
@@ -558,7 +558,7 @@ export default function ProctorDashboard() {
                     <p className="text-[10px] text-[var(--text-faint)]">Monitor sessions</p>
                   </div>
                   <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg p-3 text-center">
-                    <RotateCcw size={16} className="mx-auto text-[#F54E00] mb-1" />
+                    <RotateCcw size={16} className="mx-auto text-[#00A8E1] mb-1" />
                     <p className="text-[10px] text-[var(--text-faint)]">Allow re-attempts</p>
                   </div>
                 </div>

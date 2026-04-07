@@ -165,7 +165,7 @@ export default function StudentDatabasePage() {
         <div>
           <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Centralized Student Repository</h1>
           <p className="text-[var(--text-tertiary)] text-[13px] mt-1">
-            {adminUnivId && <span className="font-mono text-[#F54E00]">{adminUnivId}</span>}
+            {adminUnivId && <span className="font-mono text-[#00A8E1]">{adminUnivId}</span>}
             {' · '}{students.length} student{students.length !== 1 ? 's' : ''} records
           </p>
         </div>
@@ -177,11 +177,11 @@ export default function StudentDatabasePage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
         <div className="window p-4">
           <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)]">Total Students</p>
-          <p className="text-2xl font-bold text-[var(--text-primary)] mt-1 tabular-nums flex items-center gap-1.5"><Users size={16} className="text-[#F54E00]" />{stats.total}</p>
+          <p className="text-2xl font-bold text-[var(--text-primary)] mt-1 tabular-nums flex items-center gap-1.5"><Users size={16} className="text-[#00A8E1]" />{stats.total}</p>
         </div>
         <div className="window p-4">
           <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)]">Avg CGPA</p>
-          <p className="text-2xl font-bold text-[var(--text-primary)] mt-1 tabular-nums flex items-center gap-1.5"><GraduationCap size={16} className="text-[#5E6AD2]" />{stats.avgCgpa > 0 ? stats.avgCgpa.toFixed(2) : 'N/A'}</p>
+          <p className="text-2xl font-bold text-[var(--text-primary)] mt-1 tabular-nums flex items-center gap-1.5"><GraduationCap size={16} className="text-[#4B8BBE]" />{stats.avgCgpa > 0 ? stats.avgCgpa.toFixed(2) : 'N/A'}</p>
         </div>
         <div className="window p-4">
           <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)]">With Internships</p>
@@ -202,7 +202,7 @@ export default function StudentDatabasePage() {
               placeholder="Search full profile: name, email, ID, skills, education, experience, projects..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#5E6AD2] transition-all duration-150"
+              className="w-full pl-9 pr-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#4B8BBE] transition-all duration-150"
             />
           </div>
 
@@ -214,7 +214,7 @@ export default function StudentDatabasePage() {
             value={minCgpa}
             onChange={(e) => setMinCgpa(e.target.value)}
             placeholder="Min CGPA"
-            className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#5E6AD2] transition-all duration-150"
+            className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#4B8BBE] transition-all duration-150"
           />
 
           <button
@@ -267,7 +267,7 @@ export default function StudentDatabasePage() {
                           {student.photoURL ? (
                             <img src={student.photoURL} alt={student.name || 'Student'} className="w-8 h-8 rounded-full object-cover border border-[var(--border-subtle)] shrink-0" />
                           ) : (
-                            <div className="w-8 h-8 rounded-full bg-[#5E6AD2]/10 flex items-center justify-center text-[#5E6AD2] text-xs font-bold shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-[#4B8BBE]/10 flex items-center justify-center text-[#4B8BBE] text-xs font-bold shrink-0">
                               {student.name?.charAt(0)?.toUpperCase() || '?'}
                             </div>
                           )}
@@ -297,7 +297,7 @@ export default function StudentDatabasePage() {
                         <div className="inline-flex items-center gap-1">
                           <Link
                             href={`/uniadmin/students/view/${student.id}`}
-                            className="p-1.5 rounded text-[var(--text-muted)] hover:text-[#5E6AD2] hover:bg-[#5E6AD2]/10 transition-colors duration-150"
+                            className="p-1.5 rounded text-[var(--text-muted)] hover:text-[#4B8BBE] hover:bg-[#4B8BBE]/10 transition-colors duration-150"
                             title="View full profile"
                           >
                             <ExternalLink size={14} />
@@ -305,7 +305,7 @@ export default function StudentDatabasePage() {
                           <button
                             onClick={() => handleDeleteStudent(student.id, student.name || 'this student')}
                             disabled={deletingId === student.id}
-                            className="p-1.5 rounded text-[var(--text-faint)] hover:text-[#F54E00] hover:bg-[#F54E00]/10 transition-colors duration-150 disabled:opacity-50"
+                            className="p-1.5 rounded text-[var(--text-faint)] hover:text-[#00A8E1] hover:bg-[#00A8E1]/10 transition-colors duration-150 disabled:opacity-50"
                             title="Delete student"
                           >
                             <Trash2 size={14} />

@@ -1,46 +1,49 @@
-[debug] [2026-03-29T06:56:59.358Z] ----------------------------------------------------------------------
-[debug] [2026-03-29T06:56:59.364Z] Command:       /usr/local/bin/node /usr/local/bin/firebase deploy --only hosting
-[debug] [2026-03-29T06:56:59.365Z] CLI Version:   15.5.1
-[debug] [2026-03-29T06:56:59.365Z] Platform:      darwin
-[debug] [2026-03-29T06:56:59.365Z] Node Version:  v22.16.0
-[debug] [2026-03-29T06:56:59.365Z] Time:          Sun Mar 29 2026 12:26:59 GMT+0530 (India Standard Time)
-[debug] [2026-03-29T06:56:59.365Z] ----------------------------------------------------------------------
+[debug] [2026-04-07T07:38:32.303Z] ----------------------------------------------------------------------
+[debug] [2026-04-07T07:38:32.310Z] Command:       /usr/local/bin/node /usr/local/bin/firebase deploy --only hosting
+[debug] [2026-04-07T07:38:32.310Z] CLI Version:   15.5.1
+[debug] [2026-04-07T07:38:32.311Z] Platform:      darwin
+[debug] [2026-04-07T07:38:32.311Z] Node Version:  v22.16.0
+[debug] [2026-04-07T07:38:32.311Z] Time:          Tue Apr 07 2026 13:08:32 GMT+0530 (India Standard Time)
+[debug] [2026-04-07T07:38:32.311Z] ----------------------------------------------------------------------
 [debug] 
-[debug] [2026-03-29T06:57:00.215Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
-[debug] [2026-03-29T06:57:00.215Z] > authorizing via signed-in user (dibzhost@gmail.com)
-[debug] [2026-03-29T06:57:00.215Z] [iam] checking project uniship-4c1a1 for permissions ["firebase.projects.get","firebasehosting.sites.update"]
-[debug] [2026-03-29T06:57:00.216Z] Checked if tokens are valid: false, expires at: 1774741750974
-[debug] [2026-03-29T06:57:00.216Z] Checked if tokens are valid: false, expires at: 1774741750974
-[debug] [2026-03-29T06:57:00.216Z] > refreshing access token with scopes: []
-[debug] [2026-03-29T06:57:00.217Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
-[debug] [2026-03-29T06:57:00.217Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[debug] [2026-03-29T06:57:00.473Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
-[debug] [2026-03-29T06:57:00.473Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[debug] [2026-03-29T06:57:00.489Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions [none]
-[debug] [2026-03-29T06:57:00.489Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions  x-goog-user-project=uniship-4c1a1
-[debug] [2026-03-29T06:57:00.489Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
-[debug] [2026-03-29T06:57:01.972Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions 200
-[debug] [2026-03-29T06:57:01.972Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
-[debug] [2026-03-29T06:57:01.973Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:01.973Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:01.974Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1 [none]
-[debug] [2026-03-29T06:57:02.723Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1 200
-[debug] [2026-03-29T06:57:02.723Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1 {"projectId":"uniship-4c1a1","projectNumber":"1051779016295","displayName":"Dibz","name":"projects/uniship-4c1a1","resources":{"hostingSite":"uniship-4c1a1"},"state":"ACTIVE","etag":"1_bd6689a6-2e84-468e-9d17-2c08d756718f"}
-[debug] [2026-03-29T06:57:04.176Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:04.179Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:04.183Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites pageToken=&pageSize=10
-[debug] [2026-03-29T06:57:05.603Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites 200
-[debug] [2026-03-29T06:57:05.603Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites {"sites":[{"name":"projects/uniship-4c1a1/sites/uniship-4c1a1","defaultUrl":"https://uniship-4c1a1.web.app","type":"DEFAULT_SITE"}]}
-[debug] [2026-03-29T06:57:05.603Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:05.603Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:05.603Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites 
-[debug] [2026-03-29T06:57:06.329Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites 200
-[debug] [2026-03-29T06:57:06.330Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites {"sites":[{"name":"projects/uniship-4c1a1/sites/uniship-4c1a1","defaultUrl":"https://uniship-4c1a1.web.app","type":"DEFAULT_SITE"}]}
-[debug] [2026-03-29T06:57:06.330Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:06.330Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:06.330Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1/webApps/-/config [none]
-[debug] [2026-03-29T06:57:07.148Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1/webApps/-/config 200
-[debug] [2026-03-29T06:57:07.148Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1/webApps/-/config {"projectId":"uniship-4c1a1","storageBucket":"uniship-4c1a1.firebasestorage.app","apiKey":"AIzaSyDYAJnVYI7YDGlzqPUv6y5Qid8zhASKZXc","authDomain":"uniship-4c1a1.firebaseapp.com","messagingSenderId":"1051779016295","projectNumber":"1051779016295","version":"2"}
+[debug] [2026-04-07T07:38:32.313Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-04-07T07:38:33.393Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-04-07T07:38:33.393Z] > authorizing via signed-in user (dibzhost@gmail.com)
+[debug] [2026-04-07T07:38:33.393Z] [iam] checking project uniship-4c1a1 for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-04-07T07:38:33.393Z] Checked if tokens are valid: false, expires at: 1774837240695
+[debug] [2026-04-07T07:38:33.393Z] Checked if tokens are valid: false, expires at: 1774837240695
+[debug] [2026-04-07T07:38:33.393Z] > refreshing access token with scopes: []
+[debug] [2026-04-07T07:38:33.394Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-04-07T07:38:33.394Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-04-07T07:38:33.684Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-04-07T07:38:33.685Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-04-07T07:38:33.717Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions [none]
+[debug] [2026-04-07T07:38:33.717Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions  x-goog-user-project=uniship-4c1a1
+[debug] [2026-04-07T07:38:33.717Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-04-07T07:38:34.028Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2026-04-07T07:38:34.028Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[debug] [2026-04-07T07:38:35.070Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions 200
+[debug] [2026-04-07T07:38:35.071Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-04-07T07:38:35.073Z] Checked if tokens are valid: true, expires at: 1775551112685
+[debug] [2026-04-07T07:38:35.073Z] Checked if tokens are valid: true, expires at: 1775551112685
+[debug] [2026-04-07T07:38:35.074Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1 [none]
+[debug] [2026-04-07T07:38:35.572Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1 200
+[debug] [2026-04-07T07:38:35.572Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1 {"projectId":"uniship-4c1a1","projectNumber":"1051779016295","displayName":"Dibz","name":"projects/uniship-4c1a1","resources":{"hostingSite":"uniship-4c1a1"},"state":"ACTIVE","etag":"1_bd6689a6-2e84-468e-9d17-2c08d756718f"}
+[debug] [2026-04-07T07:38:36.551Z] Checked if tokens are valid: true, expires at: 1775551112685
+[debug] [2026-04-07T07:38:36.551Z] Checked if tokens are valid: true, expires at: 1775551112685
+[debug] [2026-04-07T07:38:36.551Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites pageToken=&pageSize=10
+[debug] [2026-04-07T07:38:37.826Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites 200
+[debug] [2026-04-07T07:38:37.826Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites {"sites":[{"name":"projects/uniship-4c1a1/sites/uniship-4c1a1","defaultUrl":"https://uniship-4c1a1.web.app","type":"DEFAULT_SITE"}]}
+[debug] [2026-04-07T07:38:37.826Z] Checked if tokens are valid: true, expires at: 1775551112685
+[debug] [2026-04-07T07:38:37.826Z] Checked if tokens are valid: true, expires at: 1775551112685
+[debug] [2026-04-07T07:38:37.826Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites 
+[debug] [2026-04-07T07:38:38.670Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites 200
+[debug] [2026-04-07T07:38:38.670Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites {"sites":[{"name":"projects/uniship-4c1a1/sites/uniship-4c1a1","defaultUrl":"https://uniship-4c1a1.web.app","type":"DEFAULT_SITE"}]}
+[debug] [2026-04-07T07:38:38.670Z] Checked if tokens are valid: true, expires at: 1775551112685
+[debug] [2026-04-07T07:38:38.671Z] Checked if tokens are valid: true, expires at: 1775551112685
+[debug] [2026-04-07T07:38:38.671Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1/webApps/-/config [none]
+[debug] [2026-04-07T07:38:39.445Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1/webApps/-/config 200
+[debug] [2026-04-07T07:38:39.445Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1/webApps/-/config {"projectId":"uniship-4c1a1","storageBucket":"uniship-4c1a1.firebasestorage.app","apiKey":"AIzaSyDYAJnVYI7YDGlzqPUv6y5Qid8zhASKZXc","authDomain":"uniship-4c1a1.firebaseapp.com","messagingSenderId":"1051779016295","projectNumber":"1051779016295","version":"2"}
 [info] 
    Thank you for trying our early preview of Next.js support on Firebase Hosting.
    During the preview, support is best-effort and breaking changes can be expected. Proceed with caution.
@@ -52,11 +55,11 @@
 
    We'd love to learn from you. Express your interest in helping us shape the future of Firebase Hosting: https://goo.gle/41enW5X
 
-[debug] [2026-03-29T06:57:08.728Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:08.728Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:08.728Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 [none]
-[debug] [2026-03-29T06:57:09.354Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 200
-[debug] [2026-03-29T06:57:09.354Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 {"name":"projects/uniship-4c1a1/sites/uniship-4c1a1","defaultUrl":"https://uniship-4c1a1.web.app","type":"DEFAULT_SITE"}
+[debug] [2026-04-07T07:38:40.845Z] Checked if tokens are valid: true, expires at: 1775551112685
+[debug] [2026-04-07T07:38:40.845Z] Checked if tokens are valid: true, expires at: 1775551112685
+[debug] [2026-04-07T07:38:40.846Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 [none]
+[debug] [2026-04-07T07:38:41.373Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 200
+[debug] [2026-04-07T07:38:41.373Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 {"name":"projects/uniship-4c1a1/sites/uniship-4c1a1","defaultUrl":"https://uniship-4c1a1.web.app","type":"DEFAULT_SITE"}
 [info] ▲ Next.js 16.1.4 (Turbopack)
 
 [info] - Environments: .env.local
@@ -64,7 +67,7 @@
 
 [info]   Creating an optimized production build ...
 
-[info] ✓ Compiled successfully in 4.0s
+[info] ✓ Compiled successfully in 4.5s
 
 [info]   Running TypeScript ...
 
@@ -78,7 +81,7 @@
 
 [info]   Generating static pages using 7 workers (24/33) 
 
-[info] ✓ Generating static pages using 7 workers (33/33) in 252.9ms
+[info] ✓ Generating static pages using 7 workers (33/33) in 310.7ms
 
 [info]   Finalizing page optimization ...
 
@@ -124,8 +127,8 @@
 └ ƒ /user/test-portal/[id]
 
 
-
-[info] ○  (Static)   prerendered as static content
+[info] 
+○  (Static)   prerendered as static content
 ƒ  (Dynamic)  server-rendered on demand
 
 
@@ -135,22 +138,22 @@
 [info]  • non-static component /(protected)/user/internships/[id]/page
 [info]  • non-static component /(protected)/user/practice/[id]/page
 [info]  • non-static component /(protected)/user/results/review/[id]/page
-[debug] [2026-03-29T06:57:20.054Z]  • non-static component /(protected)/user/test-portal/[id]/page
-[debug] [2026-03-29T06:57:20.054Z]  • non-static component /api/compile/route
-[debug] [2026-03-29T06:57:20.054Z]  • route with server action /uniadmin/create-test
-[debug] [2026-03-29T06:57:20.054Z]  • route with server action /uniadmin/practice
-[debug] [2026-03-29T06:57:20.054Z]  • route with server action /user/resume
+[debug] [2026-04-07T07:38:52.697Z]  • non-static component /(protected)/user/test-portal/[id]/page
+[debug] [2026-04-07T07:38:52.697Z]  • non-static component /api/compile/route
+[debug] [2026-04-07T07:38:52.697Z]  • route with server action /uniadmin/create-test
+[debug] [2026-04-07T07:38:52.697Z]  • route with server action /uniadmin/practice
+[debug] [2026-04-07T07:38:52.697Z]  • route with server action /user/resume
 [info]  • and 5 other reasons, use --debug to see more
 [info] 
-[debug] [2026-03-29T06:57:20.103Z] skipping /uniadmin/create-test due to server action
-[debug] [2026-03-29T06:57:20.103Z] skipping /uniadmin/practice due to server action
-[debug] [2026-03-29T06:57:20.104Z] skipping /user/resume due to server action
-[debug] [2026-03-29T06:57:20.428Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:20.429Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:20.429Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 [none]
-[debug] [2026-03-29T06:57:21.594Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 200
-[debug] [2026-03-29T06:57:21.594Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 {"name":"projects/uniship-4c1a1/sites/uniship-4c1a1","defaultUrl":"https://uniship-4c1a1.web.app","type":"DEFAULT_SITE"}
-[debug] [2026-03-29T06:57:48.915Z] [web frameworks] effective firebase.json:  {
+[debug] [2026-04-07T07:38:52.725Z] skipping /uniadmin/create-test due to server action
+[debug] [2026-04-07T07:38:52.725Z] skipping /uniadmin/practice due to server action
+[debug] [2026-04-07T07:38:52.726Z] skipping /user/resume due to server action
+[debug] [2026-04-07T07:38:53.054Z] Checked if tokens are valid: true, expires at: 1775551112685
+[debug] [2026-04-07T07:38:53.054Z] Checked if tokens are valid: true, expires at: 1775551112685
+[debug] [2026-04-07T07:38:53.054Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 [none]
+[debug] [2026-04-07T07:38:54.019Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 200
+[debug] [2026-04-07T07:38:54.019Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/uniship-4c1a1/sites/uniship-4c1a1 {"name":"projects/uniship-4c1a1/sites/uniship-4c1a1","defaultUrl":"https://uniship-4c1a1.web.app","type":"DEFAULT_SITE"}
+[debug] [2026-04-07T07:39:19.701Z] [web frameworks] effective firebase.json:  {
   "hosting": [
     {
       "target": "main",
@@ -283,7 +286,7 @@
           "headers": [
             {
               "key": "Set-Cookie",
-              "value": "__FIREBASE_DEFAULTS__=eyJjb25maWciOnsicHJvamVjdElkIjoidW5pc2hpcC00YzFhMSIsInN0b3JhZ2VCdWNrZXQiOiJ1bmlzaGlwLTRjMWExLmZpcmViYXNlc3RvcmFnZS5hcHAiLCJhcGlLZXkiOiJBSXphU3lEWUFKblZZSTdZREdsenFQVXY2eTVRaWQ4emhBU0taWGMiLCJhdXRoRG9tYWluIjoidW5pc2hpcC00YzFhMS5maXJlYmFzZWFwcC5jb20iLCJtZXNzYWdpbmdTZW5kZXJJZCI6IjEwNTE3NzkwMTYyOTUiLCJwcm9qZWN0TnVtYmVyIjoiMTA1MTc3OTAxNjI5NSIsInZlcnNpb24iOiIyIn0sIl9hdXRoVG9rZW5TeW5jVVJMIjoiL19fc2Vzc2lvbiJ9; SameSite=Strict; Expires=2028-02-21T17:37:48.915Z; Path=/;"
+              "value": "__FIREBASE_DEFAULTS__=eyJjb25maWciOnsicHJvamVjdElkIjoidW5pc2hpcC00YzFhMSIsInN0b3JhZ2VCdWNrZXQiOiJ1bmlzaGlwLTRjMWExLmZpcmViYXNlc3RvcmFnZS5hcHAiLCJhcGlLZXkiOiJBSXphU3lEWUFKblZZSTdZREdsenFQVXY2eTVRaWQ4emhBU0taWGMiLCJhdXRoRG9tYWluIjoidW5pc2hpcC00YzFhMS5maXJlYmFzZWFwcC5jb20iLCJtZXNzYWdpbmdTZW5kZXJJZCI6IjEwNTE3NzkwMTYyOTUiLCJwcm9qZWN0TnVtYmVyIjoiMTA1MTc3OTAxNjI5NSIsInZlcnNpb24iOiIyIn0sIl9hdXRoVG9rZW5TeW5jVVJMIjoiL19fc2Vzc2lvbiJ9; SameSite=Strict; Expires=2028-03-01T18:19:19.701Z; Path=/;"
             }
           ]
         }
@@ -301,172 +304,11 @@
     }
   ]
 }
-[debug] [2026-03-29T06:57:48.917Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
-[debug] [2026-03-29T06:57:48.918Z] > authorizing via signed-in user (dibzhost@gmail.com)
-[debug] [2026-03-29T06:57:48.918Z] [iam] checking project uniship-4c1a1 for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
-[debug] [2026-03-29T06:57:48.918Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:48.918Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:48.918Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions [none]
-[debug] [2026-03-29T06:57:48.918Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions  x-goog-user-project=uniship-4c1a1
-[debug] [2026-03-29T06:57:48.918Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
-[debug] [2026-03-29T06:57:50.386Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions 200
-[debug] [2026-03-29T06:57:50.386Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
-[debug] [2026-03-29T06:57:50.387Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:50.387Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:50.387Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v1/projects/uniship-4c1a1/locations/-/functions [none]
-[debug] [2026-03-29T06:57:51.337Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v1/projects/uniship-4c1a1/locations/-/functions 200
-[debug] [2026-03-29T06:57:51.338Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v1/projects/uniship-4c1a1/locations/-/functions {}
-[debug] [2026-03-29T06:57:51.339Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:51.339Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:51.341Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v2/projects/uniship-4c1a1/locations/-/functions filter=environment%3D%22GEN_2%22
-[debug] [2026-03-29T06:57:53.104Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v2/projects/uniship-4c1a1/locations/-/functions 200
-[debug] [2026-03-29T06:57:53.104Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v2/projects/uniship-4c1a1/locations/-/functions {"functions":[{"name":"projects/uniship-4c1a1/locations/asia-east1/functions/ssruniship4c1a1","buildConfig":{"build":"projects/1051779016295/locations/asia-east1/builds/125c0a3d-b835-4a4f-8c98-d4c189c4b713","runtime":"nodejs22","entryPoint":"ssruniship4c1a1","source":{"storageSource":{"bucket":"gcf-v2-sources-1051779016295-asia-east1","object":"ssruniship4c1a1/function-source.zip","generation":"1774737851139077"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"dockerRepository":"projects/uniship-4c1a1/locations/asia-east1/repositories/gcf-artifacts","sourceProvenance":{"resolvedStorageSource":{"bucket":"gcf-v2-sources-1051779016295-asia-east1","object":"ssruniship4c1a1/function-source.zip","generation":"1774737851139077"}},"dockerRegistry":"ARTIFACT_REGISTRY","serviceAccount":"projects/uniship-4c1a1/serviceAccounts/1051779016295-compute@developer.gserviceaccount.com","automaticUpdatePolicy":{}},"serviceConfig":{"service":"projects/uniship-4c1a1/locations/asia-east1/services/ssruniship4c1a1","timeoutSeconds":60,"environmentVariables":{"VERCEL_URL":"uniship-4c1a1.web.app","__FIREBASE_FRAMEWORKS_ENTRY__":"next.js","__FIREBASE_DEFAULTS__":"{\"config\":{\"projectId\":\"uniship-4c1a1\",\"storageBucket\":\"uniship-4c1a1.firebasestorage.app\",\"apiKey\":\"AIzaSyDYAJnVYI7YDGlzqPUv6y5Qid8zhASKZXc\",\"authDomain\":\"uniship-4c1a1.firebaseapp.com\",\"messagingSenderId\":\"1051779016295\",\"projectNumber\":\"1051779016295\",\"version\":\"2\"},\"_authTokenSyncURL\":\"/__session\"}","FIREBASE_CONFIG":"{\"projectId\":\"uniship-4c1a1\",\"storageBucket\":\"uniship-4c1a1.firebasestorage.app\"}","GCLOUD_PROJECT":"uniship-4c1a1","EVENTARC_CLOUD_EVENT_SOURCE":"projects/uniship-4c1a1/locations/asia-east1/services/ssruniship4c1a1","FUNCTION_TARGET":"ssruniship4c1a1","LOG_EXECUTION_ID":"true"},"maxInstanceCount":3,"ingressSettings":"ALLOW_ALL","uri":"https://ssruniship4c1a1-7ipz3chagq-de.a.run.app","serviceAccountEmail":"1051779016295-compute@developer.gserviceaccount.com","availableMemory":"256Mi","allTrafficOnLatestRevision":true,"revision":"ssruniship4c1a1-00013-kod","maxInstanceRequestConcurrency":80,"availableCpu":"1"},"state":"ACTIVE","updateTime":"2026-03-28T22:50:18.159291050Z","labels":{"firebase-functions-codebase":"firebase-frameworks-uniship-4c1a1","firebase-functions-hash":"71225090098b22d5a5141ec871dc908d3eeec1c1","deployment-tool":"cli-firebase"},"environment":"GEN_2","url":"https://asia-east1-uniship-4c1a1.cloudfunctions.net/ssruniship4c1a1","createTime":"2026-03-13T17:42:47.473608775Z","satisfiesPzi":true},{"name":"projects/uniship-4c1a1/locations/asia-south1/functions/approveTest","buildConfig":{"build":"projects/1051779016295/locations/asia-south1/builds/8b78e154-6bff-4ecb-b44b-8ee053b8dbae","runtime":"nodejs22","entryPoint":"approveTest","source":{"storageSource":{"bucket":"gcf-v2-sources-1051779016295-asia-south1","object":"approveTest/function-source.zip","generation":"1766498878020914"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"dockerRepository":"projects/uniship-4c1a1/locations/asia-south1/repositories/gcf-artifacts","sourceProvenance":{"resolvedStorageSource":{"bucket":"gcf-v2-sources-1051779016295-asia-south1","object":"approveTest/function-source.zip","generation":"1766498878020914"}},"dockerRegistry":"ARTIFACT_REGISTRY","serviceAccount":"projects/uniship-4c1a1/serviceAccounts/1051779016295-compute@developer.gserviceaccount.com","automaticUpdatePolicy":{}},"serviceConfig":{"service":"projects/uniship-4c1a1/locations/asia-south1/services/approvetest","timeoutSeconds":60,"environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"uniship-4c1a1\",\"storageBucket\":\"uniship-4c1a1.firebasestorage.app\"}","GCLOUD_PROJECT":"uniship-4c1a1","EVENTARC_CLOUD_EVENT_SOURCE":"projects/uniship-4c1a1/locations/asia-south1/services/approveTest","FUNCTION_TARGET":"approveTest","LOG_EXECUTION_ID":"true","FUNCTION_SIGNATURE_TYPE":"http"},"maxInstanceCount":10,"ingressSettings":"ALLOW_ALL","uri":"https://approvetest-7ipz3chagq-el.a.run.app","serviceAccountEmail":"1051779016295-compute@developer.gserviceaccount.com","availableMemory":"256Mi","allTrafficOnLatestRevision":true,"revision":"approvetest-00002-ruw","maxInstanceRequestConcurrency":80,"availableCpu":"1"},"state":"ACTIVE","updateTime":"2025-12-23T14:10:07.475736366Z","labels":{"deployment-callable":"true","firebase-functions-hash":"532205936ec4c0ad79ddede69d525ce1af9f47d9","deployment-tool":"cli-firebase"},"environment":"GEN_2","url":"https://asia-south1-uniship-4c1a1.cloudfunctions.net/approveTest","satisfiesPzs":true,"createTime":"2025-11-05T18:46:08.952395551Z","satisfiesPzi":true},{"name":"projects/uniship-4c1a1/locations/asia-south1/functions/uploadPDF","buildConfig":{"build":"projects/1051779016295/locations/asia-south1/builds/a1205473-dfdb-4919-bef9-68ec7bc64257","runtime":"nodejs22","entryPoint":"uploadPDF","source":{"storageSource":{"bucket":"gcf-v2-sources-1051779016295-asia-south1","object":"uploadPDF/function-source.zip","generation":"1766498878200440"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"dockerRepository":"projects/uniship-4c1a1/locations/asia-south1/repositories/gcf-artifacts","sourceProvenance":{"resolvedStorageSource":{"bucket":"gcf-v2-sources-1051779016295-asia-south1","object":"uploadPDF/function-source.zip","generation":"1766498878200440"}},"dockerRegistry":"ARTIFACT_REGISTRY","serviceAccount":"projects/uniship-4c1a1/serviceAccounts/1051779016295-compute@developer.gserviceaccount.com","automaticUpdatePolicy":{}},"serviceConfig":{"service":"projects/uniship-4c1a1/locations/asia-south1/services/uploadpdf","timeoutSeconds":60,"environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"uniship-4c1a1\",\"storageBucket\":\"uniship-4c1a1.firebasestorage.app\"}","GCLOUD_PROJECT":"uniship-4c1a1","EVENTARC_CLOUD_EVENT_SOURCE":"projects/uniship-4c1a1/locations/asia-south1/services/uploadPDF","FUNCTION_TARGET":"uploadPDF","LOG_EXECUTION_ID":"true"},"maxInstanceCount":10,"ingressSettings":"ALLOW_ALL","uri":"https://uploadpdf-7ipz3chagq-el.a.run.app","serviceAccountEmail":"1051779016295-compute@developer.gserviceaccount.com","availableMemory":"256Mi","allTrafficOnLatestRevision":true,"revision":"uploadpdf-00002-lor","maxInstanceRequestConcurrency":80,"availableCpu":"1"},"state":"ACTIVE","updateTime":"2025-12-23T14:10:06.197949836Z","labels":{"deployment-tool":"cli-firebase","deployment-callable":"true","firebase-functions-hash":"532205936ec4c0ad79ddede69d525ce1af9f47d9"},"environment":"GEN_2","url":"https://asia-south1-uniship-4c1a1.cloudfunctions.net/uploadPDF","satisfiesPzs":true,"createTime":"2025-11-05T18:44:23.863754047Z","satisfiesPzi":true},{"name":"projects/uniship-4c1a1/locations/asia-south1/functions/publishTest","buildConfig":{"build":"projects/1051779016295/locations/asia-south1/builds/f19ae77d-2220-43ee-b8cb-80650f90af6c","runtime":"nodejs22","entryPoint":"publishTest","source":{"storageSource":{"bucket":"gcf-v2-sources-1051779016295-asia-south1","object":"publishTest/function-source.zip","generation":"1766498878068254"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"dockerRepository":"projects/uniship-4c1a1/locations/asia-south1/repositories/gcf-artifacts","sourceProvenance":{"resolvedStorageSource":{"bucket":"gcf-v2-sources-1051779016295-asia-south1","object":"publishTest/function-source.zip","generation":"1766498878068254"}},"dockerRegistry":"ARTIFACT_REGISTRY","serviceAccount":"projects/uniship-4c1a1/serviceAccounts/1051779016295-compute@developer.gserviceaccount.com","automaticUpdatePolicy":{}},"serviceConfig":{"service":"projects/uniship-4c1a1/locations/asia-south1/services/publishtest","timeoutSeconds":60,"environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"uniship-4c1a1\",\"storageBucket\":\"uniship-4c1a1.firebasestorage.app\"}","GCLOUD_PROJECT":"uniship-4c1a1","EVENTARC_CLOUD_EVENT_SOURCE":"projects/uniship-4c1a1/locations/asia-south1/services/publishTest","FUNCTION_TARGET":"publishTest","LOG_EXECUTION_ID":"true","FUNCTION_SIGNATURE_TYPE":"http"},"maxInstanceCount":10,"ingressSettings":"ALLOW_ALL","uri":"https://publishtest-7ipz3chagq-el.a.run.app","serviceAccountEmail":"1051779016295-compute@developer.gserviceaccount.com","availableMemory":"256Mi","allTrafficOnLatestRevision":true,"revision":"publishtest-00006-jac","maxInstanceRequestConcurrency":80,"availableCpu":"1"},"state":"ACTIVE","updateTime":"2025-12-23T14:10:04.848120467Z","labels":{"firebase-functions-hash":"532205936ec4c0ad79ddede69d525ce1af9f47d9","deployment-tool":"cli-firebase","deployment-callable":"true"},"environment":"GEN_2","url":"https://asia-south1-uniship-4c1a1.cloudfunctions.net/publishTest","satisfiesPzs":true,"createTime":"2025-10-18T17:24:39.646893353Z","satisfiesPzi":true},{"name":"projects/uniship-4c1a1/locations/asia-south1/functions/processPDF","buildConfig":{"build":"projects/1051779016295/locations/asia-south1/builds/de7feecd-2b02-4a7c-90ed-02b848cac2a6","runtime":"nodejs22","entryPoint":"processPDF","source":{"storageSource":{"bucket":"gcf-v2-sources-1051779016295-asia-south1","object":"processPDF/function-source.zip","generation":"1766498878402556"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"dockerRepository":"projects/uniship-4c1a1/locations/asia-south1/repositories/gcf-artifacts","sourceProvenance":{"resolvedStorageSource":{"bucket":"gcf-v2-sources-1051779016295-asia-south1","object":"processPDF/function-source.zip","generation":"1766498878402556"}},"dockerRegistry":"ARTIFACT_REGISTRY","serviceAccount":"projects/uniship-4c1a1/serviceAccounts/1051779016295-compute@developer.gserviceaccount.com","automaticUpdatePolicy":{}},"serviceConfig":{"service":"projects/uniship-4c1a1/locations/asia-south1/services/processpdf","timeoutSeconds":300,"environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"uniship-4c1a1\",\"storageBucket\":\"uniship-4c1a1.firebasestorage.app\"}","GCLOUD_PROJECT":"uniship-4c1a1","EVENTARC_CLOUD_EVENT_SOURCE":"projects/uniship-4c1a1/locations/asia-south1/services/processPDF","FUNCTION_SIGNATURE_TYPE":"cloudevent","FUNCTION_TARGET":"processPDF","LOG_EXECUTION_ID":"true"},"maxInstanceCount":10,"ingressSettings":"ALLOW_ALL","uri":"https://processpdf-7ipz3chagq-el.a.run.app","serviceAccountEmail":"1051779016295-compute@developer.gserviceaccount.com","availableMemory":"1024Mi","allTrafficOnLatestRevision":true,"revision":"processpdf-00002-bay","maxInstanceRequestConcurrency":80,"availableCpu":"1"},"eventTrigger":{"trigger":"projects/uniship-4c1a1/locations/asia-south1/triggers/processpdf-969763","triggerRegion":"asia-south1","eventType":"google.cloud.storage.object.v1.finalized","eventFilters":[{"attribute":"bucket","value":"uniship-4c1a1.firebasestorage.app"}],"pubsubTopic":"projects/uniship-4c1a1/topics/eventarc-asia-south1-processpdf-969763-423","serviceAccountEmail":"1051779016295-compute@developer.gserviceaccount.com","retryPolicy":"RETRY_POLICY_DO_NOT_RETRY"},"state":"ACTIVE","updateTime":"2025-12-23T14:10:05.954077704Z","labels":{"deployment-tool":"cli-firebase","firebase-functions-hash":"532205936ec4c0ad79ddede69d525ce1af9f47d9"},"environment":"GEN_2","url":"https://asia-south1-uniship-4c1a1.cloudfunctions.net/processPDF","satisfiesPzs":true,"createTime":"2025-11-05T18:55:48.367412600Z","satisfiesPzi":true},{"name":"projects/uniship-4c1a1/locations/asia-south1/functions/createUserAccount","buildConfig":{"build":"projects/1051779016295/locations/asia-south1/builds/70937a01-b39c-43da-bea0-6e687edc37c2","runtime":"nodejs22","entryPoint":"createUserAccount","source":{"storageSource":{"bucket":"gcf-v2-sources-1051779016295-asia-south1","object":"createUserAccount/function-source.zip","generation":"1766498877701056"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"dockerRepository":"projects/uniship-4c1a1/locations/asia-south1/repositories/gcf-artifacts","sourceProvenance":{"resolvedStorageSource":{"bucket":"gcf-v2-sources-1051779016295-asia-south1","object":"createUserAccount/function-source.zip","generation":"1766498877701056"}},"dockerRegistry":"ARTIFACT_REGISTRY","serviceAccount":"projects/uniship-4c1a1/serviceAccounts/1051779016295-compute@developer.gserviceaccount.com","automaticUpdatePolicy":{}},"serviceConfig":{"service":"projects/uniship-4c1a1/locations/asia-south1/services/createuseraccount","timeoutSeconds":60,"environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"uniship-4c1a1\",\"storageBucket\":\"uniship-4c1a1.firebasestorage.app\"}","GCLOUD_PROJECT":"uniship-4c1a1","EVENTARC_CLOUD_EVENT_SOURCE":"projects/uniship-4c1a1/locations/asia-south1/services/createUserAccount","FUNCTION_TARGET":"createUserAccount","LOG_EXECUTION_ID":"true","FUNCTION_SIGNATURE_TYPE":"http"},"maxInstanceCount":10,"ingressSettings":"ALLOW_ALL","uri":"https://createuseraccount-7ipz3chagq-el.a.run.app","serviceAccountEmail":"1051779016295-compute@developer.gserviceaccount.com","availableMemory":"256Mi","allTrafficOnLatestRevision":true,"revision":"createuseraccount-00010-yam","maxInstanceRequestConcurrency":80,"availableCpu":"1"},"state":"ACTIVE","updateTime":"2025-12-23T14:10:06.708009896Z","labels":{"deployment-tool":"cli-firebase","deployment-callable":"true","firebase-functions-hash":"532205936ec4c0ad79ddede69d525ce1af9f47d9"},"environment":"GEN_2","url":"https://asia-south1-uniship-4c1a1.cloudfunctions.net/createUserAccount","satisfiesPzs":true,"createTime":"2025-10-01T16:25:02.987376662Z","satisfiesPzi":true},{"name":"projects/uniship-4c1a1/locations/asia-south1/functions/generateQuestionBank","buildConfig":{"build":"projects/1051779016295/locations/asia-south1/builds/4ec051c8-a773-418b-9972-e92e85fe5609","runtime":"nodejs22","entryPoint":"generateQuestionBank","source":{"storageSource":{"bucket":"gcf-v2-sources-1051779016295-asia-south1","object":"generateQuestionBank/function-source.zip","generation":"1766498877890638"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"dockerRepository":"projects/uniship-4c1a1/locations/asia-south1/repositories/gcf-artifacts","sourceProvenance":{"resolvedStorageSource":{"bucket":"gcf-v2-sources-1051779016295-asia-south1","object":"generateQuestionBank/function-source.zip","generation":"1766498877890638"}},"dockerRegistry":"ARTIFACT_REGISTRY","serviceAccount":"projects/uniship-4c1a1/serviceAccounts/1051779016295-compute@developer.gserviceaccount.com","automaticUpdatePolicy":{}},"serviceConfig":{"service":"projects/uniship-4c1a1/locations/asia-south1/services/generatequestionbank","timeoutSeconds":120,"environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"uniship-4c1a1\",\"storageBucket\":\"uniship-4c1a1.firebasestorage.app\"}","GCLOUD_PROJECT":"uniship-4c1a1","EVENTARC_CLOUD_EVENT_SOURCE":"projects/uniship-4c1a1/locations/asia-south1/services/generateQuestionBank","FUNCTION_TARGET":"generateQuestionBank","LOG_EXECUTION_ID":"true","FUNCTION_SIGNATURE_TYPE":"http"},"maxInstanceCount":10,"ingressSettings":"ALLOW_ALL","uri":"https://generatequestionbank-7ipz3chagq-el.a.run.app","serviceAccountEmail":"1051779016295-compute@developer.gserviceaccount.com","availableMemory":"256Mi","allTrafficOnLatestRevision":true,"revision":"generatequestionbank-00006-wuk","maxInstanceRequestConcurrency":80,"availableCpu":"1"},"state":"ACTIVE","updateTime":"2025-12-23T14:10:12.867701506Z","labels":{"deployment-callable":"true","firebase-functions-hash":"532205936ec4c0ad79ddede69d525ce1af9f47d9","deployment-tool":"cli-firebase"},"environment":"GEN_2","url":"https://asia-south1-uniship-4c1a1.cloudfunctions.net/generateQuestionBank","satisfiesPzs":true,"createTime":"2025-10-18T17:23:47.241766193Z","satisfiesPzi":true},{"name":"projects/uniship-4c1a1/locations/asia-south1/functions/evaluateCodeAttempt","buildConfig":{"build":"projects/1051779016295/locations/asia-south1/builds/2e91d012-d0c3-432c-bde3-28f17b7063a6","runtime":"nodejs22","entryPoint":"evaluateCodeAttempt","source":{"storageSource":{"bucket":"gcf-v2-sources-1051779016295-asia-south1","object":"evaluateCodeAttempt/function-source.zip","generation":"1766498878300041"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"dockerRepository":"projects/uniship-4c1a1/locations/asia-south1/repositories/gcf-artifacts","sourceProvenance":{"resolvedStorageSource":{"bucket":"gcf-v2-sources-1051779016295-asia-south1","object":"evaluateCodeAttempt/function-source.zip","generation":"1766498878300041"}},"dockerRegistry":"ARTIFACT_REGISTRY","serviceAccount":"projects/uniship-4c1a1/serviceAccounts/1051779016295-compute@developer.gserviceaccount.com","automaticUpdatePolicy":{}},"serviceConfig":{"service":"projects/uniship-4c1a1/locations/asia-south1/services/evaluatecodeattempt","timeoutSeconds":60,"environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"uniship-4c1a1\",\"storageBucket\":\"uniship-4c1a1.firebasestorage.app\"}","GCLOUD_PROJECT":"uniship-4c1a1","EVENTARC_CLOUD_EVENT_SOURCE":"projects/uniship-4c1a1/locations/asia-south1/services/evaluateCodeAttempt","FUNCTION_TARGET":"evaluateCodeAttempt","LOG_EXECUTION_ID":"true","FUNCTION_SIGNATURE_TYPE":"http"},"maxInstanceCount":10,"ingressSettings":"ALLOW_ALL","uri":"https://evaluatecodeattempt-7ipz3chagq-el.a.run.app","serviceAccountEmail":"1051779016295-compute@developer.gserviceaccount.com","availableMemory":"256Mi","allTrafficOnLatestRevision":true,"revision":"evaluatecodeattempt-00006-ziv","maxInstanceRequestConcurrency":80,"availableCpu":"1"},"state":"ACTIVE","updateTime":"2025-12-23T14:10:05.128675458Z","labels":{"firebase-functions-hash":"532205936ec4c0ad79ddede69d525ce1af9f47d9","deployment-tool":"cli-firebase","deployment-callable":"true"},"environment":"GEN_2","url":"https://asia-south1-uniship-4c1a1.cloudfunctions.net/evaluateCodeAttempt","satisfiesPzs":true,"createTime":"2025-10-18T17:24:39.948773853Z","satisfiesPzi":true}]}
-[info] i  hosting: The following function(s) are pinned to site uniship-4c1a1 and will be deployed as well: ssruniship4c1a1 
-[info] 
-[info] === Deploying to 'uniship-4c1a1'...
-[info] 
-[info] i  deploying functions, hosting 
-[debug] [2026-03-29T06:57:53.113Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:53.113Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:53.113Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1 [none]
-[debug] [2026-03-29T06:57:53.502Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1 200
-[debug] [2026-03-29T06:57:53.502Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1 {"projectNumber":"1051779016295","projectId":"uniship-4c1a1","lifecycleState":"ACTIVE","name":"Dibz","labels":{"firebase":"enabled","firebase-core":"disabled","generative-language":"enabled"},"createTime":"2025-08-15T05:37:33.073681Z"}
-[info] i  functions: preparing codebase firebase-frameworks-uniship-4c1a1 for deployment 
-[info] i  functions: ensuring required API cloudfunctions.googleapis.com is enabled... 
-[info] i  functions: ensuring required API cloudbuild.googleapis.com is enabled... 
-[info] i  artifactregistry: ensuring required API artifactregistry.googleapis.com is enabled... 
-[debug] [2026-03-29T06:57:53.509Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:53.509Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:53.510Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1/adminSdkConfig [none]
-[debug] [2026-03-29T06:57:54.745Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1/adminSdkConfig 200
-[debug] [2026-03-29T06:57:54.745Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/uniship-4c1a1/adminSdkConfig {"projectId":"uniship-4c1a1","storageBucket":"uniship-4c1a1.firebasestorage.app"}
-[debug] [2026-03-29T06:57:54.746Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:54.746Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:54.746Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/uniship-4c1a1/configs [none]
-[debug] [2026-03-29T06:57:55.361Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/uniship-4c1a1/configs 200
-[debug] [2026-03-29T06:57:55.362Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/uniship-4c1a1/configs {"configs":[{"name":"projects/uniship-4c1a1/configs/gemini"},{"name":"projects/uniship-4c1a1/configs/llamaindex"}]}
-[debug] [2026-03-29T06:57:55.362Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:55.362Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:55.362Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:55.362Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:55.362Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/uniship-4c1a1/configs/gemini/variables [none]
-[debug] [2026-03-29T06:57:55.362Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/uniship-4c1a1/configs/llamaindex/variables [none]
-[debug] [2026-03-29T06:57:55.748Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/uniship-4c1a1/configs/llamaindex/variables 200
-[debug] [2026-03-29T06:57:55.748Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/uniship-4c1a1/configs/llamaindex/variables {"variables":[{"name":"projects/uniship-4c1a1/configs/llamaindex/variables/apikey","updateTime":"2025-11-05T18:36:19.656560243Z"}]}
-[debug] [2026-03-29T06:57:55.748Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:55.748Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:55.748Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/uniship-4c1a1/configs/llamaindex/variables/apikey [none]
-[debug] [2026-03-29T06:57:55.929Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/uniship-4c1a1/configs/gemini/variables 200
-[debug] [2026-03-29T06:57:55.929Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/uniship-4c1a1/configs/gemini/variables {"variables":[{"name":"projects/uniship-4c1a1/configs/gemini/variables/api_key","updateTime":"2025-10-21T18:54:41.677355244Z"}]}
-[debug] [2026-03-29T06:57:55.929Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:55.929Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:57:55.929Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/uniship-4c1a1/configs/gemini/variables/api_key [none]
-[debug] [2026-03-29T06:57:56.103Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/uniship-4c1a1/configs/llamaindex/variables/apikey 200
-[debug] [2026-03-29T06:57:56.103Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/uniship-4c1a1/configs/llamaindex/variables/apikey {"name":"projects/uniship-4c1a1/configs/llamaindex/variables/apikey","updateTime":"2025-11-05T18:36:19.656560243Z","text":"llx-p54kLAD6R4AgjInUXwiDLHI2Z1vWp066UAjB8aPlS3n0Llmq"}
-[debug] [2026-03-29T06:57:56.294Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/uniship-4c1a1/configs/gemini/variables/api_key 200
-[debug] [2026-03-29T06:57:56.294Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/uniship-4c1a1/configs/gemini/variables/api_key {"name":"projects/uniship-4c1a1/configs/gemini/variables/api_key","updateTime":"2025-10-21T18:54:41.677355244Z","text":"AIzaSyCMYPQhqNEShvkxSKKAMa7a1kUbX8ctx7Q"}
-[debug] [2026-03-29T06:57:56.296Z] Validating nodejs source
-[warn] ⚠  functions: package.json indicates an outdated version of firebase-functions. Please upgrade using npm install --save firebase-functions@latest in your functions directory. 
-[warn] ⚠  functions: Please note that there will be breaking changes when you upgrade. 
-[debug] [2026-03-29T06:57:56.967Z] > [functions] package.json contents: {
-  "name": "my-app",
-  "version": "0.1.0",
-  "private": true,
-  "dependencies": {
-    "@google/generative-ai": "^0.24.1",
-    "@monaco-editor/react": "^4.7.0",
-    "firebase": "^12.9.0",
-    "groq-sdk": "^0.37.0",
-    "html2canvas": "^1.4.1",
-    "html2pdf.js": "^0.14.0",
-    "jspdf": "^4.2.0",
-    "llama-parse": "^0.1.0",
-    "llamaindex": "^0.12.1",
-    "lucide-react": "^0.574.0",
-    "next": "16.1.4",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "firebase-frameworks": "^0.11.0",
-    "firebase-functions": "^6.0.1",
-    "firebase-admin": "^11.11.1"
-  },
-  "main": "server.js",
-  "engines": {
-    "node": "22"
-  }
-}
-[debug] [2026-03-29T06:57:56.967Z] Building nodejs source
-[info] i  functions: Loading and analyzing source code for codebase firebase-frameworks-uniship-4c1a1 to determine what to deploy 
-[debug] [2026-03-29T06:57:56.969Z] Could not find functions.yaml. Must use http discovery
-[debug] [2026-03-29T06:57:56.987Z] Found firebase-functions binary at '/Users/satya/my-app/.firebase/uniship-4c1a1/functions/node_modules/.bin/firebase-functions'
-[info] Serving at port 8005
-
-[debug] [2026-03-29T06:57:57.382Z] Got response from /__/functions.yaml {"endpoints":{"ssruniship4c1a1":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-east1"],"labels":{},"httpsTrigger":{},"entryPoint":"ssruniship4c1a1"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
-[info] i  extensions: ensuring required API firebaseextensions.googleapis.com is enabled... 
-[debug] [2026-03-29T06:58:01.435Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
-[debug] [2026-03-29T06:58:01.435Z] > authorizing via signed-in user (dibzhost@gmail.com)
-[debug] [2026-03-29T06:58:01.435Z] [iam] checking project uniship-4c1a1 for permissions ["firebase.projects.get","firebaseextensions.instances.list"]
-[debug] [2026-03-29T06:58:01.435Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:58:01.435Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:58:01.435Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions [none]
-[debug] [2026-03-29T06:58:01.436Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions  x-goog-user-project=uniship-4c1a1
-[debug] [2026-03-29T06:58:01.436Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions {"permissions":["firebase.projects.get","firebaseextensions.instances.list"]}
-[debug] [2026-03-29T06:58:02.891Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions 200
-[debug] [2026-03-29T06:58:02.892Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions {"permissions":["firebase.projects.get","firebaseextensions.instances.list"]}
-[debug] [2026-03-29T06:58:02.893Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:58:02.894Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:58:02.894Z] >>> [apiv2][query] GET https://firebaseextensions.googleapis.com/v1beta/projects/uniship-4c1a1/instances pageSize=100&pageToken=
-[debug] [2026-03-29T06:58:04.603Z] <<< [apiv2][status] GET https://firebaseextensions.googleapis.com/v1beta/projects/uniship-4c1a1/instances 200
-[debug] [2026-03-29T06:58:04.604Z] <<< [apiv2][body] GET https://firebaseextensions.googleapis.com/v1beta/projects/uniship-4c1a1/instances {}
-[info] i  functions: Loaded environment variables from .env. 
-[info] i  functions: preparing .firebase/uniship-4c1a1/functions directory for uploading... 
-[info] i  functions: packaged /Users/satya/my-app/.firebase/uniship-4c1a1/functions (475.27 MB) for uploading 
-[info] i  functions: ensuring required API run.googleapis.com is enabled... 
-[info] i  functions: ensuring required API eventarc.googleapis.com is enabled... 
-[info] i  functions: ensuring required API pubsub.googleapis.com is enabled... 
-[info] i  functions: ensuring required API storage.googleapis.com is enabled... 
-[info] i  functions: generating the service identity for pubsub.googleapis.com... 
-[debug] [2026-03-29T06:58:25.304Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:58:25.305Z] Checked if tokens are valid: true, expires at: 1774771019473
-[info] i  functions: generating the service identity for eventarc.googleapis.com... 
-[debug] [2026-03-29T06:58:25.305Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:58:25.305Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:58:25.305Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1beta1/projects/1051779016295/services/pubsub.googleapis.com:generateServiceIdentity [none]
-[debug] [2026-03-29T06:58:25.305Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1beta1/projects/1051779016295/services/pubsub.googleapis.com:generateServiceIdentity  x-goog-user-project=1051779016295
-[debug] [2026-03-29T06:58:25.305Z] >>> [apiv2][body] POST https://serviceusage.googleapis.com/v1beta1/projects/1051779016295/services/pubsub.googleapis.com:generateServiceIdentity {}
-[debug] [2026-03-29T06:58:25.321Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1beta1/projects/1051779016295/services/eventarc.googleapis.com:generateServiceIdentity [none]
-[debug] [2026-03-29T06:58:25.321Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1beta1/projects/1051779016295/services/eventarc.googleapis.com:generateServiceIdentity  x-goog-user-project=1051779016295
-[debug] [2026-03-29T06:58:25.321Z] >>> [apiv2][body] POST https://serviceusage.googleapis.com/v1beta1/projects/1051779016295/services/eventarc.googleapis.com:generateServiceIdentity {}
-[debug] [2026-03-29T06:58:27.212Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1beta1/projects/1051779016295/services/eventarc.googleapis.com:generateServiceIdentity 200
-[debug] [2026-03-29T06:58:27.213Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1beta1/projects/1051779016295/services/eventarc.googleapis.com:generateServiceIdentity {"name":"operations/finished.DONE_OPERATION","done":true,"response":{"@type":"type.googleapis.com/google.api.serviceusage.v1beta1.ServiceIdentity","email":"service-1051779016295@gcp-sa-eventarc.iam.gserviceaccount.com","uniqueId":"110272773245050553766"}}
-[debug] [2026-03-29T06:58:27.394Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1beta1/projects/1051779016295/services/pubsub.googleapis.com:generateServiceIdentity 200
-[debug] [2026-03-29T06:58:27.394Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1beta1/projects/1051779016295/services/pubsub.googleapis.com:generateServiceIdentity {"name":"operations/finished.DONE_OPERATION","done":true,"response":{"@type":"type.googleapis.com/google.api.serviceusage.v1beta1.ServiceIdentity","email":"service-1051779016295@gcp-sa-pubsub.iam.gserviceaccount.com","uniqueId":"111880789216633621359"}}
-[debug] [2026-03-29T06:58:27.396Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:58:27.396Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:58:27.396Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1 [none]
-[debug] [2026-03-29T06:58:28.887Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1 200
-[debug] [2026-03-29T06:58:28.887Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1 {"projectNumber":"1051779016295","projectId":"uniship-4c1a1","lifecycleState":"ACTIVE","name":"Dibz","labels":{"firebase":"enabled","firebase-core":"disabled","generative-language":"enabled"},"createTime":"2025-08-15T05:37:33.073681Z"}
-[debug] [2026-03-29T06:58:28.888Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:58:28.888Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:58:28.888Z] >>> [apiv2][query] GET https://compute.googleapis.com/compute/v1/projects/1051779016295 [none]
-[debug] [2026-03-29T06:58:29.340Z] <<< [apiv2][status] GET https://compute.googleapis.com/compute/v1/projects/1051779016295 403
-[debug] [2026-03-29T06:58:29.341Z] <<< [apiv2][body] GET https://compute.googleapis.com/compute/v1/projects/1051779016295 {"error":{"code":403,"message":"Compute Engine API has not been used in project 1051779016295 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1051779016295 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 1051779016295 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1051779016295 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1051779016295","consumer":"projects/1051779016295","containerInfo":"1051779016295","serviceTitle":"Compute Engine API","service":"compute.googleapis.com"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 1051779016295 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1051779016295 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1051779016295"}]}]}}
-[debug] [2026-03-29T06:58:29.346Z] unable to look up default compute service account. Falling back to 1051779016295-compute@developer.gserviceaccount.com. Error: {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":403,"message":"Compute Engine API has not been used in project 1051779016295 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1051779016295 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 1051779016295 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1051779016295 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1051779016295","consumer":"projects/1051779016295","containerInfo":"1051779016295","serviceTitle":"Compute Engine API","service":"compute.googleapis.com"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 1051779016295 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1051779016295 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1051779016295"}]}]}},"response":{"statusCode":403}},"exit":1,"message":"Request to https://compute.googleapis.com/compute/v1/projects/1051779016295 had HTTP Error: 403, Compute Engine API has not been used in project 1051779016295 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1051779016295 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","status":403}
-[debug] [2026-03-29T06:58:29.351Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:58:29.351Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:58:29.351Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/uniship-4c1a1/versions [none]
-[debug] [2026-03-29T06:58:29.351Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/uniship-4c1a1/versions {"status":"CREATED","labels":{"deployment-tool":"cli-firebase","firebase-web-framework":"next_ssr"}}
-[debug] [2026-03-29T06:58:31.729Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/uniship-4c1a1/versions 200
-[debug] [2026-03-29T06:58:31.729Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/uniship-4c1a1/versions {"name":"projects/1051779016295/sites/uniship-4c1a1/versions/77182a6fdde75bbf","status":"CREATED","config":{},"labels":{"deployment-tool":"cli-firebase","firebase-web-framework":"next_ssr"}}
-[debug] [2026-03-29T06:58:31.731Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:58:31.731Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:58:31.732Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/uniship-4c1a1/billingInfo [none]
-[debug] [2026-03-29T06:58:33.326Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/uniship-4c1a1/billingInfo 200
-[debug] [2026-03-29T06:58:33.326Z] <<< [apiv2][body] GET https://cloudbilling.googleapis.com/v1/projects/uniship-4c1a1/billingInfo {"name":"projects/uniship-4c1a1/billingInfo","projectId":"uniship-4c1a1","billingAccountName":"billingAccounts/0183B3-A328E9-F87077","billingEnabled":true}
-[debug] [2026-03-29T06:58:33.332Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:58:33.332Z] Checked if tokens are valid: true, expires at: 1774771019473
-[debug] [2026-03-29T06:58:33.332Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/uniship-4c1a1/locations/asia-east1/functions:generateUploadUrl [none]
-[debug] [2026-03-29T06:58:33.873Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/uniship-4c1a1/locations/asia-east1/functions:generateUploadUrl 200
-[debug] [2026-03-29T06:58:33.874Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/uniship-4c1a1/locations/asia-east1/functions:generateUploadUrl {"uploadUrl":"https://storage.googleapis.com/gcf-v2-uploads-1051779016295.asia-east1.cloudfunctions.appspot.com/c53295e8-56c0-4d23-8ff5-f3d7e8667244.zip?GoogleAccessId=service-1051779016295@gcf-admin-robot.iam.gserviceaccount.com&Expires=1774769313&Signature=IGAD2LSKxgH%2FifbPW24BMh%2Flr7eiAo%2F5i7nL8K6gu%2BICarSTQq6b%2FEOV1IY9Eyt5ETTDSvr9hYPMmrdWYS5Egw2mYbymdOF4AfQRoL8%2BM67wL4zIiAZ5ZfqOaoOvF6arvAQ%2Fm80XbMoJ80rf9BjjxNSdIIO0qXNOw3zkvpf98yOBMHwT%2F1dBGrA6jO7nCp6E1vcVBd%2FRH4QurC1DOWwwDJxXAauVnKSRFXkP0U%2BkKD1q2D5AypAdO5J6pZtUNNSTVbt2QA6eQOEjKk1OFg%2BWa1AARF1cuGlYWh699WiUk0hNvQpVd8StR2mgpLwMXOB2pN52r3sjxhOqco%2BVvgb9uw%3D%3D","storageSource":{"bucket":"gcf-v2-uploads-1051779016295.asia-east1.cloudfunctions.appspot.com","object":"c53295e8-56c0-4d23-8ff5-f3d7e8667244.zip"}}
-[debug] [2026-03-29T06:58:33.879Z] >>> [apiv2][query] PUT https://storage.googleapis.com/gcf-v2-uploads-1051779016295.asia-east1.cloudfunctions.appspot.com/c53295e8-56c0-4d23-8ff5-f3d7e8667244.zip GoogleAccessId=service-1051779016295%40gcf-admin-robot.iam.gserviceaccount.com&Expires=1774769313&Signature=IGAD2LSKxgH%2FifbPW24BMh%2Flr7eiAo%2F5i7nL8K6gu%2BICarSTQq6b%2FEOV1IY9Eyt5ETTDSvr9hYPMmrdWYS5Egw2mYbymdOF4AfQRoL8%2BM67wL4zIiAZ5ZfqOaoOvF6arvAQ%2Fm80XbMoJ80rf9BjjxNSdIIO0qXNOw3zkvpf98yOBMHwT%2F1dBGrA6jO7nCp6E1vcVBd%2FRH4QurC1DOWwwDJxXAauVnKSRFXkP0U%2BkKD1q2D5AypAdO5J6pZtUNNSTVbt2QA6eQOEjKk1OFg%2BWa1AARF1cuGlYWh699WiUk0hNvQpVd8StR2mgpLwMXOB2pN52r3sjxhOqco%2BVvgb9uw%3D%3D
-[debug] [2026-03-29T06:58:33.879Z] >>> [apiv2][body] PUT https://storage.googleapis.com/gcf-v2-uploads-1051779016295.asia-east1.cloudfunctions.appspot.com/c53295e8-56c0-4d23-8ff5-f3d7e8667244.zip [stream]
+[debug] [2026-04-07T07:39:19.702Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-04-07T07:39:19.702Z] > authorizing via signed-in user (dibzhost@gmail.com)
+[debug] [2026-04-07T07:39:19.702Z] [iam] checking project uniship-4c1a1 for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2026-04-07T07:39:19.702Z] Checked if tokens are valid: true, expires at: 1775551112685
+[debug] [2026-04-07T07:39:19.702Z] Checked if tokens are valid: true, expires at: 1775551112685
+[debug] [2026-04-07T07:39:19.702Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions [none]
+[debug] [2026-04-07T07:39:19.702Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions  x-goog-user-project=uniship-4c1a1
+[debug] [2026-04-07T07:39:19.702Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/uniship-4c1a1:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}

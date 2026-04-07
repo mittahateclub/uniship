@@ -83,7 +83,7 @@ export default function Home() {
 
     const applyTilt = (rx: number, ry: number) => {
       card.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
-      card.style.boxShadow = `${-ry * 2}px ${rx * 2 + 20}px 80px rgba(0,0,0,0.7), 0 0 40px rgba(232,81,10,${0.04 + Math.abs(ry) * 0.005})`;
+      card.style.boxShadow = `${-ry * 2}px ${rx * 2 + 20}px 80px rgba(0,0,0,0.7), 0 0 40px rgba(0,168,225,${0.04 + Math.abs(ry) * 0.005})`;
     };
 
     const onWidgetMouseMove = (e: MouseEvent) => {
@@ -226,7 +226,7 @@ export default function Home() {
         spark.style.setProperty('--dy', `${Math.sin(angle) * dist}px`);
         spark.style.left = `${r.left - wr.left + r.width / 2}px`;
         spark.style.top = `${r.top - wr.top + r.height / 2}px`;
-        spark.style.background = i % 2 === 0 ? '#E8510A' : '#FF9340';
+        spark.style.background = i % 2 === 0 ? '#00A8E1' : '#66D0F0';
         widget.appendChild(spark);
         const t = window.setTimeout(() => spark.remove(), 700);
         timeouts.push(t);
@@ -337,7 +337,7 @@ export default function Home() {
     <div className={`${dmSans.variable} landing-root`}>
       <nav>
         <div className="nav-logo">
-          <Image src="/logo.png" alt="Uniship" width={54} height={54} className="nav-logo-img" />
+          <Image src="/logo.png" alt="Uniship" width={108} height={108} className="nav-logo-img" />
           <span className="nav-logo-text">UNISHIP</span>
         </div>
         <div className="nav-right">
@@ -387,7 +387,7 @@ export default function Home() {
                     cy="26"
                     r="22"
                     fill="none"
-                    stroke="#E8510A"
+                    stroke="#00A8E1"
                     strokeWidth="3"
                     strokeDasharray="138"
                     strokeDashoffset="1.38"
@@ -643,7 +643,7 @@ export default function Home() {
 
       <footer>
         <div className="nav-logo">
-          <Image src="/logo.png" alt="Uniship" width={48} height={48} className="nav-logo-img" />
+          <Image src="/logo.png" alt="Uniship" width={96} height={96} className="nav-logo-img" />
           <span className="nav-logo-text">UNISHIP</span>
         </div>
         <div className="footer-links">
@@ -657,9 +657,9 @@ export default function Home() {
 
       <style jsx global>{`
         :root {
-          --orange: #E8510A;
-          --orange-light: #FF6B2B;
-          --orange-glow: rgba(232,81,10,0.18);
+          --orange: #00A8E1;
+          --orange-light: #33BBEE;
+          --orange-glow: rgba(0,168,225,0.18);
           --bg: #0A0A0A;
           --bg-card: #121212;
           --bg-card2: #181818;
@@ -716,7 +716,7 @@ export default function Home() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 20px 48px;
+          padding: 10px 48px;
           background: linear-gradient(to bottom, rgba(10,10,10,0.95), rgba(10,10,10,0.7), transparent);
           backdrop-filter: blur(8px);
         }
@@ -734,7 +734,7 @@ export default function Home() {
         .nav-logo {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 5px;
           font-family: var(--font-dm-sans), sans-serif;
           font-weight: 800;
           font-size: 1.2rem;
@@ -829,7 +829,7 @@ export default function Home() {
           transform: translateX(-34%);
           width: 600px;
           height: 400px;
-          background: radial-gradient(ellipse, rgba(232,81,10,0.10) 0%, transparent 70%);
+          background: radial-gradient(ellipse, rgba(0,168,225,0.10) 0%, transparent 70%);
           pointer-events: none;
         }
 
@@ -847,8 +847,8 @@ export default function Home() {
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          border: 1px solid rgba(232,81,10,0.3);
-          background: rgba(232,81,10,0.07);
+          border: 1px solid rgba(0,168,225,0.3);
+          background: rgba(0,168,225,0.07);
           padding: 6px 14px;
           border-radius: 100px;
           margin-bottom: 32px;
@@ -883,7 +883,7 @@ export default function Home() {
 
         .hero h1 em {
           font-style: normal;
-          background: linear-gradient(135deg, var(--orange) 0%, var(--orange-light) 60%, #FFAD5E 100%);
+          background: linear-gradient(135deg, var(--orange) 0%, var(--orange-light) 60%, #99E0F5 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
@@ -939,8 +939,8 @@ export default function Home() {
           z-index: 10;
           width: 92px;
           height: 92px;
-          background: #171514;
-          border: 1.5px dashed rgba(232,81,10,0.42);
+          background: #0A1520;
+          border: 1.5px dashed rgba(0,168,225,0.42);
           border-radius: 14px;
           display: flex;
           align-items: center;
@@ -971,7 +971,7 @@ export default function Home() {
           display: block;
           font-weight: 800;
           font-size: 1.45rem;
-          color: #E8510A;
+          color: #00A8E1;
           line-height: 1;
         }
 
@@ -993,8 +993,8 @@ export default function Home() {
           top: -16px;
           right: -20px;
           z-index: 10;
-          background: #171514;
-          border: 1.5px dashed rgba(232,81,10,0.46);
+          background: #0A1520;
+          border: 1.5px dashed rgba(0,168,225,0.46);
           border-radius: 10px;
           padding: 10px 14px;
           display: flex;
@@ -1008,7 +1008,7 @@ export default function Home() {
 
         .rw-ai-icon {
           font-size: 1rem;
-          color: #E8510A;
+          color: #00A8E1;
           animation: pulse 2.1s ease-in-out infinite;
         }
 
@@ -1029,7 +1029,7 @@ export default function Home() {
           width: 7px;
           height: 7px;
           border-radius: 50%;
-          background: #E8510A;
+          background: #00A8E1;
           margin-left: auto;
           flex-shrink: 0;
           animation: pulse 1.8s ease infinite;
@@ -1042,14 +1042,14 @@ export default function Home() {
             repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 19px),
             repeating-linear-gradient(90deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 19px),
             radial-gradient(circle at 30% 20%, rgba(255,255,255,0.06), transparent 60%),
-            #141312;
+            #0C1825;
           border: 1.5px dashed rgba(255,255,255,0.24);
           border-radius: 16px;
           position: relative;
           overflow: hidden;
           transform-style: preserve-3d;
           transition: transform 0.08s linear, box-shadow 0.3s;
-          box-shadow: 14px 16px 0 rgba(0,0,0,0.32), 0 22px 48px rgba(0,0,0,0.45), 0 0 0 1px rgba(232,81,10,0.06);
+          box-shadow: 14px 16px 0 rgba(0,0,0,0.32), 0 22px 48px rgba(0,0,0,0.45), 0 0 0 1px rgba(0,168,225,0.06);
           cursor: grab;
         }
 
@@ -1090,7 +1090,7 @@ export default function Home() {
           left: 0;
           right: 0;
           height: 2px;
-          background: linear-gradient(90deg, rgba(232,81,10,0.95), rgba(255,147,64,0.7));
+          background: linear-gradient(90deg, rgba(0,168,225,0.95), rgba(51,187,238,0.7));
           border-radius: 16px 16px 0 0;
         }
 
@@ -1099,7 +1099,7 @@ export default function Home() {
           left: 0;
           right: 0;
           height: 2px;
-          background: linear-gradient(90deg, transparent, rgba(232,81,10,0.4), transparent);
+          background: linear-gradient(90deg, transparent, rgba(0,168,225,0.4), transparent);
           pointer-events: none;
           top: 0;
           animation: scanDown 3.5s ease-in-out infinite;
@@ -1154,7 +1154,7 @@ export default function Home() {
           height: 52px;
           border-radius: 50%;
           flex-shrink: 0;
-          background: linear-gradient(135deg, #E8510A, #8B2500);
+          background: linear-gradient(135deg, #00A8E1, #005F8A);
           display: grid;
           place-items: center;
           position: relative;
@@ -1173,7 +1173,7 @@ export default function Home() {
           position: absolute;
           inset: -4px;
           border-radius: 50%;
-          border: 1.5px dashed rgba(232,81,10,0.5);
+          border: 1.5px dashed rgba(0,168,225,0.5);
           animation: spinRing 8s linear infinite;
         }
 
@@ -1188,11 +1188,11 @@ export default function Home() {
           margin-top: 3px;
           font-size: 0.65rem;
           letter-spacing: 0.05em;
-          background: rgba(232,81,10,0.15);
-          border: 1px solid rgba(232,81,10,0.3);
+          background: rgba(0,168,225,0.15);
+          border: 1px solid rgba(0,168,225,0.3);
           border-radius: 100px;
           padding: 2px 8px;
-          color: #FF6B2B;
+          color: #33BBEE;
         }
 
         .rw-location {
@@ -1226,9 +1226,9 @@ export default function Home() {
         }
 
         .rw-tab.active {
-          background: rgba(232,81,10,0.12);
-          color: #FF6B2B;
-          box-shadow: inset 0 0 0 1px rgba(232,81,10,0.35);
+          background: rgba(0,168,225,0.12);
+          color: #33BBEE;
+          box-shadow: inset 0 0 0 1px rgba(0,168,225,0.35);
         }
 
         .rw-tab:hover:not(.active) {
@@ -1261,8 +1261,8 @@ export default function Home() {
         }
 
         .rw-entry:hover {
-          background: rgba(232,81,10,0.06);
-          border-color: rgba(232,81,10,0.35);
+          background: rgba(0,168,225,0.06);
+          border-color: rgba(0,168,225,0.35);
           transform: translateX(3px);
         }
 
@@ -1281,9 +1281,9 @@ export default function Home() {
         .rw-entry-chip {
           font-size: 0.6rem;
           font-weight: 700;
-          background: rgba(232,81,10,0.12);
-          border: 1px dashed rgba(232,81,10,0.4);
-          color: #FF6B2B;
+          background: rgba(0,168,225,0.12);
+          border: 1px dashed rgba(0,168,225,0.4);
+          color: #33BBEE;
           border-radius: 20px;
           padding: 2px 8px;
           white-space: nowrap;
@@ -1306,8 +1306,8 @@ export default function Home() {
           border-radius: 100px;
           font-size: 0.72rem;
           letter-spacing: 0.01em;
-          background: rgba(232,81,10,0.08);
-          border: 1px dashed rgba(232,81,10,0.34);
+          background: rgba(0,168,225,0.08);
+          border: 1px dashed rgba(0,168,225,0.34);
           color: rgba(255,255,255,0.6);
           cursor: pointer;
           transition: all 0.2s;
@@ -1315,11 +1315,11 @@ export default function Home() {
 
         .rw-skill:hover,
         .rw-skill.active {
-          background: rgba(232,81,10,0.16);
-          border-color: rgba(232,81,10,0.5);
-          color: #FF6B2B;
+          background: rgba(0,168,225,0.16);
+          border-color: rgba(0,168,225,0.5);
+          color: #33BBEE;
           transform: translateY(-2px);
-          box-shadow: 2px 3px 0 rgba(232,81,10,0.18);
+          box-shadow: 2px 3px 0 rgba(0,168,225,0.18);
         }
 
         .rw-skill-bar-wrap {
@@ -1347,7 +1347,7 @@ export default function Home() {
 
         .rw-skill-bar-fill {
           height: 100%;
-          background: linear-gradient(90deg, #E8510A, #FF9340);
+          background: linear-gradient(90deg, #00A8E1, #66D0F0);
           border-radius: 10px;
           width: 0%;
           transition: width 0.6s cubic-bezier(.4,0,.2,1);
@@ -1355,7 +1355,7 @@ export default function Home() {
 
         .rw-skill-bar-pct {
           font-size: 0.65rem;
-          color: #E8510A;
+          color: #00A8E1;
           text-align: right;
           margin-top: 4px;
         }
@@ -1369,9 +1369,9 @@ export default function Home() {
           width: 100%;
           padding: 11px;
           border-radius: 7px;
-          background: rgba(232,81,10,0.1);
-          border: 1.5px dashed rgba(232,81,10,0.46);
-          color: #FF6B2B;
+          background: rgba(0,168,225,0.1);
+          border: 1.5px dashed rgba(0,168,225,0.46);
+          color: #33BBEE;
           font-weight: 700;
           font-size: 0.78rem;
           letter-spacing: 0.03em;
@@ -1386,9 +1386,9 @@ export default function Home() {
         }
 
         .rw-generate-btn:hover {
-          background: rgba(232,81,10,0.16);
-          border-color: rgba(232,81,10,0.6);
-          box-shadow: 3px 4px 0 rgba(232,81,10,0.22);
+          background: rgba(0,168,225,0.16);
+          border-color: rgba(0,168,225,0.6);
+          box-shadow: 3px 4px 0 rgba(0,168,225,0.22);
           transform: translateY(-1px);
         }
 
@@ -1402,7 +1402,7 @@ export default function Home() {
 
         .rw-gen-progress {
           height: 2px;
-          background: linear-gradient(90deg, #E8510A, #FF9340);
+          background: linear-gradient(90deg, #00A8E1, #66D0F0);
           border-radius: 2px;
           width: 0%;
           margin-top: 6px;
@@ -1414,7 +1414,7 @@ export default function Home() {
           width: 4px;
           height: 4px;
           border-radius: 50%;
-          background: #E8510A;
+          background: #00A8E1;
           pointer-events: none;
           animation: sparkFly 0.6s ease-out forwards;
         }
@@ -1434,7 +1434,7 @@ export default function Home() {
 
         [data-theme='light'] .rw-score {
           background: #fff8ef;
-          border-color: rgba(232,81,10,0.5);
+          border-color: rgba(0,168,225,0.5);
           box-shadow: 4px 5px 0 rgba(31,26,20,0.16), 0 8px 24px rgba(31,26,20,0.1);
         }
 
@@ -1448,7 +1448,7 @@ export default function Home() {
 
         [data-theme='light'] .rw-ai-card {
           background: #fff7ef;
-          border-color: rgba(232,81,10,0.4);
+          border-color: rgba(0,168,225,0.4);
           box-shadow: 4px 5px 0 rgba(31,26,20,0.14), 0 8px 20px rgba(31,26,20,0.08);
         }
 
@@ -1467,7 +1467,7 @@ export default function Home() {
             radial-gradient(circle at 30% 20%, rgba(31,26,20,0.08), transparent 60%),
             #fdf6eb;
           border-color: rgba(31,26,20,0.28);
-          box-shadow: 10px 12px 0 rgba(31,26,20,0.16), 0 16px 40px rgba(31,26,20,0.1), 0 0 0 1px rgba(232,81,10,0.1);
+          box-shadow: 10px 12px 0 rgba(31,26,20,0.16), 0 16px 40px rgba(31,26,20,0.1), 0 0 0 1px rgba(0,168,225,0.1);
         }
 
         [data-theme='light'] .rw-card::before {
@@ -1520,8 +1520,8 @@ export default function Home() {
 
         [data-theme='light'] .rw-skill {
           color: rgba(31,26,20,0.62);
-          background: rgba(232,81,10,0.09);
-          border-color: rgba(232,81,10,0.24);
+          background: rgba(0,168,225,0.09);
+          border-color: rgba(0,168,225,0.24);
         }
 
         [data-theme='light'] .rw-skill-bar-wrap {
@@ -1553,14 +1553,14 @@ export default function Home() {
           align-items: center;
           gap: 8px;
           transition: all 0.2s;
-          box-shadow: 0 0 32px rgba(232,81,10,0.3);
+          box-shadow: 0 0 32px rgba(0,168,225,0.3);
           text-decoration: none;
         }
 
         .btn-primary:hover {
           background: var(--orange-light);
           transform: translateY(-2px);
-          box-shadow: 0 0 48px rgba(232,81,10,0.45);
+          box-shadow: 0 0 48px rgba(0,168,225,0.45);
         }
 
         .btn-secondary {
@@ -1579,8 +1579,8 @@ export default function Home() {
         }
 
         .btn-secondary:hover {
-          border-color: rgba(232,81,10,0.3);
-          background: rgba(232,81,10,0.08);
+          border-color: rgba(0,168,225,0.3);
+          background: rgba(0,168,225,0.08);
         }
 
         .scroll-hint {
@@ -1668,7 +1668,7 @@ export default function Home() {
           display: grid;
           place-items: center;
           margin-bottom: 20px;
-          border: 1px solid rgba(232,81,10,0.2);
+          border: 1px solid rgba(0,168,225,0.2);
         }
 
         .step-icon svg {
@@ -1746,7 +1746,7 @@ export default function Home() {
           border-radius: 12px;
           display: grid;
           place-items: center;
-          border: 1px solid rgba(232,81,10,0.15);
+          border: 1px solid rgba(0,168,225,0.15);
         }
 
         .feat-icon svg {
@@ -1779,8 +1779,8 @@ export default function Home() {
 
         .tag {
           padding: 5px 12px;
-          background: rgba(232,81,10,0.08);
-          border: 1px solid rgba(232,81,10,0.2);
+          background: rgba(0,168,225,0.08);
+          border: 1px solid rgba(0,168,225,0.2);
           border-radius: 100px;
           font-size: 0.75rem;
           color: var(--orange-light);
@@ -1790,8 +1790,8 @@ export default function Home() {
         .cta-banner {
           margin: 0 48px 100px;
           border-radius: 20px;
-          background: linear-gradient(135deg, #1A0D08 0%, #0D0D0D 60%);
-          border: 1px solid rgba(232,81,10,0.2);
+          background: linear-gradient(135deg, #001F3F 0%, #0D0D0D 60%);
+          border: 1px solid rgba(0,168,225,0.2);
           padding: 80px 60px;
           text-align: center;
           position: relative;
@@ -1799,8 +1799,8 @@ export default function Home() {
         }
 
         [data-theme='light'] .cta-banner {
-          background: linear-gradient(135deg, #FFF7EE 0%, #F4E8D8 60%);
-          border: 1px solid rgba(232,81,10,0.28);
+          background: linear-gradient(135deg, #EBF6FC 0%, #D6EDF8 60%);
+          border: 1px solid rgba(0,168,225,0.28);
         }
 
         .cta-banner::before {
@@ -1811,7 +1811,7 @@ export default function Home() {
           transform: translateX(-50%);
           width: 500px;
           height: 300px;
-          background: radial-gradient(ellipse, rgba(232,81,10,0.15), transparent 70%);
+          background: radial-gradient(ellipse, rgba(0,168,225,0.15), transparent 70%);
           pointer-events: none;
         }
 
@@ -1889,9 +1889,9 @@ export default function Home() {
         }
 
         @keyframes spinGlow {
-          0% { text-shadow: 0 0 6px #E8510A; }
-          50% { text-shadow: 0 0 18px #FF6B2B; }
-          100% { text-shadow: 0 0 6px #E8510A; }
+          0% { text-shadow: 0 0 6px #00A8E1; }
+          50% { text-shadow: 0 0 18px #33BBEE; }
+          100% { text-shadow: 0 0 6px #00A8E1; }
         }
 
         @keyframes scanDown {

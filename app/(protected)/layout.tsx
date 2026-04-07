@@ -43,8 +43,8 @@ export default function ProtectedLayout({
                 {userPhotoURL ? (
                   <img src={userPhotoURL} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
                 ) : (
-                  <div className="w-7 h-7 bg-[#F54E00] rounded-full flex items-center justify-center shrink-0">
-                    <span className="text-[11px] font-bold text-black">{(userName || user.email)?.[0]?.toUpperCase()}</span>
+                  <div className="w-7 h-7 bg-[#00A8E1] rounded-full flex items-center justify-center shrink-0">
+                    <span className="text-[11px] font-bold text-white">{(userName || user.email)?.[0]?.toUpperCase()}</span>
                   </div>
                 )}
                 <div className="min-w-0 hidden lg:block">
@@ -55,7 +55,7 @@ export default function ProtectedLayout({
           )}
         </div>
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto px-6 pb-6 pt-0">
           {children}
         </main>
       </div>

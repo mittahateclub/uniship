@@ -88,7 +88,7 @@ export default function ManageAccountsPage() {
           <input
             type="text"
             placeholder="Search students..."
-            className="w-full pl-8 pr-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-faint)] text-[13px] focus:outline-none focus:border-[#5E6AD2] transition-all duration-150"
+            className="w-full pl-8 pr-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-faint)] text-[13px] focus:outline-none focus:border-[#4B8BBE] transition-all duration-150"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -121,7 +121,7 @@ export default function ManageAccountsPage() {
                       <button className="btn-secondary text-[11px] px-3 py-1">Edit</button>
                       <button
                         onClick={() => handleDelete(student.id)}
-                        className="p-1.5 rounded text-[var(--text-faint)] hover:text-[#F54E00] hover:bg-[#F54E00]/10 transition-colors duration-150"
+                        className="p-1.5 rounded text-[var(--text-faint)] hover:text-[#00A8E1] hover:bg-[#00A8E1]/10 transition-colors duration-150"
                       >
                         <Trash2 size={13} />
                       </button>

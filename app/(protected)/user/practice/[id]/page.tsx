@@ -294,10 +294,10 @@ export default function PracticeSolvePage() {
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3">
-                <div className="w-20 h-20 rounded-full bg-[#F54E00]/10 flex items-center justify-center">
-                  <XCircle size={36} className="text-[#F54E00]" />
+                <div className="w-20 h-20 rounded-full bg-[#00A8E1]/10 flex items-center justify-center">
+                  <XCircle size={36} className="text-[#00A8E1]" />
                 </div>
-                <h2 className="text-2xl font-bold text-[#F54E00]">{verdictLabel(submitVerdict.verdict)}</h2>
+                <h2 className="text-2xl font-bold text-[#00A8E1]">{verdictLabel(submitVerdict.verdict)}</h2>
                 <p className="text-sm text-[var(--text-secondary)]">Keep going — you&apos;ve got this!</p>
               </div>
             )}
@@ -310,7 +310,7 @@ export default function PracticeSolvePage() {
               </div>
               <div className="w-full bg-[var(--bg-elevated)] rounded-full h-2.5">
                 <div
-                  className={`h-2.5 rounded-full transition-all duration-700 ${submitVerdict.verdict === 'AC' ? 'bg-[#4CAF50]' : 'bg-[#F54E00]'}`}
+                  className={`h-2.5 rounded-full transition-all duration-700 ${submitVerdict.verdict === 'AC' ? 'bg-[#4CAF50]' : 'bg-[#00A8E1]'}`}
                   style={{ width: `${(submitVerdict.passed / submitVerdict.total) * 100}%` }}
                 />
               </div>
@@ -344,7 +344,7 @@ export default function PracticeSolvePage() {
         {/* Left: Problem */}
         <div className="flex flex-col w-[45%] bg-[var(--bg-surface)] rounded-xl overflow-hidden border border-[var(--border-subtle)]">
           <div className="flex bg-[var(--bg-elevated)] px-4 text-[13px] font-medium border-b border-[var(--border-subtle)] items-center justify-between">
-            <div className="px-4 py-2.5 border-b-2 border-[#5E6AD2] text-[var(--text-primary)] flex items-center gap-2">
+            <div className="px-4 py-2.5 border-b-2 border-[#4B8BBE] text-[var(--text-primary)] flex items-center gap-2">
               <BookOpen size={14} /> Question
               {isAlreadySolved && <CheckCircle2 size={14} className="text-[#4CAF50]" />}
             </div>
@@ -437,7 +437,7 @@ export default function PracticeSolvePage() {
                         key={lang}
                         onClick={() => switchLanguage(lang)}
                         className={`w-full text-left px-4 py-2 text-[13px] hover:bg-[var(--bg-surface)] transition-colors ${
-                          language === lang ? 'text-[#5E6AD2] font-semibold bg-[#5E6AD2]/5' : 'text-[var(--text-secondary)]'
+                          language === lang ? 'text-[#4B8BBE] font-semibold bg-[#4B8BBE]/5' : 'text-[var(--text-secondary)]'
                         }`}
                       >
                         {lang}
@@ -502,19 +502,19 @@ export default function PracticeSolvePage() {
             <div className="flex bg-[var(--bg-elevated)] px-3 text-[13px] font-medium border-b border-[var(--border-subtle)]">
               <button
                 onClick={() => setConsoleTab('testcases')}
-                className={`px-4 py-2.5 transition-colors border-b-2 ${consoleTab === 'testcases' ? 'text-[var(--text-primary)] border-[#5E6AD2]' : 'text-[var(--text-faint)] border-transparent hover:text-[var(--text-secondary)]'}`}
+                className={`px-4 py-2.5 transition-colors border-b-2 ${consoleTab === 'testcases' ? 'text-[var(--text-primary)] border-[#4B8BBE]' : 'text-[var(--text-faint)] border-transparent hover:text-[var(--text-secondary)]'}`}
               >
                 Testcases
               </button>
               <button
                 onClick={() => setConsoleTab('result')}
-                className={`px-4 py-2.5 transition-colors flex items-center gap-1.5 border-b-2 ${consoleTab === 'result' ? 'text-[var(--text-primary)] border-[#5E6AD2]' : 'text-[var(--text-faint)] border-transparent hover:text-[var(--text-secondary)]'}`}
+                className={`px-4 py-2.5 transition-colors flex items-center gap-1.5 border-b-2 ${consoleTab === 'result' ? 'text-[var(--text-primary)] border-[#4B8BBE]' : 'text-[var(--text-faint)] border-transparent hover:text-[var(--text-secondary)]'}`}
               >
                 Result
                 {results && (
                   results.every(r => r.statusCode === 'AC')
                     ? <CheckCircle2 size={12} className="text-[#4CAF50]" />
-                    : <XCircle size={12} className="text-[#F54E00]" />
+                    : <XCircle size={12} className="text-[#00A8E1]" />
                 )}
               </button>
 
@@ -539,7 +539,7 @@ export default function PracticeSolvePage() {
                       {isResult && r && (
                         r.statusCode === 'AC'
                           ? <CheckCircle2 size={11} className="text-[#4CAF50]" />
-                          : <XCircle size={11} className="text-[#F54E00]" />
+                          : <XCircle size={11} className="text-[#00A8E1]" />
                       )}
                       Case {i + 1}
                     </button>
@@ -578,7 +578,7 @@ export default function PracticeSolvePage() {
                     {/* Summary */}
                     <div className="flex items-center justify-between mb-3">
                       <h3 className={`text-[13px] font-bold ${
-                        results.every(r => r.statusCode === 'AC') ? 'text-[#4CAF50]' : 'text-[#F54E00]'
+                        results.every(r => r.statusCode === 'AC') ? 'text-[#4CAF50]' : 'text-[#00A8E1]'
                       }`}>
                         {results.every(r => r.statusCode === 'AC') ? 'All Passed' : 'Failed'}
                       </h3>
@@ -593,7 +593,7 @@ export default function PracticeSolvePage() {
                     {results[activeTestCase] && (
                       <div className="space-y-3">
                         {results[activeTestCase].stderr ? (
-                          <div className="p-3 bg-[#F54E00]/5 text-[#F54E00] rounded-lg text-[12px] font-mono border border-[#F54E00]/20 whitespace-pre-wrap">
+                          <div className="p-3 bg-[#00A8E1]/5 text-[#00A8E1] rounded-lg text-[12px] font-mono border border-[#00A8E1]/20 whitespace-pre-wrap">
                             {results[activeTestCase].stderr}
                           </div>
                         ) : results[activeTestCase].isHidden ? (

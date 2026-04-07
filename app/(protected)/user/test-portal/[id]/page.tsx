@@ -84,7 +84,7 @@ const LANG_MONACO: Record<number, string> = {
 
 const SEVERITY_CONFIG = {
   low:    { label: 'Low',    color: '#F1A82C', points: 1 },
-  medium: { label: 'Medium', color: '#F54E00', points: 2 },
+  medium: { label: 'Medium', color: '#00A8E1', points: 2 },
   high:   { label: 'High',   color: '#DC2626', points: 3 },
 };
 
@@ -933,8 +933,8 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       <div className="max-w-lg mx-auto animate-fade-in py-12">
         <div className="window p-8">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-lg bg-[#5E6AD2]/10 flex items-center justify-center">
-              <Monitor size={20} className="text-[#5E6AD2]" />
+            <div className="w-10 h-10 rounded-lg bg-[#4B8BBE]/10 flex items-center justify-center">
+              <Monitor size={20} className="text-[#4B8BBE]" />
             </div>
             <div>
               <h1 className="text-lg font-bold text-[var(--text-primary)]">System Readiness Check</h1>
@@ -989,8 +989,8 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       <div className="max-w-lg mx-auto animate-fade-in py-12">
         <div className="window p-8">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-lg bg-[#F54E00]/10 flex items-center justify-center">
-              <Shield size={20} className="text-[#F54E00]" />
+            <div className="w-10 h-10 rounded-lg bg-[#00A8E1]/10 flex items-center justify-center">
+              <Shield size={20} className="text-[#00A8E1]" />
             </div>
             <div>
               <h1 className="text-lg font-bold text-[var(--text-primary)]">{test.title || test.sourceFileName}</h1>
@@ -1007,19 +1007,19 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
             <p className="text-[10px] font-bold text-[var(--text-faint)] uppercase tracking-widest mb-4">Monitoring & Enforcement</p>
             <div className="space-y-3 text-[12px] text-[var(--text-tertiary)]">
               <div className="flex items-start gap-2.5">
-                <Maximize size={13} className="text-[#F54E00] mt-0.5 shrink-0" />
+                <Maximize size={13} className="text-[#00A8E1] mt-0.5 shrink-0" />
                 <span>The test runs in <strong className="text-[var(--text-primary)]">fullscreen</strong>. Exiting fullscreen triggers a violation.</span>
               </div>
               <div className="flex items-start gap-2.5">
-                <Monitor size={13} className="text-[#F54E00] mt-0.5 shrink-0" />
+                <Monitor size={13} className="text-[#00A8E1] mt-0.5 shrink-0" />
                 <span><strong className="text-[var(--text-primary)]">Tab switching</strong>, copy-paste, right-click, and keyboard shortcuts are blocked and logged.</span>
               </div>
               <div className="flex items-start gap-2.5">
-                <MonitorPlay size={13} className="text-[#F54E00] mt-0.5 shrink-0" />
+                <MonitorPlay size={13} className="text-[#00A8E1] mt-0.5 shrink-0" />
                 <span>Your <strong className="text-[var(--text-primary)]">screen is being recorded</strong> and monitored. Stopping screen share triggers a violation.</span>
               </div>
               <div className="flex items-start gap-2.5">
-                <MessageCircle size={13} className="text-[#F54E00] mt-0.5 shrink-0" />
+                <MessageCircle size={13} className="text-[#00A8E1] mt-0.5 shrink-0" />
                 <span><strong className="text-[var(--text-primary)]">Live support</strong> is available during the exam via the chat button.</span>
               </div>
             </div>
@@ -1030,7 +1030,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
             <div className="space-y-2">
               {[
                 { level: 'Low', color: '#F1A82C', desc: 'Ambient noise, minor disruption', action: '1 point' },
-                { level: 'Medium', color: '#F54E00', desc: 'Fullscreen exit, copy/paste attempt, window blur', action: '2 points' },
+                { level: 'Medium', color: '#00A8E1', desc: 'Fullscreen exit, copy/paste attempt, window blur', action: '2 points' },
                 { level: 'High', color: '#DC2626', desc: 'Tab switching, unauthorized key, screen share stopped', action: '3 points — session freeze after 3' },
               ].map(v => (
                 <div key={v.level} className="flex items-center gap-3 text-[11px]">
@@ -1060,7 +1060,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   ), 0);
   const isCoding = currentQ._sectionType === 'coding';
   const isMcq = currentQ._sectionType === 'mcq';
-  const sectionColorMap = { aptitude: '#14B8A6', mcq: '#F59E0B', coding: '#5E6AD2' };
+  const sectionColorMap = { aptitude: '#14B8A6', mcq: '#F59E0B', coding: '#4B8BBE' };
 
   return (
     <div className="fixed inset-0 z-[9999] bg-[var(--bg-primary)] overflow-y-auto animate-fade-in select-none" style={{ userSelect: 'none' }}>
@@ -1068,8 +1068,8 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       {warningVisible && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[9999] max-w-md w-full px-4">
           <div className="rounded-lg shadow-lg border px-4 py-3 flex items-start gap-3 text-[13px]" style={{
-            background: `${SEVERITY_CONFIG[warningData.severity as keyof typeof SEVERITY_CONFIG]?.color || '#F54E00'}15`,
-            borderColor: `${SEVERITY_CONFIG[warningData.severity as keyof typeof SEVERITY_CONFIG]?.color || '#F54E00'}30`,
+            background: `${SEVERITY_CONFIG[warningData.severity as keyof typeof SEVERITY_CONFIG]?.color || '#00A8E1'}15`,
+            borderColor: `${SEVERITY_CONFIG[warningData.severity as keyof typeof SEVERITY_CONFIG]?.color || '#00A8E1'}30`,
           }}>
             <AlertTriangle size={16} className="shrink-0 mt-0.5" style={{ color: SEVERITY_CONFIG[warningData.severity as keyof typeof SEVERITY_CONFIG]?.color }} />
             <div>
@@ -1107,21 +1107,21 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
             <span className="w-px h-4 bg-[var(--border-subtle)]" />
             {/* Violations — only for proctored tests */}
             {violations.length > 0 && (
-              <span className="flex items-center gap-1 text-[11px] font-bold text-[#F54E00]">
+              <span className="flex items-center gap-1 text-[11px] font-bold text-[#00A8E1]">
                 <AlertTriangle size={11} />
                 {violationPoints}/{MAX_VIOLATIONS}
               </span>
             )}
             {/* Timer */}
             {timeLeft !== null && (
-              <span className={`flex items-center gap-1 text-[12px] font-bold tabular-nums ${timeLeft <= 60 ? 'text-[#DC2626] animate-pulse' : timeLeft <= 300 ? 'text-[#F54E00]' : 'text-[var(--text-primary)]'}`}>
+              <span className={`flex items-center gap-1 text-[12px] font-bold tabular-nums ${timeLeft <= 60 ? 'text-[#DC2626] animate-pulse' : timeLeft <= 300 ? 'text-[#00A8E1]' : 'text-[var(--text-primary)]'}`}>
                 <Clock size={12} />
                 {formatTime(timeLeft)}
               </span>
             )}
                 <span className="w-px h-4 bg-[var(--border-subtle)]" />
                 {/* Live Support */}
-                <button onClick={toggleChat} className="relative flex items-center gap-1 text-[11px] font-bold text-[#5E6AD2] hover:text-[#4C5ABF] transition-colors">
+                <button onClick={toggleChat} className="relative flex items-center gap-1 text-[11px] font-bold text-[#4B8BBE] hover:text-[#4C5ABF] transition-colors">
                   <MessageCircle size={12} />
                   <span className="hidden sm:inline">Support</span>
                   {newMsgCount > 0 && (
@@ -1139,7 +1139,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         <div className="fixed top-11 right-4 z-[10000] w-80 h-96 rounded-lg border border-[var(--border-subtle)] shadow-xl bg-[var(--bg-primary)] flex flex-col overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
             <div className="flex items-center gap-2">
-              <MessageCircle size={14} className="text-[#5E6AD2]" />
+              <MessageCircle size={14} className="text-[#4B8BBE]" />
               <span className="text-[12px] font-bold text-[var(--text-primary)]">Live Support</span>
             </div>
             <button onClick={toggleChat} className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors">
@@ -1157,7 +1157,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               <div key={msg.id} className={`flex ${msg.sender === 'student' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[80%] px-3 py-1.5 rounded-lg text-[12px] ${
                   msg.sender === 'student'
-                    ? 'bg-[#5E6AD2] text-white rounded-br-none'
+                    ? 'bg-[#4B8BBE] text-white rounded-br-none'
                     : 'bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-bl-none'
                 }`}>
                   {msg.message}
@@ -1173,9 +1173,9 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               onChange={e => setChatInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
               placeholder="Type a message..."
-              className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-1.5 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#5E6AD2]"
+              className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-1.5 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#4B8BBE]"
             />
-            <button onClick={sendChatMessage} disabled={!chatInput.trim()} className="p-1.5 rounded bg-[#5E6AD2] text-white disabled:opacity-40 transition-opacity">
+            <button onClick={sendChatMessage} disabled={!chatInput.trim()} className="p-1.5 rounded bg-[#4B8BBE] text-white disabled:opacity-40 transition-opacity">
               <Send size={14} />
             </button>
           </div>
@@ -1229,12 +1229,12 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                     onClick={() => setAnswers({ ...answers, [currentQuestion]: letter })}
                     className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-lg border transition-all text-[13px] ${
                       selected
-                        ? 'border-[#5E6AD2] bg-[#5E6AD2]/10 text-[var(--text-primary)]'
+                        ? 'border-[#4B8BBE] bg-[#4B8BBE]/10 text-[var(--text-primary)]'
                         : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:border-[var(--border-active)] hover:bg-[var(--bg-surface)]'
                     }`}
                   >
                     <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0 ${
-                      selected ? 'bg-[#5E6AD2] text-white' : 'bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-tertiary)]'
+                      selected ? 'bg-[#4B8BBE] text-white' : 'bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-tertiary)]'
                     }`}>
                       {letter}
                     </span>
@@ -1295,7 +1295,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           <div className="window p-5 mb-5">
             <div className="flex items-center justify-between">
               <label className="text-sm font-semibold text-[var(--text-primary)]">Selected Answer:</label>
-              <span className={`text-[13px] font-bold ${answers[currentQuestion] ? 'text-[#5E6AD2]' : 'text-[var(--text-faint)]'}`}>
+              <span className={`text-[13px] font-bold ${answers[currentQuestion] ? 'text-[#4B8BBE]' : 'text-[var(--text-faint)]'}`}>
                 {answers[currentQuestion] ? `Option ${answers[currentQuestion]}` : 'None selected'}
               </span>
             </div>
@@ -1316,7 +1316,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                       setSelectedLang(lang);
                       setQuestionLanguages(prev => ({ ...prev, [currentQuestion]: lang }));
                     }}
-                    className="appearance-none bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-1.5 pr-7 text-[12px] text-[var(--text-primary)] font-medium focus:outline-none focus:border-[#5E6AD2] cursor-pointer"
+                    className="appearance-none bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-1.5 pr-7 text-[12px] text-[var(--text-primary)] font-medium focus:outline-none focus:border-[#4B8BBE] cursor-pointer"
                   >
                     <option value={71}>Python 3</option>
                     <option value={62}>Java</option>
@@ -1346,7 +1346,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                 <button
                   onClick={submitCode}
                   disabled={!answers[currentQuestion]?.trim() || judgeSubmitting || compiling}
-                  className="flex items-center gap-1.5 bg-[#5E6AD2] hover:bg-[#4C5ABF] text-white px-3 py-1.5 rounded text-[12px] font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="flex items-center gap-1.5 bg-[#4B8BBE] hover:bg-[#4C5ABF] text-white px-3 py-1.5 rounded text-[12px] font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   {judgeSubmitting ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
                   {judgeSubmitting ? 'Submitting...' : 'Submit Code'}
@@ -1386,7 +1386,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                 value={codeStdin}
                 onChange={e => setCodeStdin(e.target.value)}
                 placeholder="Optional: provide input for your program..."
-                className="w-full h-16 p-3 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded font-mono text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[#5E6AD2] focus:outline-none transition-colors resize-none"
+                className="w-full h-16 p-3 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded font-mono text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[#4B8BBE] focus:outline-none transition-colors resize-none"
               />
             </div>
 
@@ -1424,7 +1424,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               <div className="mt-3 rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Submission Verdict</span>
-                  <span className={`text-[12px] font-bold ${judgeSummary.verdict === 'AC' ? 'text-[#4CAF50]' : judgeSummary.verdict === 'WA' ? 'text-[#F54E00]' : 'text-[#DC2626]'}`}>
+                  <span className={`text-[12px] font-bold ${judgeSummary.verdict === 'AC' ? 'text-[#4CAF50]' : judgeSummary.verdict === 'WA' ? 'text-[#00A8E1]' : 'text-[#DC2626]'}`}>
                     {judgeSummary.verdict}
                   </span>
                 </div>
@@ -1437,7 +1437,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                     {judgeCaseResults.map((c) => (
                       <div key={c.caseNumber} className="flex items-start justify-between gap-3 text-[11px]">
                         <span className="text-[var(--text-tertiary)]">Case {c.caseNumber}</span>
-                        <span className={`font-bold ${c.statusCode === 'AC' ? 'text-[#4CAF50]' : c.statusCode === 'WA' ? 'text-[#F54E00]' : 'text-[#DC2626]'}`}>{c.statusCode}</span>
+                        <span className={`font-bold ${c.statusCode === 'AC' ? 'text-[#4CAF50]' : c.statusCode === 'WA' ? 'text-[#00A8E1]' : 'text-[#DC2626]'}`}>{c.statusCode}</span>
                       </div>
                     ))}
                   </div>
@@ -1494,7 +1494,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
             <div className="flex items-center gap-3 text-[10px] text-[var(--text-faint)]">
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#14B8A6]" /> Aptitude</span>
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#F59E0B]" /> MCQ</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#5E6AD2]" /> Coding</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#4B8BBE]" /> Coding</span>
             </div>
           </div>
         </div>
@@ -1541,7 +1541,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                             Q{idx + 1}. {q.questionDescription?.slice(0, 80) || 'Question'}{(q.questionDescription || '').length > 80 ? '...' : ''}
                           </p>
                         </div>
-                        <span className={`text-[10px] font-bold uppercase tracking-widest shrink-0 ${answered ? 'text-[#4CAF50]' : 'text-[#F54E00]'}`}>
+                        <span className={`text-[10px] font-bold uppercase tracking-widest shrink-0 ${answered ? 'text-[#4CAF50]' : 'text-[#00A8E1]'}`}>
                           {answered ? 'Answered' : 'Unanswered'}
                         </span>
                       </div>

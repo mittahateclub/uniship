@@ -246,7 +246,7 @@ function ScoreRing({ score, size = 80 }: { score: number; size?: number }) {
   const radius = (size - 8) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
-  const color = score >= 75 ? '#4CAF50' : score >= 50 ? '#F1A82C' : '#F54E00';
+  const color = score >= 75 ? '#4CAF50' : score >= 50 ? '#F1A82C' : '#00A8E1';
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
@@ -272,7 +272,7 @@ function ScoreRing({ score, size = 80 }: { score: number; size?: number }) {
 
 function CategoryBar({ label, score, max }: { label: string; score: number; max: number }) {
   const pct = Math.round((score / max) * 100);
-  const color = pct >= 75 ? '#4CAF50' : pct >= 50 ? '#F1A82C' : '#F54E00';
+  const color = pct >= 75 ? '#4CAF50' : pct >= 50 ? '#F1A82C' : '#00A8E1';
 
   return (
     <div>
@@ -308,7 +308,7 @@ export default function ATSScorePanel({ data, keywords = [], compact = false }: 
 
   const gradeColor =
     breakdown.total >= 75 ? '#4CAF50' :
-    breakdown.total >= 50 ? '#F1A82C' : '#F54E00';
+    breakdown.total >= 50 ? '#F1A82C' : '#00A8E1';
 
   return (
     <div className="window overflow-hidden">
@@ -375,7 +375,7 @@ export default function ATSScorePanel({ data, keywords = [], compact = false }: 
                     <span className="text-[10px] text-[var(--text-muted)]">Missing ({breakdown.keywords.missing.length}):</span>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {breakdown.keywords.missing.map((kw, i) => (
-                        <span key={i} className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#F54E00]/10 text-[#F54E00] border border-[#F54E00]/20">
+                        <span key={i} className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#00A8E1]/10 text-[#00A8E1] border border-[#00A8E1]/20">
                           {kw}
                         </span>
                       ))}
@@ -406,7 +406,7 @@ function DetailSection({ title, items }: { title: string; items: string[] }) {
           <p key={i} className={`text-[11px] ${
             item.startsWith('✓') ? 'text-[#4CAF50]' :
             item.startsWith('△') ? 'text-[#F1A82C]' :
-            'text-[#F54E00]'
+            'text-[#00A8E1]'
           }`}>
             {item}
           </p>

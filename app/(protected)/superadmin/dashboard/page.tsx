@@ -69,8 +69,8 @@ export default function SuperadminDashboard() {
           <div key={i} className="window p-5 hover:border-[var(--border-active)] transition-colors duration-150">
             <div className="flex items-center justify-between mb-3">
               <span className="text-[10px] font-bold text-[var(--text-faint)] uppercase tracking-widest">{s.label}</span>
-              <div className="w-7 h-7 rounded-lg bg-[#F54E00]/10 flex items-center justify-center">
-                <s.icon size={14} className="text-[#F54E00]" />
+              <div className="w-7 h-7 rounded-lg bg-[#00A8E1]/10 flex items-center justify-center">
+                <s.icon size={14} className="text-[#00A8E1]" />
               </div>
             </div>
             <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{s.value}</p>
@@ -85,14 +85,14 @@ export default function SuperadminDashboard() {
         {menuItems.map((item) => (
           <Link key={item.href} href={item.href} className="group window p-4 hover:border-[var(--border-active)] transition-all duration-150">
             <div className="w-8 h-8 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded flex items-center justify-center mb-3">
-              <item.icon size={15} className="text-[#F54E00]" />
+              <item.icon size={15} className="text-[#00A8E1]" />
             </div>
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="text-[13px] font-medium text-[var(--text-primary)] mb-0.5">{item.title}</h3>
                 <p className="text-[var(--text-muted)] text-[11px]">{item.desc}</p>
               </div>
-              <ArrowUpRight size={12} className="text-[var(--text-faint)] group-hover:text-[#F54E00] transition-colors duration-150 mt-0.5 shrink-0" />
+              <ArrowUpRight size={12} className="text-[var(--text-faint)] group-hover:text-[#00A8E1] transition-colors duration-150 mt-0.5 shrink-0" />
             </div>
           </Link>
         ))}

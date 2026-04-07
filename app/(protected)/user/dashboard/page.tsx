@@ -7,24 +7,142 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { 
-  FileText, 
-  Briefcase, 
-  ClipboardCheck, 
-  PenTool, 
-  BarChart3, 
-  Calendar as CalendarIcon, 
+import {
+  FileText,
+  Briefcase,
+  ClipboardCheck,
+  BarChart3,
+  Calendar as CalendarIcon,
   User,
-  ArrowUpRight,
-  GraduationCap,
+  ArrowRight,
   Download,
   Sparkles,
+  TrendingUp,
+  Info,
+  MapPin,
+  Clock,
 } from 'lucide-react';
+
+interface CalendarEvent {
+  id: string;
+  title: string;
+  date: any;
+  type: string;
+  description: string;
+  location?: string;
+  company?: string;
+}
+
+function toDate(d: any): Date | null {
+  if (!d) return null;
+  if (typeof d.toDate === 'function') return d.toDate();
+  if (d instanceof Date) return d;
+  return new Date(d);
+}
+
+function sameDay(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+const EVENT_TYPE_STYLES: Record<string, { bg: string; border: string; text: string; icon: string; label: string }> = {
+  event:      { bg: 'rgba(75,139,190,0.12)', border: 'rgba(75,139,190,0.3)',  text: '#4B8BBE', icon: '#4B8BBE', label: 'Event' },
+  internship: { bg: 'rgba(0,193,110,0.12)',  border: 'rgba(0,193,110,0.3)',   text: '#00C16E', icon: '#00C16E', label: 'Internship' },
+  hackathon:  { bg: 'rgba(0,168,225,0.12)',  border: 'rgba(0,168,225,0.3)',   text: '#00A8E1', icon: '#00A8E1', label: 'Hackathon' },
+  research:   { bg: 'rgba(241,168,44,0.12)', border: 'rgba(241,168,44,0.3)',  text: '#F1A82C', icon: '#F1A82C', label: 'Research' },
+  workshop:   { bg: 'rgba(224,77,176,0.12)', border: 'rgba(224,77,176,0.3)',  text: '#E04DB0', icon: '#E04DB0', label: 'Workshop' },
+};
+
+/* ── decorative SVG background patterns per card ── */
+const cardArt: Record<string, React.ReactNode> = {
+  tests: (
+    <svg className="absolute right-0 top-0 h-full w-1/2" viewBox="0 0 200 200" fill="none">
+      <rect x="30" y="20" width="60" height="80" rx="4" stroke="currentColor" strokeWidth="2"/>
+      <line x1="45" y1="45" x2="75" y2="45" stroke="currentColor" strokeWidth="2"/>
+      <line x1="45" y1="58" x2="70" y2="58" stroke="currentColor" strokeWidth="2"/>
+      <line x1="45" y1="71" x2="65" y2="71" stroke="currentColor" strokeWidth="2"/>
+      <circle cx="140" cy="60" r="35" stroke="currentColor" strokeWidth="2"/>
+      <path d="M125 60l10 10 20-20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <rect x="110" y="120" width="50" height="50" rx="6" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3"/>
+      <circle cx="50" cy="150" r="20" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3"/>
+    </svg>
+  ),
+  college: (
+    <svg className="absolute right-0 top-0 h-full w-1/2" viewBox="0 0 200 200" fill="none">
+      <path d="M100 30L30 65v40l70 35 70-35V65L100 30z" stroke="currentColor" strokeWidth="2"/>
+      <path d="M100 100v50" stroke="currentColor" strokeWidth="2"/>
+      <path d="M30 65v40" stroke="currentColor" strokeWidth="2"/>
+      <circle cx="30" cy="115" r="6" stroke="currentColor" strokeWidth="1.5"/>
+      <rect x="130" y="130" width="40" height="40" rx="4" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3"/>
+      <circle cx="60" cy="160" r="15" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3"/>
+    </svg>
+  ),
+  applications: (
+    <svg className="absolute right-0 top-0 h-full w-1/2" viewBox="0 0 200 200" fill="none">
+      <rect x="40" y="25" width="55" height="70" rx="4" stroke="currentColor" strokeWidth="2"/>
+      <rect x="50" y="35" width="35" height="4" rx="1" fill="currentColor"/>
+      <rect x="50" y="45" width="28" height="4" rx="1" fill="currentColor"/>
+      <rect x="50" y="55" width="32" height="4" rx="1" fill="currentColor"/>
+      <path d="M120 50l30 30M150 50l-30 30" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M110 120h60v50H110z" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3" rx="4"/>
+      <circle cx="60" cy="140" r="18" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3"/>
+      <path d="M52 140l5 5 11-11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+  resume: (
+    <svg className="absolute right-0 top-0 h-full w-1/2" viewBox="0 0 200 200" fill="none">
+      <rect x="50" y="20" width="60" height="80" rx="4" stroke="currentColor" strokeWidth="2"/>
+      <circle cx="80" cy="42" r="10" stroke="currentColor" strokeWidth="1.5"/>
+      <rect x="62" y="60" width="36" height="3" rx="1" fill="currentColor"/>
+      <rect x="62" y="68" width="28" height="3" rx="1" fill="currentColor"/>
+      <rect x="62" y="76" width="32" height="3" rx="1" fill="currentColor"/>
+      <path d="M140 60c0-20-15-30-15-30s-15 10-15 30 15 30 15 30 15-10 15-30z" stroke="currentColor" strokeWidth="1.5"/>
+      <circle cx="125" cy="60" r="5" fill="currentColor" opacity="0.4"/>
+      <path d="M30 140l15-15 12 12 18-18 15 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+  export: (
+    <svg className="absolute right-0 top-0 h-full w-1/2" viewBox="0 0 200 200" fill="none">
+      <rect x="50" y="30" width="50" height="65" rx="3" stroke="currentColor" strokeWidth="2"/>
+      <path d="M75 110v40M60 135l15 15 15-15" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <rect x="130" y="50" width="35" height="45" rx="3" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3"/>
+      <circle cx="35" cy="140" r="15" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3"/>
+    </svg>
+  ),
+  results: (
+    <svg className="absolute right-0 top-0 h-full w-1/2" viewBox="0 0 200 200" fill="none">
+      <rect x="30" y="120" width="20" height="50" rx="2" fill="currentColor" opacity="0.3"/>
+      <rect x="60" y="90" width="20" height="80" rx="2" fill="currentColor" opacity="0.3"/>
+      <rect x="90" y="60" width="20" height="110" rx="2" fill="currentColor" opacity="0.3"/>
+      <rect x="120" y="40" width="20" height="130" rx="2" fill="currentColor" opacity="0.3"/>
+      <path d="M30 110 Q75 30 150 50" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <circle cx="150" cy="50" r="5" fill="currentColor" opacity="0.5"/>
+    </svg>
+  ),
+  practice: (
+    <svg className="absolute right-0 top-0 h-full w-1/2" viewBox="0 0 200 200" fill="none">
+      <rect x="40" y="50" width="120" height="100" rx="6" stroke="currentColor" strokeWidth="2"/>
+      <path d="M80 90l15 15 25-30" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <line x1="40" y1="75" x2="160" y2="75" stroke="currentColor" strokeWidth="1.5" opacity="0.4"/>
+      <circle cx="55" cy="62" r="4" fill="currentColor" opacity="0.3"/>
+      <circle cx="70" cy="62" r="4" fill="currentColor" opacity="0.3"/>
+      <circle cx="85" cy="62" r="4" fill="currentColor" opacity="0.3"/>
+      <rect x="55" y="120" width="90" height="8" rx="2" fill="currentColor" opacity="0.1"/>
+    </svg>
+  ),
+  profile: (
+    <svg className="absolute right-0 top-0 h-full w-1/2" viewBox="0 0 200 200" fill="none">
+      <circle cx="100" cy="60" r="25" stroke="currentColor" strokeWidth="2"/>
+      <path d="M55 140c0-25 20-45 45-45s45 20 45 45" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <rect x="130" y="25" width="35" height="35" rx="17.5" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3"/>
+      <circle cx="40" cy="130" r="12" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3"/>
+    </svg>
+  ),
+};
 
 export default function UserDashboard() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [stats, setStats] = useState({ applications: 0, pendingTests: 0, events: 0, avgScore: null as number | null });
+  const [todayEvents, setTodayEvents] = useState<CalendarEvent[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -33,39 +151,36 @@ export default function UserDashboard() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    async function fetchStats() {
+    async function fetchTodayEvents() {
       if (!user) return;
       try {
-        const [appsSnap, testsSnap, resultsSnap, eventsSnap] = await Promise.all([
-          getDocs(query(collection(db, 'applications'), where('userId', '==', user.uid))),
-          getDocs(collection(db, 'tests')),
-          getDocs(query(collection(db, 'test_results'), where('userId', '==', user.uid))),
-          getDocs(collection(db, 'events')),
-        ]);
-
-        const completedTestIds = new Set(resultsSnap.docs.map(d => d.data().testId));
-        const pendingTests = testsSnap.docs.filter(d => !completedTestIds.has(d.id)).length;
-
-        let avgScore: number | null = null;
-        if (resultsSnap.size > 0) {
-          const total = resultsSnap.docs.reduce((sum, d) => {
+        const savedSnap = await getDocs(
+          query(collection(db, 'savedEvents'), where('userId', '==', user.uid))
+        );
+        const today = new Date();
+        const events: CalendarEvent[] = savedSnap.docs
+          .map(d => {
             const data = d.data();
-            return sum + (data.score / data.totalQuestions) * 100;
-          }, 0);
-          avgScore = Math.round(total / resultsSnap.size);
-        }
-
-        setStats({
-          applications: appsSnap.size,
-          pendingTests,
-          events: eventsSnap.size,
-          avgScore,
-        });
+            return {
+              id: d.id,
+              title: data.title,
+              date: data.date,
+              type: data.type || 'event',
+              description: data.description || '',
+              location: data.location || undefined,
+              company: data.companyName || undefined,
+            };
+          })
+          .filter(e => {
+            const d = toDate(e.date);
+            return d && sameDay(d, today);
+          });
+        setTodayEvents(events);
       } catch (error) {
-        console.error('Error fetching dashboard stats:', error);
+        console.error('Error fetching today events:', error);
       }
     }
-    if (!loading && user) fetchStats();
+    if (!loading && user) fetchTodayEvents();
   }, [user, loading]);
 
   if (loading) {
@@ -79,91 +194,216 @@ export default function UserDashboard() {
   if (!user) return null;
 
   const menuItems = [
-    { title: 'Test Portal', desc: 'Assessments & mock tests', href: '/user/test-portal', icon: FileText },
-    { title: 'College Space', desc: 'Events & opportunities', href: '/user/internships', icon: Briefcase },
-    { title: 'Applications', desc: 'Track submissions', href: '/user/applications', icon: ClipboardCheck },
-    { title: 'AI Resume Builder', desc: 'AI-powered resume', href: '/user/resume', icon: Sparkles },
-    { title: 'Export Resume', desc: 'Download A4 PDF', href: '/user/resume/download', icon: Download },
-    { title: 'Results', desc: 'Performance analytics', href: '/user/results', icon: BarChart3 },
-    { title: 'My Analysis', desc: 'Progress, speed and reliability', href: '/user/analysis', icon: BarChart3 },
-    { title: 'Profile', desc: 'Academic details', href: '/user/profile', icon: User },
+    { title: 'Test Portal', desc: 'Take assessments, mock tests, and track your exam readiness', href: '/user/test-portal', icon: FileText, art: cardArt.tests },
+    { title: 'College Space', desc: 'Explore events, internships, and campus opportunities', href: '/user/internships', icon: Briefcase, art: cardArt.college },
+    { title: 'Applications', desc: 'Track your submissions and application statuses in one place', href: '/user/applications', icon: ClipboardCheck, art: cardArt.applications },
+    { title: 'AI Resume Builder', desc: 'Craft a professional resume with intelligent AI suggestions', href: '/user/resume', icon: Sparkles, art: cardArt.resume },
+    { title: 'Export Resume', desc: 'Download your polished resume as a print-ready A4 PDF', href: '/user/resume/download', icon: Download, art: cardArt.export },
+    { title: 'Results', desc: 'View scores, percentiles, and detailed performance breakdowns', href: '/user/results', icon: BarChart3, art: cardArt.results },
+    { title: 'Practice', desc: 'Sharpen your skills with curated problems and timed challenges', href: '/user/practice', icon: TrendingUp, art: cardArt.practice },
+    { title: 'Profile', desc: 'Manage your academic details and account preferences', href: '/user/profile', icon: User, art: cardArt.profile },
   ];
 
   return (
-    <div className="max-w-[1100px] mx-auto animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Dashboard</h1>
-          <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Welcome back, <span className="text-[var(--text-primary)]">{user.email?.split('@')[0]}</span></p>
-        </div>
-        <Link 
-          href="/user/calendar" 
-          className="btn-secondary flex items-center gap-2 text-[13px]"
-        >
-          <CalendarIcon size={14} />
-          View Schedule
-        </Link>
-      </div>
+    <div className="max-w-[1200px] mx-auto animate-fade-in">
+      <style>{`
+        .dash-card {
+          position: relative;
+          overflow: hidden;
+          border-radius: 10px;
+          border: 1px solid var(--border-subtle);
+          background: var(--bg-surface);
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          cursor: pointer;
+        }
+        .dash-card:hover {
+          border-color: var(--border-active);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 20px -4px rgba(0,0,0,0.15);
+        }
+        .dash-card::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          opacity: 0;
+          transition: opacity 0.2s ease;
+          background: radial-gradient(500px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.03), transparent 40%);
+          pointer-events: none;
+        }
+        .dash-card:hover::before {
+          opacity: 1;
+        }
+        [data-theme='light'] .dash-card::before {
+          background: radial-gradient(500px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0,0,0,0.02), transparent 40%);
+        }
+        .dash-card-icon {
+          width: 36px;
+          height: 36px;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: var(--bg-elevated);
+          border: 1px solid var(--border-subtle);
+          transition: border-color 0.2s ease;
+        }
+        .dash-card:hover .dash-card-icon {
+          border-color: var(--border-active);
+        }
+        .dash-card .card-arrow {
+          transition: all 0.2s ease;
+          opacity: 0;
+          transform: translateX(-4px);
+        }
+        .dash-card:hover .card-arrow {
+          opacity: 0.5;
+          transform: translateX(0);
+        }
+        .dash-card .card-art {
+          transition: opacity 0.3s ease;
+          color: var(--text-faint);
+          opacity: 0.4;
+        }
+        .dash-card:hover .card-art {
+          opacity: 0.6;
+        }
+        [data-theme='light'] .dash-card:hover {
+          box-shadow: 0 4px 20px -4px rgba(0,0,0,0.08);
+        }
+      `}</style>
 
-      {/* Stats row */}
-      <div id="stats" className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        {[
-          { label: 'Applications', value: String(stats.applications), icon: ClipboardCheck },
-          { label: 'Pending Tests', value: String(stats.pendingTests), icon: FileText },
-          { label: 'Events', value: String(stats.events), icon: CalendarIcon },
-          { label: 'Avg Score', value: stats.avgScore !== null ? `${stats.avgScore}%` : 'N/A', icon: GraduationCap },
-        ].map((stat, i) => (
-          <div key={i} className="window p-5 hover:border-[var(--border-active)] transition-colors duration-150">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-bold text-[var(--text-faint)] uppercase tracking-widest">{stat.label}</span>
-              <div className="w-7 h-7 rounded-lg bg-[#F54E00]/10 flex items-center justify-center">
-                <stat.icon size={14} className="text-[#F54E00]" />
-              </div>
+      {/* ── Today's Events ── */}
+      <Link href="/user/calendar" className="group relative block overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 mb-6 no-underline hover:border-[var(--border-active)] transition-all duration-200" style={{ textDecoration: 'none' }}>
+        {/* Calendar SVG art in blue */}
+        <svg className="absolute right-0 top-0 h-full w-2/5 opacity-[0.12] text-[#00A8E1] pointer-events-none" viewBox="0 0 300 200" fill="none">
+          <rect x="30" y="20" width="120" height="110" rx="8" stroke="currentColor" strokeWidth="2.5"/>
+          <line x1="30" y1="50" x2="150" y2="50" stroke="currentColor" strokeWidth="2"/>
+          <circle cx="55" cy="35" r="4" fill="currentColor" opacity="0.6"/>
+          <circle cx="125" cy="35" r="4" fill="currentColor" opacity="0.6"/>
+          <line x1="55" y1="20" x2="55" y2="10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+          <line x1="125" y1="20" x2="125" y2="10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+          <rect x="42" y="62" width="18" height="14" rx="2" fill="currentColor" opacity="0.15"/>
+          <rect x="68" y="62" width="18" height="14" rx="2" fill="currentColor" opacity="0.15"/>
+          <rect x="94" y="62" width="18" height="14" rx="2" fill="currentColor" opacity="0.15"/>
+          <rect x="120" y="62" width="18" height="14" rx="2" fill="currentColor" opacity="0.15"/>
+          <rect x="42" y="84" width="18" height="14" rx="2" fill="currentColor" opacity="0.15"/>
+          <rect x="68" y="84" width="18" height="14" rx="2" fill="currentColor" opacity="0.25"/>
+          <rect x="94" y="84" width="18" height="14" rx="2" fill="currentColor" opacity="0.15"/>
+          <rect x="120" y="84" width="18" height="14" rx="2" fill="currentColor" opacity="0.15"/>
+          <rect x="42" y="106" width="18" height="14" rx="2" fill="currentColor" opacity="0.15"/>
+          <rect x="68" y="106" width="18" height="14" rx="2" fill="currentColor" opacity="0.15"/>
+          <circle cx="220" cy="70" r="35" stroke="currentColor" strokeWidth="2"/>
+          <path d="M220 70V48" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          <path d="M220 70L240 80" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          <circle cx="220" cy="70" r="3" fill="currentColor" opacity="0.5"/>
+        </svg>
+
+        <div className="relative z-10 flex items-center gap-5">
+          {/* Left: title + events */}
+          <div className="flex-1 min-w-0">
+            {/* Title row */}
+            <div className="flex items-center gap-2 mb-3">
+              <CalendarIcon size={15} className="text-[#00A8E1]" />
+              <h2 className="text-[13px] font-bold text-[var(--text-primary)] tracking-[-0.01em]">Today&apos;s Events</h2>
+              <span className="text-[11px] text-[var(--text-faint)]">
+                {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              </span>
             </div>
-            <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{stat.value}</p>
+
+            {/* Event banners */}
+            {todayEvents.length === 0 ? (
+              <div className="flex items-center gap-2 py-2">
+                <CalendarIcon size={14} className="text-[var(--text-faint)]" />
+                <p className="text-[12px] text-[var(--text-muted)]">No events scheduled for today</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {todayEvents.map(ev => {
+                  const style = EVENT_TYPE_STYLES[ev.type] || EVENT_TYPE_STYLES.event;
+                  const d = toDate(ev.date);
+                  return (
+                    <div
+                      key={ev.id}
+                      className="flex items-center gap-3 px-4 py-2.5 rounded-lg border"
+                      style={{ background: style.bg, borderColor: style.border }}
+                    >
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 border" style={{ borderColor: style.text, color: style.text }}>
+                        <Info size={13} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[13px] font-semibold" style={{ color: style.text }}>
+                          {style.label}
+                        </span>
+                        <span className="text-[13px] text-[var(--text-secondary)] mx-1.5">—</span>
+                        <span className="text-[13px] text-[var(--text-primary)]">{ev.title}</span>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0 text-[11px] text-[var(--text-muted)]">
+                        {d && (
+                          <span className="flex items-center gap-1">
+                            <Clock size={10} />
+                            {d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        )}
+                        {ev.location && (
+                          <span className="flex items-center gap-1 hidden sm:flex">
+                            <MapPin size={10} />
+                            {ev.location}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        ))}
-      </div>
 
-      <div className="divider-dashed my-6" />
+          {/* Right: View Calendar button, vertically centered */}
+          <div className="shrink-0 flex items-center">
+            <div className="flex items-center gap-1.5 px-4 py-2 rounded-md bg-[#00A8E1]/10 border border-[#00A8E1]/20 text-[12px] text-[#00A8E1] font-semibold group-hover:bg-[#00A8E1]/20 transition-all duration-150">
+              <CalendarIcon size={12} />
+              View Calendar
+              <ArrowRight size={12} />
+            </div>
+          </div>
+        </div>
+      </Link>
 
-      {/* Navigation grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+      {/* ── Card Grid ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 stagger-children">
         {menuItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className="group window p-4 hover:border-[var(--border-active)] transition-all duration-150"
+            className="dash-card group"
+            onMouseMove={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              e.currentTarget.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+              e.currentTarget.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+            }}
           >
-            <div className="w-8 h-8 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded flex items-center justify-center mb-3">
-              <item.icon size={15} className="text-[#F54E00]" />
+            {/* Background art */}
+            <div className="card-art pointer-events-none">
+              {item.art}
             </div>
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-[13px] font-medium text-[var(--text-primary)] mb-0.5">{item.title}</h3>
-                <p className="text-[var(--text-muted)] text-[11px]">{item.desc}</p>
+
+            {/* Content */}
+            <div className="relative z-10 p-5 flex flex-col h-full min-h-[150px]">
+              <div className="flex items-start justify-between mb-auto">
+                <div className="dash-card-icon">
+                  <item.icon size={16} className="text-[#00A8E1]" />
+                </div>
               </div>
-              <ArrowUpRight size={12} className="text-[var(--text-faint)] group-hover:text-[#F54E00] transition-colors duration-150 mt-0.5 shrink-0" />
+              <div className="mt-4">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-[13px] font-semibold text-[var(--text-primary)] tracking-[-0.01em]">{item.title}</h3>
+                  <ArrowRight size={12} className="card-arrow text-[var(--text-faint)]" />
+                </div>
+                <p className="text-[var(--text-muted)] text-[11px] mt-1 leading-relaxed">{item.desc}</p>
+              </div>
             </div>
           </Link>
         ))}
-      </div>
-
-      {/* CTA banner */}
-      <div className="mt-8 window p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#F54E00]/10 rounded flex items-center justify-center shrink-0">
-            <Sparkles size={15} className="text-[#F54E00]" />
-          </div>
-          <div>
-            <p className="text-[13px] font-medium text-[var(--text-primary)]">Complete your Resume Profile</p>
-            <p className="text-[var(--text-muted)] text-[11px]">Boost shortlisting chances by 60%</p>
-          </div>
-        </div>
-        <Link href="/user/resume" className="btn-primary text-[13px] shrink-0">
-          Update Now
-        </Link>
       </div>
     </div>
   );

@@ -348,9 +348,9 @@ export default function AdminPracticePage() {
 
       {status.message && (
         <div className={`mb-4 p-3 rounded text-[13px] font-medium border ${
-          status.type === 'error' ? 'bg-[#F54E00]/10 text-[#F54E00] border-[#F54E00]/20'
+          status.type === 'error' ? 'bg-[#00A8E1]/10 text-[#00A8E1] border-[#00A8E1]/20'
           : status.type === 'success' ? 'bg-[#4CAF50]/10 text-[#4CAF50] border-[#4CAF50]/20'
-          : 'bg-[#5E6AD2]/10 text-[#5E6AD2] border-[#5E6AD2]/20'
+          : 'bg-[#4B8BBE]/10 text-[#4B8BBE] border-[#4B8BBE]/20'
         }`}>
           {status.message}
         </div>
@@ -404,14 +404,14 @@ export default function AdminPracticePage() {
                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => handleEdit(p)}
-                    className="text-[var(--text-faint)] hover:text-[#5E6AD2] transition-colors"
+                    className="text-[var(--text-faint)] hover:text-[#4B8BBE] transition-colors"
                     title="Edit problem"
                   >
                     <Pencil size={14} />
                   </button>
                   <button
                     onClick={() => handleDelete(p.id)}
-                    className="text-[var(--text-faint)] hover:text-[#F54E00] transition-colors"
+                    className="text-[var(--text-faint)] hover:text-[#00A8E1] transition-colors"
                     title="Delete problem"
                   >
                     <Trash2 size={14} />
@@ -431,7 +431,7 @@ export default function AdminPracticePage() {
               <button
                 onClick={() => setCreateMode('ai')}
                 className={`px-4 py-2 text-[13px] font-semibold rounded-md transition-colors flex items-center gap-1.5 ${
-                  createMode === 'ai' ? 'bg-[#5E6AD2] text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]'
+                  createMode === 'ai' ? 'bg-[#4B8BBE] text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]'
                 }`}
               >
                 <Sparkles size={13} /> AI Generate
@@ -439,7 +439,7 @@ export default function AdminPracticePage() {
               <button
                 onClick={() => setCreateMode('manual')}
                 className={`px-4 py-2 text-[13px] font-semibold rounded-md transition-colors flex items-center gap-1.5 ${
-                  createMode === 'manual' ? 'bg-[#5E6AD2] text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]'
+                  createMode === 'manual' ? 'bg-[#4B8BBE] text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]'
                 }`}
               >
                 <Keyboard size={13} /> Manual Entry
@@ -506,7 +506,7 @@ export default function AdminPracticePage() {
                   {aiVisibleUntil && (
                     <button
                       onClick={() => setAiVisibleUntil('')}
-                      className="text-[11px] text-[#F54E00] font-medium hover:underline whitespace-nowrap"
+                      className="text-[11px] text-[#00A8E1] font-medium hover:underline whitespace-nowrap"
                     >
                       Clear
                     </button>
@@ -611,7 +611,7 @@ export default function AdminPracticePage() {
                     {form.visibleUntil && (
                       <button
                         onClick={() => setForm({ ...form, visibleUntil: '' })}
-                        className="text-[11px] text-[#F54E00] font-medium hover:underline whitespace-nowrap"
+                        className="text-[11px] text-[#00A8E1] font-medium hover:underline whitespace-nowrap"
                       >
                         Clear expiry
                       </button>
@@ -708,7 +708,7 @@ export default function AdminPracticePage() {
                   </h3>
                   <button
                     onClick={() => setForm({ ...form, testCases: [...form.testCases, { input: '', expectedOutput: '', isHidden: true }] })}
-                    className="text-[11px] text-[#5E6AD2] font-medium hover:underline flex items-center gap-1"
+                    className="text-[11px] text-[#4B8BBE] font-medium hover:underline flex items-center gap-1"
                   >
                     <Plus size={11} /> Add Test Case
                   </button>
@@ -735,7 +735,7 @@ export default function AdminPracticePage() {
                         {form.testCases.length > 1 && (
                           <button
                             onClick={() => setForm({ ...form, testCases: form.testCases.filter((_, i) => i !== idx) })}
-                            className="text-[var(--text-faint)] hover:text-[#F54E00]"
+                            className="text-[var(--text-faint)] hover:text-[#00A8E1]"
                           >
                             <Trash2 size={12} />
                           </button>

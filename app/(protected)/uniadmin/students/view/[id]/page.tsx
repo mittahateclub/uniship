@@ -130,7 +130,7 @@ function getResultSections(result: ResultItem): Array<{ name: string; percentage
 function SectionHeader({ icon: Icon, title }: { icon: React.ComponentType<any>; title: string }) {
   return (
     <div className="flex items-center gap-2 mb-3 mt-5 first:mt-0">
-      <Icon size={15} className="text-[#5E6AD2]" />
+      <Icon size={15} className="text-[#4B8BBE]" />
       <h2 className="text-[13px] font-bold uppercase tracking-widest text-[var(--text-primary)]">{title}</h2>
     </div>
   );
@@ -252,7 +252,7 @@ export default function StudentViewPage() {
   if (!student) {
     return (
       <div className="window p-12 text-center">
-        <p className="text-[#F54E00] text-[13px]">Student not found.</p>
+        <p className="text-[#00A8E1] text-[13px]">Student not found.</p>
       </div>
     );
   }
@@ -308,7 +308,7 @@ export default function StudentViewPage() {
       </Link>
 
       {notice && (
-        <div className={`mb-4 p-3 rounded border text-[13px] ${notice.type === 'success' ? 'border-[#4CAF50]/20 bg-[#4CAF50]/10 text-[#4CAF50]' : 'border-[#F54E00]/20 bg-[#F54E00]/10 text-[#F54E00]'}`}>
+        <div className={`mb-4 p-3 rounded border text-[13px] ${notice.type === 'success' ? 'border-[#4CAF50]/20 bg-[#4CAF50]/10 text-[#4CAF50]' : 'border-[#00A8E1]/20 bg-[#00A8E1]/10 text-[#00A8E1]'}`}>
           {notice.message}
         </div>
       )}
@@ -319,13 +319,13 @@ export default function StudentViewPage() {
             {student.photoURL ? (
               <img src={student.photoURL} alt={student.name || 'Student'} className="w-24 h-24 rounded-full object-cover border-2 border-[var(--border-subtle)]" />
             ) : (
-              <div className="w-24 h-24 rounded-full bg-[#5E6AD2]/10 flex items-center justify-center text-[#5E6AD2] text-3xl font-bold">
+              <div className="w-24 h-24 rounded-full bg-[#4B8BBE]/10 flex items-center justify-center text-[#4B8BBE] text-3xl font-bold">
                 {student.name?.charAt(0)?.toUpperCase() || '?'}
               </div>
             )}
             <h1 className="text-[20px] font-bold text-[var(--text-primary)] mt-3">{student.name || 'Unnamed'}</h1>
             <p className="text-[13px] text-[var(--text-tertiary)]">{student.title || 'Student'}</p>
-            <p className="text-[12px] font-mono text-[#F54E00] mt-1">{student.rollNumber || student.studentId || 'N/A'}</p>
+            <p className="text-[12px] font-mono text-[#00A8E1] mt-1">{student.rollNumber || student.studentId || 'N/A'}</p>
 
             <div className="w-full mt-5 space-y-3">
               <div className="rounded bg-[var(--bg-elevated)] p-3 border border-[var(--border-subtle)]">
@@ -352,7 +352,7 @@ export default function StudentViewPage() {
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-3 py-2 text-[12px] font-semibold transition-colors ${activeTab === tab.id ? 'bg-[#5E6AD2]/10 text-[#5E6AD2]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
+                  className={`px-3 py-2 text-[12px] font-semibold transition-colors ${activeTab === tab.id ? 'bg-[#4B8BBE]/10 text-[#4B8BBE]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
                 >
                   {tab.label}
                 </button>
@@ -474,7 +474,7 @@ export default function StudentViewPage() {
                         <SectionHeader icon={Code} title="Technical Skills" />
                         <div className="flex flex-wrap gap-1.5">
                           {student.technicalSkills.split(/[,\n]+/).map((s) => s.trim()).filter(Boolean).map((skill, i) => (
-                            <span key={i} className="px-2 py-0.5 text-[11px] font-medium rounded bg-[#5E6AD2]/8 text-[#5E6AD2] border border-[#5E6AD2]/15">{skill}</span>
+                            <span key={i} className="px-2 py-0.5 text-[11px] font-medium rounded bg-[#4B8BBE]/8 text-[#4B8BBE] border border-[#4B8BBE]/15">{skill}</span>
                           ))}
                         </div>
                       </>
@@ -535,12 +535,12 @@ export default function StudentViewPage() {
                     <SectionHeader icon={FolderKanban} title="Projects" />
                     <div className="space-y-3">
                       {projEntries.map((p: any, i: number) => (
-                        <div key={i} className="border-l-2 border-[#F54E00]/30 pl-3">
+                        <div key={i} className="border-l-2 border-[#00A8E1]/30 pl-3">
                           <div className="flex justify-between items-baseline">
                             <h3 className="text-[13px] font-bold text-[var(--text-primary)]">{p.title}</h3>
                             <span className="text-[11px] text-[var(--text-faint)]">{formatDateRange(p.fromDate, p.toDate)}</span>
                           </div>
-                          {p.techStack && <p className="text-[11px] text-[#5E6AD2] mt-1">{p.techStack}</p>}
+                          {p.techStack && <p className="text-[11px] text-[#4B8BBE] mt-1">{p.techStack}</p>}
                           {p.description && <p className="text-[11px] text-[var(--text-tertiary)] mt-1 whitespace-pre-line">{p.description}</p>}
                         </div>
                       ))}
@@ -661,7 +661,7 @@ export default function StudentViewPage() {
                         </div>
                         <div>
                           <p className="text-[11px] text-[var(--text-faint)] uppercase tracking-widest">Progress</p>
-                          <p className={`text-xl font-bold tabular-nums ${scoreDelta >= 0 ? 'text-[#4CAF50]' : 'text-[#F54E00]'}`}>
+                          <p className={`text-xl font-bold tabular-nums ${scoreDelta >= 0 ? 'text-[#4CAF50]' : 'text-[#00A8E1]'}`}>
                             {scoreDelta >= 0 ? '+' : ''}{scoreDelta.toFixed(1)}%
                           </p>
                         </div>

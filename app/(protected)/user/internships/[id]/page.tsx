@@ -95,7 +95,7 @@ export default function InternshipDetail({ params }: { params: Promise<{ id: str
         <div className="window p-6 sm:p-8">
           <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4 border-b border-[var(--border-subtle)] pb-6">
             <div>
-              <span className="inline-block bg-[#F54E00] text-black px-2.5 py-0.5 text-[11px] font-bold uppercase rounded mb-2">
+              <span className="inline-block bg-[#00A8E1] text-white px-2.5 py-0.5 text-[11px] font-bold uppercase rounded mb-2">
                 {internship.companyName}
               </span>
               <h1 className="text-2xl font-semibold tracking-[-0.02em]">{internship.role}</h1>

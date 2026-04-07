@@ -11,7 +11,7 @@ import { CheckCircle2, BookOpen, Brain, Code2 } from 'lucide-react';
 const sectionMeta: Record<string, { icon: typeof BookOpen; color: string; label: string }> = {
   aptitude: { icon: BookOpen, color: 'text-teal-400', label: 'Aptitude' },
   mcq: { icon: Brain, color: 'text-amber-400', label: 'Coding MCQs' },
-  coding: { icon: Code2, color: 'text-[#5E6AD2]', label: 'Live Coding' },
+  coding: { icon: Code2, color: 'text-[#4B8BBE]', label: 'Live Coding' },
 };
 
 export default function ReviewGeneratedQuestions() {
@@ -68,7 +68,7 @@ export default function ReviewGeneratedQuestions() {
   );
   if (!testData) return (
     <div className="window p-12 text-center">
-      <p className="text-[#F54E00] text-[13px]">Test not found.</p>
+      <p className="text-[#00A8E1] text-[13px]">Test not found.</p>
     </div>
   );
 
@@ -110,7 +110,7 @@ export default function ReviewGeneratedQuestions() {
                       <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${
                         section.type === 'aptitude' ? 'text-teal-400 bg-teal-400/10'
                         : section.type === 'mcq' ? 'text-amber-400 bg-amber-400/10'
-                        : 'text-[#5E6AD2] bg-[#5E6AD2]/10'
+                        : 'text-[#4B8BBE] bg-[#4B8BBE]/10'
                       }`}>
                         {q.difficulty || meta.label} — Q{qIdx + 1}
                       </span>
@@ -169,7 +169,7 @@ export default function ReviewGeneratedQuestions() {
         {hasOnlyCodingProblems && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <Code2 size={16} className="text-[#5E6AD2]" />
+              <Code2 size={16} className="text-[#4B8BBE]" />
               <h2 className="text-[14px] font-bold text-[var(--text-primary)]">Coding Problems</h2>
               <span className="text-[11px] text-[var(--text-faint)]">({testData.problems.length} questions)</span>
             </div>
@@ -177,7 +177,7 @@ export default function ReviewGeneratedQuestions() {
               {testData.problems.map((q: any, index: number) => (
                 <div key={index} className="window p-5">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#5E6AD2] bg-[#5E6AD2]/10 px-2 py-0.5 rounded">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#4B8BBE] bg-[#4B8BBE]/10 px-2 py-0.5 rounded">
                       {q.difficulty || 'Q'} — Q{index + 1}
                     </span>
                   </div>

@@ -467,7 +467,7 @@ export default function ResumeBuilder() {
               <section className="window p-5">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-[13px] font-bold text-[var(--text-primary)]">Profile Data</h2>
-                  <Link href="/user/profile" className="text-[11px] font-semibold text-[#5E6AD2] hover:underline">
+                  <Link href="/user/profile" className="text-[11px] font-semibold text-[#4B8BBE] hover:underline">
                     Edit Profile →
                   </Link>
                 </div>
@@ -492,7 +492,7 @@ export default function ResumeBuilder() {
             {/* AI Section */}
             <section className="window p-6" id="ai-tailor">
               <div className="flex items-center gap-2 mb-1">
-                <span className="inline-block bg-[#F54E00] text-black px-2.5 py-0.5 text-[11px] font-bold uppercase rounded">AI</span>
+                <span className="inline-block bg-[#00A8E1] text-white px-2.5 py-0.5 text-[11px] font-bold uppercase rounded">AI</span>
                 <h2 className="text-sm font-semibold">Tailor for a Job</h2>
               </div>
               <p className="text-[11px] text-[var(--text-muted)] mb-4">
@@ -505,7 +505,7 @@ export default function ResumeBuilder() {
                     type="text"
                     value={companyName}
                     onChange={e => setCompanyName(e.target.value)}
-                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-2 text-sm text-[var(--text-primary)] font-mono outline-none focus:border-[#5E6AD2] transition-colors"
+                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-2 text-sm text-[var(--text-primary)] font-mono outline-none focus:border-[#4B8BBE] transition-colors"
                     placeholder="e.g. Google, Vercel…"
                   />
                 </div>
@@ -515,7 +515,7 @@ export default function ResumeBuilder() {
                     value={jobDescription}
                     onChange={e => setJobDescription(e.target.value)}
                     rows={6}
-                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-2 text-sm text-[var(--text-primary)] font-mono outline-none resize-y focus:border-[#5E6AD2] transition-colors"
+                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-2 text-sm text-[var(--text-primary)] font-mono outline-none resize-y focus:border-[#4B8BBE] transition-colors"
                     placeholder="Paste the full JD here…"
                   />
                 </div>

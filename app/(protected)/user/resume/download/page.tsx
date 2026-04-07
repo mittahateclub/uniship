@@ -300,14 +300,14 @@ function EditorPanel({ draft, saving, onChange, onSave, onClose }: EditorPanelPr
                 value={(draft as any)[key] || ''}
                 onChange={e => onChange(key, e.target.value)}
                 rows={rows || 4}
-                className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-2 text-xs text-[var(--text-primary)] font-mono outline-none resize-y focus:border-[#5E6AD2] transition-colors"
+                className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-2 text-xs text-[var(--text-primary)] font-mono outline-none resize-y focus:border-[#4B8BBE] transition-colors"
               />
             ) : (
               <input
                 type="text"
                 value={(draft as any)[key] || ''}
                 onChange={e => onChange(key, e.target.value)}
-                className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-2 text-xs text-[var(--text-primary)] font-mono outline-none focus:border-[#5E6AD2] transition-colors"
+                className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-2 text-xs text-[var(--text-primary)] font-mono outline-none focus:border-[#4B8BBE] transition-colors"
               />
             )}
           </div>
@@ -569,7 +569,7 @@ export default function DownloadResume() {
                 if (file) handleUploadPreviousResume(file);
               }}
               className={`block rounded-lg border-2 border-dashed p-8 text-center cursor-pointer transition-colors ${
-                isDragOver ? 'border-[#5E6AD2] bg-[#5E6AD2]/10' : 'border-[#5E6AD2]/40 bg-[var(--bg-elevated)]'
+                isDragOver ? 'border-[#4B8BBE] bg-[#4B8BBE]/10' : 'border-[#4B8BBE]/40 bg-[var(--bg-elevated)]'
               }`}
             >
               <input
@@ -593,7 +593,7 @@ export default function DownloadResume() {
             </label>
 
             {uploadError && (
-              <p className="text-xs text-[#F54E00] mt-3">{uploadError}</p>
+              <p className="text-xs text-[#00A8E1] mt-3">{uploadError}</p>
             )}
           </div>
 
@@ -626,7 +626,7 @@ export default function DownloadResume() {
                 className="window p-5 hover:border-[var(--border-active)] transition-colors flex flex-col justify-between">
                 <div>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="bg-[#F54E00]/15 p-2.5 rounded text-[#F54E00]">
+                    <div className="bg-[#00A8E1]/15 p-2.5 rounded text-[#00A8E1]">
                       <FileText size={20} />
                     </div>
                     <div className="min-w-0">
@@ -659,7 +659,7 @@ export default function DownloadResume() {
                       type="button"
                       onClick={() => handleDeleteResume(resume)}
                       disabled={isDeleting === resume.id}
-                      className="btn-secondary px-3 py-2.5 text-xs font-semibold text-[#F54E00] border-[#F54E00]/30 disabled:opacity-50"
+                      className="btn-secondary px-3 py-2.5 text-xs font-semibold text-[#00A8E1] border-[#00A8E1]/30 disabled:opacity-50"
                       title="Delete resume"
                     >
                       <Trash2 size={13} />
@@ -675,7 +675,7 @@ export default function DownloadResume() {
                       type="button"
                       onClick={() => handleDeleteResume(resume)}
                       disabled={isDeleting === resume.id}
-                      className="btn-secondary px-3 py-2.5 text-xs font-semibold text-[#F54E00] border-[#F54E00]/30 disabled:opacity-50"
+                      className="btn-secondary px-3 py-2.5 text-xs font-semibold text-[#00A8E1] border-[#00A8E1]/30 disabled:opacity-50"
                       title="Delete resume"
                     >
                       <Trash2 size={13} />
@@ -712,7 +712,7 @@ export default function DownloadResume() {
             <button
               onClick={() => handleDeleteResume(selectedResume)}
               disabled={isDeleting === selectedResume.id}
-              className="btn-secondary flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-[#F54E00] border-[#F54E00]/30 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-secondary flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-[#00A8E1] border-[#00A8E1]/30 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Trash2 size={13} />
               {isDeleting === selectedResume.id ? 'Deleting…' : 'Delete Resume'}
@@ -722,7 +722,7 @@ export default function DownloadResume() {
           {/* Toggle editor */}
           <button
             onClick={() => setEditOpen(o => !o)}
-            className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded border transition-colors ${editOpen ? 'bg-[#F54E00] text-black border-[#F54E00]' : 'btn-secondary'}`}
+            className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded border transition-colors ${editOpen ? 'bg-[#00A8E1] text-white border-[#00A8E1]' : 'btn-secondary'}`}
           >
             <Pencil size={13} />
             {editOpen ? 'Close Editor' : 'Edit Content'}

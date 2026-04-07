@@ -82,13 +82,13 @@ export default function CreateStudentPage() {
       <div className="mb-6">
         <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Register Student</h1>
         <p className="text-[var(--text-tertiary)] text-[13px] mt-1">
-          University ID: <span className="font-mono text-[#F54E00]">{adminUnivId || 'Loading...'}</span>
+          University ID: <span className="font-mono text-[#00A8E1]">{adminUnivId || 'Loading...'}</span>
         </p>
       </div>
 
       <div className="window p-6">
         {error && (
-          <div className="mb-4 p-3 rounded bg-[#F54E00]/10 text-[#F54E00] border border-[#F54E00]/20 text-[13px] font-medium">{error}</div>
+          <div className="mb-4 p-3 rounded bg-[#00A8E1]/10 text-[#00A8E1] border border-[#00A8E1]/20 text-[13px] font-medium">{error}</div>
         )}
         {success && (
           <div className="mb-4 p-3 rounded bg-[#4CAF50]/10 text-[#4CAF50] border border-[#4CAF50]/20 text-[13px] font-medium">{success}</div>
@@ -102,7 +102,7 @@ export default function CreateStudentPage() {
                 type={f.type} name={f.name} required={f.required}
                 value={formData[f.name as keyof typeof formData]}
                 onChange={handleChange} disabled={submitting}
-                className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-faint)] text-[13px] focus:outline-none focus:border-[#5E6AD2] transition-all duration-150 disabled:opacity-50"
+                className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-faint)] text-[13px] focus:outline-none focus:border-[#4B8BBE] transition-all duration-150 disabled:opacity-50"
               />
             </div>
           ))}

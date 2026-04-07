@@ -171,7 +171,7 @@ export default function ManageStudentsPage() {
           placeholder="Search by name, email, student ID, university..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-9 pr-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#5E6AD2] transition-all duration-150"
+          className="w-full pl-9 pr-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#4B8BBE] transition-all duration-150"
         />
       </div>
 
@@ -188,7 +188,7 @@ export default function ManageStudentsPage() {
           {filteredStudents.map((student) => (
             <div key={student.id} className="window p-5 group hover:border-[var(--border-active)] transition-colors duration-150">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-8 h-8 rounded bg-[#5E6AD2]/10 flex items-center justify-center text-[#5E6AD2] text-sm font-bold">
+                <div className="w-8 h-8 rounded bg-[#4B8BBE]/10 flex items-center justify-center text-[#4B8BBE] text-sm font-bold">
                   {student.name?.charAt(0)?.toUpperCase() || '?'}
                 </div>
                 {student.verified ? (
@@ -307,7 +307,7 @@ export default function ManageStudentsPage() {
             </div>
 
             {editError && (
-              <div className="mb-3 p-2 rounded bg-[#F54E00]/10 text-[#F54E00] border border-[#F54E00]/20 text-[12px]">
+              <div className="mb-3 p-2 rounded bg-[#00A8E1]/10 text-[#00A8E1] border border-[#00A8E1]/20 text-[12px]">
                 {editError}
               </div>
             )}
@@ -319,7 +319,7 @@ export default function ManageStudentsPage() {
                   type="text"
                   value={editForm.name}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-[var(--text-primary)] focus:outline-none focus:border-[#5E6AD2]"
+                  className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-[var(--text-primary)] focus:outline-none focus:border-[#4B8BBE]"
                 />
               </div>
 
@@ -329,7 +329,7 @@ export default function ManageStudentsPage() {
                   type="text"
                   value={editForm.studentId}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, studentId: e.target.value }))}
-                  className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-[var(--text-primary)] focus:outline-none focus:border-[#5E6AD2]"
+                  className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-[var(--text-primary)] focus:outline-none focus:border-[#4B8BBE]"
                 />
               </div>
 
@@ -339,7 +339,7 @@ export default function ManageStudentsPage() {
                   type="text"
                   value={editForm.phone}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, phone: e.target.value }))}
-                  className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-[var(--text-primary)] focus:outline-none focus:border-[#5E6AD2]"
+                  className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-[var(--text-primary)] focus:outline-none focus:border-[#4B8BBE]"
                 />
               </div>
 
@@ -348,7 +348,7 @@ export default function ManageStudentsPage() {
                 <select
                   value={editForm.universityId}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, universityId: e.target.value }))}
-                  className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-[var(--text-primary)] focus:outline-none focus:border-[#5E6AD2]"
+                  className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-[var(--text-primary)] focus:outline-none focus:border-[#4B8BBE]"
                 >
                   <option value="">Select university</option>
                   {universities.map((uni) => (

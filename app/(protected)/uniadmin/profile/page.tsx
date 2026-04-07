@@ -85,7 +85,7 @@ export default function UniadminProfilePage() {
             </div>
             <div>
               <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">University ID</label>
-              <p className="text-[13px] font-mono text-[#F54E00]">{profileData.universityId}</p>
+              <p className="text-[13px] font-mono text-[#00A8E1]">{profileData.universityId}</p>
             </div>
           </div>
 
@@ -95,7 +95,7 @@ export default function UniadminProfilePage() {
               {isEditing ? (
                 <input
                   type="text"
-                  className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] text-[13px] focus:outline-none focus:border-[#5E6AD2] transition-all duration-150"
+                  className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] text-[13px] focus:outline-none focus:border-[#4B8BBE] transition-all duration-150"
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                 />
@@ -108,7 +108,7 @@ export default function UniadminProfilePage() {
               {isEditing ? (
                 <input
                   type="text"
-                  className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] text-[13px] focus:outline-none focus:border-[#5E6AD2] transition-all duration-150"
+                  className="w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] text-[13px] focus:outline-none focus:border-[#4B8BBE] transition-all duration-150"
                   value={formData.phone}
                   onChange={(e) => setFormData({...formData, phone: e.target.value})}
                 />

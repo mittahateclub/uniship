@@ -296,8 +296,8 @@ export default function ResultsPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                 <div className="window p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="w-7 h-7 rounded-lg bg-[#5E6AD2]/10 flex items-center justify-center">
-                      <Trophy size={14} className="text-[#5E6AD2]" />
+                    <div className="w-7 h-7 rounded-lg bg-[#4B8BBE]/10 flex items-center justify-center">
+                      <Trophy size={14} className="text-[#4B8BBE]" />
                     </div>
                   </div>
                   <p className="text-xl font-bold text-[var(--text-primary)] tabular-nums">{totalTests}</p>
@@ -323,8 +323,8 @@ export default function ResultsPage() {
                 </div>
                 <div className="window p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="w-7 h-7 rounded-lg bg-[#F54E00]/10 flex items-center justify-center">
-                      <CheckCircle2 size={14} className="text-[#F54E00]" />
+                    <div className="w-7 h-7 rounded-lg bg-[#00A8E1]/10 flex items-center justify-center">
+                      <CheckCircle2 size={14} className="text-[#00A8E1]" />
                     </div>
                   </div>
                   <p className="text-xl font-bold text-[var(--text-primary)] tabular-nums leading-tight truncate" title={bestResult?.testTitle}>{bestResult?.testTitle || '—'}</p>
@@ -349,7 +349,7 @@ export default function ResultsPage() {
                     <div className={`w-1 shrink-0 ${
                       pct >= 80 ? 'bg-[#4CAF50]' :
                       pct >= 60 ? 'bg-[#F1A82C]' :
-                      'bg-[#F54E00]'
+                      'bg-[#00A8E1]'
                     }`} />
 
                     <div className="flex-1 p-4">
@@ -379,12 +379,12 @@ export default function ResultsPage() {
                           <div className={`w-[52px] h-[52px] rounded-full flex items-center justify-center border-2 ${
                             pct >= 80 ? 'border-[#4CAF50] bg-[#4CAF50]/5' :
                             pct >= 60 ? 'border-[#F1A82C] bg-[#F1A82C]/5' :
-                            'border-[#F54E00] bg-[#F54E00]/5'
+                            'border-[#00A8E1] bg-[#00A8E1]/5'
                           }`}>
                             <span className={`text-[13px] font-bold tabular-nums ${
                               pct >= 80 ? 'text-[#4CAF50]' :
                               pct >= 60 ? 'text-[#F1A82C]' :
-                              'text-[#F54E00]'
+                              'text-[#00A8E1]'
                             }`}>{percentage}%</span>
                           </div>
                         </div>
@@ -395,7 +395,7 @@ export default function ResultsPage() {
                         <button
                           type="button"
                           onClick={() => loadAnalysis(result)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium text-[#5E6AD2] bg-[#5E6AD2]/8 hover:bg-[#5E6AD2]/15 transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium text-[#4B8BBE] bg-[#4B8BBE]/8 hover:bg-[#4B8BBE]/15 transition-colors"
                         >
                           <BarChart3 size={12} />
                           View Analysis
@@ -452,7 +452,7 @@ export default function ResultsPage() {
                 <div className="loading-dots"><span /><span /><span /></div>
               </div>
             ) : analysisError ? (
-              <div className="p-3 rounded border border-[#F54E00]/30 bg-[#F54E00]/10 text-[#F54E00] text-[13px]">
+              <div className="p-3 rounded border border-[#00A8E1]/30 bg-[#00A8E1]/10 text-[#00A8E1] text-[13px]">
                 {analysisError}
               </div>
             ) : analysis ? (
@@ -481,7 +481,7 @@ export default function ResultsPage() {
                     <h3 className="text-[13px] font-semibold text-[var(--text-primary)] mb-2">Question Breakdown</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[12px]">
                       <div className="rounded bg-[#4CAF50]/10 text-[#4CAF50] px-2 py-1">Correct: {analysis.questionStats.correct}</div>
-                      <div className="rounded bg-[#F54E00]/10 text-[#F54E00] px-2 py-1">Incorrect: {analysis.questionStats.incorrect}</div>
+                      <div className="rounded bg-[#00A8E1]/10 text-[#00A8E1] px-2 py-1">Incorrect: {analysis.questionStats.incorrect}</div>
                       <div className="rounded bg-[#F1A82C]/10 text-[#F1A82C] px-2 py-1">Ungraded: {analysis.questionStats.ungraded}</div>
                       <div className="rounded bg-[var(--bg-primary)] text-[var(--text-tertiary)] px-2 py-1">Unanswered: {analysis.questionStats.unanswered}</div>
                     </div>
@@ -504,7 +504,7 @@ export default function ResultsPage() {
                       </thead>
                       <tbody>
                         {analysis.board.map((row, idx) => (
-                          <tr key={`${row.label}-${idx}`} className={`border-b border-[var(--border-subtle)]/50 ${row.isYou ? 'bg-[#5E6AD2]/10' : ''}`}>
+                          <tr key={`${row.label}-${idx}`} className={`border-b border-[var(--border-subtle)]/50 ${row.isYou ? 'bg-[#4B8BBE]/10' : ''}`}>
                             <td className="px-3 py-2 text-[12px] font-medium text-[var(--text-primary)]">{row.label}</td>
                             <td className="px-3 py-2 text-center text-[12px] text-[var(--text-secondary)] tabular-nums">{row.score}</td>
                             <td className="px-3 py-2 text-right text-[12px] text-[var(--text-secondary)] tabular-nums">{row.percentage.toFixed(1)}%</td>

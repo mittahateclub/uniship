@@ -42,10 +42,10 @@ interface ResultDoc {
 
 const verdictConfig: Record<Verdict, { label: string; color: string; bg: string; icon: typeof CheckCircle2 }> = {
   AC:        { label: 'Correct',     color: 'text-[#4CAF50]', bg: 'bg-[#4CAF50]/10', icon: CheckCircle2 },
-  WA:        { label: 'Wrong',       color: 'text-[#F54E00]', bg: 'bg-[#F54E00]/10', icon: XCircle },
+  WA:        { label: 'Wrong',       color: 'text-[#00A8E1]', bg: 'bg-[#00A8E1]/10', icon: XCircle },
   TLE:       { label: 'Time Limit',  color: 'text-[#F1A82C]', bg: 'bg-[#F1A82C]/10', icon: Clock },
-  CE:        { label: 'Compile Error', color: 'text-[#F54E00]', bg: 'bg-[#F54E00]/10', icon: AlertTriangle },
-  RE:        { label: 'Runtime Error', color: 'text-[#F54E00]', bg: 'bg-[#F54E00]/10', icon: AlertTriangle },
+  CE:        { label: 'Compile Error', color: 'text-[#00A8E1]', bg: 'bg-[#00A8E1]/10', icon: AlertTriangle },
+  RE:        { label: 'Runtime Error', color: 'text-[#00A8E1]', bg: 'bg-[#00A8E1]/10', icon: AlertTriangle },
   UNGRADED:  { label: 'Ungraded',    color: 'text-[var(--text-faint)]', bg: 'bg-[var(--bg-elevated)]', icon: MinusCircle },
   UNANSWERED:{ label: 'Unanswered',  color: 'text-[var(--text-faint)]', bg: 'bg-[var(--bg-elevated)]', icon: MinusCircle },
 };
@@ -113,7 +113,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
           <p className="text-[var(--text-tertiary)] text-[13px] mt-0.5">
             Question-by-question review &middot;{' '}
             <span className="text-[#4CAF50]">{totalCorrect} correct</span>{' '}&middot;{' '}
-            <span className="text-[#F54E00]">{totalWrong} wrong</span>{' '}&middot;{' '}
+            <span className="text-[#00A8E1]">{totalWrong} wrong</span>{' '}&middot;{' '}
             <span className="text-[var(--text-faint)]">{totalUnanswered} unanswered</span>
           </p>
         </div>
@@ -135,14 +135,14 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
               const isWrong = verdict === 'WA' || verdict === 'TLE' || verdict === 'CE' || verdict === 'RE';
 
               return (
-                <div key={idx} className={`window p-4 border-l-2 ${verdict === 'AC' ? 'border-l-[#4CAF50]' : isWrong ? 'border-l-[#F54E00]' : 'border-l-[var(--border-subtle)]'}`}>
+                <div key={idx} className={`window p-4 border-l-2 ${verdict === 'AC' ? 'border-l-[#4CAF50]' : isWrong ? 'border-l-[#00A8E1]' : 'border-l-[var(--border-subtle)]'}`}>
                   {/* Question header */}
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-[11px] font-bold text-[var(--text-faint)] tabular-nums">Q{idx + 1}</span>
                       {q.difficulty && (
                         <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
-                          q.difficulty.toLowerCase() === 'hard' ? 'bg-[#F54E00]/10 text-[#F54E00]' :
+                          q.difficulty.toLowerCase() === 'hard' ? 'bg-[#00A8E1]/10 text-[#00A8E1]' :
                           q.difficulty.toLowerCase() === 'medium' ? 'bg-[#F1A82C]/10 text-[#F1A82C]' :
                           'bg-[#4CAF50]/10 text-[#4CAF50]'
                         }`}>{q.difficulty}</span>
@@ -167,17 +167,17 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
                         return (
                           <div key={oi} className={`flex items-center gap-2 px-3 py-1.5 rounded text-[13px] border ${
                             isCorrect ? 'border-[#4CAF50]/50 bg-[#4CAF50]/5' :
-                            isStudentPick && isWrong ? 'border-[#F54E00]/50 bg-[#F54E00]/5' :
+                            isStudentPick && isWrong ? 'border-[#00A8E1]/50 bg-[#00A8E1]/5' :
                             'border-[var(--border-subtle)]'
                           }`}>
-                            <span className={`font-bold text-[12px] ${isCorrect ? 'text-[#4CAF50]' : isStudentPick && isWrong ? 'text-[#F54E00]' : 'text-[var(--text-faint)]'}`}>
+                            <span className={`font-bold text-[12px] ${isCorrect ? 'text-[#4CAF50]' : isStudentPick && isWrong ? 'text-[#00A8E1]' : 'text-[var(--text-faint)]'}`}>
                               {letter}.
                             </span>
-                            <span className={isCorrect ? 'text-[#4CAF50]' : isStudentPick && isWrong ? 'text-[#F54E00]' : 'text-[var(--text-secondary)]'}>
+                            <span className={isCorrect ? 'text-[#4CAF50]' : isStudentPick && isWrong ? 'text-[#00A8E1]' : 'text-[var(--text-secondary)]'}>
                               {opt}
                             </span>
                             {isCorrect && <CheckCircle2 size={13} className="ml-auto text-[#4CAF50]" />}
-                            {isStudentPick && isWrong && <XCircle size={13} className="ml-auto text-[#F54E00]" />}
+                            {isStudentPick && isWrong && <XCircle size={13} className="ml-auto text-[#00A8E1]" />}
                           </div>
                         );
                       })}
@@ -189,7 +189,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
                     <div className="space-y-1.5 mb-3">
                       <div className="flex items-center gap-2 text-[13px]">
                         <span className="text-[var(--text-faint)] text-[11px] font-bold w-24">Your answer:</span>
-                        <span className={`${verdict === 'AC' ? 'text-[#4CAF50]' : isWrong ? 'text-[#F54E00]' : 'text-[var(--text-tertiary)]'}`}>
+                        <span className={`${verdict === 'AC' ? 'text-[#4CAF50]' : isWrong ? 'text-[#00A8E1]' : 'text-[var(--text-tertiary)]'}`}>
                           {q.studentAnswer || '—'}
                         </span>
                       </div>
@@ -219,7 +219,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
                       )}
                       {ev && ev.passed !== undefined && ev.total !== undefined && (
                         <p className="text-[12px] text-[var(--text-tertiary)]">
-                          Test cases passed: <span className={ev.passed === ev.total ? 'text-[#4CAF50] font-bold' : 'text-[#F54E00] font-bold'}>{ev.passed}/{ev.total}</span>
+                          Test cases passed: <span className={ev.passed === ev.total ? 'text-[#4CAF50] font-bold' : 'text-[#00A8E1] font-bold'}>{ev.passed}/{ev.total}</span>
                         </p>
                       )}
                     </div>

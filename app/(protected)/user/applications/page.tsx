@@ -49,8 +49,8 @@ export default function ApplicationsPage() {
   const getStatusStyle = (status: string) => {
     switch (status) {
       case 'selected': return 'bg-[#4CAF50]/10 text-[#4CAF50] border-[#4CAF50]/20';
-      case 'rejected': return 'bg-[#F54E00]/10 text-[#F54E00] border-[#F54E00]/20';
-      case 'shortlisted': return 'bg-[#5E6AD2]/10 text-[#5E6AD2] border-[#5E6AD2]/20';
+      case 'rejected': return 'bg-[#00A8E1]/10 text-[#00A8E1] border-[#00A8E1]/20';
+      case 'shortlisted': return 'bg-[#4B8BBE]/10 text-[#4B8BBE] border-[#4B8BBE]/20';
       default: return 'bg-[#F1A82C]/10 text-[#F1A82C] border-[#F1A82C]/20';
     }
   };
@@ -83,7 +83,7 @@ export default function ApplicationsPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <Building2 size={12} className="text-[var(--text-faint)]" />
-                  <span className="text-[12px] font-medium text-[#F54E00]">{app.companyName}</span>
+                  <span className="text-[12px] font-medium text-[#00A8E1]">{app.companyName}</span>
                 </div>
                 <h2 className="text-[14px] font-bold text-[var(--text-primary)] mb-1">{app.internshipRole}</h2>
                 <div className="flex items-center gap-1.5 text-[12px] text-[var(--text-muted)]">

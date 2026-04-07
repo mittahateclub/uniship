@@ -24,9 +24,9 @@ interface CollegeEvent {
 }
 
 const TYPE_CONFIG: Record<string, { badge: string; icon: React.ComponentType<any>; label: string }> = {
-  event:      { badge: 'bg-[#5E6AD2]/10 text-[#5E6AD2] border-[#5E6AD2]/20', icon: Calendar, label: 'Event' },
+  event:      { badge: 'bg-[#4B8BBE]/10 text-[#4B8BBE] border-[#4B8BBE]/20', icon: Calendar, label: 'Event' },
   internship: { badge: 'bg-[#00C16E]/10 text-[#00C16E] border-[#00C16E]/20', icon: Briefcase, label: 'Internship' },
-  hackathon:  { badge: 'bg-[#F54E00]/10 text-[#F54E00] border-[#F54E00]/20', icon: Code, label: 'Hackathon' },
+  hackathon:  { badge: 'bg-[#00A8E1]/10 text-[#00A8E1] border-[#00A8E1]/20', icon: Code, label: 'Hackathon' },
   research:   { badge: 'bg-[#F1A82C]/10 text-[#F1A82C] border-[#F1A82C]/20', icon: FlaskConical, label: 'Research' },
   workshop:   { badge: 'bg-[#E04DB0]/10 text-[#E04DB0] border-[#E04DB0]/20', icon: Presentation, label: 'Workshop' },
 };
@@ -175,14 +175,14 @@ export default function CollegeSpacePage() {
             placeholder="Search events, companies, locations..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#5E6AD2] transition-all duration-150"
+            className="w-full pl-9 pr-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#4B8BBE] transition-all duration-150"
           />
         </div>
         <button
           onClick={() => setShowSaved(!showSaved)}
           className={`flex items-center gap-1.5 px-3 py-2 text-[12px] font-bold rounded border whitespace-nowrap transition-all duration-150 ${
             showSaved
-              ? 'bg-[#5E6AD2]/10 text-[#5E6AD2] border-[#5E6AD2]/30'
+              ? 'bg-[#4B8BBE]/10 text-[#4B8BBE] border-[#4B8BBE]/30'
               : 'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)] hover:border-[var(--border-active)]'
           }`}
         >
@@ -233,7 +233,7 @@ export default function CollegeSpacePage() {
                         {cfg.label}
                       </span>
                       {item.companyName && (
-                        <span className="text-[12px] font-bold text-[#F54E00]">{item.companyName}</span>
+                        <span className="text-[12px] font-bold text-[#00A8E1]">{item.companyName}</span>
                       )}
                       {item.location && (
                         <span className="flex items-center gap-1 text-[11px] text-[var(--text-muted)]">
@@ -276,8 +276,8 @@ export default function CollegeSpacePage() {
                       disabled={isSaving}
                       className={`p-2 rounded-lg border transition-all duration-150 ${
                         isSaved
-                          ? 'bg-[#5E6AD2]/10 border-[#5E6AD2]/20 text-[#5E6AD2]'
-                          : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-faint)] hover:text-[#5E6AD2] hover:border-[#5E6AD2]/30'
+                          ? 'bg-[#4B8BBE]/10 border-[#4B8BBE]/20 text-[#4B8BBE]'
+                          : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-faint)] hover:text-[#4B8BBE] hover:border-[#4B8BBE]/30'
                       } ${isSaving ? 'opacity-50' : ''}`}
                       title={isSaved ? 'Unsave' : 'Save to calendar'}
                     >

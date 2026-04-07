@@ -156,7 +156,7 @@ function AccordionPanel({
       <button
         type="button"
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-6 sm:px-8 py-4 text-left hover:bg-[var(--bg-elevated)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5E6AD2] focus-visible:ring-inset"
+        className="w-full flex items-center justify-between px-6 sm:px-8 py-4 text-left hover:bg-[var(--bg-elevated)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4B8BBE] focus-visible:ring-inset"
       >
         <div className="flex items-center gap-3 min-w-0">
           <span className="text-sm font-bold uppercase tracking-wide text-[var(--text-primary)] truncate">{label}</span>
@@ -328,10 +328,10 @@ export default function StudentProfile() {
   };
 
   // Shared Tailwind classes for portfolio form
-  const fieldClass = 'w-full rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[#5E6AD2] focus:ring-1 focus:ring-[#5E6AD2] outline-none transition-colors';
+  const fieldClass = 'w-full rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[#4B8BBE] focus:ring-1 focus:ring-[#4B8BBE] outline-none transition-colors';
   const cardClass = 'rounded border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4';
   const addBtnClass = 'w-full rounded border-2 border-dashed border-[var(--border-subtle)] py-2.5 text-sm font-bold text-[var(--text-tertiary)] hover:border-[var(--border-active)] hover:text-[var(--text-secondary)] transition-colors';
-  const removeBtnClass = 'text-xs font-bold text-[#F54E00] hover:text-[#ff6a2a] transition-colors';
+  const removeBtnClass = 'text-xs font-bold text-[#00A8E1] hover:text-[#ff6a2a] transition-colors';
 
   if (loading || authLoading) {
     return (
@@ -368,7 +368,7 @@ export default function StudentProfile() {
                     className="w-28 h-28 rounded-full border-2 border-[var(--border-subtle)] object-cover"
                   />
                 ) : (
-                  <div className="w-28 h-28 bg-[#F54E00] rounded-full flex items-center justify-center text-black text-4xl font-bold">
+                  <div className="w-28 h-28 bg-[#00A8E1] rounded-full flex items-center justify-center text-black text-4xl font-bold">
                     {user?.email?.charAt(0).toUpperCase()}
                   </div>
                 )}
@@ -408,7 +408,7 @@ export default function StudentProfile() {
               {profile?.rollNumber && (
                 <div className="mt-4 border-t border-[var(--border-subtle)] pt-4 text-center">
                   <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Roll No</p>
-                  <p className="font-mono text-[#F54E00] font-bold tracking-widest">{profile.rollNumber}</p>
+                  <p className="font-mono text-[#00A8E1] font-bold tracking-widest">{profile.rollNumber}</p>
                 </div>
               )}
 
@@ -457,7 +457,7 @@ export default function StudentProfile() {
                       name="name"
                       value={profile?.name || ''}
                       onChange={handleChange}
-                      className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] focus:border-[#5E6AD2] outline-none transition-colors"
+                      className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] focus:border-[#4B8BBE] outline-none transition-colors"
                     />
                   </div>
                   <div>
@@ -467,7 +467,7 @@ export default function StudentProfile() {
                       name="rollNumber"
                       value={profile?.rollNumber || ''}
                       onChange={handleChange}
-                      className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] focus:border-[#5E6AD2] outline-none transition-colors"
+                      className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] focus:border-[#4B8BBE] outline-none transition-colors"
                     />
                   </div>
 
@@ -478,7 +478,7 @@ export default function StudentProfile() {
                       name="phone"
                       value={profile?.phone || ''}
                       onChange={handleChange}
-                      className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] focus:border-[#5E6AD2] outline-none transition-colors"
+                      className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] focus:border-[#4B8BBE] outline-none transition-colors"
                     />
                   </div>
                   <div>
@@ -488,7 +488,7 @@ export default function StudentProfile() {
                       name="email"
                       value={profile?.email || ''}
                       onChange={handleChange}
-                      className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] focus:border-[#5E6AD2] outline-none transition-colors"
+                      className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] focus:border-[#4B8BBE] outline-none transition-colors"
                     />
                   </div>
 
@@ -500,7 +500,7 @@ export default function StudentProfile() {
                       placeholder="e.g. Computer Science Student | Aspiring SDE"
                       value={profile?.title || ''}
                       onChange={handleChange}
-                      className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[#5E6AD2] outline-none transition-colors"
+                      className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[#4B8BBE] outline-none transition-colors"
                     />
                   </div>
                   <div className="md:col-span-2">
@@ -510,7 +510,7 @@ export default function StudentProfile() {
                       rows={3}
                       value={profile?.bio || ''}
                       onChange={handleChange}
-                      className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] focus:border-[#5E6AD2] outline-none transition-colors resize-y"
+                      className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] focus:border-[#4B8BBE] outline-none transition-colors resize-y"
                     />
                   </div>
                 </div>
@@ -534,7 +534,7 @@ export default function StudentProfile() {
                         value={profile?.linkedinUrl || ''}
                         onChange={handleChange}
                         placeholder="https://linkedin.com/in/yourname"
-                        className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[#5E6AD2] outline-none transition-colors"
+                        className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[#4B8BBE] outline-none transition-colors"
                       />
                       {profile?.linkedinUrl && (
                         <a
@@ -563,7 +563,7 @@ export default function StudentProfile() {
                         value={profile?.githubUrl || ''}
                         onChange={handleChange}
                         placeholder="https://github.com/yourusername"
-                        className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[#5E6AD2] outline-none transition-colors"
+                        className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[#4B8BBE] outline-none transition-colors"
                       />
                       {profile?.githubUrl && (
                         <a

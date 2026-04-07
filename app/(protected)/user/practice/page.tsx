@@ -101,8 +101,8 @@ export default function PracticeListPage() {
       {/* Stats Cards */}
       <div className="grid grid-cols-4 gap-4 mb-6">
         <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl p-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-[#5E6AD2]/10 flex items-center justify-center shrink-0">
-            <Target size={18} className="text-[#5E6AD2]" />
+          <div className="w-10 h-10 rounded-lg bg-[#4B8BBE]/10 flex items-center justify-center shrink-0">
+            <Target size={18} className="text-[#4B8BBE]" />
           </div>
           <div>
             <p className="text-xl font-bold text-[var(--text-primary)]">{problems.length}</p>
@@ -128,8 +128,8 @@ export default function PracticeListPage() {
           </div>
         </div>
         <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl p-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-[#5E6AD2]/10 flex items-center justify-center shrink-0">
-            <Pin size={18} className="text-[#5E6AD2]" />
+          <div className="w-10 h-10 rounded-lg bg-[#4B8BBE]/10 flex items-center justify-center shrink-0">
+            <Pin size={18} className="text-[#4B8BBE]" />
           </div>
           <div>
             <p className="text-xl font-bold text-[var(--text-primary)]">{pinnedIds.size}</p>
@@ -146,7 +146,7 @@ export default function PracticeListPage() {
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search problems..."
-            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#5E6AD2] focus:ring-1 focus:ring-[#5E6AD2]/30 transition-all"
+            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#4B8BBE] focus:ring-1 focus:ring-[#4B8BBE]/30 transition-all"
           />
         </div>
         <div className="inline-flex rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-1">
@@ -156,7 +156,7 @@ export default function PracticeListPage() {
               onClick={() => setDifficultyFilter(d)}
               className={`px-4 py-2 text-xs font-semibold rounded-md transition-all ${
                 difficultyFilter === d
-                  ? 'bg-[#5E6AD2] text-white shadow-sm'
+                  ? 'bg-[#4B8BBE] text-white shadow-sm'
                   : 'text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]'
               }`}
             >
@@ -213,7 +213,7 @@ export default function PracticeListPage() {
                 {/* Title + expiry warning */}
                 <div className="col-span-6 min-w-0">
                   <p className={`text-sm font-medium truncate transition-colors ${
-                    isExpired ? 'text-[var(--text-faint)] line-through' : 'text-[var(--text-primary)] group-hover:text-[#5E6AD2]'
+                    isExpired ? 'text-[var(--text-faint)] line-through' : 'text-[var(--text-primary)] group-hover:text-[#4B8BBE]'
                   }`}>
                     {p.title}
                   </p>
@@ -246,7 +246,7 @@ export default function PracticeListPage() {
                       <RotateCcw size={12} /> Reattempt
                     </span>
                   ) : (
-                    <span className="text-xs font-medium text-[#5E6AD2] flex items-center gap-1.5 w-24 justify-end">
+                    <span className="text-xs font-medium text-[#4B8BBE] flex items-center gap-1.5 w-24 justify-end">
                       Solve <ArrowRight size={12} />
                     </span>
                   )}
@@ -255,8 +255,8 @@ export default function PracticeListPage() {
                     title={isPinned ? 'Unpin' : 'Pin — keeps question after expiry'}
                     className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all shrink-0 ${
                       isPinned
-                        ? 'text-[#5E6AD2] bg-[#5E6AD2]/10'
-                        : 'text-[var(--text-faint)] hover:text-[#5E6AD2] hover:bg-[#5E6AD2]/5'
+                        ? 'text-[#4B8BBE] bg-[#4B8BBE]/10'
+                        : 'text-[var(--text-faint)] hover:text-[#4B8BBE] hover:bg-[#4B8BBE]/5'
                     }`}
                   >
                     <Pin size={14} className={isPinned ? 'fill-current' : ''} />

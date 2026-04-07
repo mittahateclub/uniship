@@ -110,12 +110,12 @@ export default function TestPortal() {
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="inline-flex items-center gap-1 bg-[#F54E00]/10 text-[#F54E00] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
+                      <span className="inline-flex items-center gap-1 bg-[#00A8E1]/10 text-[#00A8E1] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
                         <Tag size={9} />
                         {test.category}
                       </span>
                       {isUpcoming && (
-                        <span className="inline-flex items-center gap-1 bg-[#5E6AD2]/10 text-[#5E6AD2] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
+                        <span className="inline-flex items-center gap-1 bg-[#4B8BBE]/10 text-[#4B8BBE] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
                           Upcoming
                         </span>
                       )}

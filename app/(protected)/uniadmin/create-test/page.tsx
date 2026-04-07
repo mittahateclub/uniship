@@ -304,9 +304,9 @@ export default function TestsPage() {
         <div className="window p-6 mb-6">
           {status.message && (
             <div className={`mb-4 p-3 rounded text-[13px] font-medium border ${
-              status.type === 'error' ? 'bg-[#F54E00]/10 text-[#F54E00] border-[#F54E00]/20'
+              status.type === 'error' ? 'bg-[#00A8E1]/10 text-[#00A8E1] border-[#00A8E1]/20'
               : status.type === 'success' ? 'bg-[#4CAF50]/10 text-[#4CAF50] border-[#4CAF50]/20'
-              : 'bg-[#5E6AD2]/10 text-[#5E6AD2] border-[#5E6AD2]/20'
+              : 'bg-[#4B8BBE]/10 text-[#4B8BBE] border-[#4B8BBE]/20'
             }`}>
               {status.message}
             </div>
@@ -415,11 +415,11 @@ export default function TestsPage() {
                         onClick={() => setExamDate(date)}
                         className={`text-[12px] py-1.5 rounded transition-colors ${
                           isSelected
-                            ? 'bg-[#5E6AD2] text-white font-semibold'
+                            ? 'bg-[#4B8BBE] text-white font-semibold'
                             : isPast
                             ? 'text-[var(--text-faint)]/40 cursor-not-allowed'
                             : isToday
-                            ? 'text-[#5E6AD2] font-semibold hover:bg-[#5E6AD2]/10'
+                            ? 'text-[#4B8BBE] font-semibold hover:bg-[#4B8BBE]/10'
                             : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]'
                         }`}
                       >
@@ -451,8 +451,8 @@ export default function TestsPage() {
                     ))}
                   </select>
                   <div className="flex rounded overflow-hidden border border-[var(--border-subtle)] ml-auto">
-                    <button type="button" onClick={() => setStartAmPm('AM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${startAmPm === 'AM' ? 'bg-[#5E6AD2] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>AM</button>
-                    <button type="button" onClick={() => setStartAmPm('PM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${startAmPm === 'PM' ? 'bg-[#5E6AD2] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>PM</button>
+                    <button type="button" onClick={() => setStartAmPm('AM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${startAmPm === 'AM' ? 'bg-[#4B8BBE] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>AM</button>
+                    <button type="button" onClick={() => setStartAmPm('PM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${startAmPm === 'PM' ? 'bg-[#4B8BBE] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>PM</button>
                   </div>
                 </div>
               </div>
@@ -474,8 +474,8 @@ export default function TestsPage() {
                     ))}
                   </select>
                   <div className="flex rounded overflow-hidden border border-[var(--border-subtle)] ml-auto">
-                    <button type="button" onClick={() => setEndAmPm('AM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${endAmPm === 'AM' ? 'bg-[#5E6AD2] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>AM</button>
-                    <button type="button" onClick={() => setEndAmPm('PM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${endAmPm === 'PM' ? 'bg-[#5E6AD2] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>PM</button>
+                    <button type="button" onClick={() => setEndAmPm('AM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${endAmPm === 'AM' ? 'bg-[#4B8BBE] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>AM</button>
+                    <button type="button" onClick={() => setEndAmPm('PM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${endAmPm === 'PM' ? 'bg-[#4B8BBE] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>PM</button>
                   </div>
                 </div>
               </div>
@@ -489,7 +489,7 @@ export default function TestsPage() {
                 <FileText size={12} className="text-[var(--text-faint)]" />
                 Source PDF
               </label>
-              <div className="relative overflow-hidden border border-dashed border-[var(--border-active)] rounded p-6 text-center bg-[var(--bg-elevated)] hover:border-[#F54E00]/40 transition-colors duration-150 cursor-pointer">
+              <div className="relative overflow-hidden border border-dashed border-[var(--border-active)] rounded p-6 text-center bg-[var(--bg-elevated)] hover:border-[#00A8E1]/40 transition-colors duration-150 cursor-pointer">
                 <input
                   type="file"
                   accept=".pdf"
@@ -526,7 +526,7 @@ export default function TestsPage() {
           {testUploads.map((test) => (
             <div key={test.id} className="window px-5 py-4 flex items-center justify-between group hover:border-[var(--border-active)] transition-colors duration-150">
               <div className="flex items-center gap-3 min-w-0">
-                <FileText size={16} className="text-[#F54E00] shrink-0" />
+                <FileText size={16} className="text-[#00A8E1] shrink-0" />
                 <div className="min-w-0">
                   <h3 className="text-[14px] font-semibold text-[var(--text-primary)] truncate">{test.title}</h3>
                   <div className="flex items-center gap-2 mt-0.5">
@@ -563,7 +563,7 @@ export default function TestsPage() {
                 <Link href={`/uniadmin/tests/review/${test.id}`} className="btn-primary text-[12px] px-4 py-1.5">Review</Link>
                 <button
                   onClick={() => openEdit(test)}
-                  className="p-2 rounded text-[var(--text-faint)] hover:text-[#5E6AD2] hover:bg-[#5E6AD2]/10 transition-colors duration-150"
+                  className="p-2 rounded text-[var(--text-faint)] hover:text-[#4B8BBE] hover:bg-[#4B8BBE]/10 transition-colors duration-150"
                   title="Edit schedule"
                 >
                   <Pencil size={14} />
@@ -571,7 +571,7 @@ export default function TestsPage() {
                 <button
                   onClick={() => handleDelete(test.id)}
                   disabled={deletingId === test.id}
-                  className="p-2 rounded text-[var(--text-faint)] hover:text-[#F54E00] hover:bg-[#F54E00]/10 transition-colors duration-150 disabled:opacity-50"
+                  className="p-2 rounded text-[var(--text-faint)] hover:text-[#00A8E1] hover:bg-[#00A8E1]/10 transition-colors duration-150 disabled:opacity-50"
                 >
                   <Trash2 size={14} />
                 </button>
@@ -587,7 +587,7 @@ export default function TestsPage() {
           <div className="window w-full max-w-md p-6 animate-fade-in overflow-y-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Calendar size={16} className="text-[#5E6AD2]" />
+                <Calendar size={16} className="text-[#4B8BBE]" />
                 <h2 className="text-[15px] font-bold text-[var(--text-primary)]">Edit Exam Schedule</h2>
               </div>
               <button onClick={() => setEditingTest(null)} className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors">
@@ -650,9 +650,9 @@ export default function TestsPage() {
                         disabled={isPast}
                         onClick={() => setEditExamDate(date)}
                         className={`text-[12px] py-1.5 rounded transition-colors ${
-                          isSelected ? 'bg-[#5E6AD2] text-white font-semibold'
+                          isSelected ? 'bg-[#4B8BBE] text-white font-semibold'
                           : isPast ? 'text-[var(--text-faint)]/40 cursor-not-allowed'
-                          : isToday ? 'text-[#5E6AD2] font-semibold hover:bg-[#5E6AD2]/10'
+                          : isToday ? 'text-[#4B8BBE] font-semibold hover:bg-[#4B8BBE]/10'
                           : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]'
                         }`}
                       >
@@ -677,8 +677,8 @@ export default function TestsPage() {
                     {Array.from({ length: 12 }, (_, i) => i * 5).map(m => <option key={m} value={m}>{String(m).padStart(2, '0')}</option>)}
                   </select>
                   <div className="flex rounded overflow-hidden border border-[var(--border-subtle)] ml-auto">
-                    <button type="button" onClick={() => setEditStartAmPm('AM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${editStartAmPm === 'AM' ? 'bg-[#5E6AD2] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>AM</button>
-                    <button type="button" onClick={() => setEditStartAmPm('PM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${editStartAmPm === 'PM' ? 'bg-[#5E6AD2] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>PM</button>
+                    <button type="button" onClick={() => setEditStartAmPm('AM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${editStartAmPm === 'AM' ? 'bg-[#4B8BBE] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>AM</button>
+                    <button type="button" onClick={() => setEditStartAmPm('PM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${editStartAmPm === 'PM' ? 'bg-[#4B8BBE] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>PM</button>
                   </div>
                 </div>
               </div>
@@ -693,8 +693,8 @@ export default function TestsPage() {
                     {Array.from({ length: 12 }, (_, i) => i * 5).map(m => <option key={m} value={m}>{String(m).padStart(2, '0')}</option>)}
                   </select>
                   <div className="flex rounded overflow-hidden border border-[var(--border-subtle)] ml-auto">
-                    <button type="button" onClick={() => setEditEndAmPm('AM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${editEndAmPm === 'AM' ? 'bg-[#5E6AD2] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>AM</button>
-                    <button type="button" onClick={() => setEditEndAmPm('PM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${editEndAmPm === 'PM' ? 'bg-[#5E6AD2] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>PM</button>
+                    <button type="button" onClick={() => setEditEndAmPm('AM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${editEndAmPm === 'AM' ? 'bg-[#4B8BBE] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>AM</button>
+                    <button type="button" onClick={() => setEditEndAmPm('PM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${editEndAmPm === 'PM' ? 'bg-[#4B8BBE] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>PM</button>
                   </div>
                 </div>
               </div>

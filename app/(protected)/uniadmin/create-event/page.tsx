@@ -25,9 +25,9 @@ const TYPE_OPTIONS = [
 ];
 
 const TYPE_COLORS: Record<string, string> = {
-  event: 'bg-[#5E6AD2]/10 text-[#5E6AD2] border-[#5E6AD2]/20',
+  event: 'bg-[#4B8BBE]/10 text-[#4B8BBE] border-[#4B8BBE]/20',
   internship: 'bg-[#00C16E]/10 text-[#00C16E] border-[#00C16E]/20',
-  hackathon: 'bg-[#F54E00]/10 text-[#F54E00] border-[#F54E00]/20',
+  hackathon: 'bg-[#00A8E1]/10 text-[#00A8E1] border-[#00A8E1]/20',
   research: 'bg-[#F1A82C]/10 text-[#F1A82C] border-[#F1A82C]/20',
   workshop: 'bg-[#E04DB0]/10 text-[#E04DB0] border-[#E04DB0]/20',
 };
@@ -110,7 +110,7 @@ function DateTimePicker({ value, onChange }: { value: string; onChange: (val: st
         <button
           type="button"
           onClick={() => { setShowCal(!showCal); setShowTime(false); }}
-          className="w-full flex items-center gap-2 px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-left hover:border-[#5E6AD2] focus:border-[#5E6AD2] focus:outline-none transition-all duration-150"
+          className="w-full flex items-center gap-2 px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-left hover:border-[#4B8BBE] focus:border-[#4B8BBE] focus:outline-none transition-all duration-150"
         >
           <Calendar size={14} className="text-[var(--text-faint)] shrink-0" />
           <span className={parsed ? 'text-[var(--text-primary)]' : 'text-[var(--text-faint)]'}>{displayDate}</span>
@@ -150,8 +150,8 @@ function DateTimePicker({ value, onChange }: { value: string; onChange: (val: st
                       className={`
                         w-full aspect-square flex items-center justify-center text-[11px] font-medium rounded-full transition-colors
                         ${!cell.inMonth ? 'text-[var(--text-faint)]/40 cursor-default' : 'hover:bg-[var(--bg-elevated)] cursor-pointer'}
-                        ${isSelected ? 'bg-[#5E6AD2] text-white hover:bg-[#5E6AD2]' : ''}
-                        ${isToday && !isSelected ? 'text-[#F54E00] font-bold' : cell.inMonth ? 'text-[var(--text-primary)]' : ''}
+                        ${isSelected ? 'bg-[#4B8BBE] text-white hover:bg-[#4B8BBE]' : ''}
+                        ${isToday && !isSelected ? 'text-[#00A8E1] font-bold' : cell.inMonth ? 'text-[var(--text-primary)]' : ''}
                       `}
                     >
                       {cell.day}
@@ -169,7 +169,7 @@ function DateTimePicker({ value, onChange }: { value: string; onChange: (val: st
         <button
           type="button"
           onClick={() => { setShowTime(!showTime); setShowCal(false); }}
-          className="w-full flex items-center gap-2 px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-left hover:border-[#5E6AD2] focus:border-[#5E6AD2] focus:outline-none transition-all duration-150"
+          className="w-full flex items-center gap-2 px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-left hover:border-[#4B8BBE] focus:border-[#4B8BBE] focus:outline-none transition-all duration-150"
         >
           <Clock size={14} className="text-[var(--text-faint)] shrink-0" />
           <span className={parsed ? 'text-[var(--text-primary)]' : 'text-[var(--text-faint)]'}>{displayTime}</span>
@@ -188,7 +188,7 @@ function DateTimePicker({ value, onChange }: { value: string; onChange: (val: st
                       type="button"
                       onClick={() => setTime(i, selectedMinute)}
                       className={`w-full py-1 text-[12px] font-medium rounded transition-colors ${
-                        selectedHour === i ? 'bg-[#5E6AD2] text-white' : 'text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'
+                        selectedHour === i ? 'bg-[#4B8BBE] text-white' : 'text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'
                       }`}
                     >
                       {String(i).padStart(2, '0')}
@@ -206,7 +206,7 @@ function DateTimePicker({ value, onChange }: { value: string; onChange: (val: st
                       type="button"
                       onClick={() => setTime(selectedHour, m)}
                       className={`w-full py-1 text-[12px] font-medium rounded transition-colors ${
-                        selectedMinute === m ? 'bg-[#5E6AD2] text-white' : 'text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'
+                        selectedMinute === m ? 'bg-[#4B8BBE] text-white' : 'text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'
                       }`}
                     >
                       {String(m).padStart(2, '0')}
@@ -332,7 +332,7 @@ export default function CreateEventPage() {
     }
   };
 
-  const inputClass = "w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-faint)] text-[13px] focus:outline-none focus:border-[#5E6AD2] transition-all duration-150";
+  const inputClass = "w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-faint)] text-[13px] focus:outline-none focus:border-[#4B8BBE] transition-all duration-150";
 
   return (
     <div className="max-w-2xl mx-auto animate-fade-in">
@@ -343,7 +343,7 @@ export default function CreateEventPage() {
 
       <div className="window p-6">
         {message.text && (
-          <div className={`mb-4 p-3 rounded text-[13px] font-medium border ${message.type === 'success' ? 'bg-[#4CAF50]/10 text-[#4CAF50] border-[#4CAF50]/20' : 'bg-[#F54E00]/10 text-[#F54E00] border-[#F54E00]/20'}`}>
+          <div className={`mb-4 p-3 rounded text-[13px] font-medium border ${message.type === 'success' ? 'bg-[#4CAF50]/10 text-[#4CAF50] border-[#4CAF50]/20' : 'bg-[#00A8E1]/10 text-[#00A8E1] border-[#00A8E1]/20'}`}>
             {message.text}
           </div>
         )}
@@ -420,7 +420,7 @@ export default function CreateEventPage() {
                       onChange={e => handleUpdateType(ev.id, e.target.value)}
                       onBlur={() => setEditingId(null)}
                       autoFocus
-                      className="px-2 py-1 text-[11px] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] focus:outline-none focus:border-[#5E6AD2]"
+                      className="px-2 py-1 text-[11px] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] focus:outline-none focus:border-[#4B8BBE]"
                     >
                       {TYPE_OPTIONS.map(t => (
                         <option key={t.value} value={t.value}>{t.label}</option>
@@ -440,7 +440,7 @@ export default function CreateEventPage() {
                   {/* Delete */}
                   <button
                     onClick={() => handleDeleteEvent(ev.id)}
-                    className="p-1.5 rounded text-[var(--text-faint)] hover:text-[#F54E00] hover:bg-[#F54E00]/10 transition-colors"
+                    className="p-1.5 rounded text-[var(--text-faint)] hover:text-[#00A8E1] hover:bg-[#00A8E1]/10 transition-colors"
                     title="Delete event"
                   >
                     <Trash2 size={14} />
