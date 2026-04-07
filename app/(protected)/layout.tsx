@@ -3,6 +3,7 @@
 import React from "react";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
+import Image from "next/image";
 import { Search, Command, Menu } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -18,33 +19,30 @@ export default function ProtectedLayout({
       <Navbar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top bar */}
-        <div className="h-14 md:h-16 bg-[var(--bg-primary)] border-b border-[var(--border-subtle)] flex items-center shrink-0 px-3 md:px-5 gap-3 md:gap-4">
-          {/* Mobile hamburger */}
-          <button
-            onClick={() => document.dispatchEvent(new CustomEvent('toggle-mobile-nav'))}
-            className="md:hidden p-1.5 -ml-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors"
-            aria-label="Open menu"
-          >
-            <Menu size={20} />
-          </button>
+        <div className="h-14 md:h-16 bg-[var(--bg-primary)] border-b border-[var(--border-subtle)] flex items-center shrink-0 px-3 md:px-5 gap-2 md:gap-4">
+          {/* Mobile logo — left side */}
+          <Link href="/" className="md:hidden flex items-center gap-1 shrink-0">
+            <Image src="/logo.png" alt="Uniship" width={56} height={56} className="shrink-0 object-contain" />
+            <span className="text-[14px] font-extrabold tracking-[0.14em] text-[var(--text-primary)] leading-none pt-[0.2em]">UNISHIP</span>
+          </Link>
           {/* Search — centered */}
           <div className="flex-1 flex justify-center">
             <button
               onClick={() => document.dispatchEvent(new CustomEvent('open-cmdk'))}
-              className="flex items-center gap-2.5 w-full max-w-md px-3 py-1.5 rounded-md text-[13px] text-[var(--text-muted)] bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[var(--border-active)] transition-all duration-150 cursor-text"
+              className="flex items-center gap-2.5 w-full max-w-md md:px-3 px-2 py-1.5 rounded-md text-[13px] text-[var(--text-muted)] bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[var(--border-active)] transition-all duration-150 cursor-text"
               title="Search (⌘K)"
             >
               <Search size={14} className="shrink-0 text-[var(--text-faint)]" />
               <span className="flex-1 text-left text-[var(--text-faint)] hidden sm:inline">Search pages, actions...</span>
-              <span className="flex-1 text-left text-[var(--text-faint)] sm:hidden">Search...</span>
+              <span className="flex-1 text-left text-[var(--text-faint)] sm:hidden text-[12px]">Search...</span>
               <kbd className="hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-mono text-[var(--text-faint)] shrink-0">
                 <Command size={9} />K
               </kbd>
             </button>
           </div>
-          {/* Profile */}
+          {/* Profile — hidden on mobile to save space */}
           {user && (
-            <div className="flex items-center gap-2.5 shrink-0">
+            <div className="hidden md:flex items-center gap-2.5 shrink-0">
               <Link
                 href={role === 'super_admin' ? '/superadmin/dashboard' : role === 'university_admin' ? '/uniadmin/profile' : '/user/profile'}
                 className="flex items-center gap-2 hover:opacity-80 transition-opacity duration-150"
@@ -62,6 +60,14 @@ export default function ProtectedLayout({
               </Link>
             </div>
           )}
+          {/* Mobile hamburger — right side */}
+          <button
+            onClick={() => document.dispatchEvent(new CustomEvent('toggle-mobile-nav'))}
+            className="md:hidden p-1.5 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors shrink-0"
+            aria-label="Open menu"
+          >
+            <Menu size={20} />
+          </button>
         </div>
         {/* Main content */}
         <main className="flex-1 overflow-y-auto px-3 md:px-6 pb-6 pt-0">
