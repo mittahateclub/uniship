@@ -251,6 +251,11 @@ select:focus {
 .btn-primary:active {
   transform: scale(0.98);
 }
+.btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
 
 .btn-secondary {
   background: transparent;

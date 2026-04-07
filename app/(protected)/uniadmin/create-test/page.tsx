@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { collection, doc, getDoc, getDocs, query, where, deleteDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where, deleteDoc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { processTestDocument } from '@/app/actions/process-test';
 import Link from 'next/link';
 import {
@@ -183,18 +183,30 @@ export default function TestsPage() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const result = await processTestDocument(formData, user.uid, universityId, {
-        title: title.trim(),
-        description: description.trim(),
-        duration,
-        category: 'General',
-        examStart,
-        examEnd,
-      });
+      const result = await processTestDocument(formData);
 
       if (result.success) {
-        setStatus({ type: 'success', message: `Uploaded successfully — ${result.problemCount} questions extracted. Please approve the test.` });
-        setCreatedTestId(result.id || null);
+        // Save to Firestore from client (where user is authenticated)
+        const docRef = await addDoc(collection(db, 'tests'), {
+          title: title.trim() || result.sourceFileName?.replace(/\.pdf$/i, '') || 'Untitled Test',
+          description: description.trim(),
+          duration,
+          category: 'General',
+          totalQuestions: result.totalQuestionCount,
+          examStart,
+          examEnd,
+          metadata: result.metadata,
+          sections: result.sections,
+          problems: result.codingProblems,
+          universityId,
+          createdBy: user.uid,
+          createdAt: serverTimestamp(),
+          sourceFileName: result.sourceFileName,
+          approved: false,
+        });
+
+        setStatus({ type: 'success', message: `Uploaded successfully — ${result.totalQuestionCount} questions extracted. Please approve the test.` });
+        setCreatedTestId(docRef.id);
         setFile(null);
         setTitle('');
         setDescription('');
@@ -523,6 +535,18 @@ export default function TestsPage() {
                 </p>
               </div>
             </div>
+
+            {/* Validation hints */}
+            {!isParsing && (!universityId || !title.trim() || !examDate || !file) && (
+              <p className="text-[12px] text-[var(--text-faint)]">
+                Missing: {[
+                  !universityId && 'University ID (profile issue)',
+                  !title.trim() && 'Test Name',
+                  !examDate && 'Exam Date',
+                  !file && 'PDF File',
+                ].filter(Boolean).join(', ')}
+              </p>
+            )}
 
             <button
               type="submit"

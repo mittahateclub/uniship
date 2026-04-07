@@ -1,8 +1,6 @@
 'use server';
 
 import { groq } from "@/lib/groq";
-import { db } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 const SYSTEM_PROMPT = `You are a strict Markdown-to-JSON conversion agent for test/exam papers.
 
@@ -85,7 +83,7 @@ CRITICAL:
 - For coding problems, separate visible (sample) test cases from hidden test cases. If not explicitly labeled, put the first 1-2 in sampleTestCases and the rest in hiddenTestCases.
 - Preserve code formatting using \\n for newlines in strings.`;
 
-export async function processTestDocument(formData: FormData, userId: string, universityId: string, options?: { title?: string; description?: string; duration?: number; category?: string; totalQuestions?: number; examStart?: string; examEnd?: string }) {
+export async function processTestDocument(formData: FormData) {
   try {
     const file = formData.get("file") as File;
     if (!file) throw new Error("No file uploaded");
@@ -229,34 +227,16 @@ export async function processTestDocument(formData: FormData, userId: string, un
 
     console.log('Extracted', totalQuestionCount, 'questions total across', sections.length, 'sections');
 
-    // 7. Save to Firestore
-    const docRef = await addDoc(collection(db, "tests"), {
-      title: options?.title || file.name.replace(/\.pdf$/i, ''),
-      description: options?.description || '',
-      duration: options?.duration || 60,
-      category: options?.category || 'General',
-      totalQuestions: options?.totalQuestions || totalQuestionCount,
-      examStart: options?.examStart || null,
-      examEnd: options?.examEnd || null,
+    return { 
+      success: true, 
+      sections,
+      codingProblems,
       metadata: parsedData.metadata || {
         difficultyLevels: [],
         totalProblems: totalQuestionCount
       },
-      sections,
-      problems: codingProblems,
-      universityId,
-      createdBy: userId,
-      createdAt: serverTimestamp(),
+      totalQuestionCount,
       sourceFileName: file.name,
-      approved: false,
-    });
-
-    console.log('Saved to Firestore with ID:', docRef.id);
-
-    return { 
-      success: true, 
-      id: docRef.id,
-      problemCount: totalQuestionCount 
     };
   } catch (error: any) {
     console.error("Test Pipeline Error:", error);
