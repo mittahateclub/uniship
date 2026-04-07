@@ -273,7 +273,7 @@ export default function UserDashboard() {
       `}</style>
 
       {/* ── Today's Events ── */}
-      <Link href="/user/calendar" className="group relative block overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 mb-6 no-underline hover:border-[var(--border-active)] transition-all duration-200" style={{ textDecoration: 'none' }}>
+      <Link href="/user/calendar" className="group relative block overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 sm:p-5 mb-6 no-underline hover:border-[var(--border-active)] transition-all duration-200" style={{ textDecoration: 'none' }}>
         {/* Calendar SVG art in blue */}
         <svg className="absolute right-0 top-0 h-full w-2/5 opacity-[0.12] text-[#00A8E1] pointer-events-none" viewBox="0 0 300 200" fill="none">
           <rect x="30" y="20" width="120" height="110" rx="8" stroke="currentColor" strokeWidth="2.5"/>
@@ -298,7 +298,7 @@ export default function UserDashboard() {
           <circle cx="220" cy="70" r="3" fill="currentColor" opacity="0.5"/>
         </svg>
 
-        <div className="relative z-10 flex items-center gap-5">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
           {/* Left: title + events */}
           <div className="flex-1 min-w-0">
             {/* Title row */}
@@ -358,8 +358,8 @@ export default function UserDashboard() {
             )}
           </div>
 
-          {/* Right: View Calendar button, vertically centered */}
-          <div className="shrink-0 flex items-center">
+          {/* Right on desktop, centered below on mobile: View Calendar button */}
+          <div className="shrink-0 flex items-center justify-center sm:justify-end">
             <div className="flex items-center gap-1.5 px-4 py-2 rounded-md bg-[#00A8E1]/10 border border-[#00A8E1]/20 text-[12px] text-[#00A8E1] font-semibold group-hover:bg-[#00A8E1]/20 transition-all duration-150">
               <CalendarIcon size={12} />
               View Calendar

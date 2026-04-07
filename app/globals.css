@@ -105,6 +105,14 @@ h1, h2, h3, h4, h5, h6 {
   animation: slideUp 0.18s ease-out forwards;
 }
 
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+.animate-slide-in-left {
+  animation: slideInLeft 0.2s ease-out forwards;
+}
+
 .stagger-children > * {
   opacity: 0;
   animation: slideUp 0.18s ease-out forwards;

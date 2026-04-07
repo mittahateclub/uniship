@@ -3,7 +3,7 @@
 import React from "react";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
-import { Search, Command } from "lucide-react";
+import { Search, Command, Menu } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function ProtectedLayout({
@@ -18,7 +18,15 @@ export default function ProtectedLayout({
       <Navbar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top bar */}
-        <div className="h-16 bg-[var(--bg-primary)] border-b border-[var(--border-subtle)] flex items-center shrink-0 px-5 gap-4">
+        <div className="h-14 md:h-16 bg-[var(--bg-primary)] border-b border-[var(--border-subtle)] flex items-center shrink-0 px-3 md:px-5 gap-3 md:gap-4">
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => document.dispatchEvent(new CustomEvent('toggle-mobile-nav'))}
+            className="md:hidden p-1.5 -ml-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors"
+            aria-label="Open menu"
+          >
+            <Menu size={20} />
+          </button>
           {/* Search — centered */}
           <div className="flex-1 flex justify-center">
             <button
@@ -27,8 +35,9 @@ export default function ProtectedLayout({
               title="Search (⌘K)"
             >
               <Search size={14} className="shrink-0 text-[var(--text-faint)]" />
-              <span className="flex-1 text-left text-[var(--text-faint)]">Search pages, actions...</span>
-              <kbd className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-mono text-[var(--text-faint)] shrink-0">
+              <span className="flex-1 text-left text-[var(--text-faint)] hidden sm:inline">Search pages, actions...</span>
+              <span className="flex-1 text-left text-[var(--text-faint)] sm:hidden">Search...</span>
+              <kbd className="hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-mono text-[var(--text-faint)] shrink-0">
                 <Command size={9} />K
               </kbd>
             </button>
@@ -55,7 +64,7 @@ export default function ProtectedLayout({
           )}
         </div>
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto px-6 pb-6 pt-0">
+        <main className="flex-1 overflow-y-auto px-3 md:px-6 pb-6 pt-0">
           {children}
         </main>
       </div>

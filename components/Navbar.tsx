@@ -47,6 +47,8 @@ import {
   Lock,
   Upload,
   Sparkles,
+  Menu,
+  X,
 } from 'lucide-react';
 
 interface NavLink {
@@ -203,6 +205,7 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [cmdkOpen, setCmdkOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -262,11 +265,14 @@ export default function Navbar() {
       setSearchQuery('');
       setSelectedIndex(0);
     };
+    const handleToggleMobileNav = () => setMobileOpen(prev => !prev);
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('open-cmdk', handleOpenCmdk);
+    document.addEventListener('toggle-mobile-nav', handleToggleMobileNav);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('open-cmdk', handleOpenCmdk);
+      document.removeEventListener('toggle-mobile-nav', handleToggleMobileNav);
     };
   }, []);
 
@@ -275,6 +281,9 @@ export default function Navbar() {
   }, [cmdkOpen]);
 
   useEffect(() => { setSelectedIndex(0); }, [searchQuery]);
+
+  // Close mobile nav on route change
+  useEffect(() => { setMobileOpen(false); }, [pathname]);
 
   const handleCmdkNavigate = useCallback((href: string) => {
     const [path, hash] = href.split('#');
@@ -333,8 +342,8 @@ export default function Navbar() {
 
   return (
     <>
-      {/* ═══ Left Sidebar ═══ */}
-      <aside className={`h-screen bg-[var(--bg-elevated)] border-r border-[var(--border-subtle)] flex flex-col transition-all duration-200 ease-out shrink-0 sticky top-0 ${collapsed ? 'w-[82px]' : 'w-[260px]'}`}>
+      {/* ═══ Desktop Sidebar (hidden on mobile) ═══ */}
+      <aside className={`hidden md:flex h-screen bg-[var(--bg-elevated)] border-r border-[var(--border-subtle)] flex-col transition-all duration-200 ease-out shrink-0 sticky top-0 ${collapsed ? 'w-[82px]' : 'w-[260px]'}`}>
         {/* Logo */}
         <div className="h-16 flex items-center border-b border-[var(--border-subtle)] shrink-0">
           <Link
@@ -404,6 +413,70 @@ export default function Navbar() {
           </button>
         </div>
       </aside>
+
+      {/* ═══ Mobile Sidebar Overlay ═══ */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <aside className="absolute left-0 top-0 bottom-0 w-[280px] bg-[var(--bg-elevated)] border-r border-[var(--border-subtle)] flex flex-col animate-slide-in-left">
+            {/* Logo + Close */}
+            <div className="h-16 flex items-center justify-between border-b border-[var(--border-subtle)] px-3 shrink-0">
+              <Link href="/" className="flex items-center gap-1">
+                <Image src="/logo.png" alt="Uniship" width={76} height={76} className="shrink-0 object-contain" />
+                <span className="text-[17px] font-extrabold tracking-[0.14em] text-[var(--text-primary)] whitespace-nowrap self-center leading-none pt-[0.35em]">UNISHIP</span>
+              </Link>
+              <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Navigation */}
+            <nav className="flex-1 overflow-y-auto px-2 py-2">
+              {(() => {
+                let lastGroup = '';
+                let isFirst = true;
+                return navLinks.map((link) => {
+                  const showHeader = link.group && link.group !== lastGroup;
+                  const isFirstGroup = showHeader && isFirst;
+                  if (showHeader) isFirst = false;
+                  if (link.group) lastGroup = link.group;
+                  return (
+                    <React.Fragment key={link.href}>
+                      {showHeader && (
+                        <p className={`px-2.5 pb-1 text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)] ${isFirstGroup ? 'pt-1' : 'pt-4'}`}>
+                          {link.group}
+                        </p>
+                      )}
+                      <Link
+                        href={link.href}
+                        className={`flex items-center gap-2.5 rounded text-[13px] font-medium transition-all duration-150 px-2.5 py-[7px] ${
+                          isActive(link.href)
+                            ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] border border-[var(--border-subtle)]'
+                            : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] border border-transparent'
+                        }`}
+                      >
+                        <link.icon size={16} className="shrink-0" />
+                        <span className="truncate">{link.label}</span>
+                      </Link>
+                    </React.Fragment>
+                  );
+                });
+              })()}
+            </nav>
+
+            {/* Logout */}
+            <div className="border-t border-[var(--border-subtle)] px-2 py-2 shrink-0">
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2.5 rounded text-[13px] font-medium transition-all duration-150 w-full text-[var(--text-tertiary)] hover:text-[#DC2626] hover:bg-[#DC2626]/10 border border-transparent px-2.5 py-[7px]"
+              >
+                <LogOut size={16} className="shrink-0" />
+                <span>Logout</span>
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
 
       {/* ═══ Command-K Modal ═══ */}
       {cmdkOpen && (
