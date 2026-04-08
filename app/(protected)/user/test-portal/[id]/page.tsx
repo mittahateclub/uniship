@@ -1424,7 +1424,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               <div className="mt-3 rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Submission Verdict</span>
-                  <span className={`text-[12px] font-bold ${judgeSummary.verdict === 'AC' ? 'text-[#4CAF50]' : judgeSummary.verdict === 'WA' ? 'text-[#00A8E1]' : 'text-[#DC2626]'}`}>
+                  <span className={`text-[12px] font-bold ${judgeSummary.verdict === 'AC' ? 'text-[#4CAF50]' : 'text-[#EF4444]'}`}>
                     {judgeSummary.verdict}
                   </span>
                 </div>
@@ -1437,7 +1437,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                     {judgeCaseResults.map((c) => (
                       <div key={c.caseNumber} className="flex items-start justify-between gap-3 text-[11px]">
                         <span className="text-[var(--text-tertiary)]">Case {c.caseNumber}</span>
-                        <span className={`font-bold ${c.statusCode === 'AC' ? 'text-[#4CAF50]' : c.statusCode === 'WA' ? 'text-[#00A8E1]' : 'text-[#DC2626]'}`}>{c.statusCode}</span>
+                        <span className={`font-bold ${c.statusCode === 'AC' ? 'text-[#4CAF50]' : 'text-[#EF4444]'}`}>{c.statusCode}</span>
                       </div>
                     ))}
                   </div>

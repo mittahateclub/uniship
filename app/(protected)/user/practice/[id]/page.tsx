@@ -294,10 +294,10 @@ export default function PracticeSolvePage() {
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3">
-                <div className="w-20 h-20 rounded-full bg-[#00A8E1]/10 flex items-center justify-center">
-                  <XCircle size={36} className="text-[#00A8E1]" />
+                <div className="w-20 h-20 rounded-full bg-[#EF4444]/10 flex items-center justify-center">
+                  <XCircle size={36} className="text-[#EF4444]" />
                 </div>
-                <h2 className="text-2xl font-bold text-[#00A8E1]">{verdictLabel(submitVerdict.verdict)}</h2>
+                <h2 className="text-2xl font-bold text-[#EF4444]">{verdictLabel(submitVerdict.verdict)}</h2>
                 <p className="text-sm text-[var(--text-secondary)]">Keep going — you&apos;ve got this!</p>
               </div>
             )}
@@ -310,7 +310,7 @@ export default function PracticeSolvePage() {
               </div>
               <div className="w-full bg-[var(--bg-elevated)] rounded-full h-2.5">
                 <div
-                  className={`h-2.5 rounded-full transition-all duration-700 ${submitVerdict.verdict === 'AC' ? 'bg-[#4CAF50]' : 'bg-[#00A8E1]'}`}
+                  className={`h-2.5 rounded-full transition-all duration-700 ${submitVerdict.verdict === 'AC' ? 'bg-[#4CAF50]' : 'bg-[#EF4444]'}`}
                   style={{ width: `${(submitVerdict.passed / submitVerdict.total) * 100}%` }}
                 />
               </div>
@@ -514,7 +514,7 @@ export default function PracticeSolvePage() {
                 {results && (
                   results.every(r => r.statusCode === 'AC')
                     ? <CheckCircle2 size={12} className="text-[#4CAF50]" />
-                    : <XCircle size={12} className="text-[#00A8E1]" />
+                    : <XCircle size={12} className="text-[#EF4444]" />
                 )}
               </button>
 
@@ -539,7 +539,7 @@ export default function PracticeSolvePage() {
                       {isResult && r && (
                         r.statusCode === 'AC'
                           ? <CheckCircle2 size={11} className="text-[#4CAF50]" />
-                          : <XCircle size={11} className="text-[#00A8E1]" />
+                          : <XCircle size={11} className="text-[#EF4444]" />
                       )}
                       Case {i + 1}
                     </button>
@@ -578,7 +578,7 @@ export default function PracticeSolvePage() {
                     {/* Summary */}
                     <div className="flex items-center justify-between mb-3">
                       <h3 className={`text-[13px] font-bold ${
-                        results.every(r => r.statusCode === 'AC') ? 'text-[#4CAF50]' : 'text-[#00A8E1]'
+                        results.every(r => r.statusCode === 'AC') ? 'text-[#4CAF50]' : 'text-[#EF4444]'
                       }`}>
                         {results.every(r => r.statusCode === 'AC') ? 'All Passed' : 'Failed'}
                       </h3>
@@ -593,7 +593,7 @@ export default function PracticeSolvePage() {
                     {results[activeTestCase] && (
                       <div className="space-y-3">
                         {results[activeTestCase].stderr ? (
-                          <div className="p-3 bg-[#00A8E1]/5 text-[#00A8E1] rounded-lg text-[12px] font-mono border border-[#00A8E1]/20 whitespace-pre-wrap">
+                          <div className="p-3 bg-[#EF4444]/5 text-[#EF4444] rounded-lg text-[12px] font-mono border border-[#EF4444]/20 whitespace-pre-wrap">
                             {results[activeTestCase].stderr}
                           </div>
                         ) : results[activeTestCase].isHidden ? (
