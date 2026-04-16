@@ -6,11 +6,45 @@ const JUDGE0_CE_URL = 'https://ce.judge0.com';
 const URL_REGEX = /^https?:\/\//i;
 const MAX_ATTEMPTS = 2;
 
+// SECURITY: Allowlist of domains for URL fetching to prevent SSRF
+const ALLOWED_URL_HOSTS = [
+  'leetcode.com', 'www.leetcode.com',
+  'codeforces.com', 'www.codeforces.com',
+  'hackerrank.com', 'www.hackerrank.com',
+  'geeksforgeeks.org', 'www.geeksforgeeks.org', 'practice.geeksforgeeks.org',
+  'codechef.com', 'www.codechef.com',
+  'neetcode.io', 'www.neetcode.io',
+  'en.wikipedia.org',
+];
+
+function isAllowedUrl(urlString: string): boolean {
+  try {
+    const parsed = new URL(urlString);
+    // Block non-HTTP(S) schemes (file://, ftp://, data:, etc.)
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false;
+    // Block private/internal IPs
+    const hostname = parsed.hostname.toLowerCase();
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0'
+        || hostname === '::1' || hostname.endsWith('.local')
+        || hostname.startsWith('10.') || hostname.startsWith('192.168.')
+        || /^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
+        || hostname.startsWith('169.254.') || hostname === 'metadata.google.internal') {
+      return false;
+    }
+    return ALLOWED_URL_HOSTS.some(h => hostname === h || hostname.endsWith('.' + h));
+  } catch {
+    return false;
+  }
+}
+
 async function fetchPageText(url: string): Promise<string | null> {
+  if (!isAllowedUrl(url)) return null;
+
   try {
     const res = await fetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ProblemBot/1.0)' },
       signal: AbortSignal.timeout(10000),
+      redirect: 'error', // SECURITY: Don't follow redirects (could redirect to internal services)
     });
     if (!res.ok) return null;
     const html = await res.text();
@@ -156,27 +190,31 @@ async function attemptGenerate(prompt: string): Promise<ProblemResult> {
     return { success: false, error: 'AI did not provide a reference solution.' };
   }
 
-  // ── Execute reference solution against each test case ──
+  // ── Execute reference solution against all test cases in parallel ──
   const refScript = parsed.referenceSolution as string;
-  const verifiedTestCases: Array<{ input: string; expectedOutput: string; isHidden: boolean }> = [];
   let lastError = '';
 
-  for (const tc of parsed.testCases) {
-    const input = tc.input || '';
-    if (!input.trim()) continue;
+  const results = await Promise.allSettled(
+    parsed.testCases
+      .filter((tc: { input?: string }) => (tc.input || '').trim())
+      .map((tc: { input: string; isHidden?: boolean }) =>
+        executeOnJudge0(refScript, 71, tc.input).then((result) => ({
+          result,
+          isHidden: !!tc.isHidden,
+          input: tc.input,
+        }))
+      )
+  );
 
-    const result = await executeOnJudge0(refScript, 71, input);
-
+  const verifiedTestCases: Array<{ input: string; expectedOutput: string; isHidden: boolean }> = [];
+  for (const settled of results) {
+    if (settled.status === 'rejected') continue;
+    const { result, isHidden, input } = settled.value;
     if (!result.stdout) {
       lastError = result.stderr || result.status || 'No output';
       continue;
     }
-
-    verifiedTestCases.push({
-      input,
-      expectedOutput: result.stdout,
-      isHidden: !!tc.isHidden,
-    });
+    verifiedTestCases.push({ input, expectedOutput: result.stdout, isHidden });
   }
 
   if (verifiedTestCases.length < 2) {

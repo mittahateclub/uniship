@@ -39,9 +39,8 @@ export default function LoginPage() {
       } else {
         setError("User profile not found.");
       }
-    } catch (err: any) {
+    } catch {
       setError("Invalid email or password.");
-      console.error(err);
     } finally {
       setIsLoading(false);
     }

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, use } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { doc, getDoc, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, setDoc } from 'firebase/firestore';
+import { authHeaders } from '@/lib/auth-client';
 import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import Editor from '@monaco-editor/react';
@@ -331,7 +332,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         try {
           const compileRes = await fetch('/api/compile', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: await authHeaders(),
             body: JSON.stringify({
               mode: 'submit',
               source_code: answer,
@@ -693,7 +694,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
     try {
       const res = await fetch('/api/compile', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders(),
         body: JSON.stringify({
           mode: 'run',
           source_code: code,
@@ -774,7 +775,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
     try {
       const res = await fetch('/api/compile', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders(),
         body: JSON.stringify({
           mode: 'submit',
           source_code: code,

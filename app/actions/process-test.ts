@@ -120,14 +120,17 @@ export async function processTestDocument(formData: FormData) {
     const jobId = parseData.id;
     console.log('Upload successful. Job ID:', jobId);
 
-    // 4. Poll for parsing results
+    // 4. Poll for parsing results with exponential backoff
+    // Starts at 1s, caps at 5s — reaches result faster for quick parses, still waits up to ~2min total
     let extractedText = '';
     let attempts = 0;
-    const maxAttempts = 60; // 2 minutes (60 * 2 seconds)
+    const maxAttempts = 40;
+    let delay = 1000;
 
     console.log('Polling for results...');
     while (attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, delay));
+      delay = Math.min(delay * 1.5, 5000);
       
       try {
         const statusResponse = await fetch(`https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}`, {
@@ -142,7 +145,6 @@ export async function processTestDocument(formData: FormData) {
           console.log(`Attempt ${attempts + 1}: Status = ${statusData.status}`);
 
           if (statusData.status === 'SUCCESS') {
-            // Get the markdown result
             const resultResponse = await fetch(`https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/markdown`, {
               headers: {
                 'Authorization': `Bearer ${process.env.LLAMA_CLOUD_API_KEY}`,
@@ -159,12 +161,12 @@ export async function processTestDocument(formData: FormData) {
           } else if (statusData.status === 'ERROR' || statusData.status === 'FAILED') {
             throw new Error(`Document parsing failed with status: ${statusData.status}`);
           }
-          // If PENDING or PROCESSING, continue polling
         } else {
           console.warn(`Status check failed: ${statusResponse.status}`);
         }
-      } catch (pollError: any) {
-        console.error('Polling error:', pollError.message);
+      } catch (pollError: unknown) {
+        const msg = pollError instanceof Error ? pollError.message : 'Unknown polling error';
+        console.error('Polling error:', msg);
       }
 
       attempts++;

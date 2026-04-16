@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { User, onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -29,13 +29,20 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
+interface UserMeta {
+  role: string | null;
+  universityId: string | null;
+  universityName: string | null;
+  userName: string | null;
+  userPhotoURL: string | null;
+}
+
+const EMPTY_META: UserMeta = { role: null, universityId: null, universityName: null, userName: null, userPhotoURL: null };
+const DEFAULT_META: UserMeta = { role: 'user', universityId: null, universityName: null, userName: null, userPhotoURL: null };
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [role, setRole] = useState<string | null>(null);
-  const [universityId, setUniversityId] = useState<string | null>(null);
-  const [universityName, setUniversityName] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string | null>(null);
-  const [userPhotoURL, setUserPhotoURL] = useState<string | null>(null);
+  const [meta, setMeta] = useState<UserMeta>(EMPTY_META);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -46,31 +53,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           if (userDoc.exists()) {
             const data = userDoc.data();
-            setRole(data.role || 'user');
-            setUniversityId(data.universityId || null);
-            setUniversityName(data.universityName || null);
-            setUserName(data.name || null);
-            setUserPhotoURL(data.photoURL || null);
+            setMeta({
+              role: data.role || 'user',
+              universityId: data.universityId || null,
+              universityName: data.universityName || null,
+              userName: data.name || null,
+              userPhotoURL: data.photoURL || null,
+            });
           } else {
-            setRole('user');
-            setUniversityId(null);
-            setUniversityName(null);
-            setUserName(null);
-            setUserPhotoURL(null);
+            setMeta(DEFAULT_META);
           }
         } catch {
-          setRole('user');
-          setUniversityId(null);
-          setUniversityName(null);
-          setUserName(null);
-          setUserPhotoURL(null);
+          setMeta(DEFAULT_META);
         }
       } else {
-        setRole(null);
-        setUniversityId(null);
-        setUniversityName(null);
-        setUserName(null);
-        setUserPhotoURL(null);
+        setMeta(EMPTY_META);
       }
       setLoading(false);
     });
@@ -78,12 +75,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return unsubscribe;
   }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     await signOut(auth);
-  };
+  }, []);
+
+  const value = useMemo<AuthContextType>(() => ({
+    user,
+    ...meta,
+    loading,
+    logout,
+  }), [user, meta, loading, logout]);
 
   return (
-    <AuthContext.Provider value={{ user, role, universityId, universityName, userName, userPhotoURL, loading, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

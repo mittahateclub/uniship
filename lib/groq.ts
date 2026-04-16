@@ -1,13 +1,21 @@
 import Groq from "groq-sdk";
 
-const apiKey = process.env.GROQ_API_KEY;
-
-if (!apiKey) {
-  throw new Error("GROQ_API_KEY is missing from .env.local");
+function getClient(): Groq {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    throw new Error("GROQ_API_KEY is missing from .env.local");
+  }
+  return new Groq({ apiKey });
 }
 
-export const groq = new Groq({
-  apiKey: apiKey,
+// Lazy singleton — only initializes when first accessed, avoids crashing
+// pages that don't use Groq
+let _groq: Groq | null = null;
+export const groq = new Proxy({} as Groq, {
+  get(_, prop) {
+    if (!_groq) _groq = getClient();
+    return (_groq as unknown as Record<string | symbol, unknown>)[prop];
+  },
 });
 
 /**

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useParams, useRouter } from 'next/navigation';
+import { authHeaders } from '@/lib/auth-client';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, addDoc, collection, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
 import {
@@ -170,7 +171,7 @@ export default function PracticeSolvePage() {
     try {
       const response = await fetch('/api/compile', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders(),
         body: JSON.stringify({
           source_code: code,
           language_id: LANG_IDS[language] || 71,

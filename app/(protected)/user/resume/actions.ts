@@ -3,19 +3,46 @@
 
 import { getGroqChatCompletion } from '@/lib/groq';
 
+// SECURITY: Input size limits to prevent abuse
+const MAX_PROFILE_SIZE = 50_000;   // 50 KB JSON stringified
+const MAX_COMPANY_NAME = 200;
+const MAX_JOB_DESC = 10_000;
+
+/**
+ * Sanitize string input — strip control characters, trim, truncate.
+ */
+function sanitize(input: string, maxLength: number): string {
+  return (input || '')
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // strip control chars (keep \n, \r, \t)
+    .trim()
+    .slice(0, maxLength);
+}
+
 export async function generateTailoredResume(
-  profileData: any,
+  profileData: Record<string, unknown>,
   companyName: string,
   jobDescription: string
 ) {
+  // SECURITY: Validate inputs
+  if (!profileData || typeof profileData !== 'object' || Array.isArray(profileData)) {
+    throw new Error('Invalid profile data.');
+  }
+  const profileStr = JSON.stringify(profileData);
+  if (profileStr.length > MAX_PROFILE_SIZE) {
+    throw new Error('Profile data too large.');
+  }
+  const cleanCompany = sanitize(companyName, MAX_COMPANY_NAME);
+  const cleanJobDesc = sanitize(jobDescription, MAX_JOB_DESC);
+  if (!cleanCompany) throw new Error('Company name is required.');
+  if (!cleanJobDesc) throw new Error('Job description is required.');
   const prompt = `
 You are an expert ATS-friendly resume writer. Your task is to tailor the provided user profile data for a specific job application.
 
-Target Company: ${companyName}
-Job Description: ${jobDescription}
+Target Company: ${cleanCompany}
+Job Description: ${cleanJobDesc}
 
 User's Raw Profile Data (all fields stored in their profile):
-${JSON.stringify(profileData, null, 2)}
+${profileStr}
 
 Instructions:
 1. Analyze the job description and extract key skills, tools, and requirements.

@@ -1,8 +1,17 @@
 import { NextResponse } from 'next/server';
 import { wrapCode } from '@/lib/code-wrapper';
+import { verifyAuthFromRequest } from '@/lib/auth-server';
+import { rateLimit } from '@/lib/rate-limit';
 
 const JUDGE0_CE_URL = 'https://ce.judge0.com';
 const PARSE_ERR_PREFIX = '__PLATFORM_PARSE_ERROR__';
+
+// SECURITY: Hard limits to prevent abuse
+const MAX_SOURCE_CODE_LENGTH = 50_000;  // 50 KB
+const MAX_STDIN_LENGTH = 10_000;        // 10 KB
+const MAX_TEST_CASES = 30;
+const MAX_TIME_LIMIT_SEC = 10;
+const MAX_MEMORY_LIMIT_KB = 512_000;    // 512 MB
 
 type CompileMode = 'run' | 'submit';
 
@@ -196,6 +205,17 @@ function finalVerdict(codes: string[]) {
 }
 
 export async function POST(request: Request) {
+  // SECURITY: Verify Firebase auth token
+  const authUser = await verifyAuthFromRequest(request);
+  if (!authUser) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // SECURITY: Rate limit — 20 requests per minute per user
+  if (!rateLimit(`compile:${authUser.uid}`, { maxRequests: 20, windowMs: 60_000 })) {
+    return NextResponse.json({ error: 'Too many requests. Please wait a moment.' }, { status: 429 });
+  }
+
   const {
     source_code,
     language_id,
@@ -210,6 +230,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'source_code and language_id are required' }, { status: 400 });
   }
 
+  // SECURITY: Input size limits
+  if (typeof source_code !== 'string' || source_code.length > MAX_SOURCE_CODE_LENGTH) {
+    return NextResponse.json({ error: `source_code exceeds maximum length of ${MAX_SOURCE_CODE_LENGTH} characters` }, { status: 400 });
+  }
+  if (stdin && (typeof stdin !== 'string' || stdin.length > MAX_STDIN_LENGTH)) {
+    return NextResponse.json({ error: `stdin exceeds maximum length of ${MAX_STDIN_LENGTH} characters` }, { status: 400 });
+  }
+
+  // SECURITY: Clamp resource limits to safe maximums
+  const safeTL = Math.min(timeLimitSec ?? getDefaultTimeLimit(language_id), MAX_TIME_LIMIT_SEC);
+  const safeML = Math.min(memoryLimitKb ?? 262144, MAX_MEMORY_LIMIT_KB);
+
   // Auto-detect function, params, and wrap if applicable
   const wrappedCode = wrapCode(source_code, language_id, mode);
 
@@ -218,76 +250,77 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'testCases are required for submit mode' }, { status: 400 });
     }
 
-    const evaluatedCases: Array<{
-      caseNumber: number;
-      statusCode: string;
-      status: string;
-      time: string | null;
-      memory: number | null;
-      stdout: string | null;
-      stderr: string | null;
-      expectedOutput: string;
-      inputPreview: string;
-      isHidden: boolean;
-    }> = [];
+    // SECURITY: Cap number of test cases
+    if (testCases.length > MAX_TEST_CASES) {
+      return NextResponse.json({ error: `Maximum ${MAX_TEST_CASES} test cases allowed` }, { status: 400 });
+    }
 
+    // Validate all test cases upfront
     for (let i = 0; i < testCases.length; i += 1) {
       const tc = testCases[i];
       if (!tc || typeof tc.input !== 'string' || typeof tc.expectedOutput !== 'string') {
         return NextResponse.json({ error: `Invalid test case at index ${i}` }, { status: 400 });
       }
+      if (tc.input.length > MAX_STDIN_LENGTH || tc.expectedOutput.length > MAX_STDIN_LENGTH) {
+        return NextResponse.json({ error: `Test case ${i} input/output exceeds size limit` }, { status: 400 });
+      }
+    }
 
-      try {
-        const result = await executeWithFallback(wrappedCode, language_id, {
+    // Run all test cases in parallel for maximum speed
+    const results = await Promise.allSettled(
+      testCases.map((tc) =>
+        executeWithFallback(wrappedCode, language_id, {
           stdin: tc.input,
-          timeLimitSec,
-          memoryLimitKb,
-        });
+          timeLimitSec: safeTL,
+          memoryLimitKb: safeML,
+        })
+      )
+    );
 
-        const executionCode = mapStatusToCode(result.status?.id, result.status?.description);
-        const code = executionCode === 'AC'
-          ? (outputsMatch(result.stdout, tc.expectedOutput) ? 'AC' : 'WA')
-          : executionCode;
-
-        // Detect platform parse errors and surface them clearly
-        const stderrText = result.compile_output || result.stderr || result.message || null;
-        const parseErr = isPlatformParseError(result.stderr);
-
-        evaluatedCases.push({
+    const evaluatedCases = results.map((settled, i) => {
+      const tc = testCases[i];
+      if (settled.status === 'rejected') {
+        const message = settled.reason instanceof Error ? settled.reason.message : 'Unknown error';
+        return {
           caseNumber: i + 1,
-          statusCode: parseErr ? 'RE' : code,
-          status: parseErr
-            ? 'Internal Parse Error'
-            : (code === 'WA' ? 'Wrong Answer' : (result.status?.description || 'Unknown')),
-          time: result.time || null,
-          memory: result.memory || null,
-          stdout: tc.isHidden ? null : (result.stdout || null),
-          stderr: parseErr
-            ? 'The platform could not parse the test input for this case. Please contact your admin.'
-            : stderrText,
-          expectedOutput: tc.isHidden ? '' : tc.expectedOutput,
-          inputPreview: tc.isHidden ? '' : tc.input.slice(0, 240),
-          isHidden: !!tc.isHidden,
-        });
-
-        if (code !== 'AC') break;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unknown error';
-        evaluatedCases.push({
-          caseNumber: i + 1,
-          statusCode: 'RE',
+          statusCode: 'RE' as string,
           status: 'Runtime Error',
-          time: null,
-          memory: null,
-          stdout: null,
+          time: null as string | null,
+          memory: null as number | null,
+          stdout: null as string | null,
           stderr: message,
           expectedOutput: tc.isHidden ? '' : tc.expectedOutput,
           inputPreview: tc.isHidden ? '' : tc.input.slice(0, 240),
           isHidden: !!tc.isHidden,
-        });
-        break;
+        };
       }
-    }
+
+      const result = settled.value;
+      const executionCode = mapStatusToCode(result.status?.id, result.status?.description);
+      const code = executionCode === 'AC'
+        ? (outputsMatch(result.stdout, tc.expectedOutput) ? 'AC' : 'WA')
+        : executionCode;
+
+      const stderrText = result.compile_output || result.stderr || result.message || null;
+      const parseErr = isPlatformParseError(result.stderr);
+
+      return {
+        caseNumber: i + 1,
+        statusCode: parseErr ? 'RE' : code,
+        status: parseErr
+          ? 'Internal Parse Error'
+          : (code === 'WA' ? 'Wrong Answer' : (result.status?.description || 'Unknown')),
+        time: result.time || null,
+        memory: result.memory || null,
+        stdout: tc.isHidden ? null : (result.stdout || null),
+        stderr: parseErr
+          ? 'The platform could not parse the test input for this case. Please contact your admin.'
+          : stderrText,
+        expectedOutput: tc.isHidden ? '' : tc.expectedOutput,
+        inputPreview: tc.isHidden ? '' : tc.input.slice(0, 240),
+        isHidden: !!tc.isHidden,
+      };
+    });
 
     const codes = evaluatedCases.map((c) => c.statusCode);
     const verdict = finalVerdict(codes);
@@ -309,8 +342,8 @@ export async function POST(request: Request) {
   try {
     const result = await executeWithFallback(wrappedCode, language_id, {
       stdin: stdin || '',
-      timeLimitSec,
-      memoryLimitKb,
+      timeLimitSec: safeTL,
+      memoryLimitKb: safeML,
     });
 
     const friendlyInputTip = getFriendlyInputTip(result.stderr, stdin);

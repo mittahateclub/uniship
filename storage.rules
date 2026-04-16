@@ -11,6 +11,7 @@ service firebase.storage {
     }
 
     // Uploaded resumes: owner-only read/write with strict file and size validation.
+    // SECURITY: Removed application/octet-stream — it allows arbitrary binary uploads.
     match /uploaded_resumes/{userId}/{fileName} {
       allow read: if request.auth != null && request.auth.uid == userId;
 
@@ -18,7 +19,14 @@ service firebase.storage {
                    && request.auth.uid == userId
                    && request.resource != null
                    && request.resource.size < 6 * 1024 * 1024
-                   && request.resource.contentType.matches('application/pdf|application/msword|application/vnd.openxmlformats-officedocument.wordprocessingml.document|application/octet-stream');
+                   && (request.resource.contentType == 'application/pdf'
+                       || request.resource.contentType == 'application/msword'
+                       || request.resource.contentType == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    }
+
+    // Catch-all: deny everything not explicitly allowed
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }

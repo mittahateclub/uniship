@@ -161,12 +161,11 @@ async function tryGenerateWithDualValidation(
       for (const sample of sampleTestCases) {
         try {
           const sr = await runCode(wrappedA, 71, sample.input);
-          if (!sr.ok) return null; // runtime error → solution is broken
+          if (!sr.ok) return null;
           sampleOutputsA.push(normalizeTokens(sr.stdout));
         } catch {
           return null;
         }
-        await new Promise((r) => setTimeout(r, 600));
       }
     }
 
@@ -216,7 +215,6 @@ RULES:
           solutionsAgreeOnSamples = false;
           break;
         }
-        await new Promise((r) => setTimeout(r, 600));
       }
 
       if (solutionsAgreeOnSamples && sampleOutputsA.length === sampleOutputsB.length) {
@@ -251,30 +249,23 @@ RULES:
       }
     }
 
-    // ── Step 5: Generate hidden case outputs using primary ref ──
-    const cases: GeneratedCase[] = [];
-
-    for (const input of testInputs) {
-      try {
-        const resultA = await runCode(wrappedA, 71, input);
-        if (!resultA.ok || !resultA.stdout.length) continue;
-
-        // Cross-validate with second solution
-        const resultB = await runCode(wrappedB, 71, input);
-        if (!resultB.ok) continue;
-
+    // ── Step 5: Generate hidden case outputs using both refs in parallel ──
+    const caseResults = await Promise.allSettled(
+      testInputs.map(async (input) => {
+        const [resultA, resultB] = await Promise.all([
+          runCode(wrappedA, 71, input),
+          runCode(wrappedB, 71, input),
+        ]);
+        if (!resultA.ok || !resultA.stdout.length || !resultB.ok) return null;
         const outputA = normalizeTokens(resultA.stdout);
         const outputB = normalizeTokens(resultB.stdout);
+        return outputA === outputB ? { input, output: outputA } : null;
+      })
+    );
 
-        // Only include test case if both solutions agree
-        if (outputA === outputB) {
-          cases.push({ input, output: outputA });
-        }
-      } catch {
-        // Skip
-      }
-      await new Promise((r) => setTimeout(r, 600));
-    }
+    const cases: GeneratedCase[] = caseResults
+      .filter((r): r is PromiseFulfilledResult<GeneratedCase | null> => r.status === 'fulfilled' && r.value !== null)
+      .map((r) => r.value!);
 
     if (cases.length === 0) return null;
 
@@ -394,25 +385,24 @@ CRITICAL RULES:
           refValid = false;
           break;
         }
-        await new Promise((r) => setTimeout(r, 600));
       }
     }
 
-    // If ref is valid, re-compute outputs via execution instead of trusting AI
+    // If ref is valid, re-compute outputs via execution in parallel
     if (refValid) {
-      const validated: GeneratedCase[] = [];
-      for (const tc of cases) {
-        try {
+      const validated = await Promise.allSettled(
+        cases.map(async (tc) => {
           const result = await runCode(wrappedRef, 71, tc.input);
           if (result.ok && result.stdout.length > 0) {
-            validated.push({ input: tc.input, output: normalizeTokens(result.stdout) });
+            return { input: tc.input, output: normalizeTokens(result.stdout) };
           }
-        } catch {
-          // skip
-        }
-        await new Promise((r) => setTimeout(r, 600));
-      }
-      if (validated.length > 0) cases = validated;
+          return null;
+        })
+      );
+      const validCases = validated
+        .filter((r): r is PromiseFulfilledResult<GeneratedCase | null> => r.status === 'fulfilled' && r.value !== null)
+        .map((r) => r.value!);
+      if (validCases.length > 0) cases = validCases;
     }
   }
 

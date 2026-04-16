@@ -107,9 +107,11 @@ export default function ResultsPage() {
         throw new Error('This result record is missing test reference.');
       }
 
-      const peersSnapshot = await getDocs(
-        query(collection(db, 'test_results'), where('testId', '==', result.testId))
-      );
+      // Fetch peers and test data in parallel — both only need testId
+      const [peersSnapshot, testSnap] = await Promise.all([
+        getDocs(query(collection(db, 'test_results'), where('testId', '==', result.testId))),
+        getDoc(doc(db, 'tests', result.testId)),
+      ]);
 
       const peersRaw = peersSnapshot.docs.map((d) => ({ id: d.id, ...d.data() } as TestResult));
       const peers = peersRaw.filter((r) => r.universityId && r.universityId === result.universityId);
@@ -152,7 +154,7 @@ export default function ResultsPage() {
 
       let questionStats: AnalysisDetails['questionStats'] = null;
       if (result.testId) {
-        const testSnap = await getDoc(doc(db, 'tests', result.testId));
+        // testSnap already fetched in parallel above
         const problems = (testSnap.data()?.problems || []) as Problem[];
 
         if (problems.length > 0) {

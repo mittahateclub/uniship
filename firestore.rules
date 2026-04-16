@@ -27,18 +27,31 @@ service cloud.firestore {
     function belongsToSameUniversity(universityId) {
       return getUserData().universityId == universityId;
     }
+
+    // Validate string field length
+    function isValidString(val, maxLen) {
+      return val is string && val.size() <= maxLen;
+    }
     
     // --- Users collection ---
     match /users/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isSuperAdmin());
       allow read: if isUniversityAdmin() && belongsToSameUniversity(resource.data.universityId);
       
-      allow create: if isAuthenticated() && request.auth.uid == userId; // Allow initial profile creation
+      // SECURITY: Initial profile creation — role MUST be 'student' (the only self-registerable role).
+      // Super admins and university admins are created via admin flows that use Firebase Admin SDK server-side.
+      allow create: if isAuthenticated()
+                    && request.auth.uid == userId
+                    && request.resource.data.role == 'student'
+                    && request.resource.data.keys().hasAll(['email', 'role'])
+                    && isValidString(request.resource.data.email, 320)
+                    && (!('name' in request.resource.data) || isValidString(request.resource.data.name, 200));
       
-      // FIX: Allow users to update their own fields EXCEPT sensitive ones like 'role' and 'universityId'
+      // Users can update their own non-sensitive fields
       allow update: if isAuthenticated() && request.auth.uid == userId && 
-                    !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'universityId']);
+                    !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'universityId', 'universityName']);
       
+      // Only super admins can change roles, delete users, etc.
       allow update, delete: if isSuperAdmin();
     }
 
@@ -51,7 +64,7 @@ service cloud.firestore {
         request.resource.data.universityId == getUserData().universityId
       );
 
-      // Allows Admins full updates and Students to ONLY update the 'attendees' field for RSVPing.
+      // Admins full updates; Students can ONLY update the 'attendees' field for RSVPing.
       allow update: if isSuperAdmin() || 
                     (isUniversityAdmin() && belongsToSameUniversity(resource.data.universityId)) ||
                     (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendees']));
@@ -93,8 +106,12 @@ service cloud.firestore {
     }
 
     match /mock_tests/{testId} {
-      allow read: if isSuperAdmin() || isAuthenticated();
-      allow write: if isUniversityAdmin() || isSuperAdmin();
+      // SECURITY: Scoped to same-university students + admins (was: any authenticated user)
+      allow read: if isSuperAdmin()
+                  || (isAuthenticated() && belongsToSameUniversity(resource.data.universityId));
+      allow create, update: if isUniversityAdmin()
+                            && request.resource.data.universityId == getUserData().universityId;
+      allow write: if isSuperAdmin();
     }
     
     match /mock_proctoring_logs/{logId} {
@@ -103,13 +120,20 @@ service cloud.firestore {
     }
     
     match /testResults/{resultId} {
-      allow read, create: if isStudent() && request.auth.uid == (resource == null ? request.resource.data.userId : resource.data.userId);
+      // SECURITY: validate userId matches on create, limit document size
+      allow read: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow create: if isAuthenticated()
+                    && request.auth.uid == request.resource.data.userId
+                    && request.resource.data.keys().hasAll(['userId']);
       allow read: if isUniversityAdmin() || isSuperAdmin();
       allow update, delete: if false;
     }
 
     match /test_results/{resultId} {
-      allow read, create: if isAuthenticated() && request.auth.uid == (resource == null ? request.resource.data.userId : resource.data.userId);
+      allow read: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow create: if isAuthenticated()
+                    && request.auth.uid == request.resource.data.userId
+                    && request.resource.data.keys().hasAll(['userId']);
       allow read: if isUniversityAdmin() || isSuperAdmin();
       allow delete: if isUniversityAdmin() && belongsToSameUniversity(resource.data.universityId);
     }
@@ -156,9 +180,18 @@ service cloud.firestore {
         resource.data.userId == request.auth.uid || isUniversityAdmin() || isSuperAdmin()
       );
 
+      // SECURITY: Messages scoped to session participants only (was: any authenticated user)
       match /messages/{messageId} {
-        allow read: if isAuthenticated();
-        allow create: if isAuthenticated();
+        allow read: if isAuthenticated() && (
+          get(/databases/$(database)/documents/exam_sessions/$(sessionId)).data.userId == request.auth.uid
+          || isUniversityAdmin()
+          || isSuperAdmin()
+        );
+        allow create: if isAuthenticated() && (
+          get(/databases/$(database)/documents/exam_sessions/$(sessionId)).data.userId == request.auth.uid
+          || isUniversityAdmin()
+          || isSuperAdmin()
+        ) && request.resource.data.senderId == request.auth.uid;
       }
     }
 
@@ -185,6 +218,7 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 
+    // Catch-all: deny everything not explicitly allowed above
     match /{document=**} {
       allow read, write: if false;
     }

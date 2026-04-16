@@ -3,8 +3,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firestore';
 import Link from 'next/link';
 import Image from 'next/image';
 import { DM_Sans } from 'next/font/google';
@@ -16,43 +14,31 @@ const dmSans = DM_Sans({
 });
 
 export default function Home() {
-  const { user, loading } = useAuth();
+  const { user, role, loading } = useAuth();
   const router = useRouter();
   const [checking, setChecking] = useState(false);
 
+  // Redirect authenticated users to their dashboard using role from AuthContext
+  // (eliminates a redundant Firestore read on every landing page visit)
   useEffect(() => {
-    async function checkUserRole() {
-      if (!loading) {
-        if (!user) {
-          setChecking(false);
-          return;
-        }
-
-        setChecking(true);
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists()) {
-          const role = userDoc.data().role;
-          switch (role) {
-            case 'super_admin':
-              router.push('/superadmin/dashboard');
-              break;
-            case 'university_admin':
-              router.push('/uniadmin/dashboard');
-              break;
-            case 'student':
-              router.push('/user/dashboard');
-              break;
-            default:
-              router.push('/user/dashboard');
-          }
-        } else {
-          router.push('/user/dashboard');
-        }
-      }
+    if (loading) return;
+    if (!user || !role) {
+      setChecking(false);
+      return;
     }
 
-    checkUserRole();
-  }, [user, loading, router]);
+    setChecking(true);
+    switch (role) {
+      case 'super_admin':
+        router.push('/superadmin/dashboard');
+        break;
+      case 'university_admin':
+        router.push('/uniadmin/dashboard');
+        break;
+      default:
+        router.push('/user/dashboard');
+    }
+  }, [user, role, loading, router]);
 
   useEffect(() => {
     if (loading || checking) return;
