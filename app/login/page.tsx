@@ -77,7 +77,7 @@ export default function LoginPage() {
         {/* Card */}
         <div className="bg-[var(--bg-surface)] rounded border border-[var(--border-subtle)] p-6">
           {error && (
-            <div className="bg-[#00A8E1]/10 text-[#00A8E1] px-3 py-2 rounded text-[13px] font-medium mb-5 border border-[#00A8E1]/20">
+            <div className="bg-red-500/10 text-red-500 px-3 py-2 rounded text-[13px] font-medium mb-5 border border-red-500/20">
               {error}
             </div>
           )}

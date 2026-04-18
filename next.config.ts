@@ -14,7 +14,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com",
-      "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebase.com wss://*.firebaseio.com https://ce.judge0.com https://api.cloud.llamaindex.ai https://api.groq.com",
+      "connect-src 'self' https://*.googleapis.com https://*.google.com https://*.firebaseio.com https://*.firebase.com wss://*.firebaseio.com https://ce.judge0.com https://api.cloud.llamaindex.ai https://api.groq.com",
       "frame-src 'self' https://accounts.google.com https://*.firebaseapp.com",
       "object-src 'none'",
       "base-uri 'self'",

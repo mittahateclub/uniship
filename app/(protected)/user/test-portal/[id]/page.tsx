@@ -472,9 +472,10 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
     setChecks(c => ({ ...c, internet: 'checking' }));
     try {
       const start = performance.now();
-      await fetch('https://www.google.com/favicon.ico', { mode: 'no-cors', cache: 'no-store' });
+      // Ping own origin — always allowed by CSP 'self' and proves server reachability
+      await fetch('/api/compile', { method: 'HEAD', cache: 'no-store' });
       const latency = Math.round(performance.now() - start);
-      setChecks(c => ({ ...c, internet: latency < 2000 ? 'pass' : 'slow' }));
+      setChecks(c => ({ ...c, internet: latency < 3000 ? 'pass' : 'slow' }));
     } catch {
       setChecks(c => ({ ...c, internet: 'fail' }));
     }

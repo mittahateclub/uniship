@@ -6,6 +6,15 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { DM_Sans } from 'next/font/google';
+import {
+  Fingerprint,
+  Crosshair,
+  RocketLaunch,
+  Strategy,
+  Scroll,
+  Trophy,
+  Timer,
+} from '@phosphor-icons/react';
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -511,10 +520,7 @@ export default function Home() {
             <div className="step">
               <div className="step-num">01</div>
               <div className="step-icon">
-                <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="8" r="4" />
-                  <path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" />
-                </svg>
+                <Fingerprint weight="duotone" />
               </div>
               <h3>Build Your Profile</h3>
               <p>Import your transcript, skills, and projects. Uniship builds a smart profile that speaks the language of recruiters.</p>
@@ -523,10 +529,7 @@ export default function Home() {
             <div className="step">
               <div className="step-num">02</div>
               <div className="step-icon">
-                <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.636 5.636l1.414 1.414M16.95 16.95l1.414 1.414M5.636 18.364l1.414-1.414M16.95 7.05l1.414-1.414" />
-                  <circle cx="12" cy="12" r="4" />
-                </svg>
+                <Crosshair weight="duotone" />
               </div>
               <h3>Get Matched</h3>
               <p>Our AI cross-references your profile with live job openings from 1,800+ hiring partners to surface your best-fit roles.</p>
@@ -535,9 +538,7 @@ export default function Home() {
             <div className="step">
               <div className="step-num">03</div>
               <div className="step-icon">
-                <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14M13 6l6 6-6 6" />
-                </svg>
+                <RocketLaunch weight="duotone" />
               </div>
               <h3>Apply &amp; Track</h3>
               <p>One-click applications, interview scheduling, and a real-time placement dashboard - all in one place.</p>
@@ -556,11 +557,7 @@ export default function Home() {
         <div className="features-grid">
           <div className="feature-card">
             <div className="feat-icon">
-              <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="12" width="4" height="9" rx="1" />
-                <rect x="10" y="7" width="4" height="14" rx="1" />
-                <rect x="17" y="3" width="4" height="18" rx="1" />
-              </svg>
+              <Strategy weight="duotone" />
             </div>
             <h3>Placement Analytics</h3>
             <p>TPO dashboards give your placement cell live visibility into offer rates, hiring trends, and student pipeline.</p>
@@ -572,13 +569,7 @@ export default function Home() {
 
           <div className="feature-card">
             <div className="feat-icon">
-              <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="16" y1="13" x2="8" y2="13" />
-                <line x1="16" y1="17" x2="8" y2="17" />
-                <line x1="10" y1="9" x2="8" y2="9" />
-              </svg>
+              <Scroll weight="duotone" />
             </div>
             <h3>Resume Builder</h3>
             <p>Students generate ATS-friendly, role-specific resumes with one click - tailored automatically per application.</p>
@@ -590,12 +581,7 @@ export default function Home() {
 
           <div className="feature-card">
             <div className="feat-icon">
-              <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="9" cy="7" r="3" />
-                <path d="M2 20c0-3.314 3.134-6 7-6s7 2.686 7 6" />
-                <circle cx="18" cy="7" r="2" />
-                <path d="M22 20c0-2.21-1.79-4-4-4" />
-              </svg>
+              <Trophy weight="duotone" />
             </div>
             <h3>Interview Prep</h3>
             <p>Company-specific mock interviews, question banks, and peer practice sessions curated by domain.</p>
@@ -603,10 +589,7 @@ export default function Home() {
 
           <div className="feature-card">
             <div className="feat-icon">
-              <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
+              <Timer weight="duotone" />
             </div>
             <h3>Deadline Alerts</h3>
             <p>Never miss an application window. Smart reminders are synced to your calendar and sent via SMS or email.</p>
@@ -1654,9 +1637,9 @@ export default function Home() {
         }
 
         .step-icon svg {
-          width: 20px;
-          height: 20px;
-          stroke: var(--orange-light);
+          width: 22px;
+          height: 22px;
+          color: var(--orange-light);
         }
 
         .step h3 {
@@ -1732,9 +1715,9 @@ export default function Home() {
         }
 
         .feat-icon svg {
-          width: 24px;
-          height: 24px;
-          stroke: var(--orange-light);
+          width: 26px;
+          height: 26px;
+          color: var(--orange-light);
         }
 
         .feature-card h3 {

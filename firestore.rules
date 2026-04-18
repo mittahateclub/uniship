@@ -38,11 +38,12 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isSuperAdmin());
       allow read: if isUniversityAdmin() && belongsToSameUniversity(resource.data.universityId);
       
-      // SECURITY: Initial profile creation — role MUST be 'student' (the only self-registerable role).
-      // Super admins and university admins are created via admin flows that use Firebase Admin SDK server-side.
+      // Self-creation: allow 'student' and 'university_admin' roles.
+      // 'university_admin' docs are created by the create-uniadmin flow (client-side auth).
+      // 'super_admin' role can NEVER be self-assigned — only set via super_admin update.
       allow create: if isAuthenticated()
                     && request.auth.uid == userId
-                    && request.resource.data.role == 'student'
+                    && request.resource.data.role in ['student', 'university_admin']
                     && request.resource.data.keys().hasAll(['email', 'role'])
                     && isValidString(request.resource.data.email, 320)
                     && (!('name' in request.resource.data) || isValidString(request.resource.data.name, 200));

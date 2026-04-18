@@ -22,7 +22,7 @@ export default function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
     if (loading) return;
 
     if (!user) {
-      router.replace('/login');
+      router.replace('/');
       return;
     }
 
