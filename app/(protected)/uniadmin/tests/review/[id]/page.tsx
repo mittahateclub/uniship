@@ -108,11 +108,10 @@ export default function ReviewGeneratedQuestions() {
                   <div key={qIdx} className="window p-5">
                     <div className="flex items-center gap-2 mb-3">
                       <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${
-                        section.type === 'aptitude' ? 'text-teal-400 bg-teal-400/10'
-                        : section.type === 'mcq' ? 'text-amber-400 bg-amber-400/10'
+                        section.type === 'mcq' ? 'text-amber-400 bg-amber-400/10'
                         : 'text-[#4B8BBE] bg-[#4B8BBE]/10'
                       }`}>
-                        {q.difficulty || meta.label} — Q{qIdx + 1}
+                        Q{qIdx + 1}
                       </span>
                     </div>
 
@@ -141,7 +140,7 @@ export default function ReviewGeneratedQuestions() {
                       </div>
                     )}
 
-                    {/* Aptitude answer */}
+                    {/* Aptitude answer (legacy — kept for backwards compat) */}
                     {section.type === 'aptitude' && q.correctAnswer && (
                       <div className="flex items-center gap-2 px-3 py-2 rounded border border-[#4CAF50]/30 bg-[#4CAF50]/10 text-[13px] text-[#4CAF50] font-medium">
                         <CheckCircle2 size={12} />

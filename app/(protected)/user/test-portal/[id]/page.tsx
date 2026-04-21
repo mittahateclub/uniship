@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, use } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { doc, getDoc, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, setDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, setDoc, getDocs, where, updateDoc } from 'firebase/firestore';
 import { authHeaders } from '@/lib/auth-client';
 import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
@@ -75,6 +75,42 @@ interface ChatMessage {
 const MAX_VIOLATIONS = 10;
 const HIGH_SEVERITY_LIMIT = 3;
 const TAB_AWAY_AUTO_SUBMIT = 30;
+const HEARTBEAT_INTERVAL_MS = 10000;
+
+type SubmitReason = 'manual' | 'time_up' | 'max_violations' | 'session_frozen' | 'tab_away' | 'esc_pressed';
+const VIOLATION_SUBMIT_REASONS = new Set<SubmitReason>(['max_violations', 'session_frozen', 'tab_away', 'esc_pressed']);
+
+const isViolationSubmitReason = (reason: SubmitReason) => VIOLATION_SUBMIT_REASONS.has(reason);
+
+const getSubmitReasonKeyword = (reason: SubmitReason): string => {
+  switch (reason) {
+    case 'max_violations': return 'max violations reached';
+    case 'session_frozen': return 'session frozen';
+    case 'tab_away': return 'tab away';
+    case 'esc_pressed': return 'ESC pressed';
+    default: return '';
+  }
+};
+
+const normalizeViolationKeyword = (raw: string): string => {
+  const key = raw.trim().toLowerCase();
+  if (!key) return '';
+  if (key.includes('esc')) return 'ESC pressed';
+  if (key.includes('screen share')) return 'screen share stopped';
+  if (key.includes('tab switch') || key.includes('tab away')) return 'tab switch';
+  if (key.includes('window blur')) return 'window blur';
+  if (key.includes('fullscreen')) return 'fullscreen exited';
+  return raw.trim();
+};
+
+const buildFlagReasonKeywords = (reason: SubmitReason, violationEntries: Violation[]): string[] => {
+  if (!isViolationSubmitReason(reason)) return [];
+  const keywords = [
+    getSubmitReasonKeyword(reason),
+    ...violationEntries.map(v => normalizeViolationKeyword(v.type)),
+  ].filter(Boolean);
+  return [...new Set(keywords)];
+};
 
 // Language ID → Monaco language mapping
 const LANG_MONACO: Record<number, string> = {
@@ -102,10 +138,11 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   // Core state
   const [test, setTest] = useState<TestData | null>(null);
   const [phase, setPhase] = useState<Phase>('loading');
+  const [alreadyAttempted, setAlreadyAttempted] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
-  const [submitReason, setSubmitReason] = useState('');
+  const [submitReason, setSubmitReason] = useState<SubmitReason | ''>('');
   const [resultSummary, setResultSummary] = useState<{
     score: number;
     totalQuestions: number;
@@ -128,6 +165,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   // Refs
   const submittedRef = useRef(false);
   const hiddenCasesRef = useRef<Array<Array<{ input: string; output: string }>>>([]);
+  const violationsRef = useRef<Violation[]>([]);
   const violationPointsRef = useRef(0);
   const highViolationsRef = useRef(0);
   const savedThemeRef = useRef<string | null>(null);
@@ -135,6 +173,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   const screenStreamRef = useRef<MediaStream | null>(null);
   const chatOpenRef = useRef(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const escPressedOnceRef = useRef(false);
   const tabAwayStartRef = useRef<number | null>(null);
   const tabAwayTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -212,6 +251,24 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           setTest(sanitized);
           setFlatQuestions(flat);
           if (data.duration) setTimeLeft(data.duration * 60);
+
+          // Check if student already attempted this test
+          if (user) {
+            try {
+              const existingResults = await getDocs(query(
+                collection(db, 'test_results'),
+                where('testId', '==', id),
+                where('userId', '==', user.uid),
+              ));
+              if (!existingResults.empty) {
+                // Check if any result does NOT have reattemptAllowed flag
+                const hasBlockingResult = existingResults.docs.some(d => !d.data().reattemptAllowed);
+                if (hasBlockingResult) {
+                  setAlreadyAttempted(true);
+                }
+              }
+            } catch { /* index may be missing, allow attempt */ }
+          }
         }
       } catch (error) {
         console.error('Error fetching test:', error);
@@ -225,7 +282,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   }, [id]);
 
   // ── Submit handler ──
-  const doSubmit = useCallback(async (reason: string) => {
+  const doSubmit = useCallback(async (reason: SubmitReason, options?: { violationsSnapshot?: Violation[] }) => {
     if (submittedRef.current || !test || !user || flatQuestions.length === 0) return;
     submittedRef.current = true;
 
@@ -233,8 +290,15 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
     screenStreamRef.current?.getTracks().forEach(t => t.stop());
 
     try {
+      // Unlock keyboard before exiting fullscreen
+      if ('keyboard' in navigator && typeof (navigator as any).keyboard?.unlock === 'function') {
+        try { (navigator as any).keyboard.unlock(); } catch { /* ok */ }
+      }
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
       const attemptedQuestions = Object.keys(answers).filter((k) => (answers[Number(k)] || '').trim().length > 0).length;
+      const violationEntries = options?.violationsSnapshot ?? violationsRef.current;
+      const flaggedByViolation = isViolationSubmitReason(reason);
+      const flagReasonKeywords = buildFlagReasonKeywords(reason, violationEntries);
 
       let score = 0;
       let gradable = 0;
@@ -400,6 +464,20 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         difficulty: q.difficulty || null,
       }));
 
+      // Reset reattemptAllowed on all prior results so admin panel shows "Reassign Test" again
+      try {
+        const priorResults = await getDocs(query(
+          collection(db, 'test_results'),
+          where('testId', '==', id),
+          where('userId', '==', user.uid),
+        ));
+        if (!priorResults.empty) {
+          await Promise.all(priorResults.docs.map(d =>
+            updateDoc(doc(db, 'test_results', d.id), { reattemptAllowed: false })
+          ));
+        }
+      } catch { /* not critical */ }
+
       const resultDocRef = await addDoc(collection(db, 'test_results'), {
         testId: id,
         testTitle: test.title || test.sourceFileName,
@@ -416,11 +494,14 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         submittedAt: serverTimestamp(),
         universityId: test.universityId,
         sessionId: sessionIdRef.current,
+        flagged: flaggedByViolation,
+        reattemptAllowed: false,
         proctoring: {
-          totalViolations: violations.length,
+          totalViolations: violationEntries.length,
           violationPoints: violationPointsRef.current,
-          violationLog: violations.map(v => `[${v.severity.toUpperCase()}] ${v.type} — ${v.timestamp}`),
+          violationLog: violationEntries.map(v => `[${v.severity.toUpperCase()}] ${v.type} — ${v.timestamp}`),
           submitReason: reason,
+          flagReasonKeywords,
         },
       });
       setResultSummary({
@@ -433,21 +514,40 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       });
       setSubmitReason(reason);
       setPhase('submitted');
-      setDoc(doc(db, 'exam_sessions', sessionIdRef.current), { status: 'submitted', submittedAt: new Date().toISOString() }, { merge: true }).catch(() => {});
+      setDoc(doc(db, 'exam_sessions', sessionIdRef.current), {
+        status: 'submitted',
+        submittedAt: serverTimestamp(),
+        lastHeartbeat: serverTimestamp(),
+        isAttempting: false,
+        flagged: flaggedByViolation,
+        submitReason: reason,
+        flagReasonKeywords,
+      }, { merge: true }).catch(() => {});
     } catch (error) {
       console.error('Error submitting test:', error);
       submittedRef.current = false;
     }
-  }, [test, user, answers, id, violations, questionLanguages, flatQuestions]);
+  }, [test, user, answers, id, questionLanguages, flatQuestions]);
 
   // ── Add violation ──
-  const addViolation = useCallback((type: string, severity: 'low' | 'medium' | 'high', userMessage: string) => {
+  const addViolation = useCallback((
+    type: string,
+    severity: 'low' | 'medium' | 'high',
+    userMessage: string,
+    options?: { immediateSubmitReason?: SubmitReason; forceMaxWarning?: boolean }
+  ) => {
     if (submittedRef.current) return;
     const entry: Violation = { type, severity, timestamp: new Date().toLocaleTimeString(), message: userMessage };
-    setViolations(prev => [...prev, entry]);
+    const nextViolations = [...violationsRef.current, entry];
+    violationsRef.current = nextViolations;
+    setViolations(nextViolations);
     const pts = SEVERITY_CONFIG[severity].points;
     violationPointsRef.current += pts;
     setViolationPoints(violationPointsRef.current);
+    if (options?.forceMaxWarning) {
+      violationPointsRef.current = MAX_VIOLATIONS;
+      setViolationPoints(MAX_VIOLATIONS);
+    }
 
     if (severity === 'high') highViolationsRef.current += 1;
 
@@ -455,14 +555,19 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
     setWarningVisible(true);
     setTimeout(() => setWarningVisible(false), 5000);
 
+    if (options?.immediateSubmitReason) {
+      doSubmit(options.immediateSubmitReason, { violationsSnapshot: nextViolations });
+      return;
+    }
+
     // Session freeze on high severity
     if (severity === 'high' && highViolationsRef.current >= HIGH_SEVERITY_LIMIT) {
       setPhase('frozen');
-      setTimeout(() => doSubmit('session_frozen'), 5000);
+      setTimeout(() => doSubmit('session_frozen', { violationsSnapshot: nextViolations }), 5000);
       return;
     }
     if (violationPointsRef.current >= MAX_VIOLATIONS) {
-      doSubmit('max_violations');
+      doSubmit('max_violations', { violationsSnapshot: nextViolations });
     }
   }, [doSubmit]);
 
@@ -472,20 +577,39 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
     setChecks(c => ({ ...c, internet: 'checking' }));
     try {
       const start = performance.now();
-      // Ping own origin — always allowed by CSP 'self' and proves server reachability
-      await fetch('/api/compile', { method: 'HEAD', cache: 'no-store' });
+      // Ping own origin — any response (even 405) proves connectivity
+      const res = await fetch('/api/compile', { method: 'HEAD', cache: 'no-store' });
       const latency = Math.round(performance.now() - start);
-      setChecks(c => ({ ...c, internet: latency < 3000 ? 'pass' : 'slow' }));
+      // Any HTTP response means the network is reachable
+      if (res.status > 0) {
+        setChecks(c => ({ ...c, internet: latency < 3000 ? 'pass' : 'slow' }));
+      } else {
+        setChecks(c => ({ ...c, internet: 'fail' }));
+      }
     } catch {
       setChecks(c => ({ ...c, internet: 'fail' }));
     }
 
-    // Screen sharing
+    // Screen sharing — require entire screen (monitor), reject tab/window
     setChecks(c => ({ ...c, screen: 'checking' }));
     try {
-      const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { width: 1920, height: 1080 } });
-      screenStreamRef.current = screenStream;
-      setChecks(c => ({ ...c, screen: 'pass' }));
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { width: 1920, height: 1080, displaySurface: 'monitor' } as any,
+        preferCurrentTab: false,
+        selfBrowserSurface: 'exclude',
+        surfaceSwitching: 'exclude',
+      } as any);
+      // Verify the user actually selected the entire screen
+      const videoTrack = screenStream.getVideoTracks()[0];
+      const settings = videoTrack?.getSettings() as any;
+      if (settings?.displaySurface && settings.displaySurface !== 'monitor') {
+        // User selected a tab or window instead of entire screen
+        screenStream.getTracks().forEach(t => t.stop());
+        setChecks(c => ({ ...c, screen: 'fail_surface' }));
+      } else {
+        screenStreamRef.current = screenStream;
+        setChecks(c => ({ ...c, screen: 'pass' }));
+      }
     } catch {
       setChecks(c => ({ ...c, screen: 'fail' }));
     }
@@ -497,11 +621,29 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
   // ── Timer ──
   useEffect(() => {
-    if (phase !== 'active' || timeLeft === null) return;
-    if (timeLeft <= 0) { doSubmit('time_up'); return; }
+    if ((phase !== 'active' && phase !== 'submitted') || timeLeft === null) return;
+    if (timeLeft <= 0) {
+      if (phase === 'active') doSubmit('time_up');
+      return;
+    }
     const t = setInterval(() => setTimeLeft(v => (v !== null ? v - 1 : null)), 1000);
     return () => clearInterval(t);
   }, [phase, timeLeft, doSubmit]);
+
+  // ── Heartbeat for active attempt detection ──
+  useEffect(() => {
+    if (phase !== 'active') return;
+    const touchSession = () => {
+      setDoc(doc(db, 'exam_sessions', sessionIdRef.current), {
+        status: 'active',
+        isAttempting: true,
+        lastHeartbeat: serverTimestamp(),
+      }, { merge: true }).catch(() => {});
+    };
+    touchSession();
+    const heartbeat = setInterval(touchSession, HEARTBEAT_INTERVAL_MS);
+    return () => clearInterval(heartbeat);
+  }, [phase]);
 
   // ── Fullscreen enforcement ──
   useEffect(() => {
@@ -509,7 +651,14 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
     const handleFS = () => {
       if (!document.fullscreenElement && !submittedRef.current) {
         addViolation('Exited fullscreen', 'medium', 'You exited fullscreen mode. Please remain in fullscreen.');
-        document.documentElement.requestFullscreen().catch(() => {});
+        document.documentElement.requestFullscreen()
+          .then(() => {
+            // Re-lock ESC key after re-entering fullscreen
+            if ('keyboard' in navigator && typeof (navigator as any).keyboard?.lock === 'function') {
+              (navigator as any).keyboard.lock(['Escape']).catch(() => {});
+            }
+          })
+          .catch(() => {});
       }
     };
     document.addEventListener('fullscreenchange', handleFS);
@@ -571,7 +720,24 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         addViolation(`Shortcut ${e.key}`, 'medium', `Keyboard shortcut blocked: ${e.metaKey ? 'Cmd' : 'Ctrl'}+${e.key.toUpperCase()}`);
       }
       if (['F12','PrintScreen'].includes(e.key)) { e.preventDefault(); addViolation(e.key, 'high', `${e.key} is not allowed during the exam.`); }
-      if (e.key === 'Escape') e.preventDefault();
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (!escPressedOnceRef.current) {
+          escPressedOnceRef.current = true;
+          addViolation(
+            'ESC pressed',
+            'high',
+            'Escape key detected! Pressing Escape again will auto-submit your test immediately.',
+          );
+        } else {
+          addViolation(
+            'ESC pressed',
+            'high',
+            'Escape key pressed again. Your test is being auto-submitted.',
+            { immediateSubmitReason: 'esc_pressed', forceMaxWarning: true }
+          );
+        }
+      }
     };
     const events = ['cut','contextmenu'] as const;
     events.forEach(ev => document.addEventListener(ev, blockEv));
@@ -595,7 +761,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
   // ── Live support chat listener ──
   useEffect(() => {
-    if (phase !== 'active' && phase !== 'frozen') return;
+    if (phase !== 'active' && phase !== 'frozen' && phase !== 'submitted') return;
     const messagesRef = collection(db, 'exam_sessions', sessionIdRef.current, 'messages');
     const q = query(messagesRef, orderBy('timestamp', 'asc'));
     const unsub = onSnapshot(q, (snapshot) => {
@@ -639,12 +805,20 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         userId: user?.uid,
         userEmail: user?.email,
         startedAt: serverTimestamp(),
+        lastHeartbeat: serverTimestamp(),
         status: 'active',
+        isAttempting: true,
         browser: navigator.userAgent,
         screenRes: `${screen.width}x${screen.height}`,
       });
     } catch (e) { console.error('Session creation failed:', e); }
-    try { await document.documentElement.requestFullscreen(); } catch { /* ok */ }
+    try {
+      await document.documentElement.requestFullscreen();
+      // Lock ESC key in fullscreen so the browser doesn't exit fullscreen on first press
+      if ('keyboard' in navigator && typeof (navigator as any).keyboard?.lock === 'function') {
+        try { await (navigator as any).keyboard.lock(['Escape']); } catch { /* not supported or denied */ }
+      }
+    } catch { /* ok */ }
     setPhase('active');
   };
 
@@ -665,6 +839,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
     try {
       await addDoc(collection(db, 'exam_sessions', sessionIdRef.current, 'messages'), {
         sender: 'student',
+        senderId: user.uid,
         message: msg,
         timestamp: serverTimestamp(),
         userEmail: user.email,
@@ -823,6 +998,31 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   if (!test) return <div className="flex items-center justify-center py-24 text-[var(--text-tertiary)]">Test not found.</div>;
   if (flatQuestions.length === 0) return <div className="flex items-center justify-center py-24 text-[var(--text-tertiary)]">No problems found.</div>;
 
+  // ── Already attempted screen ──
+  if (alreadyAttempted) {
+    return (
+      <div className="max-w-lg mx-auto animate-fade-in py-12">
+        <div className="window p-8 text-center">
+          <div className="w-16 h-16 rounded-full bg-[#DC2626]/10 flex items-center justify-center mx-auto mb-5">
+            <Lock size={28} className="text-[#DC2626]" />
+          </div>
+          <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">Test Already Attempted</h1>
+          <p className="text-[var(--text-tertiary)] text-[13px] mb-6">
+            You have already submitted this test. Each test can only be attempted once. Contact your administrator if you need a reattempt.
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <button onClick={() => router.push('/user/results')} className="btn-primary px-6 py-2.5 text-[13px]">
+              View Results
+            </button>
+            <button onClick={() => router.push('/user/test-portal')} className="btn-secondary px-6 py-2.5 text-[13px]">
+              Back to Tests
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // ── Submitted screen ──
   if (phase === 'submitted') {
     const wasForced = submitReason !== 'manual';
@@ -840,6 +1040,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
             {submitReason === 'session_frozen' && 'Your session was frozen and auto-submitted due to a critical security breach.'}
             {submitReason === 'time_up' && 'Time expired. Your answers have been saved.'}
             {submitReason === 'tab_away' && 'Your test was auto-submitted because you left the test tab for over 30 seconds.'}
+            {submitReason === 'esc_pressed' && 'Your test was auto-submitted because the Escape key was pressed.'}
             {submitReason === 'manual' && 'Your answers have been saved successfully.'}
           </p>
           {violations.length > 0 && (
@@ -888,6 +1089,72 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               Back to Tests
             </button>
           </div>
+
+          {/* Post-submission chat — available until test duration ends */}
+          {timeLeft !== null && timeLeft > 0 && (
+            <div className="mt-6">
+              <p className="text-[11px] text-[var(--text-faint)] mb-2">
+                Chat with proctor available for {formatTime(timeLeft)}
+              </p>
+              <button onClick={toggleChat} className="inline-flex items-center gap-2 text-[12px] font-bold text-[#4B8BBE] hover:text-[#4C5ABF] transition-colors">
+                <MessageCircle size={14} />
+                {chatOpen ? 'Close Chat' : 'Open Chat'}
+                {newMsgCount > 0 && (
+                  <span className="w-4 h-4 rounded-full bg-[#DC2626] text-white text-[8px] font-bold flex items-center justify-center">
+                    {newMsgCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Chat panel on submitted screen */}
+          {chatOpen && (
+            <div className="mt-4 mx-auto w-full max-w-sm rounded-lg border border-[var(--border-subtle)] shadow-xl bg-[var(--bg-primary)] flex flex-col overflow-hidden" style={{ height: '320px' }}>
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
+                <div className="flex items-center gap-2">
+                  <MessageCircle size={14} className="text-[#4B8BBE]" />
+                  <span className="text-[12px] font-bold text-[var(--text-primary)]">Live Support</span>
+                </div>
+                <button onClick={toggleChat} className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors">
+                  <XCircle size={16} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                {chatMessages.length === 0 && (
+                  <div className="text-center py-8">
+                    <MessageCircle size={20} className="mx-auto text-[var(--text-faint)] mb-2" />
+                    <p className="text-[11px] text-[var(--text-faint)]">Send a message to the proctor.</p>
+                  </div>
+                )}
+                {chatMessages.map(msg => (
+                  <div key={msg.id} className={`flex ${msg.sender === 'student' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[80%] px-3 py-1.5 rounded-lg text-[12px] ${
+                      msg.sender === 'student'
+                        ? 'bg-[#4B8BBE] text-white rounded-br-none'
+                        : 'bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-bl-none'
+                    }`}>
+                      {msg.message}
+                    </div>
+                  </div>
+                ))}
+                <div ref={chatEndRef} />
+              </div>
+              <div className="border-t border-[var(--border-subtle)] p-2 flex gap-2">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={e => setChatInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
+                  placeholder="Type a message..."
+                  className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-1.5 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#4B8BBE]"
+                />
+                <button onClick={sendChatMessage} disabled={!chatInput.trim()} className="p-1.5 rounded bg-[#4B8BBE] text-white disabled:opacity-40 transition-opacity">
+                  <Send size={14} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -927,6 +1194,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           {status === 'pass' && <><CheckCircle2 size={14} className="text-[#4CAF50]" /><span className="text-[11px] font-bold text-[#4CAF50]">Ready</span></>}
           {status === 'slow' && <><AlertTriangle size={14} className="text-[#F1A82C]" /><span className="text-[11px] font-bold text-[#F1A82C]">Slow</span></>}
           {status === 'fail' && <><XCircle size={14} className="text-[#DC2626]" /><span className="text-[11px] font-bold text-[#DC2626]">Failed</span></>}
+          {status === 'fail_surface' && <><XCircle size={14} className="text-[#DC2626]" /><span className="text-[11px] font-bold text-[#DC2626]">Entire Screen Required</span></>}
         </div>
       </div>
     );
@@ -970,6 +1238,9 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
           {checks.screen === 'fail' && (
             <p className="text-[12px] text-[#DC2626] mb-4">Screen sharing denied. Please allow screen sharing and reload the page.</p>
+          )}
+          {checks.screen === 'fail_surface' && (
+            <p className="text-[12px] text-[#DC2626] mb-4">You must share your <strong>entire screen</strong>, not a single tab or window. Please reload and select &quot;Entire Screen&quot;.</p>
           )}
 
           <button
@@ -1204,7 +1475,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           <div className="flex justify-between items-start mb-5">
             <div className="flex items-center gap-2">
               <span className="inline-block text-white px-2.5 py-0.5 text-[11px] font-bold uppercase rounded" style={{ background: sectionColorMap[currentQ._sectionType] }}>
-                {currentQ._sectionType === 'aptitude' ? 'Aptitude' : currentQ._sectionType === 'mcq' ? 'MCQ' : currentQ.difficulty || 'Coding'} {currentQuestion + 1}
+                Question {currentQuestion + 1}
               </span>
               {currentQ.topic && (
                 <span className="inline-block bg-[var(--bg-surface)] text-[var(--text-secondary)] px-2.5 py-0.5 text-[11px] font-medium rounded border border-[var(--border-subtle)]">

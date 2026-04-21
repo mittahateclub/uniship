@@ -2,201 +2,341 @@
 
 import { groq } from "@/lib/groq";
 
-const SYSTEM_PROMPT = `You are a strict Markdown-to-JSON conversion agent for test/exam papers.
+// ── System prompt for test CREATION (single PDF → structured questions JSON) ──
+const SYSTEM_PROMPT = `You are a document-to-JSON extraction agent. Your ONLY job is to faithfully transcribe an exam paper into structured JSON — do NOT answer questions, reorder anything, or use your own knowledge.
 
-Your task is to convert the given markdown document into structured JSON. The test paper may contain up to THREE types of sections:
-
-1. **Aptitude Questions** — text-based questions with a correct answer (e.g. math, reasoning, data interpretation)
-2. **Coding MCQs** — multiple choice questions about programming with 4 options (A, B, C, D)
-3. **Live Coding Questions** — full coding problems with test cases, input/output format
-
-Detect which sections exist in the document and classify each question accordingly.
+The paper has MCQ sections (questions with A/B/C/D options) and optionally Live Coding sections.
 
 Rules:
-1. Output ONLY valid JSON. No markdown, comments, or extra text.
-2. Preserve ALL information faithfully — every question, every option, every answer, every test case.
-3. Use camelCase for all JSON keys.
-4. Detect question types by content: if it has options A/B/C/D about code → "mcq". If it's a math/reasoning question with a short textual answer → "aptitude". If it has input format, output format, test cases → "coding".
-5. If sections are labeled in the document (e.g. "Section 1 — Aptitude"), use those labels to classify questions.
+1. Output ONLY valid JSON. No markdown, no comments, no extra text.
+2. Copy every question and every option EXACTLY as written. Do not paraphrase, correct, or reorder.
+3. OPTIONS MUST BE IN THEIR ORIGINAL DOCUMENT ORDER — A first, then B, then C, then D. Never reorder.
+4. For options: strip only the letter prefix ("A.", "(A)", "A)") — keep ALL other text verbatim including symbols, code, angle brackets like <class 'list'>.
+5. Classify: question with A/B/C/D options → type "mcq". Question with input/output format and test cases → type "coding". NO other types.
+6. Include ALL questions from ALL sections. Do not skip any.
+7. Leave correctAnswer as null for every question — answers will be populated separately.
+8. Include a "questionNumber" field on each question with its number as it appears in the document (e.g. 1, 2, 3...).
 
-Expected JSON structure:
+JSON structure:
 {
-  "metadata": {
-    "difficultyLevels": [],
-    "totalProblems": number
-  },
+  "metadata": { "totalProblems": number },
   "sections": [
     {
-      "type": "aptitude",
-      "title": "Section 1: Aptitude",
-      "questions": [
-        {
-          "questionDescription": "Full question text",
-          "correctAnswer": "The answer",
-          "difficulty": "EASY"
-        }
-      ]
-    },
-    {
       "type": "mcq",
-      "title": "Section 2: Coding MCQs",
+      "title": "Section title from document",
       "questions": [
         {
-          "questionDescription": "Question text including any code snippets",
-          "options": ["6", "8", "9", "Error"],
-          "correctAnswer": "B",
+          "questionNumber": 1,
+          "questionDescription": "Exact question text",
+          "options": ["option A text", "option B text", "option C text", "option D text"],
+          "correctAnswer": null,
           "difficulty": "EASY"
         }
       ]
     },
     {
       "type": "coding",
-      "title": "Section 3: Live Coding",
+      "title": "Section title from document",
       "questions": [
         {
+          "questionNumber": 1,
           "title": "Problem title",
           "questionDescription": "Full problem statement",
           "difficulty": "EASY",
           "functionName": "",
           "constraints": [],
-          "inputFormat": "string",
-          "outputFormat": "string",
-          "sampleTestCases": [
-            { "input": "string", "output": "string" }
-          ],
-          "hiddenTestCases": [
-            { "input": "string", "output": "string" }
-          ]
+          "inputFormat": "",
+          "outputFormat": "",
+          "sampleTestCases": [{ "input": "", "output": "" }],
+          "hiddenTestCases": [{ "input": "", "output": "" }]
         }
       ]
     }
   ]
+}`;
+
+// ── Focused prompt: extract answer key as a numbered object ──
+const ANSWER_KEY_EXTRACTION_PROMPT = `You are given an exam answer key document. Extract every answer into a JSON object keyed by the question's GLOBAL sequential number (1, 2, 3 … N across the whole paper).
+
+Output JSON with exactly this shape:
+{ "answers": { "1": "C", "2": "B", "3": "A", ... } }
+
+Rules:
+- Keys are the question numbers as integers-as-strings ("1", "2", ...) in sequential order.
+- Values are a single uppercase letter: A, B, C, or D.
+- If the key uses numbers (1/2/3/4), convert: 1→A, 2→B, 3→C, 4→D.
+- Include ALL answers. Do not stop early.
+- Output ONLY the JSON object. No explanation, no markdown.`;
+
+// ── System prompt for EVALUATION (questions PDF + answers PDF → graded result) ──
+const EVALUATION_SYSTEM_PROMPT = `You are a precise AI Exam Grader. You receive TWO documents:
+
+<QUESTIONS_DOCUMENT>  — Contains all exam questions (MCQs and/or Coding problems)
+<ANSWERS_DOCUMENT>    — Contains either student responses OR an official answer key
+
+────────────────────────────────────────
+STEP 1: PARSE BOTH DOCUMENTS
+────────────────────────────────────────
+From QUESTIONS_DOCUMENT extract:
+• Question identifier (Q1, Q2, 1., 2., etc.)
+• Question type: MCQ (has options A/B/C/D) or Coding (has problem statement, I/O format)
+• Question text and options (for MCQ) or full problem (for Coding)
+
+From ANSWERS_DOCUMENT extract:
+• The selected option letter for each MCQ (A/B/C/D)
+• The code snippet or explanation for each Coding question
+• Mark as "Not Attempted" if no answer is found for a question
+
+────────────────────────────────────────
+STEP 2: MATCH & EVALUATE
+────────────────────────────────────────
+Match questions to answers by their identifier. Be tolerant of formatting differences (Q1 = 1. = Question 1).
+
+MCQ SCORING:
+• +1.00  → Correct
+• −0.25  → Incorrect (negative marking)
+•  0.00  → Not Attempted
+
+CODING SCORING (5 marks max per question):
+┌────────────────────┬───────┐
+│ Criterion          │ Marks │
+├────────────────────┼───────┤
+│ Correct Output     │   2   │
+│ Logic & Approach   │   1   │
+│ Code Quality       │   1   │
+│ Optimization       │   1   │
+└────────────────────┴───────┘
+
+Deduct proportionally for partial correctness. Award 0 for completely wrong or missing code.
+
+────────────────────────────────────────
+STEP 3: OUTPUT FORMAT (strict JSON)
+────────────────────────────────────────
+{
+  "summary": {
+    "total_questions": <int>,
+    "attempted": <int>,
+    "correct": <int>,
+    "incorrect": <int>,
+    "not_attempted": <int>,
+    "score": <float>,
+    "max_score": <float>,
+    "percentage": <float>
+  },
+  "section_wise": {
+    "MCQ": {
+      "total": <int>,
+      "attempted": <int>,
+      "correct": <int>,
+      "incorrect": <int>,
+      "score": <float>,
+      "max_score": <float>
+    },
+    "Coding": {
+      "total": <int>,
+      "attempted": <int>,
+      "score": <float>,
+      "max_score": <float>,
+      "breakdown": [
+        { "question": "Q5", "score": <float>, "max": 5, "feedback": "..." }
+      ]
+    }
+  },
+  "detailed_analysis": [
+    {
+      "question": "Q1",
+      "type": "MCQ",
+      "question_text": "...",
+      "student_answer": "B",
+      "correct_answer": "C",
+      "result": "Incorrect",
+      "marks_awarded": -0.25,
+      "explanation": "Option B is wrong because..."
+    },
+    {
+      "question": "Q5",
+      "type": "Coding",
+      "question_text": "...",
+      "student_code": "...",
+      "result": "Partial",
+      "marks_awarded": 3,
+      "breakdown": {
+        "correct_output": 1,
+        "logic": 1,
+        "code_quality": 1,
+        "optimization": 0
+      },
+      "explanation": "Logic is correct but time complexity is O(n²) instead of O(n)."
+    }
+  ]
 }
 
-CRITICAL:
-- ALL question types MUST use "questionDescription" for the question text (not "questionText").
-- For MCQ options, store ONLY the option text without the letter prefix (e.g. ["6", "8", "9", "Error"] not ["A. 6", "B. 8", ...]).
-- The correctAnswer for MCQs must be the letter (A, B, C, or D).
-- If the document only has coding problems (no clear sections), put them in a single coding section.
-- You MUST include ALL questions from ALL sections. Do not skip any.
-- If answers are provided in the document, always include them.
-- For coding problems, separate visible (sample) test cases from hidden test cases. If not explicitly labeled, put the first 1-2 in sampleTestCases and the rest in hiddenTestCases.
-- Preserve code formatting using \\n for newlines in strings.`;
+────────────────────────────────────────
+RULES
+────────────────────────────────────────
+• Return ONLY valid JSON — no markdown, no extra text.
+• Do NOT hallucinate answers. If ambiguous, explain in the explanation field.
+• If an answer is missing, set result = "Not Attempted" and marks_awarded = 0.
+• Always provide a brief explanation for incorrect or partial answers.
+• Be strict but fair — partial credit where deserved.
+• For coding: if code is incomplete but logic is explained, award partial marks for logic/approach.`;
+
+// ── Shared helper: extract text from PDF or DOCX via LlamaParse ──
+async function extractTextFromFile(file: File): Promise<string> {
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+
+  // Detect MIME type from extension
+  const ext = file.name.split('.').pop()?.toLowerCase();
+  const mimeType = ext === 'docx'
+    ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    : 'application/pdf';
+
+  const uploadFormData = new FormData();
+  const blob = new Blob([buffer], { type: mimeType });
+  uploadFormData.append('file', blob, file.name);
+
+  console.log(`[LlamaParse] Uploading ${file.name} (${mimeType})...`);
+  const parseResponse = await fetch('https://api.cloud.llamaindex.ai/api/parsing/upload', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.LLAMA_CLOUD_API_KEY}`,
+      'Accept': 'application/json',
+    },
+    body: uploadFormData,
+  });
+
+  if (!parseResponse.ok) {
+    const errorText = await parseResponse.text();
+    throw new Error(`LlamaParse upload failed: ${parseResponse.status} - ${errorText}`);
+  }
+
+  const { id: jobId } = await parseResponse.json();
+  console.log(`[LlamaParse] Job ID: ${jobId}`);
+
+  // Poll with exponential backoff (1s → 5s cap, ~2 min max)
+  let delay = 1000;
+  for (let attempt = 1; attempt <= 40; attempt++) {
+    await new Promise((r) => setTimeout(r, delay));
+    delay = Math.min(delay * 1.5, 5000);
+
+    const statusRes = await fetch(`https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}`, {
+      headers: {
+        'Authorization': `Bearer ${process.env.LLAMA_CLOUD_API_KEY}`,
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!statusRes.ok) continue;
+    const { status } = await statusRes.json();
+    console.log(`[LlamaParse] Attempt ${attempt}: ${status}`);
+
+    if (status === 'SUCCESS') {
+      const resultRes = await fetch(
+        `https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/markdown`,
+        {
+          headers: {
+            'Authorization': `Bearer ${process.env.LLAMA_CLOUD_API_KEY}`,
+            'Accept': 'application/json',
+          },
+        }
+      );
+      if (resultRes.ok) {
+        const { markdown, text } = await resultRes.json();
+        return markdown || text || '';
+      }
+    } else if (status === 'ERROR' || status === 'FAILED') {
+      throw new Error(`LlamaParse job failed with status: ${status}`);
+    }
+  }
+
+  throw new Error('LlamaParse timeout: document processing took too long.');
+}
 
 export async function processTestDocument(formData: FormData) {
   try {
     const file = formData.get("file") as File;
     if (!file) throw new Error("No file uploaded");
+    const answersFile = formData.get("answersFile") as File | null;
 
     console.log('Starting document processing for:', file.name);
 
-    // 1. Convert file to buffer
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // 2. Create FormData for upload
-    const uploadFormData = new FormData();
-    const blob = new Blob([buffer], { type: 'application/pdf' });
-    uploadFormData.append('file', blob, file.name);
-
-    // 3. Upload file to LlamaParse
-    console.log('Uploading to LlamaParse...');
-    const parseResponse = await fetch('https://api.cloud.llamaindex.ai/api/parsing/upload', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.LLAMA_CLOUD_API_KEY}`,
-        'Accept': 'application/json',
-      },
-      body: uploadFormData
-    });
-
-    if (!parseResponse.ok) {
-      const errorText = await parseResponse.text();
-      console.error('LlamaParse upload error:', errorText);
-      throw new Error(`LlamaParse upload failed: ${parseResponse.status} - ${errorText}`);
-    }
-
-    const parseData = await parseResponse.json();
-    const jobId = parseData.id;
-    console.log('Upload successful. Job ID:', jobId);
-
-    // 4. Poll for parsing results with exponential backoff
-    // Starts at 1s, caps at 5s — reaches result faster for quick parses, still waits up to ~2min total
-    let extractedText = '';
-    let attempts = 0;
-    const maxAttempts = 40;
-    let delay = 1000;
-
-    console.log('Polling for results...');
-    while (attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, delay));
-      delay = Math.min(delay * 1.5, 5000);
-      
-      try {
-        const statusResponse = await fetch(`https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}`, {
-          headers: {
-            'Authorization': `Bearer ${process.env.LLAMA_CLOUD_API_KEY}`,
-            'Accept': 'application/json',
-          }
-        });
-
-        if (statusResponse.ok) {
-          const statusData = await statusResponse.json();
-          console.log(`Attempt ${attempts + 1}: Status = ${statusData.status}`);
-
-          if (statusData.status === 'SUCCESS') {
-            const resultResponse = await fetch(`https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/markdown`, {
-              headers: {
-                'Authorization': `Bearer ${process.env.LLAMA_CLOUD_API_KEY}`,
-                'Accept': 'application/json',
-              }
-            });
-
-            if (resultResponse.ok) {
-              const resultData = await resultResponse.json();
-              extractedText = resultData.markdown || resultData.text || '';
-              console.log('Successfully extracted text. Length:', extractedText.length);
-              break;
-            }
-          } else if (statusData.status === 'ERROR' || statusData.status === 'FAILED') {
-            throw new Error(`Document parsing failed with status: ${statusData.status}`);
-          }
-        } else {
-          console.warn(`Status check failed: ${statusResponse.status}`);
-        }
-      } catch (pollError: unknown) {
-        const msg = pollError instanceof Error ? pollError.message : 'Unknown polling error';
-        console.error('Polling error:', msg);
-      }
-
-      attempts++;
-    }
+    // 1. Extract text from questions PDF (and optionally answers PDF) in parallel
+    const [extractedText, answersText] = await Promise.all([
+      extractTextFromFile(file),
+      answersFile ? extractTextFromFile(answersFile) : Promise.resolve(''),
+    ]);
 
     if (!extractedText) {
-      throw new Error('Failed to parse document: timeout or empty result');
+      throw new Error('Failed to parse document: empty result');
     }
 
-    // 5. Use Groq to convert markdown to structured JSON
-    console.log('Converting to JSON with Groq...');
-    
-    const chatCompletion = await groq.chat.completions.create({
+    // Escape bare angle brackets so the LLM preserves them (e.g. Python <class 'list'> in options).
+    // Only escape brackets that are NOT part of our XML-style delimiters.
+    const safeQuestionsText = extractedText
+      .replace(/<(?!\/?(QUESTIONS_DOCUMENT|ANSWER_KEY|ANSWERS_DOCUMENT)[ >])/g, "&lt;")
+      .replace(/(?<![A-Z_])>/g, (m, offset, str) => {
+        // Keep closing delimiter tags intact, escape everything else
+        const before = str.slice(Math.max(0, offset - 30), offset);
+        return /\/(QUESTIONS_DOCUMENT|ANSWER_KEY|ANSWERS_DOCUMENT)$/.test(before) ? m : "&gt;";
+      });
+
+    // 2. Two-pass approach:
+    //    Pass A — parse questions only (no answer key in prompt, avoids global-count confusion)
+    //    Pass B — extract answer key as a clean flat array (separate focused call)
+    //    Then merge answers into sections in code — 100% accurate global indexing.
+    console.log('Parsing questions and answer key in parallel...');
+
+    const questionsCallPromise = groq.chat.completions.create({
       messages: [
-        {
-          role: "system",
-          content: SYSTEM_PROMPT
-        },
-        {
-          role: "user",
-          content: extractedText.slice(0, 30000) // Increased limit for more content
-        }
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: safeQuestionsText.slice(0, 30000) },
       ],
       model: "llama-3.3-70b-versatile",
       response_format: { type: "json_object" },
-      temperature: 0.1, // Low temperature for consistency
+      temperature: 0,
+      // 40 questions × ~150 tokens each (question + 4 options + keys) = ~6000 + JSON overhead
+      max_tokens: 8000,
     });
 
-    const content = chatCompletion.choices[0].message.content || "{}";
+    const answerKeyCallPromise = answersText
+      ? groq.chat.completions.create({
+          messages: [
+            { role: "system", content: ANSWER_KEY_EXTRACTION_PROMPT },
+            { role: "user", content: answersText.slice(0, 10000) },
+          ],
+          model: "llama-3.3-70b-versatile",
+          response_format: { type: "json_object" },
+          temperature: 0,
+          max_tokens: 1024, // 40 answers × ~5 tokens each + JSON overhead — well within limit
+        })
+      : Promise.resolve(null);
+
+    const [questionsCompletion, answerKeyCompletion] = await Promise.all([
+      questionsCallPromise,
+      answerKeyCallPromise,
+    ]);
+
+    const content = questionsCompletion.choices[0].message.content || "{}";
     const parsedData = JSON.parse(content);
+
+    // Extract answer map {globalNumber → letter} from the dedicated answer key call
+    let answerMap: Record<string, string> = {};
+    if (answerKeyCompletion) {
+      try {
+        const akContent = answerKeyCompletion.choices[0]?.message?.content || '{}';
+        const akData = JSON.parse(akContent);
+        // Support both object format {"1":"C",...} and legacy array format ["C","B",...]
+        if (akData.answers && typeof akData.answers === 'object' && !Array.isArray(akData.answers)) {
+          answerMap = akData.answers;
+        } else if (Array.isArray(akData.answers)) {
+          akData.answers.forEach((v: string, i: number) => { answerMap[String(i + 1)] = v; });
+        }
+        console.log(`Answer key extracted: ${Object.keys(answerMap).length} answers`, answerMap);
+      } catch (e) {
+        console.warn('Failed to parse answer key response:', e);
+      }
+    }
 
     console.log('Parsed data structure:', JSON.stringify(parsedData, null, 2).slice(0, 500));
 
@@ -215,6 +355,74 @@ export async function processTestDocument(formData: FormData) {
 
     if (totalQuestionCount === 0) {
       throw new Error('No questions were extracted from any section');
+    }
+
+    // ── Validate: detect MCQ questions with missing/empty options and retry those sections ──
+    const sectionsNeedingRetry: number[] = [];
+    for (let si = 0; si < sections.length; si++) {
+      const section = sections[si];
+      if (section.type !== 'mcq') continue;
+      const broken = (section.questions || []).filter(
+        (q: any) => !q.options || q.options.length < 4
+      );
+      if (broken.length > 0) {
+        console.warn(`Section ${si} ("${section.title}") has ${broken.length} questions with missing options — retrying`);
+        sectionsNeedingRetry.push(si);
+      }
+    }
+
+    if (sectionsNeedingRetry.length > 0) {
+      // Re-run just the broken sections in parallel, each with its own focused prompt
+      const retryPromises = sectionsNeedingRetry.map(async (si) => {
+        const section = sections[si];
+        // Find the text for this section by searching in the extracted document
+        const sectionTitle = section.title || '';
+        const sectionStart = safeQuestionsText.indexOf(sectionTitle.replace(/section\s*/i, '').trim());
+        const sectionText = sectionStart >= 0
+          ? safeQuestionsText.slice(sectionStart, sectionStart + 8000)
+          : safeQuestionsText.slice(0, 8000);
+
+        const retryCompletion = await groq.chat.completions.create({
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: `Extract ONLY this section. Include ALL options for every question:\n\n${sectionText}` },
+          ],
+          model: 'llama-3.3-70b-versatile',
+          response_format: { type: 'json_object' },
+          temperature: 0,
+          max_tokens: 4000,
+        });
+        try {
+          const retryData = JSON.parse(retryCompletion.choices[0]?.message?.content || '{}');
+          const retrySections: any[] = retryData.sections || [];
+          // Find the matching section in the retry result (by index or title)
+          const match = retrySections.find((s: any) =>
+            s.title === section.title || s.type === section.type
+          ) || retrySections[0];
+          if (match && (match.questions || []).length > 0) {
+            sections[si].questions = match.questions;
+            console.log(`Retry for section ${si} succeeded: ${match.questions.length} questions`);
+          }
+        } catch (e) {
+          console.warn(`Retry parse failed for section ${si}:`, e);
+        }
+      });
+      await Promise.all(retryPromises);
+      // Recount after retries
+      totalQuestionCount = sections.reduce((sum: number, s: any) => sum + (s.questions || []).length, 0);
+    }
+
+    // Merge answers into questions by global sequential index (code-level, 100% accurate)
+    if (Object.keys(answerMap).length > 0) {
+      let globalIdx = 1;
+      for (const section of sections) {
+        for (const q of section.questions || []) {
+          const answer = answerMap[String(globalIdx)];
+          if (answer) q.correctAnswer = answer;
+          globalIdx++;
+        }
+      }
+      console.log(`Merged answers into ${totalQuestionCount} questions`);
     }
 
     // Build legacy problems array from coding sections for backward compatibility
@@ -245,6 +453,68 @@ export async function processTestDocument(formData: FormData) {
     return { 
       success: false, 
       error: error.message || 'An unknown error occurred' 
+    };
+  }
+}
+
+// ── Evaluate exam: questions doc + answers doc → graded result JSON ──
+export async function evaluateExam(formData: FormData) {
+  try {
+    const questionsFile = formData.get('questionsFile') as File;
+    const answersFile = formData.get('answersFile') as File;
+
+    if (!questionsFile) throw new Error('Questions document is required.');
+    if (!answersFile) throw new Error('Answers document is required.');
+
+    console.log('Evaluating exam:', questionsFile.name, '+', answersFile.name);
+
+    // Parse both documents in parallel
+    const [questionsText, answersText] = await Promise.all([
+      extractTextFromFile(questionsFile),
+      extractTextFromFile(answersFile),
+    ]);
+
+    if (!questionsText) throw new Error('Could not extract text from the questions document.');
+    if (!answersText) throw new Error('Could not extract text from the answers document.');
+
+    console.log(`Questions: ${questionsText.length} chars | Answers: ${answersText.length} chars`);
+
+    // Combine with clear delimiters for the model
+    const combinedPrompt =
+      `<QUESTIONS_DOCUMENT>\n${questionsText.slice(0, 15000)}\n</QUESTIONS_DOCUMENT>\n\n` +
+      `<ANSWERS_DOCUMENT>\n${answersText.slice(0, 15000)}\n</ANSWERS_DOCUMENT>`;
+
+    console.log('Running evaluation via Groq...');
+    const completion = await groq.chat.completions.create({
+      messages: [
+        { role: 'system', content: EVALUATION_SYSTEM_PROMPT },
+        { role: 'user', content: combinedPrompt },
+      ],
+      model: 'llama-3.3-70b-versatile',
+      response_format: { type: 'json_object' },
+      temperature: 0.05, // Near-deterministic for fair grading
+    });
+
+    const raw = completion.choices[0]?.message?.content || '{}';
+    const result = JSON.parse(raw);
+
+    if (!result.summary || !result.detailed_analysis) {
+      throw new Error('Evaluation returned incomplete data. Please try again.');
+    }
+
+    console.log('Evaluation complete. Questions evaluated:', result.detailed_analysis?.length);
+
+    return {
+      success: true,
+      evaluation: result,
+      questionsFileName: questionsFile.name,
+      answersFileName: answersFile.name,
+    };
+  } catch (error: any) {
+    console.error('Evaluation Pipeline Error:', error);
+    return {
+      success: false,
+      error: error.message || 'An unknown error occurred during evaluation.',
     };
   }
 }

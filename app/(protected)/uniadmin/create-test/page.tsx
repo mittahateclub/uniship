@@ -10,7 +10,7 @@ import Link from 'next/link';
 import {
   Upload, FileText, Clock, Type, AlignLeft, Calendar,
   ChevronLeft, ChevronRight, Trash2, CheckCircle, XCircle,
-  Tag, Pencil, X, Save, ChevronDown, ChevronUp, Copy, Check,
+  Tag, Pencil, X, Save, ChevronDown, ChevronUp, Copy, Check, RefreshCw,
 } from 'lucide-react';
 
 export default function TestsPage() {
@@ -19,6 +19,7 @@ export default function TestsPage() {
 
   // Upload form state
   const [file, setFile] = useState<File | null>(null);
+  const [answersFile, setAnswersFile] = useState<File | null>(null);
   const [universityId, setUniversityId] = useState<string | null>(null);
   const [isParsing, setIsParsing] = useState(false);
   const [status, setStatus] = useState({ type: '', message: '' });
@@ -55,6 +56,8 @@ export default function TestsPage() {
   const [editCalendarYear, setEditCalendarYear] = useState(new Date().getFullYear());
   const [saving, setSaving] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [reassigningId, setReassigningId] = useState<string | null>(null);
+  const [reassignedTitle, setReassignedTitle] = useState<string | null>(null);
 
   const copyLink = (testId: string) => {
     const link = `https://uniship-4c1a1.web.app/user/test-portal/${testId}`;
@@ -124,11 +127,18 @@ export default function TestsPage() {
 
   useEffect(() => { loadTests(); }, [user]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleQuestionsFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
       setStatus({ type: '', message: '' });
       setCreatedTestId(null);
+    }
+  };
+
+  const handleAnswersFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setAnswersFile(e.target.files[0]);
+      setStatus({ type: '', message: '' });
     }
   };
 
@@ -182,6 +192,7 @@ export default function TestsPage() {
 
       const formData = new FormData();
       formData.append('file', file);
+      if (answersFile) formData.append('answersFile', answersFile);
 
       const result = await processTestDocument(formData);
 
@@ -250,6 +261,22 @@ export default function TestsPage() {
     }
   };
 
+  const handleReassignTest = async (testId: string, testTitle: string) => {
+    setReassigningId(testId);
+    try {
+      const snap = await getDocs(query(
+        collection(db, 'test_results'),
+        where('testId', '==', testId),
+      ));
+      await Promise.all(snap.docs.map(d => updateDoc(doc(db, 'test_results', d.id), { reattemptAllowed: true })));
+      setReassignedTitle(testTitle);
+      setTimeout(() => setReassignedTitle(null), 3500);
+    } catch (e) {
+      console.error('Failed to reassign test:', e);
+    }
+    setReassigningId(null);
+  };
+
   const openEdit = (test: any) => {
     setEditingTest(test);
     setEditDuration(test.duration || 60);
@@ -304,6 +331,22 @@ export default function TestsPage() {
 
   return (
     <div className="max-w-4xl mx-auto animate-fade-in">
+      {/* Reassign success toast */}
+      {reassignedTitle && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
+          <div className="flex items-center gap-3 bg-[var(--bg-primary)] border border-[#4CAF50]/40 rounded-lg shadow-lg px-5 py-3">
+            <div className="w-7 h-7 rounded-full bg-[#4CAF50]/10 flex items-center justify-center shrink-0">
+              <CheckCircle size={15} className="text-[#4CAF50]" />
+            </div>
+            <div>
+              <p className="text-[13px] font-semibold text-[var(--text-primary)]">
+                &quot;{reassignedTitle}&quot; reassigned
+              </p>
+              <p className="text-[11px] text-[var(--text-tertiary)]">All students can now reattempt this test</p>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Tests</h1>
@@ -516,23 +559,46 @@ export default function TestsPage() {
 
             <div className="divider-dashed" />
 
-            {/* PDF Upload */}
-            <div>
-              <label className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
-                <FileText size={12} className="text-[var(--text-faint)]" />
-                Source PDF
-              </label>
-              <div className="relative overflow-hidden border border-dashed border-[var(--border-active)] rounded p-6 text-center bg-[var(--bg-elevated)] hover:border-[#00A8E1]/40 transition-colors duration-150 cursor-pointer">
-                <input
-                  type="file"
-                  accept=".pdf"
-                  onChange={handleFileChange}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                />
-                <Upload size={18} className="mx-auto mb-1.5 text-[var(--text-faint)]" />
-                <p className="text-[13px] text-[var(--text-tertiary)] pointer-events-none">
-                  {file ? file.name : 'Drop PDF or click to select'}
-                </p>
+            {/* PDF Upload - Two columns */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Questions PDF */}
+              <div>
+                <label className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
+                  <FileText size={12} className="text-[var(--text-faint)]" />
+                  Questions PDF
+                </label>
+                <div className="relative overflow-hidden border border-dashed border-[var(--border-active)] rounded p-4 text-center bg-[var(--bg-elevated)] hover:border-[#00A8E1]/40 transition-colors duration-150 cursor-pointer">
+                  <input
+                    type="file"
+                    accept=".pdf,.docx"
+                    onChange={handleQuestionsFileChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  <Upload size={16} className="mx-auto mb-1 text-[var(--text-faint)]" />
+                  <p className="text-[12px] text-[var(--text-tertiary)] pointer-events-none truncate">
+                    {file ? file.name : 'Drop or click'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Answers PDF */}
+              <div>
+                <label className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
+                  <FileText size={12} className="text-[var(--text-faint)]" />
+                  Answers PDF <span className="text-[10px] text-[var(--text-faint)]">(optional)</span>
+                </label>
+                <div className="relative overflow-hidden border border-dashed border-[var(--border-active)] rounded p-4 text-center bg-[var(--bg-elevated)] hover:border-[#00A8E1]/40 transition-colors duration-150 cursor-pointer">
+                  <input
+                    type="file"
+                    accept=".pdf,.docx"
+                    onChange={handleAnswersFileChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  <Upload size={16} className="mx-auto mb-1 text-[var(--text-faint)]" />
+                  <p className="text-[12px] text-[var(--text-tertiary)] pointer-events-none truncate">
+                    {answersFile ? answersFile.name : 'Drop or click'}
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -543,7 +609,7 @@ export default function TestsPage() {
                   !universityId && 'University ID (profile issue)',
                   !title.trim() && 'Test Name',
                   !examDate && 'Exam Date',
-                  !file && 'PDF File',
+                  !file && 'Questions PDF',
                 ].filter(Boolean).join(', ')}
               </p>
             )}
@@ -604,6 +670,15 @@ export default function TestsPage() {
                 >
                   {test.approved ? <CheckCircle size={13} /> : <XCircle size={13} />}
                   {test.approved ? 'Approved' : 'Not Approved'}
+                </button>
+                <button
+                  onClick={() => handleReassignTest(test.id, test.title)}
+                  disabled={reassigningId === test.id}
+                  className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 bg-[#4B8BBE]/10 text-[#4B8BBE] hover:bg-[#4B8BBE]/20"
+                  title="Allow all students to reattempt this test"
+                >
+                  <RefreshCw size={13} className={reassigningId === test.id ? 'animate-spin' : ''} />
+                  {reassigningId === test.id ? 'Reassigning...' : 'Reassign'}
                 </button>
                 <Link href={`/uniadmin/tests/review/${test.id}`} className="btn-primary text-[12px] px-4 py-1.5">Review</Link>
                 <button
