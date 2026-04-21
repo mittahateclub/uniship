@@ -2,19 +2,19 @@
 
 import { groq } from "@/lib/groq";
 
-// ── System prompt for test CREATION (single PDF → structured questions JSON) ──
-const SYSTEM_PROMPT = `You are a document-to-JSON extraction agent. Your ONLY job is to faithfully transcribe an exam paper into structured JSON — do NOT answer questions, reorder anything, or use your own knowledge.
+// ── System prompt for test CREATION (single PDF → structured questions + answers JSON) ──
+const SYSTEM_PROMPT = `You are a document-to-JSON extraction agent. Your ONLY job is to faithfully transcribe an exam paper into structured JSON — do NOT invent answers or use your own knowledge.
 
-The paper has MCQ sections (questions with A/B/C/D options) and optionally Live Coding sections.
+The paper is a single document that contains, for every question: the question text with A/B/C/D options and the correct answer (as a letter). It may be laid out as a table with columns like "Q No. | Question & Options | Answer", or as question blocks followed by an "Answer:" line. Sections may include MCQ sections and optionally Live Coding sections.
 
 Rules:
 1. Output ONLY valid JSON. No markdown, no comments, no extra text.
 2. Copy every question and every option EXACTLY as written. Do not paraphrase, correct, or reorder.
 3. OPTIONS MUST BE IN THEIR ORIGINAL DOCUMENT ORDER — A first, then B, then C, then D. Never reorder.
 4. For options: strip only the letter prefix ("A.", "(A)", "A)") — keep ALL other text verbatim including symbols, code, angle brackets like <class 'list'>.
-5. Classify: question with A/B/C/D options → type "mcq". Question with input/output format and test cases → type "coding". NO other types.
-6. Include ALL questions from ALL sections. Do not skip any.
-7. Leave correctAnswer as null for every question — answers will be populated separately.
+5. Classify: question with A/B/C/D options → type "mcq". A "Live Coding" / "Coding Problems" problem (has a Problem Statement and usually a Model Solution) → type "coding". NO other types.
+6. Include ALL questions from ALL sections. Do not skip any — this includes every MCQ (e.g. Q1–Q40) AND every coding problem in the Live Coding section. Never stop early.
+7. correctAnswer: extract the letter (A/B/C/D) from the Answer column/line for that question. If the doc shows "(C) 60 seconds", output just "C". If absolutely no answer is present, use null.
 8. Include a "questionNumber" field on each question with its number as it appears in the document (e.g. 1, 2, 3...).
 
 JSON structure:
@@ -29,7 +29,7 @@ JSON structure:
           "questionNumber": 1,
           "questionDescription": "Exact question text",
           "options": ["option A text", "option B text", "option C text", "option D text"],
-          "correctAnswer": null,
+          "correctAnswer": "C",
           "difficulty": "EASY"
         }
       ]
@@ -54,19 +54,6 @@ JSON structure:
     }
   ]
 }`;
-
-// ── Focused prompt: extract answer key as a numbered object ──
-const ANSWER_KEY_EXTRACTION_PROMPT = `You are given an exam answer key document. Extract every answer into a JSON object keyed by the question's GLOBAL sequential number (1, 2, 3 … N across the whole paper).
-
-Output JSON with exactly this shape:
-{ "answers": { "1": "C", "2": "B", "3": "A", ... } }
-
-Rules:
-- Keys are the question numbers as integers-as-strings ("1", "2", ...) in sequential order.
-- Values are a single uppercase letter: A, B, C, or D.
-- If the key uses numbers (1/2/3/4), convert: 1→A, 2→B, 3→C, 4→D.
-- Include ALL answers. Do not stop early.
-- Output ONLY the JSON object. No explanation, no markdown.`;
 
 // ── System prompt for EVALUATION (questions PDF + answers PDF → graded result) ──
 const EVALUATION_SYSTEM_PROMPT = `You are a precise AI Exam Grader. You receive TWO documents:
@@ -257,15 +244,11 @@ export async function processTestDocument(formData: FormData) {
   try {
     const file = formData.get("file") as File;
     if (!file) throw new Error("No file uploaded");
-    const answersFile = formData.get("answersFile") as File | null;
 
     console.log('Starting document processing for:', file.name);
 
-    // 1. Extract text from questions PDF (and optionally answers PDF) in parallel
-    const [extractedText, answersText] = await Promise.all([
-      extractTextFromFile(file),
-      answersFile ? extractTextFromFile(answersFile) : Promise.resolve(''),
-    ]);
+    // Extract text from the single combined PDF (questions + answers + explanations)
+    const extractedText = await extractTextFromFile(file);
 
     if (!extractedText) {
       throw new Error('Failed to parse document: empty result');
@@ -281,13 +264,10 @@ export async function processTestDocument(formData: FormData) {
         return /\/(QUESTIONS_DOCUMENT|ANSWER_KEY|ANSWERS_DOCUMENT)$/.test(before) ? m : "&gt;";
       });
 
-    // 2. Two-pass approach:
-    //    Pass A — parse questions only (no answer key in prompt, avoids global-count confusion)
-    //    Pass B — extract answer key as a clean flat array (separate focused call)
-    //    Then merge answers into sections in code — 100% accurate global indexing.
-    console.log('Parsing questions and answer key in parallel...');
+    // Single-pass extraction: questions + correct answers in one JSON response.
+    console.log('Parsing questions and answers...');
 
-    const questionsCallPromise = groq.chat.completions.create({
+    const questionsCompletion = await groq.chat.completions.create({
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: safeQuestionsText.slice(0, 30000) },
@@ -295,48 +275,13 @@ export async function processTestDocument(formData: FormData) {
       model: "llama-3.3-70b-versatile",
       response_format: { type: "json_object" },
       temperature: 0,
-      // 40 questions × ~150 tokens each (question + 4 options + keys) = ~6000 + JSON overhead
-      max_tokens: 8000,
+      // Headroom for 40 MCQs + live coding section. Previously 8000 truncated the tail
+      // (last MCQs + coding problems). 16000 comfortably covers a full paper.
+      max_tokens: 16000,
     });
-
-    const answerKeyCallPromise = answersText
-      ? groq.chat.completions.create({
-          messages: [
-            { role: "system", content: ANSWER_KEY_EXTRACTION_PROMPT },
-            { role: "user", content: answersText.slice(0, 10000) },
-          ],
-          model: "llama-3.3-70b-versatile",
-          response_format: { type: "json_object" },
-          temperature: 0,
-          max_tokens: 1024, // 40 answers × ~5 tokens each + JSON overhead — well within limit
-        })
-      : Promise.resolve(null);
-
-    const [questionsCompletion, answerKeyCompletion] = await Promise.all([
-      questionsCallPromise,
-      answerKeyCallPromise,
-    ]);
 
     const content = questionsCompletion.choices[0].message.content || "{}";
     const parsedData = JSON.parse(content);
-
-    // Extract answer map {globalNumber → letter} from the dedicated answer key call
-    let answerMap: Record<string, string> = {};
-    if (answerKeyCompletion) {
-      try {
-        const akContent = answerKeyCompletion.choices[0]?.message?.content || '{}';
-        const akData = JSON.parse(akContent);
-        // Support both object format {"1":"C",...} and legacy array format ["C","B",...]
-        if (akData.answers && typeof akData.answers === 'object' && !Array.isArray(akData.answers)) {
-          answerMap = akData.answers;
-        } else if (Array.isArray(akData.answers)) {
-          akData.answers.forEach((v: string, i: number) => { answerMap[String(i + 1)] = v; });
-        }
-        console.log(`Answer key extracted: ${Object.keys(answerMap).length} answers`, answerMap);
-      } catch (e) {
-        console.warn('Failed to parse answer key response:', e);
-      }
-    }
 
     console.log('Parsed data structure:', JSON.stringify(parsedData, null, 2).slice(0, 500));
 
@@ -412,17 +357,14 @@ export async function processTestDocument(formData: FormData) {
       totalQuestionCount = sections.reduce((sum: number, s: any) => sum + (s.questions || []).length, 0);
     }
 
-    // Merge answers into questions by global sequential index (code-level, 100% accurate)
-    if (Object.keys(answerMap).length > 0) {
-      let globalIdx = 1;
-      for (const section of sections) {
-        for (const q of section.questions || []) {
-          const answer = answerMap[String(globalIdx)];
-          if (answer) q.correctAnswer = answer;
-          globalIdx++;
+    // Normalize correctAnswer values: strip prefixes like "(C)" → "C", uppercase, keep letter only.
+    for (const section of sections) {
+      for (const q of section.questions || []) {
+        if (typeof q.correctAnswer === 'string') {
+          const m = q.correctAnswer.match(/[A-Da-d]/);
+          q.correctAnswer = m ? m[0].toUpperCase() : null;
         }
       }
-      console.log(`Merged answers into ${totalQuestionCount} questions`);
     }
 
     // Build legacy problems array from coding sections for backward compatibility

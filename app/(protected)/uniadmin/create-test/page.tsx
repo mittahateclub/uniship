@@ -19,7 +19,6 @@ export default function TestsPage() {
 
   // Upload form state
   const [file, setFile] = useState<File | null>(null);
-  const [answersFile, setAnswersFile] = useState<File | null>(null);
   const [universityId, setUniversityId] = useState<string | null>(null);
   const [isParsing, setIsParsing] = useState(false);
   const [status, setStatus] = useState({ type: '', message: '' });
@@ -135,13 +134,6 @@ export default function TestsPage() {
     }
   };
 
-  const handleAnswersFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setAnswersFile(e.target.files[0]);
-      setStatus({ type: '', message: '' });
-    }
-  };
-
   const to24Hour = (h: number, ampm: 'AM' | 'PM') => {
     if (ampm === 'AM') return h === 12 ? 0 : h;
     return h === 12 ? 12 : h + 12;
@@ -192,7 +184,6 @@ export default function TestsPage() {
 
       const formData = new FormData();
       formData.append('file', file);
-      if (answersFile) formData.append('answersFile', answersFile);
 
       const result = await processTestDocument(formData);
 
@@ -559,46 +550,23 @@ export default function TestsPage() {
 
             <div className="divider-dashed" />
 
-            {/* PDF Upload - Two columns */}
-            <div className="grid grid-cols-2 gap-4">
-              {/* Questions PDF */}
-              <div>
-                <label className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
-                  <FileText size={12} className="text-[var(--text-faint)]" />
-                  Questions PDF
-                </label>
-                <div className="relative overflow-hidden border border-dashed border-[var(--border-active)] rounded p-4 text-center bg-[var(--bg-elevated)] hover:border-[#00A8E1]/40 transition-colors duration-150 cursor-pointer">
-                  <input
-                    type="file"
-                    accept=".pdf,.docx"
-                    onChange={handleQuestionsFileChange}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                  />
-                  <Upload size={16} className="mx-auto mb-1 text-[var(--text-faint)]" />
-                  <p className="text-[12px] text-[var(--text-tertiary)] pointer-events-none truncate">
-                    {file ? file.name : 'Drop or click'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Answers PDF */}
-              <div>
-                <label className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
-                  <FileText size={12} className="text-[var(--text-faint)]" />
-                  Answers PDF <span className="text-[10px] text-[var(--text-faint)]">(optional)</span>
-                </label>
-                <div className="relative overflow-hidden border border-dashed border-[var(--border-active)] rounded p-4 text-center bg-[var(--bg-elevated)] hover:border-[#00A8E1]/40 transition-colors duration-150 cursor-pointer">
-                  <input
-                    type="file"
-                    accept=".pdf,.docx"
-                    onChange={handleAnswersFileChange}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                  />
-                  <Upload size={16} className="mx-auto mb-1 text-[var(--text-faint)]" />
-                  <p className="text-[12px] text-[var(--text-tertiary)] pointer-events-none truncate">
-                    {answersFile ? answersFile.name : 'Drop or click'}
-                  </p>
-                </div>
+            {/* PDF Upload — single combined document */}
+            <div>
+              <label className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
+                <FileText size={12} className="text-[var(--text-faint)]" />
+                Test PDF <span className="text-[10px] text-[var(--text-faint)]">(questions, answers & explanations in one file)</span>
+              </label>
+              <div className="relative overflow-hidden border border-dashed border-[var(--border-active)] rounded p-4 text-center bg-[var(--bg-elevated)] hover:border-[#00A8E1]/40 transition-colors duration-150 cursor-pointer">
+                <input
+                  type="file"
+                  accept=".pdf,.docx"
+                  onChange={handleQuestionsFileChange}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                />
+                <Upload size={16} className="mx-auto mb-1 text-[var(--text-faint)]" />
+                <p className="text-[12px] text-[var(--text-tertiary)] pointer-events-none truncate">
+                  {file ? file.name : 'Drop or click to upload a single PDF containing Q&A and explanations'}
+                </p>
               </div>
             </div>
 
