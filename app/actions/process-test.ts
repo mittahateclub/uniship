@@ -1,6 +1,7 @@
 'use server';
 
 import { groq } from "@/lib/groq";
+import { generateHiddenTestCases } from "@/app/actions/generate-hidden-test-cases";
 
 // ── System prompt for test CREATION (single PDF → structured questions + answers JSON) ──
 const SYSTEM_PROMPT = `You are a document-to-JSON extraction agent. Your ONLY job is to faithfully transcribe an exam paper into structured JSON — do NOT invent answers or use your own knowledge.
@@ -40,20 +41,26 @@ JSON structure:
       "questions": [
         {
           "questionNumber": 1,
-          "title": "Problem title",
-          "questionDescription": "Full problem statement",
+          "title": "Problem title from document",
+          "questionDescription": "Full problem statement verbatim",
           "difficulty": "EASY",
-          "functionName": "",
-          "constraints": [],
-          "inputFormat": "",
-          "outputFormat": "",
+          "functionName": "function_name_if_specified_else_empty_string",
+          "constraints": ["1 <= n <= 10^5", "0 <= arr[i] <= 10^9"],
+          "inputFormat": "Description of input format from document, or empty string",
+          "outputFormat": "Description of output format from document, or empty string",
           "sampleTestCases": [{ "input": "", "output": "" }],
-          "hiddenTestCases": [{ "input": "", "output": "" }]
+          "hiddenTestCases": []
         }
       ]
     }
   ]
-}`;
+}
+
+IMPORTANT for coding questions:
+- "constraints" MUST be a JSON array of strings — extract EVERY constraint line from the document (e.g. "1 <= n <= 10^5", "1 <= arr[i] <= 1000", "String length <= 500"). If none mentioned, use [].
+- "inputFormat" and "outputFormat": copy the Input Format / Output Format sections verbatim if present.
+- "sampleTestCases": extract any sample/example input-output pairs shown in the document. If none are shown, use [].
+- "hiddenTestCases": always leave as [] — these are generated separately.`;
 
 // ── System prompt for EVALUATION (questions PDF + answers PDF → graded result) ──
 const EVALUATION_SYSTEM_PROMPT = `You are a precise AI Exam Grader. You receive TWO documents:
@@ -272,12 +279,11 @@ export async function processTestDocument(formData: FormData) {
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: safeQuestionsText.slice(0, 30000) },
       ],
-      model: "llama-3.3-70b-versatile",
+      model: "meta-llama/llama-4-scout-17b-16e-instruct",
       response_format: { type: "json_object" },
       temperature: 0,
-      // Headroom for 40 MCQs + live coding section. Previously 8000 truncated the tail
-      // (last MCQs + coding problems). 16000 comfortably covers a full paper.
-      max_tokens: 16000,
+      // Llama 4 Scout hard output cap is 8192 tokens
+      max_tokens: 8192,
     });
 
     const content = questionsCompletion.choices[0].message.content || "{}";
@@ -332,7 +338,7 @@ export async function processTestDocument(formData: FormData) {
             { role: 'system', content: SYSTEM_PROMPT },
             { role: 'user', content: `Extract ONLY this section. Include ALL options for every question:\n\n${sectionText}` },
           ],
-          model: 'llama-3.3-70b-versatile',
+          model: 'meta-llama/llama-4-scout-17b-16e-instruct',
           response_format: { type: 'json_object' },
           temperature: 0,
           max_tokens: 4000,
@@ -365,6 +371,57 @@ export async function processTestDocument(formData: FormData) {
           q.correctAnswer = m ? m[0].toUpperCase() : null;
         }
       }
+    }
+
+    // ── Generate test cases for coding questions that have empty sampleTestCases ──
+    const codingQsNeedingTestCases: Array<{ section: any; q: any }> = [];
+    for (const section of sections) {
+      if (section.type !== 'coding') continue;
+      for (const q of section.questions || []) {
+        const samples: any[] = q.sampleTestCases || [];
+        const hasRealSamples = samples.some((tc: any) => tc.input?.trim() || tc.output?.trim());
+        if (!hasRealSamples) {
+          codingQsNeedingTestCases.push({ section, q });
+        }
+      }
+    }
+
+    if (codingQsNeedingTestCases.length > 0) {
+      console.log(`Generating test cases for ${codingQsNeedingTestCases.length} coding question(s)...`);
+      await Promise.allSettled(
+        codingQsNeedingTestCases.map(async ({ q }) => {
+          try {
+            // Build a rich context string matching what practice questions pass
+            const parts: string[] = [];
+            if (q.title) parts.push(`Problem: ${q.title}`);
+            if (q.questionDescription) parts.push(`\nDescription:\n${q.questionDescription}`);
+            if (q.constraints && q.constraints.length > 0) {
+              parts.push(`\nConstraints:\n${q.constraints.map((c: string) => `- ${c}`).join('\n')}`);
+            }
+            if (q.inputFormat) parts.push(`\nInput Format:\n${q.inputFormat}`);
+            if (q.outputFormat) parts.push(`\nOutput Format:\n${q.outputFormat}`);
+            const richQuestionText = parts.join('') || q.questionDescription || q.title || '';
+
+            // Existing PDF sample cases (if any) to anchor the reference solution
+            const existingSamples = (q.sampleTestCases || []).filter(
+              (tc: any) => tc.input?.trim() || tc.output?.trim()
+            );
+
+            const result = await generateHiddenTestCases(
+              richQuestionText,
+              5, // 1 sample + 4 hidden
+              existingSamples.length > 0 ? existingSamples : undefined,
+            );
+            if (result.success && result.cases && result.cases.length > 0) {
+              q.sampleTestCases = [result.cases[0]];
+              q.hiddenTestCases = result.cases.slice(1);
+              console.log(`Generated ${result.cases.length} test cases for: ${(q.title || q.questionDescription || '').slice(0, 60)}`);
+            }
+          } catch (e) {
+            console.warn(`Failed to generate test cases for coding question:`, e);
+          }
+        })
+      );
     }
 
     // Build legacy problems array from coding sections for backward compatibility
@@ -432,9 +489,10 @@ export async function evaluateExam(formData: FormData) {
         { role: 'system', content: EVALUATION_SYSTEM_PROMPT },
         { role: 'user', content: combinedPrompt },
       ],
-      model: 'llama-3.3-70b-versatile',
+      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
       response_format: { type: 'json_object' },
       temperature: 0.05, // Near-deterministic for fair grading
+      max_tokens: 8192,
     });
 
     const raw = completion.choices[0]?.message?.content || '{}';

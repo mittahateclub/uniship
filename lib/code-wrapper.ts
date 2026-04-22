@@ -631,8 +631,16 @@ ${printResult}
 function extractCppFunctionName(code: string): string | null {
   // Match free functions or methods inside class Solution
   // [\w:]+ handles std::vector etc, (?:const\s+)? handles const qualifiers
+  const CPP_KEYWORDS = new Set([
+    'if','else','for','while','do','switch','case','return','break','continue',
+    'try','catch','throw','new','delete','sizeof','typeof','alignof','decltype',
+    'static_cast','dynamic_cast','reinterpret_cast','const_cast','typedef',
+    'struct','class','enum','namespace','template','operator','public','private',
+    'protected','virtual','override','final','explicit','inline','extern',
+    'register','volatile','mutable','constexpr','consteval','constinit',
+  ]);
   const matches = [...code.matchAll(/(?:^|\s)(?:(?:const\s+)?[\w:]+(?:<[^>]*>)?(?:\s*[*&])?)\s+(\w+)\s*\([^)]*\)\s*\{/gm)];
-  const filtered = matches.filter(m => m[1] !== 'main' && m[1] !== 'Main');
+  const filtered = matches.filter(m => m[1] !== 'main' && m[1] !== 'Main' && !CPP_KEYWORDS.has(m[1]));
   if (filtered.length === 0) return null;
   return filtered[filtered.length - 1][1];
 }
@@ -644,7 +652,11 @@ function extractCppParamTypes(code: string, fn: string): string[] {
   return match[1].split(',').map(p => {
     const parts = p.trim().split(/\s+/);
     // type might be multi-word like "const vector<int>&"
-    return parts.length >= 2 ? parts.slice(0, -1).join(' ') : 'int';
+    const type = parts.length >= 2 ? parts.slice(0, -1).join(' ') : 'int';
+    const varName = parts[parts.length - 1];
+    // int arr[] or int* arr → treat as pointer
+    if (varName.includes('[]') || varName.startsWith('*')) return type + '*';
+    return type;
   });
 }
 
@@ -843,6 +855,8 @@ function buildCWrapper(
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <limits.h>
+#include <math.h>
 
 // ---- helpers ----
 int* _parseIntArr(const char* s, int* outSize) {

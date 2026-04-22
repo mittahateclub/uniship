@@ -127,9 +127,10 @@ async function tryGenerateWithDualValidation(
   try {
     // ── Step 1: Generate primary ref solution + test inputs ──
     const completion = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
       temperature,
       response_format: { type: 'json_object' },
+      max_tokens: 8192,
       messages: [
         { role: 'system', content: REF_SOLUTION_PROMPT(requestedCount) },
         { role: 'user', content: userContent },
@@ -184,9 +185,10 @@ RULES:
 8. The function MUST return/print results in the ORIGINAL input order.`;
 
     const crossCompletion = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
       temperature: 0.1,
       response_format: { type: 'json_object' },
+      max_tokens: 8192,
       messages: [
         { role: 'system', content: crossPrompt },
         { role: 'user', content: `Question:\n${questionText}` },
@@ -342,9 +344,10 @@ CRITICAL RULES:
 7. Use the SIMPLEST correct approach (brute force / direct computation). Do NOT use algorithms that reorder input (like MO's algorithm) — use straightforward iteration or prefix sums.`;
 
   const completion = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
+    model: 'meta-llama/llama-4-scout-17b-16e-instruct',
     temperature: 0.2,
     response_format: { type: 'json_object' },
+    max_tokens: 8192,
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: `Question:\n${questionText}` },

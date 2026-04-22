@@ -149,12 +149,40 @@ export default function ReviewGeneratedQuestions() {
                     )}
 
                     {/* Coding test cases */}
-                    {section.type === 'coding' && q.sampleTestCases && q.sampleTestCases.length > 0 && (
-                      <div className="mt-3 space-y-1">
-                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Sample Case:</p>
-                        <pre className="bg-[var(--bg-elevated)] p-3 rounded text-[12px] text-[#4CAF50] font-mono">
+                    {section.type === 'coding' && (
+                      <div className="mt-3 space-y-2">
+                        {q.constraints && q.constraints.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1">Constraints:</p>
+                            <ul className="list-disc list-inside space-y-0.5">
+                              {q.constraints.map((c: string, ci: number) => (
+                                <li key={ci} className="text-[12px] text-[var(--text-tertiary)] font-mono">{c}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {q.sampleTestCases && q.sampleTestCases.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1">Sample Case:</p>
+                            <pre className="bg-[var(--bg-elevated)] p-3 rounded text-[12px] text-[#4CAF50] font-mono">
 {`Input: ${q.sampleTestCases[0]?.input}\nOutput: ${q.sampleTestCases[0]?.output}`}
-                        </pre>
+                            </pre>
+                          </div>
+                        )}
+                        {q.hiddenTestCases && q.hiddenTestCases.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-bold text-[#4B8BBE] uppercase tracking-widest mb-1">
+                              Hidden Test Cases ({q.hiddenTestCases.length}):
+                            </p>
+                            <div className="space-y-1">
+                              {q.hiddenTestCases.map((tc: any, tci: number) => (
+                                <pre key={tci} className="bg-[var(--bg-elevated)] border border-[#4B8BBE]/20 p-3 rounded text-[12px] text-[#4B8BBE] font-mono">
+{`[${tci + 1}] Input:  ${tc.input}\n      Output: ${tc.output}`}
+                                </pre>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

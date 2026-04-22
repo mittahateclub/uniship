@@ -987,7 +987,10 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
   useEffect(() => {
     setSelectedLang(questionLanguages[currentQuestion] || 71);
-  }, [currentQuestion, questionLanguages]);
+    setCodeStdin('');
+    setCodeOutput(null);
+    setCodeError(null);
+  }, [currentQuestion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const allChecksPassed = (checks.internet === 'pass' || checks.internet === 'slow') && checks.screen === 'pass';
 
@@ -1456,7 +1459,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       )}
 
       {/* Main content */}
-      <div className="max-w-4xl mx-auto pt-14 pb-8 px-4">
+      <div className={`${isCoding ? 'max-w-7xl' : 'max-w-4xl'} mx-auto pt-14 pb-8 px-4`}>
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded" style={{ background: `${sectionColorMap[currentQ._sectionType]}20`, color: sectionColorMap[currentQ._sectionType] }}>
@@ -1471,256 +1474,278 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           </span>
         </div>
 
-        <div className="window p-6 sm:p-8 mb-5">
-          <div className="flex justify-between items-start mb-5">
-            <div className="flex items-center gap-2">
-              <span className="inline-block text-white px-2.5 py-0.5 text-[11px] font-bold uppercase rounded" style={{ background: sectionColorMap[currentQ._sectionType] }}>
-                Question {currentQuestion + 1}
-              </span>
-              {currentQ.topic && (
-                <span className="inline-block bg-[var(--bg-surface)] text-[var(--text-secondary)] px-2.5 py-0.5 text-[11px] font-medium rounded border border-[var(--border-subtle)]">
-                  {currentQ.topic}
-                </span>
+        {isCoding ? (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-5 items-start">
+            <div className="window p-6 sm:p-8">
+              <div className="flex justify-between items-start mb-5">
+                <div className="flex items-center gap-2">
+                  <span className="inline-block text-white px-2.5 py-0.5 text-[11px] font-bold uppercase rounded" style={{ background: sectionColorMap[currentQ._sectionType] }}>
+                    Question {currentQuestion + 1}
+                  </span>
+                  {currentQ.topic && (
+                    <span className="inline-block bg-[var(--bg-surface)] text-[var(--text-secondary)] px-2.5 py-0.5 text-[11px] font-medium rounded border border-[var(--border-subtle)]">
+                      {currentQ.topic}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <h2 className="text-base font-medium mb-5 leading-relaxed text-[var(--text-primary)]">
+                {currentQ.questionDescription}
+              </h2>
+
+              {currentQ.sampleTestCases && currentQ.sampleTestCases.length > 0 && (
+                <div className="mt-5 space-y-2">
+                  <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Sample Test Case:</p>
+                  <pre className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-4 rounded text-sm text-[#4CAF50] overflow-x-auto font-mono">
+                    <div className="mb-2"><span className="text-[var(--text-faint)]">Input:</span> {currentQ.sampleTestCases[0].input}</div>
+                    <div><span className="text-[var(--text-faint)]">Output:</span> {currentQ.sampleTestCases[0].output}</div>
+                  </pre>
+                </div>
+              )}
+
+              {currentQ.constraints && currentQ.constraints.length > 0 && (
+                <div className="mt-5">
+                  <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-2">Constraints:</p>
+                  <ul className="list-disc list-inside text-sm space-y-1">
+                    {currentQ.constraints.map((c, i) => <li key={i} className="text-[var(--text-tertiary)]">{c}</li>)}
+                  </ul>
+                </div>
+              )}
+
+              {currentQ.hints && currentQ.hints.length > 0 && (
+                <div className="mt-5">
+                  <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-2">Hints:</p>
+                  <ul className="list-disc list-inside text-sm space-y-1">
+                    {currentQ.hints.map((h, i) => <li key={i} className="text-[var(--text-tertiary)]">{h}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            <div className="window p-5">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-semibold text-[var(--text-primary)]">Your Solution:</label>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <select
+                      value={selectedLang}
+                      onChange={e => {
+                        const lang = Number(e.target.value);
+                        setSelectedLang(lang);
+                        setQuestionLanguages(prev => ({ ...prev, [currentQuestion]: lang }));
+                        setCodeOutput(null);
+                        setCodeError(null);
+                      }}
+                      className="appearance-none bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-1.5 pr-7 text-[12px] text-[var(--text-primary)] font-medium focus:outline-none focus:border-[#4B8BBE] cursor-pointer"
+                    >
+                      <option value={71}>Python 3</option>
+                      <option value={62}>Java</option>
+                      <option value={54}>C++</option>
+                      <option value={50}>C</option>
+                    </select>
+                    <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-faint)] pointer-events-none" />
+                  </div>
+                  <button
+                    onClick={runCode}
+                    disabled={!answers[currentQuestion]?.trim() || compiling}
+                    className="flex items-center gap-1.5 bg-[#4CAF50] hover:bg-[#43A047] text-white px-3 py-1.5 rounded text-[12px] font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {compiling ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
+                    {compiling ? 'Running...' : 'Run Code'}
+                  </button>
+                  <button
+                    onClick={submitCode}
+                    disabled={!answers[currentQuestion]?.trim() || judgeSubmitting || compiling}
+                    className="flex items-center gap-1.5 bg-[#4B8BBE] hover:bg-[#4C5ABF] text-white px-3 py-1.5 rounded text-[12px] font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {judgeSubmitting ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
+                    {judgeSubmitting ? 'Submitting...' : 'Submit Code'}
+                  </button>
+                </div>
+              </div>
+              <div className="rounded-lg overflow-hidden border border-[var(--border-subtle)]">
+                <Editor
+                  height="280px"
+                  language={LANG_MONACO[selectedLang] || 'plaintext'}
+                  theme="vs-dark"
+                  value={answers[currentQuestion] || ''}
+                  onChange={(val) => setAnswers({ ...answers, [currentQuestion]: val || '' })}
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: 14,
+                    lineNumbers: 'on',
+                    scrollBeyondLastLine: false,
+                    automaticLayout: true,
+                    tabSize: 4,
+                    wordWrap: 'on',
+                    padding: { top: 12 },
+                    renderLineHighlight: 'line',
+                    cursorBlinking: 'smooth',
+                    smoothScrolling: true,
+                    contextmenu: false,
+                    domReadOnly: false,
+                  }}
+                />
+              </div>
+              <p className="text-xs text-[var(--text-faint)] mt-2">{answers[currentQuestion] ? 'Answer saved' : 'No answer provided yet'}</p>
+
+              {/* Stdin input */}
+              <div className="mt-3">
+                <label className="block text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-widest mb-1.5">Input (stdin)</label>
+                <textarea
+                  value={codeStdin}
+                  onChange={e => setCodeStdin(e.target.value)}
+                  placeholder="Optional: provide input for your program..."
+                  className="w-full h-16 p-3 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded font-mono text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[#4B8BBE] focus:outline-none transition-colors resize-none"
+                />
+              </div>
+
+              {/* Output terminal */}
+              {(codeOutput !== null || codeError !== null || compiling) && (
+                <div className="mt-3">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <Terminal size={12} className="text-[var(--text-faint)]" />
+                      <span className="text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Output</span>
+                    </div>
+                    {compileTime && (
+                      <div className="flex items-center gap-3 text-[10px] text-[var(--text-faint)]">
+                        <span>Time: {compileTime}s</span>
+                        {compileMemory && <span>Memory: {compileMemory}</span>}
+                      </div>
+                    )}
+                  </div>
+                  <div className="bg-[#0D1117] border border-[var(--border-subtle)] rounded p-4 min-h-[60px] max-h-48 overflow-auto">
+                    {compiling ? (
+                      <div className="flex items-center gap-2 text-[var(--text-faint)] text-[12px]">
+                        <Loader2 size={14} className="animate-spin" />
+                        <span>Compiling and executing...</span>
+                      </div>
+                    ) : codeError ? (
+                      <pre className="text-[#F87171] text-[12px] font-mono whitespace-pre-wrap">{codeError}</pre>
+                    ) : (
+                      <pre className="text-[#4ADE80] text-[12px] font-mono whitespace-pre-wrap">{codeOutput}</pre>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {judgeSummary && (
+                <div className="mt-3 rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Submission Verdict</span>
+                    <span className={`text-[12px] font-bold ${judgeSummary.verdict === 'AC' ? 'text-[#4CAF50]' : 'text-[#EF4444]'}`}>
+                      {judgeSummary.verdict}
+                    </span>
+                  </div>
+                  <p className="text-[12px] text-[var(--text-secondary)]">
+                    Passed {judgeSummary.passed} / {judgeSummary.total} test cases
+                    {judgeSummary.failedCase ? ` (failed at case #${judgeSummary.failedCase})` : ''}
+                  </p>
+                  {judgeCaseResults && judgeCaseResults.length > 0 && (
+                    <div className="mt-2 space-y-1.5">
+                      {judgeCaseResults.map((c) => (
+                        <div key={c.caseNumber} className="flex items-start justify-between gap-3 text-[11px]">
+                          <span className="text-[var(--text-tertiary)]">Case {c.caseNumber}</span>
+                          <span className={`font-bold ${c.statusCode === 'AC' ? 'text-[#4CAF50]' : 'text-[#EF4444]'}`}>{c.statusCode}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {judgeCaseResults?.find((c) => c.stderr)?.stderr && (
+                    <pre className="mt-2 text-[#F87171] text-[11px] font-mono whitespace-pre-wrap">{judgeCaseResults.find((c) => c.stderr)?.stderr}</pre>
+                  )}
+                </div>
               )}
             </div>
           </div>
-          
-          <h2 className="text-base font-medium mb-5 leading-relaxed text-[var(--text-primary)]">
-            {currentQ.questionDescription}
-          </h2>
-
-          {/* MCQ Options */}
-          {isMcq && currentQ.options && currentQ.options.length > 0 && (
-            <div className="mt-4 space-y-2">
-              {currentQ.options.map((option, oIdx) => {
-                const letter = String.fromCharCode(65 + oIdx); // A, B, C, D...
-                const selected = (answers[currentQuestion] || '').toUpperCase() === letter;
-                return (
-                  <button
-                    key={oIdx}
-                    type="button"
-                    onClick={() => setAnswers({ ...answers, [currentQuestion]: letter })}
-                    className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-lg border transition-all text-[13px] ${
-                      selected
-                        ? 'border-[#4B8BBE] bg-[#4B8BBE]/10 text-[var(--text-primary)]'
-                        : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:border-[var(--border-active)] hover:bg-[var(--bg-surface)]'
-                    }`}
-                  >
-                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0 ${
-                      selected ? 'bg-[#4B8BBE] text-white' : 'bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-tertiary)]'
-                    }`}>
-                      {letter}
+        ) : (
+          <>
+            <div className="window p-6 sm:p-8 mb-5">
+              <div className="flex justify-between items-start mb-5">
+                <div className="flex items-center gap-2">
+                  <span className="inline-block text-white px-2.5 py-0.5 text-[11px] font-bold uppercase rounded" style={{ background: sectionColorMap[currentQ._sectionType] }}>
+                    Question {currentQuestion + 1}
+                  </span>
+                  {currentQ.topic && (
+                    <span className="inline-block bg-[var(--bg-surface)] text-[var(--text-secondary)] px-2.5 py-0.5 text-[11px] font-medium rounded border border-[var(--border-subtle)]">
+                      {currentQ.topic}
                     </span>
-                    <span>{option}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          
-          {/* Sample test cases — coding only */}
-          {isCoding && currentQ.sampleTestCases && currentQ.sampleTestCases.length > 0 && (
-            <div className="mt-5 space-y-2">
-              <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Sample Test Case:</p>
-              <pre className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-4 rounded text-sm text-[#4CAF50] overflow-x-auto font-mono">
-                <div className="mb-2"><span className="text-[var(--text-faint)]">Input:</span> {currentQ.sampleTestCases[0].input}</div>
-                <div><span className="text-[var(--text-faint)]">Output:</span> {currentQ.sampleTestCases[0].output}</div>
-              </pre>
-            </div>
-          )}
-
-          {currentQ.constraints && currentQ.constraints.length > 0 && (
-            <div className="mt-5">
-              <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-2">Constraints:</p>
-              <ul className="list-disc list-inside text-sm space-y-1">
-                {currentQ.constraints.map((c, i) => <li key={i} className="text-[var(--text-tertiary)]">{c}</li>)}
-              </ul>
-            </div>
-          )}
-
-          {currentQ.hints && currentQ.hints.length > 0 && (
-            <div className="mt-5">
-              <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-2">Hints:</p>
-              <ul className="list-disc list-inside text-sm space-y-1">
-                {currentQ.hints.map((h, i) => <li key={i} className="text-[var(--text-tertiary)]">{h}</li>)}
-              </ul>
-            </div>
-          )}
-        </div>
-
-        {/* Answer — Aptitude */}
-        {currentQ._sectionType === 'aptitude' && (
-          <div className="window p-5 mb-5">
-            <label className="text-sm font-semibold text-[var(--text-primary)] mb-2 block">Your Answer:</label>
-            <input
-              type="text"
-              value={answers[currentQuestion] || ''}
-              onChange={e => setAnswers({ ...answers, [currentQuestion]: e.target.value })}
-              placeholder="Type your answer..."
-              className="w-full px-4 py-3 text-[14px] rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--border-active)] transition-colors"
-            />
-            <p className="text-xs text-[var(--text-faint)] mt-2">{answers[currentQuestion] ? 'Answer saved' : 'No answer provided yet'}</p>
-          </div>
-        )}
-
-        {/* Answer — MCQ (already handled via option buttons above, just show status) */}
-        {isMcq && (
-          <div className="window p-5 mb-5">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-semibold text-[var(--text-primary)]">Selected Answer:</label>
-              <span className={`text-[13px] font-bold ${answers[currentQuestion] ? 'text-[#4B8BBE]' : 'text-[var(--text-faint)]'}`}>
-                {answers[currentQuestion] ? `Option ${answers[currentQuestion]}` : 'None selected'}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Answer — Coding */}
-        {isCoding && (
-          <div className="window p-5 mb-5">
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-semibold text-[var(--text-primary)]">Your Solution:</label>
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <select
-                    value={selectedLang}
-                    onChange={e => {
-                      const lang = Number(e.target.value);
-                      setSelectedLang(lang);
-                      setQuestionLanguages(prev => ({ ...prev, [currentQuestion]: lang }));
-                    }}
-                    className="appearance-none bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-1.5 pr-7 text-[12px] text-[var(--text-primary)] font-medium focus:outline-none focus:border-[#4B8BBE] cursor-pointer"
-                  >
-                    <option value={71}>Python 3</option>
-                    <option value={62}>Java</option>
-                    <option value={54}>C++</option>
-                    <option value={50}>C</option>
-                    <option value={63}>JavaScript</option>
-                    <option value={74}>TypeScript</option>
-                    <option value={51}>C#</option>
-                    <option value={72}>Ruby</option>
-                    <option value={60}>Go</option>
-                    <option value={73}>Rust</option>
-                    <option value={78}>Kotlin</option>
-                    <option value={76}>SQL</option>
-                    <option value={68}>PHP</option>
-                    <option value={85}>Dart</option>
-                  </select>
-                  <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-faint)] pointer-events-none" />
+                  )}
                 </div>
-                <button
-                  onClick={runCode}
-                  disabled={!answers[currentQuestion]?.trim() || compiling}
-                  className="flex items-center gap-1.5 bg-[#4CAF50] hover:bg-[#43A047] text-white px-3 py-1.5 rounded text-[12px] font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                >
-                  {compiling ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
-                  {compiling ? 'Running...' : 'Run Code'}
-                </button>
-                <button
-                  onClick={submitCode}
-                  disabled={!answers[currentQuestion]?.trim() || judgeSubmitting || compiling}
-                  className="flex items-center gap-1.5 bg-[#4B8BBE] hover:bg-[#4C5ABF] text-white px-3 py-1.5 rounded text-[12px] font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                >
-                  {judgeSubmitting ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
-                  {judgeSubmitting ? 'Submitting...' : 'Submit Code'}
-                </button>
               </div>
-            </div>
-            <div className="rounded-lg overflow-hidden border border-[var(--border-subtle)]">
-              <Editor
-                height="280px"
-                language={LANG_MONACO[selectedLang] || 'plaintext'}
-                theme="vs-dark"
-                value={answers[currentQuestion] || ''}
-                onChange={(val) => setAnswers({ ...answers, [currentQuestion]: val || '' })}
-                options={{
-                  minimap: { enabled: false },
-                  fontSize: 14,
-                  lineNumbers: 'on',
-                  scrollBeyondLastLine: false,
-                  automaticLayout: true,
-                  tabSize: 4,
-                  wordWrap: 'on',
-                  padding: { top: 12 },
-                  renderLineHighlight: 'line',
-                  cursorBlinking: 'smooth',
-                  smoothScrolling: true,
-                  contextmenu: false,
-                  domReadOnly: false,
-                }}
-              />
-            </div>
-            <p className="text-xs text-[var(--text-faint)] mt-2">{answers[currentQuestion] ? 'Answer saved' : 'No answer provided yet'}</p>
 
-            {/* Stdin input */}
-            <div className="mt-3">
-              <label className="block text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-widest mb-1.5">Input (stdin)</label>
-              <textarea
-                value={codeStdin}
-                onChange={e => setCodeStdin(e.target.value)}
-                placeholder="Optional: provide input for your program..."
-                className="w-full h-16 p-3 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded font-mono text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[#4B8BBE] focus:outline-none transition-colors resize-none"
-              />
+              <h2 className="text-base font-medium mb-5 leading-relaxed text-[var(--text-primary)]">
+                {currentQ.questionDescription}
+              </h2>
+
+              {/* MCQ Options */}
+              {isMcq && currentQ.options && currentQ.options.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  {currentQ.options.map((option, oIdx) => {
+                    const letter = String.fromCharCode(65 + oIdx); // A, B, C, D...
+                    const selected = (answers[currentQuestion] || '').toUpperCase() === letter;
+                    return (
+                      <button
+                        key={oIdx}
+                        type="button"
+                        onClick={() => setAnswers({ ...answers, [currentQuestion]: letter })}
+                        className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-lg border transition-all text-[13px] ${
+                          selected
+                            ? 'border-[#4B8BBE] bg-[#4B8BBE]/10 text-[var(--text-primary)]'
+                            : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:border-[var(--border-active)] hover:bg-[var(--bg-surface)]'
+                        }`}
+                      >
+                        <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0 ${
+                          selected ? 'bg-[#4B8BBE] text-white' : 'bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-tertiary)]'
+                        }`}>
+                          {letter}
+                        </span>
+                        <span>{option}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {currentQ.hints && currentQ.hints.length > 0 && (
+                <div className="mt-5">
+                  <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-2">Hints:</p>
+                  <ul className="list-disc list-inside text-sm space-y-1">
+                    {currentQ.hints.map((h, i) => <li key={i} className="text-[var(--text-tertiary)]">{h}</li>)}
+                  </ul>
+                </div>
+              )}
             </div>
 
-            {/* Output terminal */}
-            {(codeOutput !== null || codeError !== null || compiling) && (
-              <div className="mt-3">
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-1.5">
-                    <Terminal size={12} className="text-[var(--text-faint)]" />
-                    <span className="text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Output</span>
-                  </div>
-                  {compileTime && (
-                    <div className="flex items-center gap-3 text-[10px] text-[var(--text-faint)]">
-                      <span>Time: {compileTime}s</span>
-                      {compileMemory && <span>Memory: {compileMemory}</span>}
-                    </div>
-                  )}
-                </div>
-                <div className="bg-[#0D1117] border border-[var(--border-subtle)] rounded p-4 min-h-[60px] max-h-48 overflow-auto">
-                  {compiling ? (
-                    <div className="flex items-center gap-2 text-[var(--text-faint)] text-[12px]">
-                      <Loader2 size={14} className="animate-spin" />
-                      <span>Compiling and executing...</span>
-                    </div>
-                  ) : codeError ? (
-                    <pre className="text-[#F87171] text-[12px] font-mono whitespace-pre-wrap">{codeError}</pre>
-                  ) : (
-                    <pre className="text-[#4ADE80] text-[12px] font-mono whitespace-pre-wrap">{codeOutput}</pre>
-                  )}
-                </div>
+            {/* Answer — Aptitude */}
+            {currentQ._sectionType === 'aptitude' && (
+              <div className="window p-5 mb-5">
+                <label className="text-sm font-semibold text-[var(--text-primary)] mb-2 block">Your Answer:</label>
+                <input
+                  type="text"
+                  value={answers[currentQuestion] || ''}
+                  onChange={e => setAnswers({ ...answers, [currentQuestion]: e.target.value })}
+                  placeholder="Type your answer..."
+                  className="w-full px-4 py-3 text-[14px] rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--border-active)] transition-colors"
+                />
+                <p className="text-xs text-[var(--text-faint)] mt-2">{answers[currentQuestion] ? 'Answer saved' : 'No answer provided yet'}</p>
               </div>
             )}
 
-            {judgeSummary && (
-              <div className="mt-3 rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Submission Verdict</span>
-                  <span className={`text-[12px] font-bold ${judgeSummary.verdict === 'AC' ? 'text-[#4CAF50]' : 'text-[#EF4444]'}`}>
-                    {judgeSummary.verdict}
+            {/* Answer — MCQ (already handled via option buttons above, just show status) */}
+            {isMcq && (
+              <div className="window p-5 mb-5">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-semibold text-[var(--text-primary)]">Selected Answer:</label>
+                  <span className={`text-[13px] font-bold ${answers[currentQuestion] ? 'text-[#4B8BBE]' : 'text-[var(--text-faint)]'}`}>
+                    {answers[currentQuestion] ? `Option ${answers[currentQuestion]}` : 'None selected'}
                   </span>
                 </div>
-                <p className="text-[12px] text-[var(--text-secondary)]">
-                  Passed {judgeSummary.passed} / {judgeSummary.total} test cases
-                  {judgeSummary.failedCase ? ` (failed at case #${judgeSummary.failedCase})` : ''}
-                </p>
-                {judgeCaseResults && judgeCaseResults.length > 0 && (
-                  <div className="mt-2 space-y-1.5">
-                    {judgeCaseResults.map((c) => (
-                      <div key={c.caseNumber} className="flex items-start justify-between gap-3 text-[11px]">
-                        <span className="text-[var(--text-tertiary)]">Case {c.caseNumber}</span>
-                        <span className={`font-bold ${c.statusCode === 'AC' ? 'text-[#4CAF50]' : 'text-[#EF4444]'}`}>{c.statusCode}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {judgeCaseResults?.find((c) => c.stderr)?.stderr && (
-                  <pre className="mt-2 text-[#F87171] text-[11px] font-mono whitespace-pre-wrap">{judgeCaseResults.find((c) => c.stderr)?.stderr}</pre>
-                )}
               </div>
             )}
-          </div>
+          </>
         )}
 
         {/* Navigation */}
