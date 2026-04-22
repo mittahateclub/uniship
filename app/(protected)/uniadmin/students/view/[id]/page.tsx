@@ -34,9 +34,8 @@ interface StudentData {
   name?: string;
   email?: string;
   phone?: string;
-  linkedin?: string;
-  github?: string;
-  website?: string;
+  linkedinUrl?: string;
+  githubUrl?: string;
   photoURL?: string;
   title?: string;
   bio?: string;
@@ -602,15 +601,6 @@ export default function StudentViewPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2">
-                <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest">ATS Score</p>
-                <p className="text-[13px] font-bold text-[var(--text-primary)] tabular-nums">
-                  {latestResumeAts !== null ? `${latestResumeAts}/100` : 'N/A'}
-                </p>
-                {bestResumeAts !== null && (
-                  <p className="text-[10px] text-[var(--text-faint)]">Best: {bestResumeAts}/100</p>
-                )}
-              </div>
               <button type="button" disabled={reviewing} onClick={() => handleReview('verified')} className="btn-secondary inline-flex items-center gap-1 text-[12px]">
                 <BadgeCheck size={13} /> Mark Profile Verified
               </button>
@@ -723,18 +713,14 @@ export default function StudentViewPage() {
 
                 <div className="window p-4">
                   <SectionHeader icon={Mail} title="Web Presence" />
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-[12px]">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[12px]">
                     <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
                       <p className="text-[var(--text-faint)] mb-1">LinkedIn URL</p>
-                      <p className="text-[var(--text-primary)] break-all">{student.linkedin || 'N/A'}</p>
+                      <p className="text-[var(--text-primary)] break-all">{student.linkedinUrl || 'N/A'}</p>
                     </div>
                     <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
                       <p className="text-[var(--text-faint)] mb-1">GitHub URL</p>
-                      <p className="text-[var(--text-primary)] break-all">{student.github || 'N/A'}</p>
-                    </div>
-                    <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-                      <p className="text-[var(--text-faint)] mb-1">Website</p>
-                      <p className="text-[var(--text-primary)] break-all">{student.website || 'N/A'}</p>
+                      <p className="text-[var(--text-primary)] break-all">{student.githubUrl || 'N/A'}</p>
                     </div>
                   </div>
                 </div>

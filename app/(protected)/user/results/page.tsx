@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -419,8 +420,8 @@ export default function ResultsPage() {
         </>
       )}
 
-      {activeResult && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {activeResult && typeof window !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
           <div
             className="absolute inset-0 bg-black/70"
             onClick={() => {
@@ -430,7 +431,7 @@ export default function ResultsPage() {
             }}
           />
 
-          <div className="relative w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5">
+          <div className="relative w-full max-w-6xl max-h-[92vh] overflow-y-auto rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 sm:p-6">
             <div className="flex items-start justify-between gap-4 mb-4">
               <div>
                 <h2 className="text-lg font-bold text-[var(--text-primary)]">Detailed Analysis</h2>
@@ -519,7 +520,8 @@ export default function ResultsPage() {
               </div>
             ) : null}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
