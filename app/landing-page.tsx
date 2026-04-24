@@ -6,15 +6,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { DM_Sans } from 'next/font/google';
-import {
-  Fingerprint,
-  Crosshair,
-  RocketLaunch,
-  Strategy,
-  Scroll,
-  Trophy,
-  Timer,
-} from '@phosphor-icons/react';
+
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -52,36 +44,20 @@ export default function Home() {
   useEffect(() => {
     if (loading || checking) return;
 
-    const card = document.getElementById('rwCard') as HTMLElement | null;
-    const widget = document.getElementById('resumeWidget') as HTMLElement | null;
-    const scoreArc = document.getElementById('scoreArc') as SVGCircleElement | null;
-    const scoreNum = document.getElementById('scoreNum') as HTMLElement | null;
-    const aiTitle = document.getElementById('aiTitle') as HTMLElement | null;
-    const aiBody = document.getElementById('aiBody') as HTMLElement | null;
-    const skillBarWrap = document.getElementById('skillBarWrap') as HTMLElement | null;
-    const skillBarFill = document.getElementById('skillBarFill') as HTMLElement | null;
-    const skillBarLabel = document.getElementById('skillBarLabel') as HTMLElement | null;
-    const skillBarPct = document.getElementById('skillBarPct') as HTMLElement | null;
-    const generateBtn = document.getElementById('generateBtn') as HTMLButtonElement | null;
-    const genBtnText = document.getElementById('genBtnText') as HTMLElement | null;
-    const genProgress = document.getElementById('genProgress') as HTMLElement | null;
-    const rwAvatar = document.getElementById('rwAvatar') as HTMLElement | null;
-    const rwScore = document.getElementById('rwScore') as HTMLElement | null;
-    const aiCard = document.getElementById('aiCard') as HTMLElement | null;
+    const widget = document.getElementById('apWidget') as HTMLElement | null;
+    const card = document.getElementById('apCard') as HTMLElement | null;
+    const statBadge = document.getElementById('apStatBadge') as HTMLElement | null;
 
-    if (!card || !widget || !scoreArc || !scoreNum || !aiTitle || !aiBody || !skillBarWrap || !skillBarFill || !skillBarLabel || !skillBarPct || !generateBtn || !genBtnText || !genProgress || !rwAvatar || !rwScore || !aiCard) {
-      return;
-    }
+    if (!widget || !card || !statBadge) return;
 
     const timeouts: number[] = [];
-    const intervals: number[] = [];
 
     const applyTilt = (rx: number, ry: number) => {
       card.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
-      card.style.boxShadow = `${-ry * 2}px ${rx * 2 + 20}px 80px rgba(0,0,0,0.7), 0 0 40px rgba(0,168,225,${0.04 + Math.abs(ry) * 0.005})`;
+      card.style.boxShadow = `${-ry * 2}px ${rx * 2 + 16}px 0 rgba(0,0,0,0.32), 0 22px 48px rgba(0,0,0,0.45)`;
     };
 
-    const onWidgetMouseMove = (e: MouseEvent) => {
+    const onMouseMove = (e: MouseEvent) => {
       const r = card.getBoundingClientRect();
       const cx = r.left + r.width / 2;
       const cy = r.top + r.height / 2;
@@ -90,7 +66,7 @@ export default function Home() {
       applyTilt(-dy * 10, dx * 10);
     };
 
-    const onWidgetMouseLeave = () => {
+    const onMouseLeave = () => {
       card.style.transition = 'transform 0.7s cubic-bezier(.4,0,.2,1), box-shadow 0.3s';
       applyTilt(0, 0);
       const t = window.setTimeout(() => {
@@ -103,20 +79,20 @@ export default function Home() {
     let touchStartY = 0;
     let isTouchDragging = false;
 
-    const onCardTouchStart = (e: TouchEvent) => {
+    const onTouchStart = (e: TouchEvent) => {
       touchStartX = e.touches[0].clientX;
       touchStartY = e.touches[0].clientY;
       isTouchDragging = true;
     };
 
-    const onCardTouchMove = (e: TouchEvent) => {
+    const onTouchMove = (e: TouchEvent) => {
       if (!isTouchDragging) return;
       const dx = (e.touches[0].clientX - touchStartX) / 15;
       const dy = (e.touches[0].clientY - touchStartY) / 15;
       applyTilt(-dy, dx);
     };
 
-    const onCardTouchEnd = () => {
+    const onTouchEnd = () => {
       isTouchDragging = false;
       card.style.transition = 'transform 0.7s cubic-bezier(.4,0,.2,1), box-shadow 0.3s';
       applyTilt(0, 0);
@@ -126,190 +102,28 @@ export default function Home() {
       timeouts.push(t);
     };
 
-    const animateScore = () => {
-      const total = 138;
-      const target = 99;
-      let cur = 99;
-      const id = window.setInterval(() => {
-        cur += 2;
-        if (cur >= target) {
-          cur = target;
-          window.clearInterval(id);
-        }
-        scoreNum.textContent = String(cur);
-        scoreArc.style.strokeDashoffset = String(total - (total * cur / 100));
-      }, 30);
-      intervals.push(id);
-    };
-
-    const scoreKickoff = window.setTimeout(animateScore, 800);
-    timeouts.push(scoreKickoff);
-
-    const aiMessages = [
-      { title: 'Skill Match', body: 'React & TS - top 5% fit' },
-      { title: 'ATS Score', body: 'Keyword density: optimal' },
-      { title: 'Suggestion', body: 'Add quantified impact metrics' },
-      { title: 'Job Fit', body: '17 roles matched today' },
-      { title: 'AI Insight', body: 'Profile strength: Excellent' },
-    ];
-
-    let aiIdx = 0;
-    const aiInterval = window.setInterval(() => {
-      aiIdx = (aiIdx + 1) % aiMessages.length;
-      aiTitle.style.opacity = '0';
-      aiBody.style.opacity = '0';
-      const t = window.setTimeout(() => {
-        aiTitle.textContent = aiMessages[aiIdx].title;
-        aiBody.textContent = aiMessages[aiIdx].body;
-        aiTitle.style.transition = 'opacity 0.4s';
-        aiBody.style.transition = 'opacity 0.4s';
-        aiTitle.style.opacity = '1';
-        aiBody.style.opacity = '1';
-      }, 300);
-      timeouts.push(t);
-    }, 3000);
-    intervals.push(aiInterval);
-
-    const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('.rw-tab'));
-    const panels = Array.from(document.querySelectorAll<HTMLElement>('.rw-tab-panel'));
-    const skills = Array.from(document.querySelectorAll<HTMLElement>('.rw-skill'));
-
-    const tabHandlers: Array<() => void> = [];
-    tabs.forEach((tab) => {
-      const handler = () => {
-        tabs.forEach((t) => t.classList.remove('active'));
-        panels.forEach((p) => p.classList.remove('active'));
-        tab.classList.add('active');
-        const tabId = tab.dataset.tab;
-        const target = document.getElementById(`tab-${tabId}`);
-        target?.classList.add('active');
-        skillBarWrap.style.display = 'none';
-        skills.forEach((s) => s.classList.remove('active'));
-      };
-      tab.addEventListener('click', handler);
-      tabHandlers.push(() => tab.removeEventListener('click', handler));
-    });
-
-    const skillHandlers: Array<() => void> = [];
-    skills.forEach((skill) => {
-      const handler = () => {
-        skills.forEach((s) => s.classList.remove('active'));
-        skill.classList.add('active');
-        const level = skill.dataset.level || '0';
-        skillBarWrap.style.display = 'block';
-        skillBarLabel.textContent = skill.textContent || '';
-        skillBarPct.textContent = `${level}%`;
-        skillBarFill.style.width = '0%';
-        const t = window.setTimeout(() => {
-          skillBarFill.style.width = `${level}%`;
-        }, 50);
-        timeouts.push(t);
-      };
-      skill.addEventListener('click', handler);
-      skillHandlers.push(() => skill.removeEventListener('click', handler));
-    });
-
-    const spawnSparks = (el: HTMLElement) => {
-      const r = el.getBoundingClientRect();
-      const wr = widget.getBoundingClientRect();
-      for (let i = 0; i < 10; i += 1) {
-        const spark = document.createElement('div');
-        spark.className = 'rw-spark';
-        const angle = (Math.PI * 2 * i) / 10;
-        const dist = 30 + Math.random() * 30;
-        spark.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
-        spark.style.setProperty('--dy', `${Math.sin(angle) * dist}px`);
-        spark.style.left = `${r.left - wr.left + r.width / 2}px`;
-        spark.style.top = `${r.top - wr.top + r.height / 2}px`;
-        spark.style.background = i % 2 === 0 ? '#00A8E1' : '#66D0F0';
-        widget.appendChild(spark);
-        const t = window.setTimeout(() => spark.remove(), 700);
-        timeouts.push(t);
-      }
-    };
-
-    const onGenerateClick = () => {
-      if (generateBtn.classList.contains('loading')) return;
-      generateBtn.classList.add('loading');
-      spawnSparks(generateBtn);
-
-      const phases = [
-        'Scanning profile...',
-        'Matching keywords...',
-        'Tailoring language...',
-        'Scoring ATS fit...',
-        'Resume Optimized!',
-      ];
-      let phaseIndex = 0;
-      let progress = 0;
-
-      genBtnText.textContent = phases[0];
-
-      const progressId = window.setInterval(() => {
-        progress += 1.2;
-        genProgress.style.width = `${Math.min(progress, 100)}%`;
-      }, 40);
-      intervals.push(progressId);
-
-      const phaseId = window.setInterval(() => {
-        phaseIndex += 1;
-        if (phaseIndex < phases.length) genBtnText.textContent = phases[phaseIndex];
-        if (phaseIndex >= phases.length - 1) {
-          window.clearInterval(phaseId);
-          window.clearInterval(progressId);
-          genProgress.style.width = '100%';
-
-          const t = window.setTimeout(() => {
-            generateBtn.classList.remove('loading');
-            genBtnText.textContent = 'AI Optimize Resume';
-            genProgress.style.width = '0%';
-            scoreNum.textContent = '99';
-            scoreArc.style.strokeDashoffset = String(138 - (138 * 99 / 100));
-
-            const t2 = window.setTimeout(() => {
-              scoreNum.textContent = '99';
-              scoreArc.style.strokeDashoffset = String(138 - (138 * 99 / 100));
-            }, 2000);
-            timeouts.push(t2);
-          }, 800);
-          timeouts.push(t);
-        }
-      }, 700);
-      intervals.push(phaseId);
-    };
-
-    const onAvatarClick = () => spawnSparks(rwAvatar);
-
     const onDocMouseMove = (e: MouseEvent) => {
       const wx = window.innerWidth / 2;
       const wy = window.innerHeight / 2;
       const dx = (e.clientX - wx) / wx;
       const dy = (e.clientY - wy) / wy;
-      rwScore.style.transform = `translate(${-dx * 6}px, ${-dy * 6}px) scale(1)`;
-      aiCard.style.transform = `translate(${dx * 4}px, ${dy * 4}px)`;
+      statBadge.style.transform = `rotate(-2deg) translate(${-dx * 6}px, ${-dy * 6}px)`;
     };
 
-    widget.addEventListener('mousemove', onWidgetMouseMove);
-    widget.addEventListener('mouseleave', onWidgetMouseLeave);
-    card.addEventListener('touchstart', onCardTouchStart, { passive: true });
-    card.addEventListener('touchmove', onCardTouchMove, { passive: true });
-    card.addEventListener('touchend', onCardTouchEnd);
-    generateBtn.addEventListener('click', onGenerateClick);
-    rwAvatar.addEventListener('click', onAvatarClick);
+    widget.addEventListener('mousemove', onMouseMove);
+    widget.addEventListener('mouseleave', onMouseLeave);
+    card.addEventListener('touchstart', onTouchStart, { passive: true });
+    card.addEventListener('touchmove', onTouchMove, { passive: true });
+    card.addEventListener('touchend', onTouchEnd);
     document.addEventListener('mousemove', onDocMouseMove);
 
     return () => {
       timeouts.forEach((id) => window.clearTimeout(id));
-      intervals.forEach((id) => window.clearInterval(id));
-      tabHandlers.forEach((dispose) => dispose());
-      skillHandlers.forEach((dispose) => dispose());
-      widget.removeEventListener('mousemove', onWidgetMouseMove);
-      widget.removeEventListener('mouseleave', onWidgetMouseLeave);
-      card.removeEventListener('touchstart', onCardTouchStart);
-      card.removeEventListener('touchmove', onCardTouchMove);
-      card.removeEventListener('touchend', onCardTouchEnd);
-      generateBtn.removeEventListener('click', onGenerateClick);
-      rwAvatar.removeEventListener('click', onAvatarClick);
+      widget.removeEventListener('mousemove', onMouseMove);
+      widget.removeEventListener('mouseleave', onMouseLeave);
+      card.removeEventListener('touchstart', onTouchStart);
+      card.removeEventListener('touchmove', onTouchMove);
+      card.removeEventListener('touchend', onTouchEnd);
       document.removeEventListener('mousemove', onDocMouseMove);
     };
   }, [loading, checking]);
@@ -341,15 +155,8 @@ export default function Home() {
       </nav>
 
       <section className="hero" id="hero">
-        <div className="hero-grid" />
-
         <div className="hero-layout">
           <div className="hero-content">
-            <div className="hero-badge">
-              <span />
-              With AI-based resume builder
-            </div>
-
             <h1>
               Your Career
               <br />
@@ -364,139 +171,95 @@ export default function Home() {
 
             <div className="hero-actions">
               <Link href="/login" className="btn-primary">SIGN IN -&gt;</Link>
-              <button className="btn-secondary" onClick={() => scrollToId('process')}>See How It Works</button>
             </div>
           </div>
 
           <div className="hero-right">
-            <div className="resume-widget sketch-widget" id="resumeWidget">
-              <div className="rw-score" id="rwScore">
-                <svg width="52" height="52" viewBox="0 0 52 52">
-                  <circle cx="26" cy="26" r="22" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
-                  <circle
-                    cx="26"
-                    cy="26"
-                    r="22"
-                    fill="none"
-                    stroke="#00A8E1"
-                    strokeWidth="3"
-                    strokeDasharray="138"
-                    strokeDashoffset="1.38"
-                    strokeLinecap="round"
-                    id="scoreArc"
-                    style={{ transform: 'rotate(-90deg)', transformOrigin: 'center', transition: 'stroke-dashoffset 1.8s cubic-bezier(.4,0,.2,1)' }}
-                  />
-                </svg>
-                <span className="rw-score-label">ATS SCORE</span>
-                <div className="rw-score-inner">
-                  <span className="rw-score-num" id="scoreNum">99</span>
-                </div>
+            <div className="ap-widget sketch-widget" id="apWidget">
+
+              <div className="ap-stat-badge" id="apStatBadge">
+                <div className="ap-stat-num">3</div>
+                <div className="ap-stat-label">Shortlisted</div>
               </div>
 
-              <div className="rw-ai-card" id="aiCard">
-                <div className="rw-ai-icon">✦</div>
-                <div className="rw-ai-text">
-                  <div className="rw-ai-title" id="aiTitle">AI Suggestion</div>
-                  <div className="rw-ai-body" id="aiBody">Optimizing for Product roles...</div>
-                </div>
-                <div className="rw-ai-dot" />
-              </div>
+              <div className="ap-card" id="apCard">
+                <div className="ap-card-inner">
+                  <div className="ap-accent-bar" />
 
-              <div className="rw-card" id="rwCard">
-                <div className="rw-card-inner">
-                  <div className="rw-accent-bar" />
-                  <div className="rw-scan" id="rwScan" />
+                  <div className="ap-topbar">
+                    <span className="ap-topbar-title">My Applications</span>
+                    <span className="ap-live">
+                      <span className="ap-live-dot" />
+                      Live
+                    </span>
+                  </div>
 
-                  <div className="rw-header">
-                    <div className="rw-avatar" id="rwAvatar">
-                      <span>N</span>
-                      <div className="rw-avatar-ring" />
-                    </div>
-                    <div className="rw-name-block">
-                      <div className="rw-name">Name</div>
-                      <div className="rw-role-tag">Full Stack Developer</div>
-                      <div className="rw-location">Hyderabad</div>
+                  <div className="ap-submitting-row">
+                    <div className="ap-job-logo" style={{ background: 'linear-gradient(135deg,#1a56db,#0e3fa8)' }}>GS</div>
+                    <div className="ap-submitting-body">
+                      <div className="ap-submitting-title">Goldman Sachs — Analyst</div>
+                      <div className="ap-submitting-label">Submitting application…</div>
+                      <div className="ap-bar-track"><div className="ap-bar-fill" /></div>
                     </div>
                   </div>
 
-                  <div className="rw-tabs">
-                    <button className="rw-tab active" data-tab="exp">Experience</button>
-                    <button className="rw-tab" data-tab="skills">Skills</button>
-                    <button className="rw-tab" data-tab="edu">Education</button>
-                  </div>
-
-                  <div className="rw-tab-panel active" id="tab-exp">
-                    <div className="rw-entry">
-                      <div className="rw-entry-left">
-                        <div className="rw-entry-title">Software Engineer Intern</div>
-                        <div className="rw-entry-sub">Razorpay · Bangalore</div>
+                  <div className="ap-job-list">
+                    <div className="ap-job-row">
+                      <div className="ap-job-logo-sm" style={{ background: 'linear-gradient(135deg,#0052cc,#003d99)' }}>MS</div>
+                      <div className="ap-job-info">
+                        <div className="ap-job-title">Microsoft — SDE Intern</div>
+                        <div className="ap-job-meta">₹85,000/mo · Hyderabad</div>
                       </div>
-                      <div className="rw-entry-chip">2024</div>
+                      <span className="ap-status ap-s-short">Shortlisted ✓</span>
                     </div>
-                    <div className="rw-entry">
-                      <div className="rw-entry-left">
-                        <div className="rw-entry-title">Frontend Developer Intern</div>
-                        <div className="rw-entry-sub">Flipkart · Remote</div>
+                    <div className="ap-job-row">
+                      <div className="ap-job-logo-sm" style={{ background: 'linear-gradient(135deg,#e8710a,#c75300)' }}>AM</div>
+                      <div className="ap-job-info">
+                        <div className="ap-job-title">Amazon — SDE Intern</div>
+                        <div className="ap-job-meta">₹90,000/mo · Bangalore</div>
                       </div>
-                      <div className="rw-entry-chip">2023</div>
+                      <span className="ap-status ap-s-review">Under Review</span>
                     </div>
-                    <div className="rw-entry">
-                      <div className="rw-entry-left">
-                        <div className="rw-entry-title">Open Source Contributor</div>
-                        <div className="rw-entry-sub">Mozilla Firefox · Remote</div>
+                    <div className="ap-job-row">
+                      <div className="ap-job-logo-sm" style={{ background: 'linear-gradient(135deg,#1a73e8,#0d5bcc)' }}>GO</div>
+                      <div className="ap-job-info">
+                        <div className="ap-job-title">Google — STEP Intern</div>
+                        <div className="ap-job-meta">₹1,20,000/mo · Remote</div>
                       </div>
-                      <div className="rw-entry-chip">2023</div>
+                      <span className="ap-status ap-s-applied">Applied</span>
                     </div>
-                  </div>
-
-                  <div className="rw-tab-panel" id="tab-skills">
-                    <div className="rw-skills-grid">
-                      <span className="rw-skill" data-level="95">React</span>
-                      <span className="rw-skill" data-level="88">TypeScript</span>
-                      <span className="rw-skill" data-level="82">Node.js</span>
-                      <span className="rw-skill" data-level="79">Python</span>
-                      <span className="rw-skill" data-level="74">PostgreSQL</span>
-                      <span className="rw-skill" data-level="91">Figma</span>
-                      <span className="rw-skill" data-level="70">Docker</span>
-                      <span className="rw-skill" data-level="85">Git</span>
-                    </div>
-                    <div className="rw-skill-bar-wrap" id="skillBarWrap" style={{ display: 'none' }}>
-                      <div className="rw-skill-bar-label" id="skillBarLabel">React</div>
-                      <div className="rw-skill-bar-track"><div className="rw-skill-bar-fill" id="skillBarFill" /></div>
-                      <div className="rw-skill-bar-pct" id="skillBarPct">95%</div>
+                    <div className="ap-job-row">
+                      <div className="ap-job-logo-sm" style={{ background: 'linear-gradient(135deg,#2d2d2d,#111)' }}>UB</div>
+                      <div className="ap-job-info">
+                        <div className="ap-job-title">Uber — Backend Engineer</div>
+                        <div className="ap-job-meta">₹70,000/mo · Pune</div>
+                      </div>
+                      <span className="ap-status ap-s-new">New</span>
                     </div>
                   </div>
 
-                  <div className="rw-tab-panel" id="tab-edu">
-                    <div className="rw-entry">
-                      <div className="rw-entry-left">
-                        <div className="rw-entry-title">B.E. Computer Science</div>
-                        <div className="rw-entry-sub"> Hyderabad Campus</div>
-                      </div>
-                      <div className="rw-entry-chip">2025</div>
+                  <div className="ap-footer">
+                    <div className="ap-footer-stat">
+                      <div className="ap-footer-num">8<em>+</em></div>
+                      <div className="ap-footer-label">Applied</div>
                     </div>
-                    <div className="rw-entry">
-                      <div className="rw-entry-left">
-                        <div className="rw-entry-title">CGPA 9.1 / 10</div>
-                        <div className="rw-entry-sub">Dean's List - 4 consecutive semesters</div>
-                      </div>
-                      <div className="rw-entry-chip gpa">★</div>
+                    <div className="ap-footer-divider" />
+                    <div className="ap-footer-stat">
+                      <div className="ap-footer-num">3</div>
+                      <div className="ap-footer-label">Shortlisted</div>
                     </div>
-                  </div>
-
-                  <div className="rw-generate-wrap">
-                    <button className="rw-generate-btn" id="generateBtn">
-                      <span className="rw-gen-icon">✦</span>
-                      <span id="genBtnText">AI Optimize Resume</span>
-                    </button>
-                    <div className="rw-gen-progress" id="genProgress" />
+                    <div className="ap-footer-divider" />
+                    <div className="ap-footer-stat">
+                      <div className="ap-footer-num">1</div>
+                      <div className="ap-footer-label">Interview</div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="rw-corner tl" />
-                <div className="rw-corner tr" />
-                <div className="rw-corner bl" />
-                <div className="rw-corner br" />
+                <div className="ap-corner tl" />
+                <div className="ap-corner tr" />
+                <div className="ap-corner bl" />
+                <div className="ap-corner br" />
               </div>
 
             </div>
@@ -511,88 +274,95 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="process-shell">
-        <div className="section" id="process">
-          <div className="section-label">Process</div>
-          <h2 className="section-title">Three steps to your first offer</h2>
+      <div className="about-shell" id="about">
+        <div className="about-inner">
+          <div className="about-label">About us</div>
+          <h2 className="about-title">Built to simplify <em>placements</em>.</h2>
+          <p className="about-body">
+            Uniship is a unified placement platform that bridges the gap between students and placement cells.
+            We bring company listings, mock assessments, AI-powered resume building, and application tracking
+            into one seamless experience — simplifying the process of placements.
+          </p>
+        </div>
+      </div>
 
-          <div className="steps">
-            <div className="step">
-              <div className="step-num">01</div>
-              <div className="step-icon">
-                <Fingerprint weight="duotone" />
-              </div>
-              <h3>Build Your Profile</h3>
-              <p>Import your transcript, skills, and projects. Uniship builds a smart profile that speaks the language of recruiters.</p>
-              <div className="step-line" />
+      <div className="feat-section" id="features">
+        <div className="feat-head">
+          <h2 className="feat-title">Everything you need to get placed</h2>
+          <p className="feat-sub">A complete toolkit built for students, powered by AI, loved by placement cells.</p>
+        </div>
+        <div className="feat-cards">
+          <div className="feat-card">
+            <div className="feat-icon">
+              <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect x="2" y="7" width="20" height="14" rx="2"/>
+              </svg>
             </div>
-            <div className="step">
-              <div className="step-num">02</div>
-              <div className="step-icon">
-                <Crosshair weight="duotone" />
-              </div>
-              <h3>Get Matched</h3>
-              <p>Our AI cross-references your profile with live job openings from 1,800+ hiring partners to surface your best-fit roles.</p>
-              <div className="step-line" />
+            <h3>Smart Job Applications</h3>
+            <p>Apply to top companies and track your applications effortlessly.</p>
+          </div>
+          <div className="feat-card">
+            <div className="feat-icon">
+              <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 13 11 15 15 11"/>
+              </svg>
             </div>
-            <div className="step">
-              <div className="step-num">03</div>
-              <div className="step-icon">
-                <RocketLaunch weight="duotone" />
-              </div>
-              <h3>Apply &amp; Track</h3>
-              <p>One-click applications, interview scheduling, and a real-time placement dashboard - all in one place.</p>
-              <div className="step-line" />
+            <h3>Mock Tests &amp; Assessments</h3>
+            <p>Practice real placement tests and improve with instant feedback.</p>
+          </div>
+          <div className="feat-card">
+            <div className="feat-icon">
+              <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+              </svg>
             </div>
+            <h3>AI Resume Builder</h3>
+            <p>Create ATS-ready resumes tailored for your target roles.</p>
+          </div>
+          <div className="feat-card">
+            <div className="feat-icon">
+              <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            </div>
+            <h3>College Space</h3>
+            <p>Stay updated with drives, events, and placement announcements.</p>
+          </div>
+          <div className="feat-card">
+            <div className="feat-icon">
+              <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+              </svg>
+            </div>
+            <h3>Practice Arena</h3>
+            <p>Solve curated problems and climb the leaderboard.</p>
           </div>
         </div>
       </div>
 
-      <div className="features-wrap" id="features">
-        <div className="features-head">
-          <div className="section-label">Features</div>
-          <h2 className="section-title">Everything you need.<br />Nothing you don&apos;t.</h2>
-        </div>
-
-        <div className="features-grid">
-          <div className="feature-card">
-            <div className="feat-icon">
-              <Strategy weight="duotone" />
-            </div>
-            <h3>Placement Analytics</h3>
-            <p>TPO dashboards give your placement cell live visibility into offer rates, hiring trends, and student pipeline.</p>
-            <div className="tag-row">
-              <span className="tag">For Colleges</span>
-              <span className="tag">Exportable</span>
-            </div>
+      <div className="how-section" id="how">
+        <h2 className="how-title">From profile to placement in four steps</h2>
+        <p className="how-sub">A clear path from your first login to your first offer.</p>
+        <div className="how-steps">
+          <div className="how-step">
+            <div className="how-num">01</div>
+            <h4>Sign up with your college</h4>
+            <p>Verify with your university email and join your placement cell automatically.</p>
           </div>
-
-          <div className="feature-card">
-            <div className="feat-icon">
-              <Scroll weight="duotone" />
-            </div>
-            <h3>Resume Builder</h3>
-            <p>Students generate ATS-friendly, role-specific resumes with one click - tailored automatically per application.</p>
-            <div className="tag-row">
-              <span className="tag">Auto-Tailored</span>
-              <span className="tag">ATS-Friendly</span>
-            </div>
+          <div className="how-step">
+            <div className="how-num">02</div>
+            <h4>Build your AI resume</h4>
+            <p>Answer a few questions — get a recruiter-ready resume in minutes.</p>
           </div>
-
-          <div className="feature-card">
-            <div className="feat-icon">
-              <Trophy weight="duotone" />
-            </div>
-            <h3>Interview Prep</h3>
-            <p>Company-specific mock interviews, question banks, and peer practice sessions curated by domain.</p>
+          <div className="how-step">
+            <div className="how-num">03</div>
+            <h4>Practice &amp; prepare</h4>
+            <p>Take mock tests targeted at the companies visiting your campus.</p>
           </div>
-
-          <div className="feature-card">
-            <div className="feat-icon">
-              <Timer weight="duotone" />
-            </div>
-            <h3>Deadline Alerts</h3>
-            <p>Never miss an application window. Smart reminders are synced to your calendar and sent via SMS or email.</p>
+          <div className="how-step">
+            <div className="how-num">04</div>
+            <h4>Apply &amp; get hired</h4>
+            <p>Apply in one click and track every application until you land the offer.</p>
           </div>
         </div>
       </div>
@@ -798,16 +568,6 @@ export default function Home() {
           pointer-events: none;
         }
 
-        .hero-grid {
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
-          background-size: 60px 60px;
-          mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 80%);
-          opacity: 0.5;
-        }
-
         .hero-badge {
           display: inline-flex;
           align-items: center;
@@ -884,20 +644,316 @@ export default function Home() {
           min-height: 560px;
         }
 
-        .resume-widget {
+        .ap-widget {
           position: relative;
-          width: 360px;
-          height: 520px;
+          width: 380px;
           perspective: 1000px;
           user-select: none;
           animation: fadeUp 0.8s 0.2s ease both;
         }
 
-        .sketch-widget {
+        .ap-widget.sketch-widget {
           filter: sepia(0.1) saturate(0.7) contrast(1.12);
         }
 
-        .rw-score {
+        .ap-stat-badge {
+          position: absolute;
+          top: -28px;
+          left: -40px;
+          z-index: 10;
+          width: 80px;
+          height: 80px;
+          background: #0A1520;
+          border: 1.5px dashed rgba(0,168,225,0.42);
+          border-radius: 14px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 2px;
+          box-shadow: 5px 6px 0 rgba(0,0,0,0.24), 0 10px 26px rgba(0,0,0,0.3);
+          transform: rotate(-2deg);
+          transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .ap-stat-badge:hover {
+          transform: rotate(-2deg) scale(1.04) translateY(-2px);
+          box-shadow: 7px 9px 0 rgba(0,0,0,0.28), 0 14px 32px rgba(0,0,0,0.34);
+        }
+
+        .ap-stat-num {
+          font-weight: 800;
+          font-size: 1.7rem;
+          color: #00A8E1;
+          line-height: 1;
+        }
+
+        .ap-stat-label {
+          font-size: 0.47rem;
+          letter-spacing: 0.07em;
+          color: rgba(255,255,255,0.3);
+          text-transform: uppercase;
+          white-space: nowrap;
+          font-weight: 700;
+        }
+
+        .ap-card {
+          width: 100%;
+          background:
+            repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 19px),
+            repeating-linear-gradient(90deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 19px),
+            radial-gradient(circle at 30% 20%, rgba(255,255,255,0.06), transparent 60%),
+            #0C1825;
+          border: 1.5px dashed rgba(255,255,255,0.24);
+          border-radius: 16px;
+          position: relative;
+          overflow: hidden;
+          transform-style: preserve-3d;
+          transition: transform 0.08s linear, box-shadow 0.3s;
+          box-shadow: 14px 16px 0 rgba(0,0,0,0.32), 0 22px 48px rgba(0,0,0,0.45), 0 0 0 1px rgba(0,168,225,0.06);
+          cursor: grab;
+        }
+
+        .ap-card::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: repeating-linear-gradient(-18deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 9px);
+          opacity: 0.22;
+          pointer-events: none;
+        }
+
+        .ap-card::after {
+          content: '';
+          position: absolute;
+          inset: 6px;
+          border: 1.25px dashed rgba(255,255,255,0.2);
+          border-radius: 12px;
+          opacity: 0.5;
+          pointer-events: none;
+        }
+
+        .ap-card:active { cursor: grabbing; }
+
+        .ap-card-inner {
+          padding: 20px 22px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .ap-accent-bar {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 2px;
+          background: linear-gradient(90deg, transparent, #00A8E1 40%, transparent);
+          opacity: 0.6;
+        }
+
+        .ap-topbar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .ap-topbar-title {
+          font-size: 11px;
+          font-weight: 700;
+          color: rgba(255,255,255,0.4);
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+        }
+
+        .ap-live {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 11px;
+          color: #22c55e;
+          font-weight: 600;
+        }
+
+        .ap-live-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: #22c55e;
+          box-shadow: 0 0 7px #22c55e;
+          animation: apLivePulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes apLivePulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+
+        .ap-submitting-row {
+          background: rgba(0,168,225,0.05);
+          border: 1px dashed rgba(0,168,225,0.3);
+          border-radius: 10px;
+          padding: 12px 14px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .ap-job-logo {
+          width: 36px;
+          height: 36px;
+          border-radius: 8px;
+          flex-shrink: 0;
+          display: grid;
+          place-items: center;
+          font-weight: 800;
+          font-size: 11px;
+          color: #fff;
+        }
+
+        .ap-submitting-body { flex: 1; min-width: 0; }
+
+        .ap-submitting-title {
+          font-size: 12px;
+          font-weight: 700;
+          color: rgba(240,237,232,0.9);
+          margin-bottom: 5px;
+        }
+
+        .ap-submitting-label {
+          font-size: 10px;
+          color: #00A8E1;
+          margin-bottom: 5px;
+          font-weight: 500;
+        }
+
+        .ap-bar-track {
+          height: 2px;
+          background: rgba(0,168,225,0.15);
+          border-radius: 99px;
+          overflow: hidden;
+        }
+
+        .ap-bar-fill {
+          height: 100%;
+          background: linear-gradient(90deg, #00A8E1, #66D0F0);
+          border-radius: 99px;
+          animation: apBarProgress 3.2s cubic-bezier(.4,0,.2,1) infinite;
+        }
+
+        @keyframes apBarProgress {
+          0%   { width: 0%;   opacity: 1; }
+          65%  { width: 100%; opacity: 1; }
+          85%  { width: 100%; opacity: 0.4; }
+          100% { width: 0%;   opacity: 0; }
+        }
+
+        .ap-job-list {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .ap-job-row {
+          background: rgba(255,255,255,0.02);
+          border: 1px dashed rgba(255,255,255,0.12);
+          border-radius: 10px;
+          padding: 10px 12px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          transition: border-color 0.2s, background 0.2s;
+        }
+
+        .ap-job-row:hover {
+          border-color: rgba(0,168,225,0.35);
+          background: rgba(0,168,225,0.04);
+        }
+
+        .ap-job-logo-sm {
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          flex-shrink: 0;
+          display: grid;
+          place-items: center;
+          font-weight: 800;
+          font-size: 10px;
+          color: #fff;
+        }
+
+        .ap-job-info { flex: 1; min-width: 0; }
+
+        .ap-job-title {
+          font-size: 12px;
+          font-weight: 600;
+          color: rgba(240,237,232,0.88);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .ap-job-meta {
+          font-size: 10px;
+          color: rgba(122,117,112,0.8);
+          margin-top: 2px;
+        }
+
+        .ap-status {
+          font-size: 10px;
+          font-weight: 700;
+          padding: 3px 8px;
+          border-radius: 999px;
+          white-space: nowrap;
+          flex-shrink: 0;
+          letter-spacing: 0.02em;
+        }
+
+        .ap-s-new     { background: rgba(255,255,255,0.04); color: rgba(122,117,112,0.9); border: 1px dashed rgba(255,255,255,0.15); }
+        .ap-s-applied { background: rgba(0,168,225,0.1); color: #33BBEE; border: 1px dashed rgba(0,168,225,0.3); }
+        .ap-s-short   { background: rgba(34,197,94,0.1); color: #22c55e; border: 1px dashed rgba(34,197,94,0.3); }
+        .ap-s-review  { background: rgba(251,191,36,0.1); color: #fbbf24; border: 1px dashed rgba(251,191,36,0.3); }
+
+        .ap-footer {
+          border-top: 1px dashed rgba(255,255,255,0.1);
+          padding-top: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .ap-footer-stat { text-align: center; flex: 1; }
+
+        .ap-footer-num {
+          font-weight: 800;
+          font-size: 18px;
+          color: rgba(240,237,232,0.9);
+          line-height: 1;
+        }
+
+        .ap-footer-num em { color: #00A8E1; font-style: normal; }
+
+        .ap-footer-label {
+          font-size: 9px;
+          color: rgba(122,117,112,0.8);
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          margin-top: 3px;
+        }
+
+        .ap-footer-divider { width: 1px; height: 28px; background: rgba(255,255,255,0.07); }
+
+        .ap-corner {
+          position: absolute;
+          width: 14px;
+          height: 14px;
+          pointer-events: none;
+        }
+
+        .ap-corner.tl { top: 10px; left: 10px; border-top: 1.5px dashed rgba(0,168,225,0.6); border-left: 1.5px dashed rgba(0,168,225,0.6); }
+        .ap-corner.tr { top: 10px; right: 10px; border-top: 1.5px dashed rgba(0,168,225,0.6); border-right: 1.5px dashed rgba(0,168,225,0.6); }
+        .ap-corner.bl { bottom: 10px; left: 10px; border-bottom: 1.5px dashed rgba(0,168,225,0.6); border-left: 1.5px dashed rgba(0,168,225,0.6); }
+        .ap-corner.br { bottom: 10px; right: 10px; border-bottom: 1.5px dashed rgba(0,168,225,0.6); border-right: 1.5px dashed rgba(0,168,225,0.6); }
           position: absolute;
           top: -24px;
           left: -36px;
@@ -1566,190 +1622,213 @@ export default function Home() {
 
         .scroll-hint svg { width: 18px; }
 
-        .process-shell {
+        .about-shell {
           background: var(--bg-card);
-          padding: 2px 0;
+          padding: 2px 48px;
         }
 
-        .section {
-          padding: 100px 48px;
+        .about-inner {
+          padding: 100px 0 100px 56px;
+          max-width: 1200px;
+          margin: 0 auto;
+          border-left: 3px solid var(--orange);
+        }
+
+        .about-label {
+          font-size: 0.72rem;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: var(--orange);
+          margin-bottom: 20px;
+          font-weight: 600;
+        }
+
+        .about-title {
+          font-family: var(--font-dm-sans), sans-serif;
+          font-weight: 800;
+          font-size: clamp(2.2rem, 5vw, 3.8rem);
+          letter-spacing: -0.03em;
+          line-height: 1.05;
+          margin-bottom: 28px;
+          color: var(--text);
+        }
+
+        .about-title em {
+          font-style: normal;
+          color: var(--orange-light);
+        }
+
+        .about-body {
+          color: var(--text);
+          font-size: 1.15rem;
+          line-height: 1.8;
+          max-width: 640px;
+          opacity: 0.85;
+        }
+
+        .feat-section {
+          padding: 120px 48px 80px;
+          background: var(--bg);
+          text-align: center;
+        }
+
+        .feat-head {
+          max-width: 700px;
+          margin: 0 auto 64px;
+        }
+
+        .feat-title {
+          font-family: var(--font-dm-sans), sans-serif;
+          font-size: clamp(1.9rem, 4vw, 3rem);
+          font-weight: 800;
+          letter-spacing: -0.03em;
+          line-height: 1.1;
+          margin-bottom: 16px;
+          color: var(--text);
+        }
+
+        .feat-sub {
+          color: var(--muted);
+          font-size: 1rem;
+          line-height: 1.6;
+          max-width: 560px;
+          margin: 0 auto;
+        }
+
+        .feat-cards {
+          display: flex;
+          gap: 16px;
+          justify-content: center;
+          flex-wrap: wrap;
           max-width: 1200px;
           margin: 0 auto;
         }
 
-        .section-label {
-          font-size: 0.72rem;
-          letter-spacing: 0.04em;
-          text-transform: uppercase;
-          color: var(--orange);
-          margin-bottom: 16px;
-          font-weight: 500;
-        }
-
-        .section-title {
-          font-family: var(--font-dm-sans), sans-serif;
-          font-weight: 800;
-          font-size: clamp(2rem, 4vw, 3rem);
-          letter-spacing: -0.03em;
-          line-height: 1.1;
-          max-width: 560px;
-        }
-
-        .steps {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 2px;
-          margin-top: 64px;
-          background: var(--border);
-          border-radius: 16px;
-          overflow: hidden;
-        }
-
-        .step {
+        .feat-card {
           background: var(--bg-card);
-          padding: 40px 36px;
-          position: relative;
-          overflow: hidden;
-          transition: background 0.3s;
+          border: 1px solid var(--border);
+          border-radius: 16px;
+          padding: 36px 24px 28px;
+          width: 200px;
+          flex-shrink: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          gap: 12px;
+          transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s, background 0.3s;
         }
 
-        .step:hover { background: var(--bg-card2); }
-
-        .step-num {
-          font-family: var(--font-dm-sans), sans-serif;
-          font-weight: 800;
-          font-size: 4rem;
-          color: var(--muted2);
-          line-height: 1;
-          letter-spacing: -0.04em;
-          margin-bottom: 20px;
+        .feat-card:hover {
+          border-color: rgba(0,168,225,0.45);
+          transform: translateY(-6px);
+          box-shadow: 0 18px 50px rgba(0,168,225,0.1);
+          background: var(--bg-card2);
         }
 
-        .step-icon {
-          width: 44px;
-          height: 44px;
-          background: var(--orange-glow);
-          border-radius: 10px;
+        .feat-card .feat-icon {
+          width: 52px;
+          height: 52px;
+          border-radius: 14px;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.1);
           display: grid;
           place-items: center;
-          margin-bottom: 20px;
-          border: 1px solid rgba(0,168,225,0.2);
+          color: var(--text);
         }
 
-        .step-icon svg {
+        .feat-card .feat-icon svg {
           width: 22px;
           height: 22px;
-          color: var(--orange-light);
+          stroke: currentColor;
+          fill: none;
         }
 
-        .step h3 {
+        .feat-card h3 {
           font-family: var(--font-dm-sans), sans-serif;
+          font-size: 0.95rem;
           font-weight: 700;
-          font-size: 1.1rem;
-          margin-bottom: 10px;
+          color: var(--text);
           letter-spacing: -0.01em;
         }
 
-        .step p {
+        .feat-card p {
           color: var(--muted);
-          font-size: 0.9rem;
+          font-size: 0.82rem;
           line-height: 1.6;
         }
 
-        .step-line {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          height: 3px;
-          background: var(--orange);
-          transform: scaleX(0);
-          transform-origin: left;
-          transition: transform 0.4s ease;
-        }
-
-        .step:hover .step-line { transform: scaleX(1); }
-
-        .features-wrap {
-          padding: 100px 48px;
+        .how-section {
+          padding: 100px 48px 140px;
           background: var(--bg);
+          text-align: center;
         }
 
-        .features-head {
-          max-width: 1200px;
+        .how-title {
+          font-family: var(--font-dm-sans), sans-serif;
+          font-size: clamp(1.7rem, 3.5vw, 2.5rem);
+          font-weight: 800;
+          letter-spacing: -0.03em;
+          margin-bottom: 14px;
+          color: var(--text);
+        }
+
+        .how-sub {
+          color: var(--muted);
+          font-size: 1rem;
+          margin-bottom: 56px;
+        }
+
+        .how-steps {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 24px;
+          max-width: 1100px;
           margin: 0 auto;
+          text-align: left;
         }
 
-        .features-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 2px;
-          margin-top: 64px;
-          max-width: 1200px;
-          margin-left: auto;
-          margin-right: auto;
-          background: var(--border);
-          border-radius: 16px;
-          overflow: hidden;
+        .how-step {
+          padding: 24px;
+          border-left: 2px solid var(--orange);
+          transition: transform 0.25s;
         }
 
-        .feature-card {
-          background: var(--bg-card);
-          padding: 44px;
-          transition: background 0.3s;
-          position: relative;
-          overflow: hidden;
-        }
+        .how-step:hover { transform: translateX(6px); }
 
-        .feature-card:hover { background: var(--bg-card2); }
-
-        .feature-card .feat-icon {
-          margin-bottom: 20px;
-          width: 52px;
-          height: 52px;
-          background: var(--orange-glow);
-          border-radius: 12px;
-          display: grid;
-          place-items: center;
-          border: 1px solid rgba(0,168,225,0.15);
-        }
-
-        .feat-icon svg {
-          width: 26px;
-          height: 26px;
+        .how-num {
           color: var(--orange-light);
-        }
-
-        .feature-card h3 {
           font-family: var(--font-dm-sans), sans-serif;
           font-weight: 700;
-          font-size: 1.15rem;
+          font-size: 0.85rem;
           margin-bottom: 10px;
+          letter-spacing: 0.02em;
+        }
+
+        .how-step h4 {
+          font-family: var(--font-dm-sans), sans-serif;
+          font-size: 1rem;
+          font-weight: 700;
+          margin-bottom: 8px;
+          color: var(--text);
           letter-spacing: -0.01em;
         }
 
-        .feature-card p {
+        .how-step p {
           color: var(--muted);
-          line-height: 1.65;
-          font-size: 0.9rem;
-          max-width: 420px;
+          font-size: 0.85rem;
+          line-height: 1.55;
         }
 
-        .tag-row {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          margin-top: 20px;
+        @media (max-width: 860px) {
+          .feat-card { width: 160px; padding: 28px 16px 22px; }
+          .how-steps { grid-template-columns: 1fr 1fr; }
         }
 
-        .tag {
-          padding: 5px 12px;
-          background: rgba(0,168,225,0.08);
-          border: 1px solid rgba(0,168,225,0.2);
-          border-radius: 100px;
-          font-size: 0.75rem;
-          color: var(--orange-light);
-          letter-spacing: 0.01em;
+        @media (max-width: 560px) {
+          .feat-card { width: 140px; padding: 24px 12px 18px; }
+          .feat-card h3 { font-size: 0.85rem; }
+          .how-steps { grid-template-columns: 1fr; }
         }
 
         .cta-banner {
