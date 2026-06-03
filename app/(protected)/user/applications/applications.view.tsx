@@ -1,0 +1,73 @@
+'use client';
+
+import { ClipboardCheck, Building2, CalendarDays } from 'lucide-react';
+
+export interface Application {
+  id: string;
+  internshipRole: string;
+  companyName: string;
+  status: 'pending' | 'shortlisted' | 'selected' | 'rejected';
+  appliedAt: any;
+}
+
+export interface ApplicationsViewProps {
+  loading: boolean;
+  applications: Application[];
+}
+
+function getStatusStyle(status: string) {
+  switch (status) {
+    case 'selected': return 'bg-[#4CAF50]/10 text-[#4CAF50] border-[#4CAF50]/20';
+    case 'rejected': return 'bg-[#00A8E1]/10 text-[#00A8E1] border-[#00A8E1]/20';
+    case 'shortlisted': return 'bg-[#4B8BBE]/10 text-[#4B8BBE] border-[#4B8BBE]/20';
+    default: return 'bg-[#F1A82C]/10 text-[#F1A82C] border-[#F1A82C]/20';
+  }
+}
+
+export function ApplicationsView({ loading, applications }: ApplicationsViewProps) {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="loading-dots"><span /><span /><span /></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-[1000px] mx-auto animate-fade-in">
+      <div className="mb-6">
+        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">My Applications</h1>
+        <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Track the status of your professional opportunities.</p>
+      </div>
+
+      {applications.length === 0 ? (
+        <div className="text-center py-16 border border-dashed border-[var(--border-active)] rounded">
+          <ClipboardCheck size={28} className="mx-auto text-[var(--text-faint)] mb-3" />
+          <p className="text-[var(--text-primary)] text-[13px] font-medium">No applications found.</p>
+          <p className="text-[var(--text-faint)] text-[12px] mt-1">Apply to internships to see them here.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {applications.map((app) => (
+            <div key={app.id} className="window p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 hover:border-[var(--border-active)] transition-colors duration-150">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <Building2 size={12} className="text-[var(--text-faint)]" />
+                  <span className="text-[12px] font-medium text-[#00A8E1]">{app.companyName}</span>
+                </div>
+                <h2 className="text-[14px] font-bold text-[var(--text-primary)] mb-1">{app.internshipRole}</h2>
+                <div className="flex items-center gap-1.5 text-[12px] text-[var(--text-muted)]">
+                  <CalendarDays size={11} />
+                  <span>Applied {app.appliedAt?.toDate().toLocaleDateString()}</span>
+                </div>
+              </div>
+              <div className={`px-2.5 py-1 rounded text-[11px] font-bold border uppercase tracking-wider ${getStatusStyle(app.status)}`}>
+                {app.status}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -367,14 +367,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="cta-banner">
-        <h2>
-          Ready to land your
-          <br />
-          <em>dream placement?</em>
-        </h2>
-        <p>Join Uniship.</p>
-      </div>
+
 
       <footer>
         <div className="nav-logo">
@@ -653,7 +646,13 @@ export default function Home() {
         }
 
         .ap-widget.sketch-widget {
-          filter: sepia(0.1) saturate(0.7) contrast(1.12);
+          filter: sepia(0.1) saturate(0.7) contrast(1.12) brightness(0.98);
+        }
+        [data-theme='light'] .ap-widget.sketch-widget {
+          filter: sepia(0.05) saturate(0.9) contrast(1.04) brightness(1.08);
+        }
+        [data-theme='dark'] .ap-widget.sketch-widget {
+          filter: sepia(0.12) saturate(0.7) contrast(1.18) brightness(0.98);
         }
 
         .ap-stat-badge {
@@ -1625,6 +1624,9 @@ export default function Home() {
         .about-shell {
           background: var(--bg-card);
           padding: 2px 48px;
+        }
+        [data-theme='light'] .about-shell {
+          background: var(--bg);
         }
 
         .about-inner {

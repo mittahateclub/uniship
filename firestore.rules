@@ -219,6 +219,60 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 
+    // --- Internships (read by students same-uni; write by uni admins same-uni) ---
+    match /internships/{internshipId} {
+      allow read: if isAuthenticated() && (
+                    isSuperAdmin() ||
+                    belongsToSameUniversity(resource.data.universityId)
+                  );
+
+      allow create: if (isUniversityAdmin() &&
+                       request.resource.data.universityId == getUserData().universityId)
+                    || isSuperAdmin();
+
+      allow update, delete: if isSuperAdmin() ||
+                            (isUniversityAdmin() && belongsToSameUniversity(resource.data.universityId));
+    }
+
+    // --- Applications (student creates own; student reads own; uni admin reads scoped) ---
+    match /applications/{applicationId} {
+      allow create: if isAuthenticated()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.keys().hasAll(['userId', 'internshipId']);
+
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow read: if isSuperAdmin();
+      // Uni admins can read applications for internships in their university.
+      allow read: if isUniversityAdmin() && (
+        // Cross-doc check: the application points to an internship the admin owns.
+        get(/databases/$(database)/documents/internships/$(resource.data.internshipId)).data.universityId
+          == getUserData().universityId
+      );
+
+      // Status updates by admins only; students cannot edit after submit.
+      allow update: if (isUniversityAdmin() || isSuperAdmin())
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['status', 'reviewedAt', 'reviewedBy', 'notes']);
+
+      allow delete: if false;
+    }
+
+    // --- Notifications (server-created via Cloud Functions; user reads own) ---
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
+      // Users can flip read/readAt on their own notifications. Nothing else.
+      allow update: if isAuthenticated()
+                    && resource.data.userId == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['read', 'readAt']);
+
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
+      // Creation is server-only (Cloud Functions with admin SDK bypasses these rules).
+      allow create: if false;
+    }
+
     // Catch-all: deny everything not explicitly allowed above
     match /{document=**} {
       allow read, write: if false;
