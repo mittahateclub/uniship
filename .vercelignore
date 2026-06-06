@@ -1,0 +1,6 @@
+.env
+.env.*
+.env.local
+firebase-debug.log
+*.log
+.firebase

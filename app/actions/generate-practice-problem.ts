@@ -1,8 +1,8 @@
 'use server';
 
 import { groq } from '@/lib/groq';
+import { runCode } from '@/lib/judge0';
 
-const JUDGE0_CE_URL = 'https://ce.judge0.com';
 const URL_REGEX = /^https?:\/\//i;
 const MAX_ATTEMPTS = 2;
 
@@ -98,56 +98,6 @@ CRITICAL Rules:
 - Starter code must include proper type hints/signatures for each language.
 - Function names must be consistent across all languages.`;
 
-async function executeOnJudge0(
-  source_code: string,
-  language_id: number,
-  stdin: string,
-): Promise<{ stdout: string | null; stderr: string | null; status: string | null }> {
-  const selfHostedUrl = process.env.JUDGE0_API_URL;
-  const selfHostedToken = process.env.JUDGE0_AUTH_TOKEN;
-
-  const urls = selfHostedUrl ? [selfHostedUrl, JUDGE0_CE_URL] : [JUDGE0_CE_URL];
-
-  for (const baseUrl of urls) {
-    try {
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (selfHostedToken && baseUrl === selfHostedUrl) {
-        headers['X-Auth-Token'] = selfHostedToken;
-      }
-
-      const body = {
-        source_code,
-        language_id,
-        stdin,
-        cpu_time_limit: 10,
-        memory_limit: 256000,
-        wall_time_limit: 15,
-      };
-
-      const response = await fetch(
-        `${baseUrl}/submissions?base64_encoded=false&wait=true&fields=stdout,stderr,status,compile_output`,
-        { method: 'POST', headers, body: JSON.stringify(body) },
-      );
-
-      if (!response.ok) continue;
-      const data = await response.json();
-
-      // Internal Error (status 13) = sandbox/worker issue — try next URL
-      if (data.status?.id === 13) continue;
-
-      return {
-        stdout: data.stdout ? data.stdout.trim() : null,
-        stderr: data.stderr || data.compile_output || null,
-        status: data.status?.description || null,
-      };
-    } catch {
-      continue;
-    }
-  }
-
-  return { stdout: null, stderr: 'Could not reach Judge0', status: null };
-}
-
 type ProblemResult = {
   success: boolean;
   problem?: {
@@ -198,7 +148,7 @@ async function attemptGenerate(prompt: string): Promise<ProblemResult> {
     parsed.testCases
       .filter((tc: { input?: string }) => (tc.input || '').trim())
       .map((tc: { input: string; isHidden?: boolean }) =>
-        executeOnJudge0(refScript, 71, tc.input).then((result) => ({
+        runCode(refScript, 71, tc.input).then((result) => ({
           result,
           isHidden: !!tc.isHidden,
           input: tc.input,
@@ -211,7 +161,7 @@ async function attemptGenerate(prompt: string): Promise<ProblemResult> {
     if (settled.status === 'rejected') continue;
     const { result, isHidden, input } = settled.value;
     if (!result.stdout) {
-      lastError = result.stderr || result.status || 'No output';
+      lastError = result.stderr || 'No output';
       continue;
     }
     verifiedTestCases.push({ input, expectedOutput: result.stdout, isHidden });
