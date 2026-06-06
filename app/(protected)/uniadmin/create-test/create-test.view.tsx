@@ -59,7 +59,7 @@ export default function TestsPage() {
   const [reassignedTitle, setReassignedTitle] = useState<string | null>(null);
 
   const copyLink = (testId: string) => {
-    const link = `https://uniship-4c1a1.web.app/user/test-portal/${testId}`;
+    const link = `${window.location.origin}/user/test-portal/${testId}`;
     navigator.clipboard.writeText(link);
     setCopiedId(testId);
     setTimeout(() => setCopiedId(null), 2000);
@@ -376,7 +376,7 @@ export default function TestsPage() {
               </button>
               <div className="flex items-center gap-2 mt-2">
                 <span className="flex-1 px-3 py-2 rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[12px] text-[var(--text-secondary)] font-mono truncate select-all">
-                  {`https://uniship-4c1a1.web.app/user/test-portal/${createdTestId}`}
+                  {`${typeof window !== 'undefined' ? window.location.origin : ''}/user/test-portal/${createdTestId}`}
                 </span>
                 <button
                   type="button"
