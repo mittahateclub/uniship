@@ -98,6 +98,28 @@ CRITICAL Rules:
 - Starter code must include proper type hints/signatures for each language.
 - Function names must be consistent across all languages.`;
 
+// ce.judge0.com (the public fallback) intermittently drops requests under
+// concurrency. Retry transient failures so verification doesn't flake out.
+async function runWithRetry(
+  source: string,
+  stdin: string,
+  attempts = 3,
+): Promise<{ stdout: string; stderr: string; ok: boolean }> {
+  let last = { stdout: '', stderr: 'Judge0 unavailable', ok: false };
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const r = await runCode(source, 71, stdin);
+      // A real result (program output or an actual error) — return immediately.
+      if (r.stdout || r.stderr) return r;
+      last = r;
+    } catch (e) {
+      last = { stdout: '', stderr: e instanceof Error ? e.message : 'fetch failed', ok: false };
+    }
+    await new Promise((res) => setTimeout(res, 500 * (i + 1)));
+  }
+  return last;
+}
+
 type ProblemResult = {
   success: boolean;
   problem?: {
@@ -148,7 +170,7 @@ async function attemptGenerate(prompt: string): Promise<ProblemResult> {
     parsed.testCases
       .filter((tc: { input?: string }) => (tc.input || '').trim())
       .map((tc: { input: string; isHidden?: boolean }) =>
-        runCode(refScript, 71, tc.input).then((result) => ({
+        runWithRetry(refScript, tc.input).then((result) => ({
           result,
           isHidden: !!tc.isHidden,
           input: tc.input,

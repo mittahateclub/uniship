@@ -176,7 +176,7 @@ export default function TestsPage() {
     if (!user || !universityId || !examDate || !file) return;
 
     setIsParsing(true);
-    setStatus({ type: 'info', message: 'LlamaParse is reading and Groq is thinking...' });
+    setStatus({ type: 'info', message: 'Generating test...' });
 
     try {
       const examStart = buildISOString(examDate, startHour, startMinute, startAmPm);
