@@ -37,8 +37,11 @@ cd uniship
 
 
 2. **Install dependencies**
+
+   Requires **Node 22 LTS** (see `.nvmrc`). With nvm: `nvm use`. With Homebrew: `brew install node@22`.
+
 ```bash
-npm install
+npm ci
 
 ```
 
