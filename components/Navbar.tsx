@@ -16,7 +16,6 @@ import {
   Users,
   LogOut,
   Search,
-  Command,
   Download,
   GraduationCap,
   Database,
@@ -194,7 +193,7 @@ const superadminSearchItems: SearchableItem[] = [
 
 
 export default function Navbar() {
-  const { user, role, logout } = useAuth();
+  const { role, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -273,10 +272,10 @@ export default function Navbar() {
     if (cmdkOpen) setTimeout(() => searchInputRef.current?.focus(), 50);
   }, [cmdkOpen]);
 
-  useEffect(() => { setSelectedIndex(0); }, [searchQuery]);
-
-  // Close mobile nav on route change
-  useEffect(() => { setMobileOpen(false); }, [pathname]);
+  // Warm up role-specific pages so sidebar navigation feels instant after login.
+  useEffect(() => {
+    navLinks.forEach((link) => router.prefetch(link.href));
+  }, [navLinks, router]);
 
   const handleCmdkNavigate = useCallback((href: string) => {
     const [path, hash] = href.split('#');
@@ -331,10 +330,8 @@ export default function Navbar() {
 
   const isActive = (href: string) => pathname === href || pathname?.startsWith(href + '/');
 
-  const roleLabel = role === 'super_admin' ? 'Super Admin' : role === 'university_admin' ? 'Uni Admin' : 'Student';
-
   // Shared nav link renderer — eliminates duplication between desktop & mobile
-  const renderNavLinks = (isCollapsed: boolean) => {
+  const renderNavLinks = (isCollapsed: boolean, closeOnNavigate = false) => {
     let lastGroup = '';
     let isFirst = true;
     return navLinks.map((link) => {
@@ -352,6 +349,7 @@ export default function Navbar() {
           {showHeader && isCollapsed && !isFirstGroup && <div className="my-2 mx-2 border-t border-[var(--border-subtle)]" />}
           <Link
             href={link.href}
+            onClick={closeOnNavigate ? () => setMobileOpen(false) : undefined}
             title={isCollapsed ? link.label : undefined}
             className={`flex items-center gap-2.5 rounded text-[13px] font-medium transition-all duration-150 ${isCollapsed ? 'justify-center p-2' : 'px-2.5 py-[7px]'} ${
               isActive(link.href)
@@ -428,7 +426,7 @@ export default function Navbar() {
 
             {/* Navigation */}
             <nav className="flex-1 overflow-y-auto px-2 py-2">
-              {renderNavLinks(false)}
+              {renderNavLinks(false, true)}
             </nav>
 
             {/* Logout */}
@@ -458,7 +456,10 @@ export default function Navbar() {
                 placeholder="Search pages, actions, or type what you need..."
                 className="flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] outline-none border-none"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setSelectedIndex(0);
+                }}
                 onKeyDown={handleCmdkKeyDown}
               />
               <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] text-[var(--text-faint)] font-mono shrink-0">ESC</kbd>

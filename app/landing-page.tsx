@@ -5,13 +5,18 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { DM_Sans } from 'next/font/google';
+import localFont from 'next/font/local';
 
 
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '700'],
+const dmSans = localFont({
+  src: [
+    { path: './fonts/DMSans-300.ttf', weight: '300', style: 'normal' },
+    { path: './fonts/DMSans-400.ttf', weight: '400', style: 'normal' },
+    { path: './fonts/DMSans-500.ttf', weight: '500', style: 'normal' },
+    { path: './fonts/DMSans-700.ttf', weight: '700', style: 'normal' },
+  ],
   variable: '--font-dm-sans',
+  display: 'swap',
 });
 
 export default function Home() {
