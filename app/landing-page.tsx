@@ -151,7 +151,7 @@ export default function Home() {
     <div className={`${dmSans.variable} landing-root`}>
       <nav>
         <div className="nav-logo">
-          <Image src="/logo.png" alt="Uniship" width={94} height={94} className="nav-logo-img" />
+          <Image src="/logo.png" alt="Uniship" width={94} height={94} priority className="nav-logo-img" />
           <span className="nav-logo-text">UNISHIP</span>
         </div>
         <div className="nav-right">

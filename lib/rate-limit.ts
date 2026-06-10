@@ -1,6 +1,6 @@
 /**
  * Simple in-memory sliding-window rate limiter.
- * Good for single-instance deployments (Firebase Hosting / Cloud Run).
+ * Good for local development or single-instance deployments.
  * For multi-instance, use Redis or Firestore-based rate limiting.
  */
 

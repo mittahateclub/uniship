@@ -10,8 +10,8 @@ function getAdminApp(): App {
     if (existing.length > 0) {
       app = existing[0];
     } else {
-      // Use GOOGLE_APPLICATION_CREDENTIALS env var (preferred),
-      // or fall back to individual env vars for Firebase Hosting / Cloud Functions.
+      // Use GOOGLE_APPLICATION_CREDENTIALS when available,
+      // or fall back to individual env vars for serverless runtimes.
       const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
       const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
       const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
@@ -19,7 +19,7 @@ function getAdminApp(): App {
       if (clientEmail && privateKey && projectId) {
         app = initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
       } else {
-        // On Firebase Hosting / Cloud Functions, default credentials are available
+        // On Google-managed runtimes, default credentials may be available.
         app = initializeApp();
       }
     }

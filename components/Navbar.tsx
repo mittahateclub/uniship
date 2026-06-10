@@ -375,7 +375,7 @@ export default function Navbar() {
             href="/"
             className={`flex items-center overflow-hidden rounded-md transition-colors duration-150 mx-2 ${collapsed ? 'justify-center w-full py-1' : 'gap-1 px-2 py-1.5 w-full'}`}
           >
-            <Image src="/logo.png" alt="Uniship" width={76} height={76} className="shrink-0 object-contain" />
+            <Image src="/logo.png" alt="Uniship" width={76} height={76} priority className="shrink-0 object-contain" />
             {!collapsed && <span className="text-[17px] font-extrabold tracking-[0.14em] text-[var(--text-primary)] whitespace-nowrap self-center leading-none pt-[0.35em]">UNISHIP</span>}
           </Link>
         </div>
@@ -416,7 +416,7 @@ export default function Navbar() {
             {/* Logo + Close */}
             <div className="h-16 flex items-center justify-between border-b border-[var(--border-subtle)] px-3 shrink-0">
               <Link href="/" className="flex items-center gap-1">
-                <Image src="/logo.png" alt="Uniship" width={76} height={76} className="shrink-0 object-contain" />
+                <Image src="/logo.png" alt="Uniship" width={76} height={76} priority className="shrink-0 object-contain" />
                 <span className="text-[17px] font-extrabold tracking-[0.14em] text-[var(--text-primary)] whitespace-nowrap self-center leading-none pt-[0.35em]">UNISHIP</span>
               </Link>
               <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors">

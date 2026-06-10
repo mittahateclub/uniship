@@ -22,7 +22,7 @@ export default function ProtectedLayout({
         <div className="h-14 md:h-16 bg-[var(--bg-primary)] border-b border-[var(--border-subtle)] flex items-center shrink-0 px-3 md:px-5 gap-2 md:gap-4">
           {/* Mobile logo — left side */}
           <Link href="/" className="md:hidden flex items-center gap-1 shrink-0">
-            <Image src="/logo.png" alt="Uniship" width={56} height={56} className="shrink-0 object-contain" />
+            <Image src="/logo.png" alt="Uniship" width={56} height={56} priority className="shrink-0 object-contain" />
             <span className="text-[14px] font-extrabold tracking-[0.14em] text-[var(--text-primary)] leading-none pt-[0.2em]">UNISHIP</span>
           </Link>
           {/* Search — centered */}

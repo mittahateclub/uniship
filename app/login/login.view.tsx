@@ -33,7 +33,7 @@ export function LoginView({ email, password, error, isLoading, onEmailChange, on
         }} />
         <div className="text-center mb-4">
           <div className="flex justify-center -mb-10">
-            <Image src="/logo.png" alt="Uniship" width={1775} height={490} className="object-contain w-auto" style={{ maxHeight: 490 }} />
+            <Image src="/logo.png" alt="Uniship" width={1775} height={490} priority className="object-contain w-auto" style={{ maxHeight: 490 }} />
           </div>
           <p className="text-[var(--text-tertiary)] text-[13px] mt-0">Sign in to your Uniship account</p>
         </div>
