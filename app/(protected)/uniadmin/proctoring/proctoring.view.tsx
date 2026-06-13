@@ -12,7 +12,7 @@ import {
   Monitor, Users, XCircle, CheckCircle2, RefreshCw, ChevronRight,
   Mic, Camera, MonitorPlay, ShieldCheck, RotateCcw, Calendar, LogIn, X,
   Flag, Bell,
-} from 'lucide-react';
+} from '@/components/icons';
 
 interface ExamSession {
   id: string;
@@ -625,7 +625,7 @@ export default function ProctorDashboard() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-0.5">
-                  <span className="text-[11px] font-bold text-[#4B8BBE]">New Message</span>
+                  <span className="text-[11px] font-semibold text-[#4B8BBE]">New Message</span>
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); setChatNotification(null); }}
@@ -663,7 +663,7 @@ export default function ProctorDashboard() {
             <Shield size={18} className="text-[#4B8BBE]" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Proctoring Dashboard</h1>
+            <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Proctoring Dashboard</h1>
             <p className="text-[var(--text-tertiary)] text-[12px]">Monitor live exams, respond to student queries, and manage submissions</p>
           </div>
         </div>
@@ -675,7 +675,7 @@ export default function ProctorDashboard() {
           <div className="px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Calendar size={14} className="text-[#4B8BBE]" />
-              <span className="text-[12px] font-bold text-[var(--text-primary)]">Upcoming in 24 Hours</span>
+              <span className="text-[12px] font-semibold text-[var(--text-primary)]">Upcoming in 24 Hours</span>
             </div>
             <span className="text-[10px] text-[var(--text-faint)]">{upcomingTests.length} test{upcomingTests.length !== 1 ? 's' : ''}</span>
           </div>
@@ -699,12 +699,12 @@ export default function ProctorDashboard() {
                     <div className="flex items-center gap-2">
                       <span className="text-[12px] font-semibold text-[var(--text-primary)] truncate">{test.title}</span>
                       {isLive ? (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-bold text-[#4CAF50] bg-[#4CAF50]/10 px-1.5 py-0.5 rounded shrink-0">
+                        <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[#4CAF50] bg-[#4CAF50]/10 px-1.5 py-0.5 rounded shrink-0">
                           <div className="w-1 h-1 rounded-full bg-[#4CAF50] animate-pulse" />
                           LIVE NOW
                         </span>
                       ) : (
-                        <span className="text-[9px] font-bold text-[#4B8BBE] bg-[#4B8BBE]/10 px-1.5 py-0.5 rounded shrink-0">
+                        <span className="text-[9px] font-semibold text-[#4B8BBE] bg-[#4B8BBE]/10 px-1.5 py-0.5 rounded shrink-0">
                           {diffH > 0 ? `in ${diffH}h ${diffM}m` : `in ${diffM}m`}
                         </span>
                       )}
@@ -750,8 +750,8 @@ export default function ProctorDashboard() {
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-wider">Live Sessions</p>
-              <p className="text-2xl font-bold text-[var(--text-primary)] mt-1">{filteredSessions.length}</p>
+              <p className="text-[11px] font-semibold text-[var(--text-faint)] uppercase tracking-wider">Live Sessions</p>
+              <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">{filteredSessions.length}</p>
             </div>
             <div className="w-9 h-9 rounded-lg bg-[#4CAF50]/10 flex items-center justify-center">
               <Monitor size={16} className="text-[#4CAF50]" />
@@ -761,8 +761,8 @@ export default function ProctorDashboard() {
         <button type="button" onClick={() => setStatsPopup('submissions')} className="window p-4 text-left hover:border-[#4B8BBE]/40 transition-colors cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-wider">Recent Submissions</p>
-              <p className="text-2xl font-bold text-[var(--text-primary)] mt-1">{recentResults.length}</p>
+              <p className="text-[11px] font-semibold text-[var(--text-faint)] uppercase tracking-wider">Recent Submissions</p>
+              <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">{recentResults.length}</p>
             </div>
             <div className="w-9 h-9 rounded-lg bg-[#4B8BBE]/10 flex items-center justify-center">
               <CheckCircle2 size={16} className="text-[#4B8BBE]" />
@@ -772,8 +772,8 @@ export default function ProctorDashboard() {
         <button type="button" onClick={() => setStatsPopup('flagged')} className="window p-4 text-left hover:border-[#DC2626]/40 transition-colors cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-wider">Flagged</p>
-              <p className="text-2xl font-bold text-[var(--text-primary)] mt-1">
+              <p className="text-[11px] font-semibold text-[var(--text-faint)] uppercase tracking-wider">Flagged</p>
+              <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">
                 {flaggedResults.length}
               </p>
             </div>
@@ -791,7 +791,7 @@ export default function ProctorDashboard() {
             <div className="px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-[#4CAF50] animate-pulse" />
-                <span className="text-[12px] font-bold text-[var(--text-primary)]">Live Sessions</span>
+                <span className="text-[12px] font-semibold text-[var(--text-primary)]">Live Sessions</span>
               </div>
               <span className="text-[10px] text-[var(--text-faint)]">{isProctoringMode ? `${filteredSessions.length} active` : 'Enter proctoring mode'}</span>
             </div>
@@ -836,7 +836,7 @@ export default function ProctorDashboard() {
                       </span>
                       <div className="flex items-center gap-1.5">
                         {unreadSessions.has(session.id) && (
-                          <span className="flex items-center gap-1 text-[9px] font-bold text-[#4B8BBE] bg-[#4B8BBE]/10 px-1.5 py-0.5 rounded">
+                          <span className="flex items-center gap-1 text-[9px] font-semibold text-[#4B8BBE] bg-[#4B8BBE]/10 px-1.5 py-0.5 rounded">
                             <MessageCircle size={9} />
                             New
                           </span>
@@ -848,7 +848,7 @@ export default function ProctorDashboard() {
                       <span className="text-[10px] text-[var(--text-tertiary)] truncate">{session.testTitle}</span>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="inline-flex items-center gap-1 text-[9px] font-bold text-[#4CAF50] bg-[#4CAF50]/10 px-1.5 py-0.5 rounded">
+                      <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[#4CAF50] bg-[#4CAF50]/10 px-1.5 py-0.5 rounded">
                         <div className="w-1 h-1 rounded-full bg-[#4CAF50] animate-pulse" />
                         LIVE
                       </span>
@@ -873,8 +873,8 @@ export default function ProctorDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-[13px] font-bold text-[var(--text-primary)]">{activeSelectedSession.userEmail}</span>
-                      <span className="inline-flex items-center gap-1 text-[9px] font-bold text-[#4CAF50] bg-[#4CAF50]/10 px-1.5 py-0.5 rounded">
+                      <span className="text-[13px] font-semibold text-[var(--text-primary)]">{activeSelectedSession.userEmail}</span>
+                      <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[#4CAF50] bg-[#4CAF50]/10 px-1.5 py-0.5 rounded">
                         <div className="w-1 h-1 rounded-full bg-[#4CAF50] animate-pulse" />
                         LIVE
                       </span>
@@ -951,7 +951,7 @@ export default function ProctorDashboard() {
                 <div className="w-14 h-14 rounded-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center mx-auto mb-4">
                   <MessageCircle size={24} className="text-[var(--text-faint)]" />
                 </div>
-                <h2 className="text-[15px] font-bold text-[var(--text-primary)] mb-1">Select a Session</h2>
+                <h2 className="text-[15px] font-semibold text-[var(--text-primary)] mb-1">Select a Session</h2>
                 <p className="text-[12px] text-[var(--text-tertiary)] leading-relaxed">
                   {isProctoringMode
                     ? 'Click on an active session from the left panel to view details and chat with the student in real-time.'
@@ -996,7 +996,7 @@ export default function ProctorDashboard() {
                       <Monitor size={17} className="text-emerald-500" />
                     </div>
                     <div>
-                      <h3 className="text-[15px] font-bold text-[var(--text-primary)]">Live Sessions</h3>
+                      <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">Live Sessions</h3>
                       <p className="text-[11px] text-[var(--text-tertiary)]">{filteredSessions.length} active session{filteredSessions.length !== 1 ? 's' : ''}</p>
                     </div>
                   </div>
@@ -1032,11 +1032,11 @@ export default function ProctorDashboard() {
                             <span className="text-[13px] font-semibold text-[var(--text-primary)] truncate">{session.userEmail}</span>
                             <div className="flex items-center gap-2">
                               {unreadSessions.has(session.id) && (
-                                <span className="flex items-center gap-1 text-[9px] font-bold text-[var(--accent-orange)] bg-[var(--accent-orange)]/10 px-1.5 py-0.5 rounded">
+                                <span className="flex items-center gap-1 text-[9px] font-semibold text-[var(--accent-orange)] bg-[var(--accent-orange)]/10 px-1.5 py-0.5 rounded">
                                   <MessageCircle size={9} /> New
                                 </span>
                               )}
-                              <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                              <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">
                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> LIVE
                               </span>
                             </div>
@@ -1063,7 +1063,7 @@ export default function ProctorDashboard() {
                       <CheckCircle2 size={17} className="text-[var(--accent-orange)]" />
                     </div>
                     <div>
-                      <h3 className="text-[15px] font-bold text-[var(--text-primary)]">Recent Submissions</h3>
+                      <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">Recent Submissions</h3>
                       <p className="text-[11px] text-[var(--text-tertiary)]">{recentResults.length} total submission{recentResults.length !== 1 ? 's' : ''}</p>
                     </div>
                   </div>
@@ -1087,7 +1087,7 @@ export default function ProctorDashboard() {
                               <span className="text-[13px] font-medium text-[var(--text-primary)] truncate">{result.userEmail}</span>
                               <div className="flex items-center gap-2">
                                 {wasForced && (
-                                  <span className="text-[9px] font-bold text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded uppercase">
+                                  <span className="text-[9px] font-semibold text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded uppercase">
                                     {getSubmitReasonLabel(result.proctoring?.submitReason)}
                                   </span>
                                 )}
@@ -1145,7 +1145,7 @@ export default function ProctorDashboard() {
                       <Flag size={17} className="text-red-500" />
                     </div>
                     <div>
-                      <h3 className="text-[20px] leading-none font-bold text-[var(--text-primary)]">Flagged Students</h3>
+                      <h3 className="text-[20px] leading-none font-semibold text-[var(--text-primary)]">Flagged Students</h3>
                       <p className="text-[12px] mt-1 text-[var(--text-tertiary)]">{flaggedResults.length} flagged account{flaggedResults.length !== 1 ? 's' : ''}</p>
                     </div>
                   </div>
@@ -1192,7 +1192,7 @@ export default function ProctorDashboard() {
                                 </div>
                               </div>
                               <div className="flex flex-col items-end gap-2 shrink-0">
-                                <span className="text-[12px] font-bold text-red-500 bg-red-500/10 px-3 py-1 rounded-lg uppercase tracking-wide">
+                                <span className="text-[12px] font-semibold text-red-500 bg-red-500/10 px-3 py-1 rounded-lg uppercase tracking-wide">
                                   {getSubmitReasonLabel(result.proctoring?.submitReason)}
                                 </span>
                                 <div className="flex items-center gap-2">
@@ -1251,7 +1251,7 @@ export default function ProctorDashboard() {
                               </div>
                               {allLogs.length > 0 && (
                                 <details className="mt-3.5">
-                                  <summary className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider cursor-pointer hover:text-[var(--text-primary)] select-none">
+                                  <summary className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider cursor-pointer hover:text-[var(--text-primary)] select-none">
                                     Violation Log ({allLogs.length})
                                   </summary>
                                   <div className="mt-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl p-3 max-h-36 overflow-y-auto">

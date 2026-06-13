@@ -7,6 +7,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { app } from '@/lib/firebase';
+import { Camera, User, X } from '@/components/icons';
 
 // Field names match exactly what is stored in Firebase
 interface UserProfile {
@@ -152,32 +153,31 @@ function AccordionPanel({
   onToggle: () => void; children: React.ReactNode; id?: string;
 }) {
   return (
-    <div id={id}>
+    <div id={id} className={isOpen ? 'bg-[var(--bg-elevated)]/40' : ''}>
       <button
         type="button"
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-6 sm:px-8 py-4 text-left hover:bg-[var(--bg-elevated)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4B8BBE] focus-visible:ring-inset"
+        className="w-full flex items-center justify-between gap-3 px-5 sm:px-6 py-4 text-left hover:bg-[var(--bg-elevated)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-orange)] focus-visible:ring-inset"
       >
         <div className="flex items-center gap-3 min-w-0">
-          <span className="text-sm font-bold uppercase tracking-wide text-[var(--text-primary)] truncate">{label}</span>
+          <span
+            className={`w-1.5 h-1.5 rounded-full shrink-0 transition-colors ${hasContent ? 'bg-[var(--accent-orange)]' : 'bg-[var(--border-active)]'}`}
+            title={hasContent ? 'Has content' : 'Empty'}
+          />
+          <span className="text-[14px] font-semibold tracking-[-0.01em] text-[var(--text-primary)] truncate">{label}</span>
           {hint && (
-            <span className="hidden sm:inline-flex text-[10px] font-semibold uppercase tracking-wider bg-[var(--border-subtle)] text-[var(--text-tertiary)] px-2 py-0.5 rounded">{hint}</span>
-          )}
-          {hasContent && (
-            <span className="w-2 h-2 rounded-full bg-[#4CAF50] flex-shrink-0" title="Has content" />
+            <span className="hidden sm:inline-flex text-[10px] font-medium bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-faint)] px-2 py-0.5 rounded-full">{hint}</span>
           )}
         </div>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className={`w-5 h-5 text-[var(--text-faint)] flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
+        <span className={`w-6 h-6 rounded-full grid place-items-center shrink-0 text-[var(--text-faint)] transition-all duration-200 ${isOpen ? 'rotate-180 bg-[var(--bg-surface)] text-[var(--text-secondary)]' : ''}`}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </span>
       </button>
       <div className={`grid transition-all duration-200 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
         <div className="overflow-hidden">
-          <div className="px-6 sm:px-8 pb-5 pt-1">{children}</div>
+          <div className="px-5 sm:px-6 pb-5 pt-1">{children}</div>
         </div>
       </div>
     </div>
@@ -289,6 +289,19 @@ export default function StudentProfile() {
     );
   };
 
+  const handleRemovePhoto = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) return;
+    try {
+      await updateDoc(doc(db, 'users', user.uid), { photoURL: '' });
+      setProfile((prev) => ({ ...prev, photoURL: '' }));
+      setMessage('Profile photo removed.');
+    } catch (error) {
+      console.error('Error removing photo:', error);
+      setMessage('Failed to remove photo.');
+    }
+  };
+
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !profile) return;
@@ -328,10 +341,10 @@ export default function StudentProfile() {
   };
 
   // Shared Tailwind classes for portfolio form
-  const fieldClass = 'w-full rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[#4B8BBE] focus:ring-1 focus:ring-[#4B8BBE] outline-none transition-colors';
-  const cardClass = 'rounded border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4';
-  const addBtnClass = 'w-full rounded border-2 border-dashed border-[var(--border-subtle)] py-2.5 text-sm font-bold text-[var(--text-tertiary)] hover:border-[var(--border-active)] hover:text-[var(--text-secondary)] transition-colors';
-  const removeBtnClass = 'text-xs font-bold text-[#00A8E1] hover:text-[#ff6a2a] transition-colors';
+  const fieldClass = 'w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-input)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[var(--accent-orange)] outline-none transition-colors';
+  const cardClass = 'rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4';
+  const addBtnClass = 'w-full rounded-[10px] border border-dashed border-[var(--border-active)] py-2.5 text-[13px] font-semibold text-[var(--text-tertiary)] hover:border-[var(--accent-orange)]/50 hover:text-[var(--text-primary)] hover:bg-[var(--accent-orange)]/5 transition-colors';
+  const removeBtnClass = 'text-[11px] font-medium text-[var(--text-faint)] hover:text-[var(--status-danger)] transition-colors';
 
   if (loading || authLoading) {
     return (
@@ -341,176 +354,183 @@ export default function StudentProfile() {
     );
   }
 
+  const completeness = (() => {
+    const signals = [
+      profile?.name, profile?.title, profile?.bio, profile?.phone, profile?.rollNumber,
+      profile?.technicalSkills, educationEntries.length > 0, experienceEntries.length > 0,
+      projectEntries.length > 0, (profile?.linkedinUrl || profile?.githubUrl),
+    ];
+    return Math.round((signals.filter(Boolean).length / signals.length) * 100);
+  })();
+
   return (
     <div className="animate-fade-in">
-      <div className="max-w-5xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold tracking-[-0.02em]">Student Profile</h1>
-          <p className="text-[var(--text-tertiary)] text-sm mt-1">
+      <div className="max-w-[1200px] mx-auto">
+        <div className="pt-8 mb-6">
+          <h1 className="text-[26px] font-semibold tracking-[-0.025em] text-[var(--text-primary)]">Student Profile</h1>
+          <p className="text-[var(--text-tertiary)] text-[13.5px] mt-1.5">
             Manage your academic identity, portfolio, and resume details.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="window p-6 sticky top-8" id="photo">
-
-              {/* Clickable avatar */}
-              <div
-                className="relative w-28 h-28 mx-auto mb-4 group cursor-pointer"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {profile?.photoURL ? (
-                  <img
-                    src={profile.photoURL}
-                    alt="Profile"
-                    className="w-28 h-28 rounded-full border-2 border-[var(--border-subtle)] object-cover"
-                  />
-                ) : (
-                  <div className="w-28 h-28 bg-[#00A8E1] rounded-full flex items-center justify-center text-black text-4xl font-bold">
-                    {user?.email?.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <div className="absolute inset-0 rounded-full bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  <span className="text-white text-[10px] font-bold uppercase mt-1">Change</span>
-                </div>
-                {uploadProgress !== null && (
-                  <div className="absolute inset-0 rounded-full bg-black/70 flex items-center justify-center">
-                    <span className="text-white font-bold text-lg tabular-nums">{uploadProgress}%</span>
-                  </div>
-                )}
-              </div>
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handlePhotoChange}
-              />
-
-              <p className="text-center text-[10px] text-[var(--text-faint)] uppercase font-bold mb-3">
-                Click photo to change
-              </p>
-
-              <h2 className="text-center font-semibold truncate text-lg">
-                {profile?.name || user?.email?.split('@')[0]}
-              </h2>
-              <p className="text-center text-sm text-[var(--text-tertiary)] mt-1">
-                {profile?.title || 'Student Account'}
-              </p>
-
-              {profile?.rollNumber && (
-                <div className="mt-4 border-t border-[var(--border-subtle)] pt-4 text-center">
-                  <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Roll No</p>
-                  <p className="font-mono text-[#00A8E1] font-bold tracking-widest">{profile.rollNumber}</p>
+        {/* ── Identity band ── */}
+        <div id="photo" className="rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 sm:p-6 mb-5 flex flex-col sm:flex-row sm:items-center gap-5">
+          {/* Clickable avatar */}
+          <div className="relative w-20 h-20 sm:w-[88px] sm:h-[88px] shrink-0 mx-auto sm:mx-0">
+            <div
+              className="w-full h-full group cursor-pointer relative"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {profile?.photoURL ? (
+                <img
+                  src={profile.photoURL}
+                  alt="Profile"
+                  className="w-full h-full rounded-full border border-[var(--border-subtle)] object-cover"
+                />
+              ) : (
+                <div className="w-full h-full rounded-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-faint)]">
+                  <User size={36} />
                 </div>
               )}
-
-              {/* Clickable LinkedIn & GitHub links with logos in sidebar */}
-              {(profile?.linkedinUrl || profile?.githubUrl) && (
-                <div className="mt-4 border-t border-[var(--border-subtle)] pt-4 flex justify-center gap-3">
-                  {profile?.linkedinUrl && (
-                    <a
-                      href={profile.linkedinUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="LinkedIn Profile"
-                      className="text-[#0A66C2] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded p-2 hover:border-[var(--border-active)] transition-colors"
-                    >
-                      <LinkedInIcon />
-                    </a>
-                  )}
-                  {profile?.githubUrl && (
-                    <a
-                      href={profile.githubUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="GitHub Profile"
-                      className="text-[var(--text-primary)] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded p-2 hover:border-[var(--border-active)] transition-colors"
-                    >
-                      <GitHubIcon />
-                    </a>
-                  )}
+              <div className="absolute inset-0 rounded-full bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera size={20} className="text-white" />
+                <span className="text-white text-[9px] font-semibold uppercase mt-1 tracking-wide">Change</span>
+              </div>
+              {uploadProgress !== null && (
+                <div className="absolute inset-0 rounded-full bg-black/70 flex items-center justify-center">
+                  <span className="text-white font-semibold text-base tabular-nums">{uploadProgress}%</span>
                 </div>
+              )}
+            </div>
+            {profile?.photoURL && uploadProgress === null && (
+              <button
+                type="button"
+                onClick={handleRemovePhoto}
+                title="Remove photo"
+                aria-label="Remove photo"
+                className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--status-danger)] hover:border-[var(--status-danger)]/40 transition-colors shadow-sm"
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handlePhotoChange}
+          />
+
+          {/* Identity */}
+          <div className="flex-1 min-w-0 text-center sm:text-left">
+            <h2 className="text-[19px] font-semibold tracking-[-0.015em] text-[var(--text-primary)] truncate">
+              {profile?.name || user?.email?.split('@')[0]}
+            </h2>
+            <p className="text-[13px] text-[var(--text-tertiary)] mt-0.5 truncate">
+              {profile?.title || 'Student Account'}
+            </p>
+            <div className="flex items-center justify-center sm:justify-start flex-wrap gap-2 mt-3">
+              {profile?.rollNumber && (
+                <span className="font-mono text-[11px] text-[var(--accent-orange)] bg-[var(--accent-orange)]/10 px-2.5 py-1 rounded-full tracking-[0.05em]">
+                  {profile.rollNumber}
+                </span>
+              )}
+              {profile?.linkedinUrl && (
+                <a href={profile.linkedinUrl} target="_blank" rel="noopener noreferrer" title="LinkedIn Profile"
+                  className="text-[var(--text-primary)] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-full p-2 hover:border-[var(--border-active)] transition-colors">
+                  <LinkedInIcon />
+                </a>
+              )}
+              {profile?.githubUrl && (
+                <a href={profile.githubUrl} target="_blank" rel="noopener noreferrer" title="GitHub Profile"
+                  className="text-[var(--text-primary)] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-full p-2 hover:border-[var(--border-active)] transition-colors">
+                  <GitHubIcon />
+                </a>
               )}
             </div>
           </div>
 
-          {/* Edit Form */}
-          <div className="lg:col-span-3">
-            <form onSubmit={handleUpdate} className="space-y-6">
+          {/* Completeness meter */}
+          <div className="shrink-0 w-full sm:w-[150px]">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10.5px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]">Profile</span>
+              <span className="text-[12px] font-semibold tabular-nums text-[var(--text-primary)]">{completeness}%</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-[var(--bg-elevated)] overflow-hidden">
+              <div className="h-full rounded-full bg-[var(--accent-orange)] transition-all duration-500" style={{ width: `${completeness}%` }} />
+            </div>
+          </div>
+        </div>
+
+        <form onSubmit={handleUpdate} className="space-y-5">
 
               {/* Personal Details */}
               <div className="window p-6" id="personal-details">
-                <h3 className="text-lg font-semibold tracking-[-0.02em] mb-5">Personal Details</h3>
+                <h3 className="text-[16px] font-semibold tracking-[-0.015em] mb-5">Personal Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5 block">Full Name</label>
+                    <label className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5 block">Full Name</label>
                     <input
                       type="text"
                       name="name"
                       value={profile?.name || ''}
                       onChange={handleChange}
-                      className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] focus:border-[#4B8BBE] outline-none transition-colors"
+                      className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-[10px] px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent-orange)] outline-none transition-colors"
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5 block">Roll Number</label>
+                    <label className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5 block">Roll Number</label>
                     <input
                       type="text"
                       name="rollNumber"
                       value={profile?.rollNumber || ''}
                       onChange={handleChange}
-                      className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] focus:border-[#4B8BBE] outline-none transition-colors"
+                      className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-[10px] px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent-orange)] outline-none transition-colors"
                     />
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5 block">Phone Number</label>
+                    <label className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5 block">Phone Number</label>
                     <input
                       type="tel"
                       name="phone"
                       value={profile?.phone || ''}
                       onChange={handleChange}
-                      className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] focus:border-[#4B8BBE] outline-none transition-colors"
+                      className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-[10px] px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent-orange)] outline-none transition-colors"
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5 block">Contact Email</label>
+                    <label className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5 block">Contact Email</label>
                     <input
                       type="email"
                       name="email"
                       value={profile?.email || ''}
                       onChange={handleChange}
-                      className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] focus:border-[#4B8BBE] outline-none transition-colors"
+                      className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-[10px] px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent-orange)] outline-none transition-colors"
                     />
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5 block">Professional Title</label>
+                    <label className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5 block">Professional Title</label>
                     <input
                       type="text"
                       name="title"
                       placeholder="e.g. Computer Science Student | Aspiring SDE"
                       value={profile?.title || ''}
                       onChange={handleChange}
-                      className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[#4B8BBE] outline-none transition-colors"
+                      className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-[10px] px-3.5 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[var(--accent-orange)] outline-none transition-colors"
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5 block">Bio</label>
+                    <label className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5 block">Bio</label>
                     <textarea
                       name="bio"
                       rows={3}
                       value={profile?.bio || ''}
                       onChange={handleChange}
-                      className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] focus:border-[#4B8BBE] outline-none transition-colors resize-y"
+                      className="w-full bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-[10px] px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent-orange)] outline-none transition-colors resize-y"
                     />
                   </div>
                 </div>
@@ -518,13 +538,13 @@ export default function StudentProfile() {
 
               {/* Web Presence */}
               <div className="window p-6" id="web-presence">
-                <h3 className="text-lg font-semibold tracking-[-0.02em] mb-5">Web Presence</h3>
+                <h3 className="text-[16px] font-semibold tracking-[-0.015em] mb-5">Web Presence</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
                   {/* LinkedIn */}
                   <div>
-                    <label className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5 flex items-center gap-2">
-                      <span className="text-[#0A66C2]"><LinkedInIcon /></span>
+                    <label className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5 flex items-center gap-2">
+                      <span className="text-[var(--text-primary)]"><LinkedInIcon /></span>
                       LinkedIn URL
                     </label>
                     <div className="flex items-center gap-2">
@@ -534,7 +554,7 @@ export default function StudentProfile() {
                         value={profile?.linkedinUrl || ''}
                         onChange={handleChange}
                         placeholder="https://linkedin.com/in/yourname"
-                        className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[#4B8BBE] outline-none transition-colors"
+                        className="flex-1 bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-[10px] px-3.5 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[var(--accent-orange)] outline-none transition-colors"
                       />
                       {profile?.linkedinUrl && (
                         <a
@@ -542,7 +562,7 @@ export default function StudentProfile() {
                           target="_blank"
                           rel="noopener noreferrer"
                           title="Open LinkedIn"
-                          className="flex-shrink-0 bg-[#0A66C2] text-white p-2.5 rounded border border-[var(--border-subtle)] hover:opacity-90 transition-opacity"
+                          className="flex-shrink-0 bg-[var(--bg-elevated)] text-[var(--text-primary)] p-2.5 rounded-[10px] border border-[var(--border-subtle)] hover:border-[var(--border-active)] transition-colors"
                         >
                           <LinkedInIcon />
                         </a>
@@ -552,7 +572,7 @@ export default function StudentProfile() {
 
                   {/* GitHub */}
                   <div>
-                    <label className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                    <label className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5 flex items-center gap-2">
                       <span className="text-[var(--text-primary)]"><GitHubIcon /></span>
                       GitHub URL
                     </label>
@@ -563,7 +583,7 @@ export default function StudentProfile() {
                         value={profile?.githubUrl || ''}
                         onChange={handleChange}
                         placeholder="https://github.com/yourusername"
-                        className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[#4B8BBE] outline-none transition-colors"
+                        className="flex-1 bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-[10px] px-3.5 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[var(--accent-orange)] outline-none transition-colors"
                       />
                       {profile?.githubUrl && (
                         <a
@@ -571,7 +591,7 @@ export default function StudentProfile() {
                           target="_blank"
                           rel="noopener noreferrer"
                           title="Open GitHub"
-                          className="flex-shrink-0 bg-[var(--border-subtle)] text-[var(--text-primary)] p-2.5 rounded border border-[var(--border-subtle)] hover:border-[var(--border-active)] transition-colors"
+                          className="flex-shrink-0 bg-[var(--bg-elevated)] text-[var(--text-primary)] p-2.5 rounded-[10px] border border-[var(--border-subtle)] hover:border-[var(--border-active)] transition-colors"
                         >
                           <GitHubIcon />
                         </a>
@@ -621,7 +641,7 @@ export default function StudentProfile() {
                       {educationEntries.map((entry, i) => (
                         <div key={i} className={cardClass}>
                           <div className="flex justify-between items-center mb-3">
-                            <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Entry {i + 1}</span>
+                            <span className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em]">Entry {i + 1}</span>
                             <button type="button" onClick={() => removeEntry(setEducationEntries, i)} className={removeBtnClass}>Remove</button>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -650,7 +670,7 @@ export default function StudentProfile() {
                       {experienceEntries.map((entry, i) => (
                         <div key={i} className={cardClass}>
                           <div className="flex justify-between items-center mb-3">
-                            <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Entry {i + 1}</span>
+                            <span className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em]">Entry {i + 1}</span>
                             <button type="button" onClick={() => removeEntry(setExperienceEntries, i)} className={removeBtnClass}>Remove</button>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -679,7 +699,7 @@ export default function StudentProfile() {
                       {projectEntries.map((entry, i) => (
                         <div key={i} className={cardClass}>
                           <div className="flex justify-between items-center mb-3">
-                            <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Entry {i + 1}</span>
+                            <span className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em]">Entry {i + 1}</span>
                             <button type="button" onClick={() => removeEntry(setProjectEntries, i)} className={removeBtnClass}>Remove</button>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -709,7 +729,7 @@ export default function StudentProfile() {
                       {achievementEntries.map((entry, i) => (
                         <div key={i} className={cardClass}>
                           <div className="flex justify-between items-center mb-3">
-                            <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Entry {i + 1}</span>
+                            <span className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em]">Entry {i + 1}</span>
                             <button type="button" onClick={() => removeEntry(setAchievementEntries, i)} className={removeBtnClass}>Remove</button>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -737,7 +757,7 @@ export default function StudentProfile() {
                       {positionEntries.map((entry, i) => (
                         <div key={i} className={cardClass}>
                           <div className="flex justify-between items-center mb-3">
-                            <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Entry {i + 1}</span>
+                            <span className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em]">Entry {i + 1}</span>
                             <button type="button" onClick={() => removeEntry(setPositionEntries, i)} className={removeBtnClass}>Remove</button>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -783,7 +803,7 @@ export default function StudentProfile() {
                       {extracurricularEntries.map((entry, i) => (
                         <div key={i} className={cardClass}>
                           <div className="flex justify-between items-center mb-3">
-                            <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Entry {i + 1}</span>
+                            <span className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em]">Entry {i + 1}</span>
                             <button type="button" onClick={() => removeEntry(setExtracurricularEntries, i)} className={removeBtnClass}>Remove</button>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -805,7 +825,7 @@ export default function StudentProfile() {
 
               {/* Status Message */}
               {message && (
-                <div className={`window p-4 text-center text-sm font-medium ${message.includes('success') ? 'border-[#4CAF50] text-[#4CAF50]' : 'border-red-500 text-red-400'}`}>
+                <div className={`window p-4 text-center text-sm font-medium ${message.includes('success') ? '!border-[var(--status-success)]/40 text-[var(--status-success)]' : '!border-[var(--status-danger)]/40 text-[var(--status-danger)]'}`}>
                   {message}
                 </div>
               )}
@@ -814,13 +834,11 @@ export default function StudentProfile() {
               <button
                 type="submit"
                 disabled={updating}
-                className="btn-primary w-full py-3 text-sm font-semibold"
+                className="btn-primary !rounded-[10px] w-full !py-3 text-sm font-semibold"
               >
                 {updating ? 'Saving...' : 'Save Profile Changes'}
               </button>
             </form>
-          </div>
-        </div>
       </div>
     </div>
   );

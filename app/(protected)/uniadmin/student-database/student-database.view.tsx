@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, getDoc, deleteDoc } from 'firebase/firestore';
 import Link from 'next/link';
-import { Trash2, ExternalLink, UserPlus, Search, Filter, Briefcase, GraduationCap, Users } from 'lucide-react';
+import { Trash2, ExternalLink, UserPlus, Search, Filter, Briefcase, GraduationCap, Users } from '@/components/icons';
 
 interface EducationEntry {
   cgpa?: string;
@@ -163,7 +163,7 @@ export default function StudentDatabasePage() {
     <div className="animate-fade-in">
       <div className="mb-6 flex justify-between items-center">
         <div>
-          <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Centralized Student Repository</h1>
+          <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Centralized Student Repository</h1>
           <p className="text-[var(--text-tertiary)] text-[13px] mt-1">
             {adminUnivId && <span className="font-mono text-[#00A8E1]">{adminUnivId}</span>}
             {' · '}{students.length} student{students.length !== 1 ? 's' : ''} records
@@ -176,16 +176,16 @@ export default function StudentDatabasePage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
         <div className="window p-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)]">Total Students</p>
-          <p className="text-2xl font-bold text-[var(--text-primary)] mt-1 tabular-nums flex items-center gap-1.5"><Users size={16} className="text-[#00A8E1]" />{stats.total}</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]">Total Students</p>
+          <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1 tabular-nums flex items-center gap-1.5"><Users size={16} className="text-[#00A8E1]" />{stats.total}</p>
         </div>
         <div className="window p-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)]">Avg CGPA</p>
-          <p className="text-2xl font-bold text-[var(--text-primary)] mt-1 tabular-nums flex items-center gap-1.5"><GraduationCap size={16} className="text-[#4B8BBE]" />{stats.avgCgpa > 0 ? stats.avgCgpa.toFixed(2) : 'N/A'}</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]">Avg CGPA</p>
+          <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1 tabular-nums flex items-center gap-1.5"><GraduationCap size={16} className="text-[#4B8BBE]" />{stats.avgCgpa > 0 ? stats.avgCgpa.toFixed(2) : 'N/A'}</p>
         </div>
         <div className="window p-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)]">With Internships</p>
-          <p className="text-2xl font-bold text-[var(--text-primary)] mt-1 tabular-nums flex items-center gap-1.5"><Briefcase size={16} className="text-[#F1A82C]" />{stats.withInternships}</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]">With Internships</p>
+          <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1 tabular-nums flex items-center gap-1.5"><Briefcase size={16} className="text-[#F1A82C]" />{stats.withInternships}</p>
         </div>
       </div>
 
@@ -246,12 +246,12 @@ export default function StudentDatabasePage() {
             <table className="w-full min-w-[920px]">
               <thead>
                 <tr className="border-b border-[var(--border-subtle)]">
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)]">Student</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)]">Contact</th>
-                  <th className="px-3 py-3 text-center text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)]">Academics</th>
-                  <th className="px-3 py-3 text-center text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)]">Skills</th>
-                  <th className="px-3 py-3 text-center text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)]">Internships</th>
-                  <th className="px-3 py-3 text-right text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)]">Actions</th>
+                  <th className="px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]">Student</th>
+                  <th className="px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]">Contact</th>
+                  <th className="px-3 py-3 text-center text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]">Academics</th>
+                  <th className="px-3 py-3 text-center text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]">Skills</th>
+                  <th className="px-3 py-3 text-center text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]">Internships</th>
+                  <th className="px-3 py-3 text-right text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -267,7 +267,7 @@ export default function StudentDatabasePage() {
                           {student.photoURL ? (
                             <img src={student.photoURL} alt={student.name || 'Student'} className="w-8 h-8 rounded-full object-cover border border-[var(--border-subtle)] shrink-0" />
                           ) : (
-                            <div className="w-8 h-8 rounded-full bg-[#4B8BBE]/10 flex items-center justify-center text-[#4B8BBE] text-xs font-bold shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-[#4B8BBE]/10 flex items-center justify-center text-[#4B8BBE] text-xs font-semibold shrink-0">
                               {student.name?.charAt(0)?.toUpperCase() || '?'}
                             </div>
                           )}

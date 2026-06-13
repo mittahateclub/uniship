@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
-import { UserPlus, Mail, Building2, Hash, Phone, CheckCircle, XCircle, Shield, X, Save } from 'lucide-react';
+import { UserPlus, Mail, Building2, Hash, Phone, CheckCircle, XCircle, Shield, X, Save } from '@/components/icons';
 
 interface UniadminData {
   id: string;
@@ -145,7 +145,7 @@ export default function ManageUniadminsPage() {
     <div className="animate-fade-in">
       <div className="mb-6 flex justify-between items-center">
         <div>
-          <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Manage University Admins</h1>
+          <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Manage University Admins</h1>
           <p className="text-[var(--text-tertiary)] text-[13px] mt-1">View and manage all university administrators</p>
         </div>
         <Link href="/superadmin/create-uniadmin" className="btn-primary inline-flex items-center gap-2">
@@ -169,23 +169,23 @@ export default function ManageUniadminsPage() {
           {uniadmins.map((admin) => (
             <div key={admin.id} className="window p-5 group hover:border-[var(--border-active)] transition-colors duration-150">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-8 h-8 rounded bg-[#00A8E1]/10 flex items-center justify-center text-[#00A8E1] text-sm font-bold">
+                <div className="w-8 h-8 rounded bg-[#00A8E1]/10 flex items-center justify-center text-[#00A8E1] text-sm font-semibold">
                   {admin.name?.charAt(0)?.toUpperCase() || '?'}
                 </div>
                 <div className="flex items-center gap-1.5">
                   {admin.verified ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#4CAF50] bg-[#4CAF50]/10 border border-[#4CAF50]/20 px-1.5 py-0.5 rounded">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#4CAF50] bg-[#4CAF50]/10 border border-[#4CAF50]/20 px-1.5 py-0.5 rounded">
                       <CheckCircle size={9} /> Verified
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#F1A82C] bg-[#F1A82C]/10 border border-[#F1A82C]/20 px-1.5 py-0.5 rounded">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#F1A82C] bg-[#F1A82C]/10 border border-[#F1A82C]/20 px-1.5 py-0.5 rounded">
                       <XCircle size={9} /> Pending
                     </span>
                   )}
                 </div>
               </div>
 
-              <h3 className="text-[15px] font-bold text-[var(--text-primary)] mb-3">{admin.name}</h3>
+              <h3 className="text-[15px] font-semibold text-[var(--text-primary)] mb-3">{admin.name}</h3>
 
               <div className="space-y-2 text-[13px]">
                 <div className="flex items-center gap-2 text-[var(--text-tertiary)]">
@@ -231,7 +231,7 @@ export default function ManageUniadminsPage() {
         <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4" onClick={() => setViewingAdmin(null)}>
           <div className="window w-full max-w-md p-6 animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[15px] font-bold text-[var(--text-primary)]">Admin Details</h2>
+              <h2 className="text-[15px] font-semibold text-[var(--text-primary)]">Admin Details</h2>
               <button onClick={() => setViewingAdmin(null)} className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors">
                 <X size={16} />
               </button>
@@ -310,7 +310,7 @@ export default function ManageUniadminsPage() {
         <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4" onClick={() => setEditingAdmin(null)}>
           <div className="window w-full max-w-md p-6 animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[15px] font-bold text-[var(--text-primary)]">Edit University Admin</h2>
+              <h2 className="text-[15px] font-semibold text-[var(--text-primary)]">Edit University Admin</h2>
               <button onClick={() => setEditingAdmin(null)} className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors">
                 <X size={16} />
               </button>
@@ -324,7 +324,7 @@ export default function ManageUniadminsPage() {
 
             <div className="space-y-3">
               <div>
-                <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">Full Name</label>
+                <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Full Name</label>
                 <input
                   type="text"
                   value={editForm.name}
@@ -334,7 +334,7 @@ export default function ManageUniadminsPage() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">Phone</label>
+                <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Phone</label>
                 <input
                   type="text"
                   value={editForm.phone}
@@ -344,7 +344,7 @@ export default function ManageUniadminsPage() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">University</label>
+                <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">University</label>
                 <select
                   value={editForm.universityId}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, universityId: e.target.value }))}

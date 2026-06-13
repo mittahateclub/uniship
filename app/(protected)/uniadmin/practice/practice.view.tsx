@@ -11,7 +11,7 @@ import {
   Sparkles, Plus, Trash2, ChevronDown, ChevronUp, Code2, Clock,
   CheckCircle2, AlertTriangle, BookOpen, Keyboard, Eye, EyeOff, Pencil,
   CalendarClock,
-} from 'lucide-react';
+} from '@/components/icons';
 
 interface TestCase {
   input: string;
@@ -333,7 +333,7 @@ export default function AdminPracticePage() {
     <div className="max-w-4xl mx-auto animate-fade-in">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Practice Problems</h1>
+          <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Practice Problems</h1>
           <p className="text-[var(--text-tertiary)] text-[13px] mt-1">
             {mode === 'list' ? `${problems.length} problem${problems.length !== 1 ? 's' : ''} published` : mode === 'edit' ? 'Edit practice problem' : 'Create a new practice problem'}
           </p>
@@ -372,7 +372,7 @@ export default function AdminPracticePage() {
                   <div className="min-w-0">
                     <p className="text-[13px] font-semibold text-[var(--text-primary)] truncate">{p.title}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${DIFFICULTY_COLORS[p.difficulty] || DIFFICULTY_COLORS['Medium']}`}>
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${DIFFICULTY_COLORS[p.difficulty] || DIFFICULTY_COLORS['Medium']}`}>
                         {p.difficulty}
                       </span>
                       <span className="text-[11px] text-[var(--text-faint)]">
@@ -718,7 +718,7 @@ export default function AdminPracticePage() {
                     <div key={idx} className="border border-[var(--border-subtle)] rounded p-3 bg-[var(--bg-elevated)]">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold text-[var(--text-faint)]">Case {idx + 1}</span>
+                          <span className="text-[10px] font-semibold text-[var(--text-faint)]">Case {idx + 1}</span>
                           <button
                             onClick={() => {
                               const updated = [...form.testCases];
@@ -743,7 +743,7 @@ export default function AdminPracticePage() {
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="text-[9px] font-bold text-[var(--text-faint)] uppercase mb-1 block">Input (stdin)</label>
+                          <label className="text-[9px] font-semibold text-[var(--text-faint)] uppercase mb-1 block">Input (stdin)</label>
                           <textarea
                             value={tc.input}
                             onChange={e => {
@@ -757,7 +757,7 @@ export default function AdminPracticePage() {
                           />
                         </div>
                         <div>
-                          <label className="text-[9px] font-bold text-[var(--text-faint)] uppercase mb-1 block">Expected Output</label>
+                          <label className="text-[9px] font-semibold text-[var(--text-faint)] uppercase mb-1 block">Expected Output</label>
                           <textarea
                             value={tc.expectedOutput}
                             onChange={e => {

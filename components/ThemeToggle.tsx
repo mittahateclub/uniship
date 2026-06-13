@@ -1,7 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon } from '@/components/icons';
 
 type Theme = 'dark' | 'light';
 
@@ -21,7 +21,9 @@ const subscribeToTheme = (onStoreChange: () => void) => {
   };
 };
 
-export default function ThemeToggle() {
+// Always lives in the page's top chrome (nav / top bar), never floating.
+// Pass a className to match the host surface; defaults to the app-chrome style.
+export default function ThemeToggle({ className }: { className?: string }) {
   const theme = useSyncExternalStore(subscribeToTheme, getThemeSnapshot, () => 'dark');
 
   const toggle = () => {
@@ -35,14 +37,9 @@ export default function ThemeToggle() {
     <button
       onClick={toggle}
       aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-      className="fixed bottom-5 right-5 z-50 p-2.5 rounded-full border transition-all duration-200 ease-out shadow-lg hover:scale-105 active:scale-95"
-      style={{
-        background: theme === 'dark' ? 'var(--bg-surface)' : 'var(--bg-primary)',
-        borderColor: 'var(--border-subtle)',
-        color: 'var(--text-primary)',
-      }}
+      className={className ?? 'theme-btn-chrome'}
     >
-      {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+      {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
     </button>
   );
 }

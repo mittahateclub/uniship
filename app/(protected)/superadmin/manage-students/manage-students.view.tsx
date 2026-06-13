@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { collection, getDocs, query, where, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { User, Mail, Building2, Hash, Phone, CheckCircle, XCircle, X, Save, Search } from 'lucide-react';
+import { User, Mail, Building2, Hash, Phone, CheckCircle, XCircle, X, Save, Search } from '@/components/icons';
 
 interface StudentData {
   id: string;
@@ -160,7 +160,7 @@ export default function ManageStudentsPage() {
   return (
     <div className="animate-fade-in">
       <div className="mb-6">
-        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Manage Students</h1>
+        <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Manage Students</h1>
         <p className="text-[var(--text-tertiary)] text-[13px] mt-1">View, verify, edit, and assign students to universities</p>
       </div>
 
@@ -188,21 +188,21 @@ export default function ManageStudentsPage() {
           {filteredStudents.map((student) => (
             <div key={student.id} className="window p-5 group hover:border-[var(--border-active)] transition-colors duration-150">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-8 h-8 rounded bg-[#4B8BBE]/10 flex items-center justify-center text-[#4B8BBE] text-sm font-bold">
+                <div className="w-8 h-8 rounded bg-[#4B8BBE]/10 flex items-center justify-center text-[#4B8BBE] text-sm font-semibold">
                   {student.name?.charAt(0)?.toUpperCase() || '?'}
                 </div>
                 {student.verified ? (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#4CAF50] bg-[#4CAF50]/10 border border-[#4CAF50]/20 px-1.5 py-0.5 rounded">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#4CAF50] bg-[#4CAF50]/10 border border-[#4CAF50]/20 px-1.5 py-0.5 rounded">
                     <CheckCircle size={9} /> Verified
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#F1A82C] bg-[#F1A82C]/10 border border-[#F1A82C]/20 px-1.5 py-0.5 rounded">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#F1A82C] bg-[#F1A82C]/10 border border-[#F1A82C]/20 px-1.5 py-0.5 rounded">
                     <XCircle size={9} /> Pending
                   </span>
                 )}
               </div>
 
-              <h3 className="text-[15px] font-bold text-[var(--text-primary)] mb-3 truncate">{student.name || 'Unnamed Student'}</h3>
+              <h3 className="text-[15px] font-semibold text-[var(--text-primary)] mb-3 truncate">{student.name || 'Unnamed Student'}</h3>
 
               <div className="space-y-2 text-[13px]">
                 <div className="flex items-center gap-2 text-[var(--text-tertiary)]">
@@ -232,7 +232,7 @@ export default function ManageStudentsPage() {
         <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4" onClick={() => setViewingStudent(null)}>
           <div className="window w-full max-w-md p-6 animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[15px] font-bold text-[var(--text-primary)]">Student Details</h2>
+              <h2 className="text-[15px] font-semibold text-[var(--text-primary)]">Student Details</h2>
               <button onClick={() => setViewingStudent(null)} className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors">
                 <X size={16} />
               </button>
@@ -300,7 +300,7 @@ export default function ManageStudentsPage() {
         <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4" onClick={() => setEditingStudent(null)}>
           <div className="window w-full max-w-md p-6 animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[15px] font-bold text-[var(--text-primary)]">Edit Student</h2>
+              <h2 className="text-[15px] font-semibold text-[var(--text-primary)]">Edit Student</h2>
               <button onClick={() => setEditingStudent(null)} className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors">
                 <X size={16} />
               </button>
@@ -314,7 +314,7 @@ export default function ManageStudentsPage() {
 
             <div className="space-y-3">
               <div>
-                <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">Full Name</label>
+                <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Full Name</label>
                 <input
                   type="text"
                   value={editForm.name}
@@ -324,7 +324,7 @@ export default function ManageStudentsPage() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">Student ID</label>
+                <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Student ID</label>
                 <input
                   type="text"
                   value={editForm.studentId}
@@ -334,7 +334,7 @@ export default function ManageStudentsPage() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">Phone</label>
+                <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Phone</label>
                 <input
                   type="text"
                   value={editForm.phone}
@@ -344,7 +344,7 @@ export default function ManageStudentsPage() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">University</label>
+                <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">University</label>
                 <select
                   value={editForm.universityId}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, universityId: e.target.value }))}

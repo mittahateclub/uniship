@@ -22,8 +22,8 @@ import {
   CalendarPlus,
   ShieldCheck,
   UserPlus,
-  ArrowLeft,
-  ArrowRight,
+  PanelLeftClose,
+  PanelLeftOpen,
   Award,
   FolderKanban,
   Trophy,
@@ -41,7 +41,7 @@ import {
   Upload,
   Sparkles,
   X,
-} from 'lucide-react';
+} from '@/components/icons';
 
 interface NavLink {
   href: string;
@@ -328,7 +328,14 @@ export default function Navbar() {
     try { await logout(); router.push('/'); } catch {}
   };
 
-  const isActive = (href: string) => pathname === href || pathname?.startsWith(href + '/');
+  // Mark only the most specific matching link active so a parent route
+  // (e.g. /user/resume) doesn't also highlight when on a child
+  // (/user/resume/download).
+  const activeHref = useMemo(() => {
+    const matches = navLinks.filter(l => pathname === l.href || pathname?.startsWith(l.href + '/'));
+    return matches.sort((a, b) => b.href.length - a.href.length)[0]?.href;
+  }, [navLinks, pathname]);
+  const isActive = (href: string) => href === activeHref;
 
   // Shared nav link renderer — eliminates duplication between desktop & mobile
   const renderNavLinks = (isCollapsed: boolean, closeOnNavigate = false) => {
@@ -342,7 +349,7 @@ export default function Navbar() {
       return (
         <React.Fragment key={link.href}>
           {showHeader && !isCollapsed && (
-            <p className={`px-2.5 pb-1 text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)] ${isFirstGroup ? 'pt-1' : 'pt-4'}`}>
+            <p className={`px-2.5 pb-1 text-[10.5px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)] ${isFirstGroup ? 'pt-1' : 'pt-4'}`}>
               {link.group}
             </p>
           )}
@@ -351,13 +358,14 @@ export default function Navbar() {
             href={link.href}
             onClick={closeOnNavigate ? () => setMobileOpen(false) : undefined}
             title={isCollapsed ? link.label : undefined}
-            className={`flex items-center gap-2.5 rounded text-[13px] font-medium transition-all duration-150 ${isCollapsed ? 'justify-center p-2' : 'px-2.5 py-[7px]'} ${
+            aria-current={isActive(link.href) ? 'page' : undefined}
+            className={`group/nav flex items-center gap-2.5 rounded-[10px] text-[13px] font-medium transition-colors duration-150 ${isCollapsed ? 'justify-center p-2.5' : 'px-2.5 py-2.5'} ${
               isActive(link.href)
-                ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] border border-[var(--border-subtle)]'
-                : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] border border-transparent'
+                ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)]'
+                : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)]'
             }`}
           >
-            <link.icon size={16} className="shrink-0" />
+            <link.icon size={17} className={`shrink-0 transition-colors duration-150 ${isActive(link.href) ? 'text-[var(--accent-orange)]' : 'text-[var(--text-muted)] group-hover/nav:text-[var(--text-secondary)]'}`} />
             {!isCollapsed && <span className="truncate">{link.label}</span>}
           </Link>
         </React.Fragment>
@@ -368,39 +376,39 @@ export default function Navbar() {
   return (
     <>
       {/* ═══ Desktop Sidebar (hidden on mobile) ═══ */}
-      <aside className={`hidden md:flex h-screen bg-[var(--bg-elevated)] border-r border-[var(--border-subtle)] flex-col transition-all duration-200 ease-out shrink-0 sticky top-0 ${collapsed ? 'w-[82px]' : 'w-[260px]'}`}>
-        {/* Logo */}
-        <div className="h-16 flex items-center border-b border-[var(--border-subtle)] shrink-0">
-          <Link
-            href="/"
-            className={`flex items-center overflow-hidden rounded-md transition-colors duration-150 mx-2 ${collapsed ? 'justify-center w-full py-1' : 'gap-1 px-2 py-1.5 w-full'}`}
+      <aside className={`hidden md:flex h-screen bg-transparent flex-col transition-all duration-200 ease-out shrink-0 sticky top-0 ${collapsed ? 'w-[72px]' : 'w-[240px]'}`}>
+        {/* Logo + collapse control */}
+        <div className={`h-14 flex items-center shrink-0 ${collapsed ? 'justify-center' : 'justify-between pr-2'}`}>
+          {!collapsed && (
+            <Link
+              href="/"
+              className="flex items-center gap-1 overflow-hidden rounded-md transition-colors duration-150 ml-2 px-2 py-1.5 min-w-0"
+            >
+              <Image src="/logo.png" alt="Uniship" width={64} height={64} priority className="shrink-0 object-contain" />
+              <span className="text-[15px] font-bold tracking-[0.12em] text-[var(--text-primary)] whitespace-nowrap self-center leading-none pt-[0.3em]">UNISHIP</span>
+            </Link>
+          )}
+          <button
+            onClick={() => setCollapsed(c => !c)}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className="p-2 rounded-[8px] text-[var(--text-faint)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors duration-150 shrink-0"
           >
-            <Image src="/logo.png" alt="Uniship" width={76} height={76} priority className="shrink-0 object-contain" />
-            {!collapsed && <span className="text-[17px] font-extrabold tracking-[0.14em] text-[var(--text-primary)] whitespace-nowrap self-center leading-none pt-[0.35em]">UNISHIP</span>}
-          </Link>
+            {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+          </button>
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-2 py-2">
-          {/* Collapse/Expand toggle — top of nav, above icons */}
-          <button
-            onClick={() => setCollapsed(c => !c)}
-            className="sidebar-toggle"
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {collapsed
-              ? <ArrowRight size={15} strokeWidth={2.5} />
-              : <><ArrowLeft size={15} strokeWidth={2.5} /><span>Collapse</span></>}
-          </button>
           {renderNavLinks(collapsed)}
         </nav>
 
         {/* Logout — bottom of sidebar */}
-        <div className="border-t border-[var(--border-subtle)] px-2 py-2 shrink-0">
+        <div className="px-2 py-3 shrink-0">
           <button
             onClick={handleLogout}
             title={collapsed ? 'Logout' : undefined}
-            className={`flex items-center gap-2.5 rounded text-[13px] font-medium transition-all duration-150 w-full text-[var(--text-tertiary)] hover:text-[#DC2626] hover:bg-[#DC2626]/10 border border-transparent ${collapsed ? 'justify-center p-2' : 'px-2.5 py-[7px]'}`}
+            className={`flex items-center gap-2.5 rounded-[8px] text-[13px] font-medium transition-colors duration-150 w-full text-[var(--text-tertiary)] hover:text-[var(--status-danger)] hover:bg-[var(--status-danger)]/10 ${collapsed ? 'justify-center p-2' : 'px-2.5 py-[7px]'}`}
           >
             <LogOut size={16} className="shrink-0" />
             {!collapsed && <span>Logout</span>}
@@ -412,12 +420,12 @@ export default function Navbar() {
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute left-0 top-0 bottom-0 w-[280px] bg-[var(--bg-elevated)] border-r border-[var(--border-subtle)] flex flex-col animate-slide-in-left">
+          <aside className="absolute left-0 top-0 bottom-0 w-[280px] bg-[var(--bg-primary)] border-r border-[var(--border-subtle)] flex flex-col animate-slide-in-left">
             {/* Logo + Close */}
             <div className="h-16 flex items-center justify-between border-b border-[var(--border-subtle)] px-3 shrink-0">
               <Link href="/" className="flex items-center gap-1">
                 <Image src="/logo.png" alt="Uniship" width={76} height={76} priority className="shrink-0 object-contain" />
-                <span className="text-[17px] font-extrabold tracking-[0.14em] text-[var(--text-primary)] whitespace-nowrap self-center leading-none pt-[0.35em]">UNISHIP</span>
+                <span className="text-[17px] font-bold tracking-[0.14em] text-[var(--text-primary)] whitespace-nowrap self-center leading-none pt-[0.35em]">UNISHIP</span>
               </Link>
               <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors">
                 <X size={18} />
@@ -445,16 +453,17 @@ export default function Navbar() {
 
       {/* ═══ Command-K Modal ═══ */}
       {cmdkOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[18vh]">
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[14vh]">
           <div className="absolute inset-0 cmdk-overlay" onClick={() => setCmdkOpen(false)} />
-          <div className="relative w-full max-w-xl mx-4 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-lg shadow-2xl shadow-black/60 overflow-hidden animate-fade-in">
-            <div className="flex items-center gap-3 px-4 h-12 border-b border-[var(--border-subtle)]">
-              <Search size={16} className="text-[var(--text-muted)] shrink-0" />
+          <div className="relative w-full max-w-[600px] mx-4 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-[14px] shadow-2xl shadow-black/50 overflow-hidden animate-fade-in">
+            <div className="flex items-center gap-3 px-5 sm:px-6 h-14 border-b border-[var(--border-subtle)] focus-within:bg-[var(--bg-elevated)]/35 transition-colors">
+              <Search size={17} className="text-[var(--text-muted)] shrink-0" />
               <input
                 ref={searchInputRef}
                 type="text"
                 placeholder="Search pages, actions, or type what you need..."
-                className="flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] outline-none border-none"
+                style={{ outline: 'none', boxShadow: 'none', border: 'none', background: 'transparent' }}
+                className="h-full min-w-0 flex-1 px-1 bg-transparent text-[14px] leading-none text-[var(--text-primary)] placeholder:text-[var(--text-faint)] outline-none border-none focus-visible:outline-none"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -471,20 +480,20 @@ export default function Navbar() {
                 <div className="px-1.5">
                   {groupedResults.map((group) => (
                     <div key={group.category}>
-                      <p className="px-2.5 pt-3 pb-1 text-[10px] font-bold text-[var(--text-faint)] uppercase tracking-widest">{group.category}</p>
+                      <p className="px-2.5 pt-3 pb-1 text-[10px] font-semibold text-[var(--text-faint)] uppercase tracking-[0.07em]">{group.category}</p>
                       {group.items.map((page) => {
                         const globalIndex = filteredPages.indexOf(page);
                         return (
                           <button
                             key={`${page.category}-${page.label}`}
                             onClick={() => handleCmdkNavigate(page.href)}
-                            className={`w-full flex items-center gap-3 px-2.5 py-2 rounded text-left transition-colors duration-100 ${
+                            className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-[8px] text-left transition-colors duration-100 ${
                               globalIndex === selectedIndex
-                                ? 'bg-[var(--border-subtle)] text-[var(--text-primary)]'
+                                ? 'bg-[var(--accent-orange)]/10 text-[var(--text-primary)]'
                                 : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]'
                             }`}
                           >
-                            <page.icon size={15} className={globalIndex === selectedIndex ? 'text-[#00A8E1]' : 'text-[var(--text-faint)]'} />
+                            <page.icon size={16} className={globalIndex === selectedIndex ? 'text-[var(--accent-orange)]' : 'text-[var(--text-muted)]'} />
                             <div className="flex-1 min-w-0">
                               <p className="text-[13px] font-medium truncate">{page.label}</p>
                               <p className="text-[11px] text-[var(--text-faint)] truncate">{page.desc}</p>

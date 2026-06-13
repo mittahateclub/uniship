@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { collection, addDoc, serverTimestamp, doc, getDoc, getDocs, query, where, updateDoc, deleteDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { ChevronLeft, ChevronRight, Calendar, Clock, Trash2, Pencil } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Clock, Trash2, Pencil } from '@/components/icons';
 
 interface ExistingEvent {
   id: string;
@@ -123,7 +123,7 @@ function DateTimePicker({ value, onChange }: { value: string; onChange: (val: st
               <button type="button" onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1))} className="p-1 rounded hover:bg-[var(--bg-elevated)] transition-colors">
                 <ChevronLeft size={14} className="text-[var(--text-muted)]" />
               </button>
-              <span className="text-[12px] font-bold text-[var(--text-primary)]">
+              <span className="text-[12px] font-semibold text-[var(--text-primary)]">
                 {MONTH_NAMES[viewMonth.getMonth()]} {viewMonth.getFullYear()}
               </span>
               <button type="button" onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1))} className="p-1 rounded hover:bg-[var(--bg-elevated)] transition-colors">
@@ -133,7 +133,7 @@ function DateTimePicker({ value, onChange }: { value: string; onChange: (val: st
             {/* Day headers */}
             <div className="grid grid-cols-7 mb-1">
               {DAY_LABELS.map(d => (
-                <div key={d} className="text-center text-[9px] font-bold uppercase tracking-widest text-[var(--text-faint)] py-1">{d}</div>
+                <div key={d} className="text-center text-[9px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)] py-1">{d}</div>
               ))}
             </div>
             {/* Days grid */}
@@ -151,7 +151,7 @@ function DateTimePicker({ value, onChange }: { value: string; onChange: (val: st
                         w-full aspect-square flex items-center justify-center text-[11px] font-medium rounded-full transition-colors
                         ${!cell.inMonth ? 'text-[var(--text-faint)]/40 cursor-default' : 'hover:bg-[var(--bg-elevated)] cursor-pointer'}
                         ${isSelected ? 'bg-[#4B8BBE] text-white hover:bg-[#4B8BBE]' : ''}
-                        ${isToday && !isSelected ? 'text-[#00A8E1] font-bold' : cell.inMonth ? 'text-[var(--text-primary)]' : ''}
+                        ${isToday && !isSelected ? 'text-[#00A8E1] font-semibold' : cell.inMonth ? 'text-[var(--text-primary)]' : ''}
                       `}
                     >
                       {cell.day}
@@ -180,7 +180,7 @@ function DateTimePicker({ value, onChange }: { value: string; onChange: (val: st
             <div className="flex gap-2">
               {/* Hours */}
               <div className="flex-1">
-                <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-faint)] mb-1.5 text-center">Hour</p>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)] mb-1.5 text-center">Hour</p>
                 <div className="max-h-[180px] overflow-y-auto space-y-0.5 scrollbar-thin">
                   {Array.from({ length: 24 }, (_, i) => (
                     <button
@@ -198,7 +198,7 @@ function DateTimePicker({ value, onChange }: { value: string; onChange: (val: st
               </div>
               {/* Minutes */}
               <div className="flex-1">
-                <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-faint)] mb-1.5 text-center">Min</p>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)] mb-1.5 text-center">Min</p>
                 <div className="max-h-[180px] overflow-y-auto space-y-0.5 scrollbar-thin">
                   {[0,5,10,15,20,25,30,35,40,45,50,55].map(m => (
                     <button
@@ -337,7 +337,7 @@ export default function CreateEventPage() {
   return (
     <div className="max-w-2xl mx-auto animate-fade-in">
       <div className="mb-6">
-        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Manage Events</h1>
+        <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Manage Events</h1>
         <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Create new events and manage existing ones</p>
       </div>
 
@@ -350,11 +350,11 @@ export default function CreateEventPage() {
 
         <form id="form" onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">Event Title *</label>
+            <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Event Title *</label>
             <input name="title" type="text" required placeholder="Event Title" value={formData.title} onChange={handleChange} className={inputClass} />
           </div>
           <div>
-            <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">Type</label>
+            <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Type</label>
             <select name="type" value={formData.type} onChange={handleChange} className={inputClass}>
               <option value="event">Event</option>
               <option value="internship">Internship</option>
@@ -364,15 +364,15 @@ export default function CreateEventPage() {
             </select>
           </div>
           <div>
-            <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">Date & Time *</label>
+            <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Date & Time *</label>
             <DateTimePicker value={formData.date} onChange={(val) => setFormData({ ...formData, date: val })} />
           </div>
           <div>
-            <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">Location *</label>
+            <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Location *</label>
             <input name="location" type="text" required placeholder="Location" value={formData.location} onChange={handleChange} className={inputClass} />
           </div>
           <div>
-            <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">Description *</label>
+            <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Description *</label>
             <textarea name="description" required rows={4} placeholder="Description" value={formData.description} onChange={handleChange} className={inputClass + ' resize-none'} />
           </div>
           <button type="submit" disabled={submitting || !adminUnivId} className="btn-primary w-full mt-2">
@@ -383,7 +383,7 @@ export default function CreateEventPage() {
 
       {/* ── Existing Events ── */}
       <div className="mt-8 mb-6">
-        <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-[-0.02em] mb-1">Existing Events</h2>
+        <h2 className="text-lg font-semibold text-[var(--text-primary)] tracking-[-0.02em] mb-1">Existing Events</h2>
         <p className="text-[var(--text-tertiary)] text-[12px] mb-4">Change the type or delete events. Changes are reflected in College Space immediately.</p>
 
         {loadingEvents ? (
@@ -401,15 +401,15 @@ export default function CreateEventPage() {
                 <div key={ev.id} className="window p-4 flex items-center gap-3">
                   {/* Date */}
                   <div className="hidden sm:flex flex-col items-center min-w-[40px]">
-                    <span className="text-[15px] font-bold tabular-nums text-[var(--text-primary)] leading-none">{d.getDate()}</span>
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-faint)] mt-0.5">
+                    <span className="text-[15px] font-semibold tabular-nums text-[var(--text-primary)] leading-none">{d.getDate()}</span>
+                    <span className="text-[9px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)] mt-0.5">
                       {d.toLocaleString('default', { month: 'short' })}
                     </span>
                   </div>
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-[13px] font-bold text-[var(--text-primary)] truncate">{ev.title}</h3>
+                    <h3 className="text-[13px] font-semibold text-[var(--text-primary)] truncate">{ev.title}</h3>
                     <p className="text-[11px] text-[var(--text-faint)] truncate">{ev.location}</p>
                   </div>
 
@@ -429,7 +429,7 @@ export default function CreateEventPage() {
                   ) : (
                     <button
                       onClick={() => { setEditingId(ev.id); setEditType(ev.type || 'event'); }}
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded border uppercase tracking-wider cursor-pointer hover:opacity-80 ${typeColor}`}
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded border uppercase tracking-wider cursor-pointer hover:opacity-80 ${typeColor}`}
                       title="Click to change type"
                     >
                       {typeLabel}

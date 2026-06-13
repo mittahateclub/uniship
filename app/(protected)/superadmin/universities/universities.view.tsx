@@ -1,6 +1,6 @@
 'use client';
 
-import { Building2, Plus, Search, CheckCircle, XCircle, Trash2, Shield, Users, X } from 'lucide-react';
+import { Building2, Plus, Search, CheckCircle, XCircle, Trash2, Shield, Users, X } from '@/components/icons';
 
 export interface University {
   id: string;
@@ -60,7 +60,7 @@ export function UniversitiesView({
     <div className="max-w-[900px] mx-auto animate-fade-in">
       <div className="mb-6 flex justify-between items-center">
         <div>
-          <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Manage Universities</h1>
+          <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Manage Universities</h1>
           <p className="text-[var(--text-tertiary)] text-[13px] mt-1">{universities.length} registered universit{universities.length !== 1 ? 'ies' : 'y'}</p>
         </div>
         <button onClick={onShowCreate} className="btn-primary inline-flex items-center gap-2">
@@ -101,13 +101,13 @@ export function UniversitiesView({
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-[14px] font-bold text-[var(--text-primary)] truncate">{uni.name}</h3>
+                    <h3 className="text-[14px] font-semibold text-[var(--text-primary)] truncate">{uni.name}</h3>
                     {uni.verified ? (
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#4CAF50]/10 text-[#4CAF50] border border-[#4CAF50]/20">
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#4CAF50]/10 text-[#4CAF50] border border-[#4CAF50]/20">
                         <CheckCircle size={10} /> Verified
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#F1A82C]/10 text-[#F1A82C] border border-[#F1A82C]/20">
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#F1A82C]/10 text-[#F1A82C] border border-[#F1A82C]/20">
                         <XCircle size={10} /> Pending
                       </span>
                     )}
@@ -150,7 +150,7 @@ export function UniversitiesView({
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
                 <Building2 size={16} className="text-[#4B8BBE]" />
-                <h2 className="text-[15px] font-bold text-[var(--text-primary)]">Register University</h2>
+                <h2 className="text-[15px] font-semibold text-[var(--text-primary)]">Register University</h2>
               </div>
               <button onClick={onHideCreate} className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors">
                 <X size={16} />
@@ -163,7 +163,7 @@ export function UniversitiesView({
 
             <form onSubmit={onCreate} className="space-y-4">
               <div>
-                <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">University Name *</label>
+                <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">University Name *</label>
                 <input
                   type="text" required value={newUni.name}
                   onChange={e => onNewUniChange({ ...newUni, name: e.target.value })}
@@ -172,7 +172,7 @@ export function UniversitiesView({
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">University Code *</label>
+                <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">University Code *</label>
                 <input
                   type="text" required value={newUni.code}
                   onChange={e => onNewUniChange({ ...newUni, code: e.target.value })}
@@ -182,7 +182,7 @@ export function UniversitiesView({
                 <p className="text-[10px] text-[var(--text-faint)] mt-1">Unique identifier. Used to link admins & students.</p>
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">Domain</label>
+                <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Domain</label>
                 <input
                   type="text" value={newUni.domain}
                   onChange={e => onNewUniChange({ ...newUni, domain: e.target.value })}

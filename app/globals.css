@@ -1,108 +1,214 @@
 @import "tailwindcss";
 
-/* ═══════════════════════════════════════════
-   PostHog Design System — Product OS
-   ═══════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════════════
+   UNISHIP — LINEAR-STYLE PRODUCT LANGUAGE
+   ────────────────────────────────────────────────────────────────────
+   One coherent system across landing, login and the app: a quiet,
+   precise product tool in the spirit of linear.app — dark by default,
+   paper-light as the persisted alternative.
+
+   TYPE        Geist (variable) is the single identity face.
+               Headlines: medium weight (540-560), tight tracking
+               (-0.02em), never uppercase-condensed. Space Mono remains
+               only for true terminal/kbd contexts.
+   PALETTE     Near-black field #08090A; surfaces are slightly lifted
+               panels (#0F1011 → #17181B) separated by hairline borders
+               (rgba-white 8-16%), never shadows-on-shadows. ONE accent:
+               brand cyan #00A8E1 (#0082BE on light) on <5% of any
+               screen — primary CTAs, active marks, focus rings.
+   SHAPE       One radius family: 10px panels/inputs (--radius),
+               Tailwind's default rounded-* scale, pills for buttons
+               and tags, circles for avatars.
+   MOTION      One curve: expo-out cubic-bezier(0.16,1,0.3,1) (--ease).
+               Durations 150/300/600/900ms (--dur-1..4). Quiet fade-ups,
+               route rise+fade; prefers-reduced-motion renders static.
+   CONTRACT    Token names (--bg-*, --text-*, --accent-*, --border-*,
+               --status-*, --radius) and component classes (.window,
+               .btn-primary, .skeleton, .loading-dots, …) are a stable
+               API consumed by the app views — values may change,
+               names must not.
+   ════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Core palette */
-  --bg-primary: #000000;
-  --bg-surface: #151515;
-  --bg-elevated: #050505;
-  --bg-input: #000000;
+  /* Core palette — near-black field, lifted panels */
+  --bg-canvas: #040505;
+  --bg-primary: #08090A;
+  --bg-surface: #0F1011;
+  --bg-elevated: #17181B;
+  --bg-input: #0E0F10;
 
   /* Text */
-  --text-primary: #EEEFE9;
-  --text-secondary: rgba(238, 239, 233, 0.7);
-  --text-tertiary: rgba(238, 239, 233, 0.5);
-  --text-muted: rgba(238, 239, 233, 0.4);
-  --text-faint: rgba(238, 239, 233, 0.3);
+  --text-primary: #F7F8F8;
+  --text-secondary: rgba(247, 248, 248, 0.72);
+  --text-tertiary: rgba(247, 248, 248, 0.55);
+  --text-muted: rgba(247, 248, 248, 0.45);
+  --text-faint: rgba(247, 248, 248, 0.32);
 
-  /* Accents */
+  /* Accent — brand cyan (legacy token names kept as contract) */
   --accent-orange: #00A8E1;
-  --accent-orange-hover: #33BBEE;
-  --accent-indigo: #0088BD;
-  --accent-indigo-hover: #33BBEE;
+  --accent-orange-hover: #2BBCEF;
+  --accent-indigo: #00A8E1;
+  --accent-indigo-hover: #2BBCEF;
+  --accent-ink: #04141B; /* text set on top of the accent */
 
-  /* Borders */
-  --border-subtle: #2C2C2C;
-  --border-active: #4B4B4B;
+  /* Borders — hairlines */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-active: rgba(255, 255, 255, 0.17);
 
   /* Status */
-  --status-success: #4CAF50;
-  --status-warning: #F1A82C;
-  --status-danger: #DC2626;
+  --status-success: #4CB782;
+  --status-warning: #F2C94C;
+  --status-danger: #EC5A5A;
 
-  /* Radius */
-  --radius: 4px;
+  /* Shape — one radius family */
+  --radius: 10px;
+
+  /* Motion — one curve, one duration scale */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-1: 150ms;
+  --dur-2: 300ms;
+  --dur-3: 600ms;
+  --dur-4: 900ms;
+
+  /* Shared horizontal gutter */
+  --gutter: clamp(20px, 4.5vw, 64px);
 }
 
-/* ── Light Mode ── */
+/* ── Paper (light) theme ── */
 [data-theme="light"] {
-  --bg-primary: #FFFFFF;
-  --bg-surface: #F5F5F4;
-  --bg-elevated: #FAFAF9;
+  --bg-canvas: #ECEDEF;
+  --bg-primary: #FCFCFD;
+  --bg-surface: #F4F5F6;
+  --bg-elevated: #FFFFFF;
   --bg-input: #FFFFFF;
 
-  --text-primary: #1C1917;
-  --text-secondary: rgba(28, 25, 23, 0.7);
-  --text-tertiary: rgba(28, 25, 23, 0.5);
-  --text-muted: rgba(28, 25, 23, 0.4);
-  --text-faint: rgba(28, 25, 23, 0.3);
+  --text-primary: #16181D;
+  --text-secondary: rgba(22, 24, 29, 0.74);
+  --text-tertiary: rgba(22, 24, 29, 0.58);
+  --text-muted: rgba(22, 24, 29, 0.46);
+  --text-faint: rgba(22, 24, 29, 0.34);
 
-  --accent-orange: #0088BD;
-  --accent-orange-hover: #006F99;
-  --accent-indigo: #0088BD;
-  --accent-indigo-hover: #0090C0;
+  --accent-orange: #0082BE;
+  --accent-orange-hover: #006A9B;
+  --accent-indigo: #0082BE;
+  --accent-indigo-hover: #006A9B;
+  --accent-ink: #FFFFFF;
 
-  --border-subtle: #E7E5E4;
-  --border-active: #D6D3D1;
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-active: rgba(0, 0, 0, 0.18);
 
-  --status-success: #16A34A;
-  --status-warning: #D97706;
-  --status-danger: #DC2626;
+  --status-success: #15794A;
+  --status-warning: #9A6E00;
+  --status-danger: #C8323B;
 }
 
 @theme inline {
   --color-background: var(--bg-primary);
   --color-foreground: var(--text-primary);
+  --font-sans: var(--font-geist), system-ui, sans-serif;
+  --font-mono: var(--font-space-mono), ui-monospace, monospace;
 }
 
 * {
   border-color: var(--border-subtle);
 }
 
+::selection {
+  background: rgba(0, 168, 225, 0.35);
+}
+
+html {
+  background: var(--bg-primary);
+}
+
 body {
   background: var(--bg-primary);
   color: var(--text-primary);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-geist), system-ui, sans-serif;
+  font-optical-sizing: auto;
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 /* ── Typography ── */
 h1, h2, h3, h4, h5, h6 {
-  letter-spacing: -0.02em;
-  font-weight: 700;
+  letter-spacing: -0.018em;
+  font-weight: 600;
 }
 
-/* ── Animations (all <200ms ease-out) ── */
+/* Legacy voices (kept for compatibility; landing/login no longer use them) */
+.u-display {
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.06;
+}
+.u-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.u-rule {
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* ── Motion primitives ── */
+
+/* Line-mask reveal (outer element is crop + observer target) */
+.reveal-line {
+  display: block;
+  overflow: hidden;
+}
+.reveal-line > .reveal-inner {
+  display: block;
+  transform: translateY(112%);
+  will-change: transform;
+}
+.reveal-line.is-in > .reveal-inner {
+  transform: translateY(0);
+  transition: transform var(--dur-4) var(--ease);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+/* Quiet fade-up driven by an in-view observer */
+.reveal-block {
+  opacity: 0;
+  transform: translateY(14px);
+}
+.reveal-block.is-in {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity var(--dur-3) var(--ease), transform var(--dur-4) var(--ease);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+/* Route-level transition (applied by app/template.tsx) */
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-enter {
+  animation: pageEnter var(--dur-2) var(--ease);
+}
+
+/* ── Animations (legacy class contract, system curve) ── */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-fade-in {
-  animation: fadeIn 0.18s ease-out forwards;
+  animation: fadeIn var(--dur-2) var(--ease) forwards;
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-slide-up {
-  animation: slideUp 0.18s ease-out forwards;
+  animation: slideUp var(--dur-2) var(--ease) forwards;
 }
 
 @keyframes slideInLeft {
@@ -110,21 +216,21 @@ h1, h2, h3, h4, h5, h6 {
   to { transform: translateX(0); }
 }
 .animate-slide-in-left {
-  animation: slideInLeft 0.2s ease-out forwards;
+  animation: slideInLeft var(--dur-2) var(--ease) forwards;
 }
 
 .stagger-children > * {
   opacity: 0;
-  animation: slideUp 0.18s ease-out forwards;
+  animation: slideUp var(--dur-2) var(--ease) forwards;
 }
-.stagger-children > *:nth-child(1) { animation-delay: 0.03s; }
-.stagger-children > *:nth-child(2) { animation-delay: 0.06s; }
-.stagger-children > *:nth-child(3) { animation-delay: 0.09s; }
-.stagger-children > *:nth-child(4) { animation-delay: 0.12s; }
-.stagger-children > *:nth-child(5) { animation-delay: 0.15s; }
-.stagger-children > *:nth-child(6) { animation-delay: 0.18s; }
-.stagger-children > *:nth-child(7) { animation-delay: 0.21s; }
-.stagger-children > *:nth-child(8) { animation-delay: 0.24s; }
+.stagger-children > *:nth-child(1) { animation-delay: 0.04s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.08s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.12s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.16s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.20s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.24s; }
+.stagger-children > *:nth-child(7) { animation-delay: 0.28s; }
+.stagger-children > *:nth-child(8) { animation-delay: 0.32s; }
 
 /* Skeleton shimmer */
 @keyframes shimmer {
@@ -132,9 +238,9 @@ h1, h2, h3, h4, h5, h6 {
   100% { background-position: 200% 0; }
 }
 .skeleton {
-  background: linear-gradient(90deg, var(--bg-surface) 25%, var(--border-subtle) 50%, var(--bg-surface) 75%);
+  background: linear-gradient(90deg, var(--bg-surface) 25%, var(--bg-elevated) 50%, var(--bg-surface) 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s ease-in-out infinite;
+  animation: shimmer 1.5s var(--ease) infinite;
   border-radius: var(--radius);
 }
 
@@ -145,8 +251,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 .loading-dots span {
   display: inline-block;
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: var(--accent-orange);
   margin: 0 3px;
@@ -155,25 +261,77 @@ h1, h2, h3, h4, h5, h6 {
 .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
 .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
 
-/* Command K overlay */
+/* Phosphor duotone icons — lift the secondary fill so the soft two-tone
+   actually reads on dark/light surfaces (default 0.2 is near-invisible,
+   collapsing the glyph to a thin outline). CSS overrides the SVG
+   presentation attribute cleanly, no !important needed. */
+svg[viewBox="0 0 256 256"] path[opacity="0.2"] {
+  opacity: 0.28;
+}
+[data-theme="light"] svg[viewBox="0 0 256 256"] path[opacity="0.2"] {
+  opacity: 0.16;
+}
+
+/* Theme toggle — always in the top chrome, round ghost button */
+.theme-btn-chrome {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  color: var(--text-muted);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.theme-btn-chrome:hover {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+}
+
+/* Command K overlay — flat dim */
 .cmdk-overlay {
-  backdrop-filter: blur(12px);
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(5, 6, 7, 0.72);
+}
+[data-theme="light"] .cmdk-overlay {
+  background: rgba(22, 24, 29, 0.4);
 }
 
 /* ── Scrollbar ── */
-::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: var(--border-active); }
+::-webkit-scrollbar-thumb { background: var(--border-active); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
 
-/* Focus ring */
+/* Focus — visible, accent, everywhere */
+:focus-visible {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: 2px;
+}
 .focus-ring:focus-visible {
   outline: 2px solid var(--accent-indigo);
   outline-offset: 2px;
 }
 
-/* Sidebar toggle — orange arrow row at top of nav */
+/* Skip link */
+.skip-link {
+  position: fixed;
+  top: 10px;
+  left: 16px;
+  z-index: 200;
+  padding: 8px 16px;
+  background: var(--accent-orange);
+  color: var(--accent-ink);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+/* Sidebar toggle — small chrome control at top of nav */
 .sidebar-toggle {
   background: none;
   border: none;
@@ -181,33 +339,58 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 10px 5px 10px;
+  padding: 5px 10px;
   margin-bottom: 6px;
-  color: var(--accent-orange);
-  font-size: 12px;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 10.5px;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: color 0.15s ease-out, opacity 0.15s ease-out;
+  transition: color var(--dur-1) var(--ease);
   flex-shrink: 0;
 }
-/* When collapsed the button only has an icon — center it */
 .sidebar-toggle:has(svg:only-child) {
   justify-content: center;
   padding-left: 0;
   padding-right: 0;
 }
 .sidebar-toggle:hover {
-  color: var(--accent-orange-hover);
-  opacity: 0.85;
+  color: var(--text-primary);
 }
 
-/* Window-style card */
+/* App content panel — the workspace surface inset on the canvas,
+   with the landing's ambient light at the top of every page */
+.app-panel {
+  position: relative;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  transition: background 0.3s ease;
+}
+.app-panel::before {
+  content: '';
+  position: absolute;
+  top: -200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 900px;
+  max-width: 100%;
+  height: 440px;
+  background: radial-gradient(ellipse at center, rgba(120, 160, 190, 0.07) 0%, transparent 65%);
+  pointer-events: none;
+}
+[data-theme="light"] .app-panel::before {
+  background: radial-gradient(ellipse at center, rgba(70, 130, 170, 0.07) 0%, transparent 65%);
+}
+
+/* Panel card — lifted surface, hairline border */
 .window {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius);
-  transition: border-color 0.15s ease-out;
+  transition: border-color var(--dur-1) var(--ease);
 }
 .window:hover {
   border-color: var(--border-active);
@@ -226,24 +409,25 @@ select {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius);
   color: var(--text-primary);
-  transition: border-color 0.15s ease-out;
+  transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
 }
 input:not([type="checkbox"]):not([type="radio"]):focus,
 textarea:focus,
 select:focus {
   outline: none;
   border-color: var(--accent-indigo);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-indigo) 16%, transparent);
 }
 
-/* Button base reset */
+/* Buttons — quiet solids, Linear restraint */
 .btn-primary {
   background: var(--accent-orange);
-  color: #ffffff;
+  color: var(--accent-ink);
   font-weight: 600;
   padding: 8px 16px;
   font-size: 13px;
   border-radius: var(--radius);
-  transition: background 0.15s ease-out, transform 0.1s ease-out;
+  transition: background var(--dur-1) var(--ease), transform var(--dur-2) var(--ease);
 }
 .btn-primary:hover {
   background: var(--accent-orange-hover);
@@ -265,9 +449,37 @@ select:focus {
   padding: 8px 16px;
   font-size: 13px;
   font-weight: 500;
-  transition: background 0.15s ease-out, border-color 0.15s ease-out;
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
 }
 .btn-secondary:hover {
   background: var(--bg-elevated);
-  border-color: var(--text-tertiary);
+  border-color: var(--text-faint);
+}
+
+/* Active sidebar item — accent edge mark (set via aria-current) */
+a[aria-current="page"] {
+  position: relative;
+}
+nav a[aria-current="page"]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 22%;
+  bottom: 22%;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--accent-orange);
+}
+
+/* ── Reduced motion: everything renders static ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal-line > .reveal-inner { transform: none; }
+  .reveal-block { opacity: 1; transform: none; }
+  .stagger-children > * { opacity: 1; }
 }

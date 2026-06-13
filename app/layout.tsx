@@ -1,17 +1,27 @@
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
-import ThemeToggle from "@/components/ThemeToggle";
 import localFont from "next/font/local";
 
-const inter = localFont({
+const geist = localFont({
+  src: "./fonts/Geist-Variable.ttf",
+  weight: "100 900",
+  variable: "--font-geist",
+  display: "swap",
+});
+
+const bricolage = localFont({
+  src: "./fonts/BricolageGrotesque-Variable.ttf",
+  weight: "200 800",
+  variable: "--font-bricolage",
+  display: "swap",
+});
+
+const spaceMono = localFont({
   src: [
-    { path: "./fonts/Inter-400.ttf", weight: "400", style: "normal" },
-    { path: "./fonts/Inter-500.ttf", weight: "500", style: "normal" },
-    { path: "./fonts/Inter-600.ttf", weight: "600", style: "normal" },
-    { path: "./fonts/Inter-700.ttf", weight: "700", style: "normal" },
-    { path: "./fonts/Inter-800.ttf", weight: "800", style: "normal" },
+    { path: "./fonts/SpaceMono-Regular.ttf", weight: "400", style: "normal" },
+    { path: "./fonts/SpaceMono-Bold.ttf", weight: "700", style: "normal" },
   ],
-  variable: "--font-inter",
+  variable: "--font-space-mono",
   display: "swap",
 });
 
@@ -26,7 +36,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    <html lang="en" className={`${geist.variable} ${bricolage.variable} ${spaceMono.variable}`} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -34,10 +44,10 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body suppressHydrationWarning style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)', fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
+      <body suppressHydrationWarning className="bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans">
+        <a href="#main-content" className="skip-link">Skip to content</a>
         <AuthProvider>
           {children}
-          <ThemeToggle />
         </AuthProvider>
       </body>
     </html>

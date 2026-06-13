@@ -9,7 +9,7 @@ import { doc, getDoc, addDoc, collection, getDocs, query, where, serverTimestamp
 import {
   Play, CloudUpload, ChevronDown, Clock, CheckCircle2, XCircle,
   BookOpen, AlertTriangle, Loader2, RotateCcw, ArrowLeft, Trophy,
-} from 'lucide-react';import dynamic from 'next/dynamic';
+} from '@/components/icons';import dynamic from 'next/dynamic';
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
 
@@ -34,9 +34,9 @@ const LANG_IDS: Record<string, number> = {
 const SUPPORTED_LANGS = ['Python3', 'JavaScript', 'Java', 'C++', 'C'];
 
 const DIFFICULTY_COLORS: Record<string, string> = {
-  Easy: 'text-teal-400',
-  Medium: 'text-amber-400',
-  Hard: 'text-red-400',
+  Easy: 'text-[var(--status-success)]',
+  Medium: 'text-[var(--status-warning)]',
+  Hard: 'text-[var(--status-danger)]',
 };
 
 const DEFAULT_STARTER: Record<string, (fn: string) => string> = {
@@ -287,18 +287,18 @@ export default function PracticeSolvePage() {
           <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-8 flex flex-col items-center gap-6">
             {submitVerdict.verdict === 'AC' ? (
               <div className="flex flex-col items-center gap-3">
-                <div className="w-20 h-20 rounded-full bg-[#4CAF50]/10 flex items-center justify-center">
-                  <Trophy size={36} className="text-[#4CAF50]" />
+                <div className="w-20 h-20 rounded-full bg-[var(--status-success)]/10 flex items-center justify-center">
+                  <Trophy size={36} className="text-[var(--status-success)]" />
                 </div>
-                <h2 className="text-2xl font-bold text-[#4CAF50]">Accepted</h2>
+                <h2 className="text-2xl font-semibold text-[var(--status-success)]">Accepted</h2>
                 <p className="text-sm text-[var(--text-secondary)]">All test cases passed!</p>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3">
-                <div className="w-20 h-20 rounded-full bg-[#EF4444]/10 flex items-center justify-center">
-                  <XCircle size={36} className="text-[#EF4444]" />
+                <div className="w-20 h-20 rounded-full bg-[var(--status-danger)]/10 flex items-center justify-center">
+                  <XCircle size={36} className="text-[var(--status-danger)]" />
                 </div>
-                <h2 className="text-2xl font-bold text-[#EF4444]">{verdictLabel(submitVerdict.verdict)}</h2>
+                <h2 className="text-2xl font-semibold text-[var(--status-danger)]">{verdictLabel(submitVerdict.verdict)}</h2>
                 <p className="text-sm text-[var(--text-secondary)]">Keep going — you&apos;ve got this!</p>
               </div>
             )}
@@ -307,11 +307,11 @@ export default function PracticeSolvePage() {
             <div className="w-full space-y-2">
               <div className="flex justify-between text-xs text-[var(--text-faint)]">
                 <span>Test cases</span>
-                <span className="font-bold text-[var(--text-primary)]">{submitVerdict.passed} / {submitVerdict.total}</span>
+                <span className="font-semibold text-[var(--text-primary)]">{submitVerdict.passed} / {submitVerdict.total}</span>
               </div>
               <div className="w-full bg-[var(--bg-elevated)] rounded-full h-2.5">
                 <div
-                  className={`h-2.5 rounded-full transition-all duration-700 ${submitVerdict.verdict === 'AC' ? 'bg-[#4CAF50]' : 'bg-[#EF4444]'}`}
+                  className={`h-2.5 rounded-full transition-all duration-700 ${submitVerdict.verdict === 'AC' ? 'bg-[var(--status-success)]' : 'bg-[var(--status-danger)]'}`}
                   style={{ width: `${(submitVerdict.passed / submitVerdict.total) * 100}%` }}
                 />
               </div>
@@ -326,13 +326,13 @@ export default function PracticeSolvePage() {
                   setResults(null);
                   setConsoleTab('testcases');
                 }}
-                className="flex-1 flex items-center justify-center gap-2 btn-secondary text-sm py-3 rounded-xl"
+                className="flex-1 flex items-center justify-center gap-2 btn-secondary text-sm py-3 rounded-[10px]"
               >
                 <RotateCcw size={15} /> Reattempt
               </button>
               <button
                 onClick={() => router.push('/user/practice')}
-                className="flex-1 flex items-center justify-center gap-2 btn-primary text-sm py-3 rounded-xl"
+                className="flex-1 flex items-center justify-center gap-2 btn-primary text-sm py-3 rounded-[10px]"
               >
                 <ArrowLeft size={15} /> All Questions
               </button>
@@ -345,12 +345,12 @@ export default function PracticeSolvePage() {
         {/* Left: Problem */}
         <div className="flex flex-col w-[45%] bg-[var(--bg-surface)] rounded-xl overflow-hidden border border-[var(--border-subtle)]">
           <div className="flex bg-[var(--bg-elevated)] px-4 text-[13px] font-medium border-b border-[var(--border-subtle)] items-center justify-between">
-            <div className="px-4 py-2.5 border-b-2 border-[#4B8BBE] text-[var(--text-primary)] flex items-center gap-2">
+            <div className="px-4 py-2.5 border-b-2 border-[var(--accent-orange)] text-[var(--text-primary)] flex items-center gap-2">
               <BookOpen size={14} /> Question
-              {isAlreadySolved && <CheckCircle2 size={14} className="text-[#4CAF50]" />}
+              {isAlreadySolved && <CheckCircle2 size={14} className="text-[var(--status-success)]" />}
             </div>
             {showExpiry && (
-              <div className="flex items-center gap-1.5 mr-2 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 text-[11px] font-semibold">
+              <div className="flex items-center gap-1.5 mr-2 px-2.5 py-1 rounded-full bg-[var(--status-warning)]/10 text-[var(--status-warning)] text-[11px] font-semibold">
                 <Clock size={10} /> Expires in {daysLeft} day{daysLeft !== 1 ? 's' : ''}
               </div>
             )}
@@ -358,11 +358,11 @@ export default function PracticeSolvePage() {
           <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <h1 className="text-xl font-bold text-[var(--text-primary)] leading-tight">{problem.title}</h1>
-                <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border shrink-0 ${
-                  problem.difficulty === 'Easy' ? 'bg-teal-500/10 text-teal-400 border-teal-500/20' :
-                  problem.difficulty === 'Hard' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                  'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                <h1 className="text-xl font-semibold text-[var(--text-primary)] leading-tight">{problem.title}</h1>
+                <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border shrink-0 ${
+                  problem.difficulty === 'Easy' ? 'bg-[var(--status-success)]/10 text-[var(--status-success)] border-[var(--status-success)]/20' :
+                  problem.difficulty === 'Hard' ? 'bg-[var(--status-danger)]/10 text-[var(--status-danger)] border-[var(--status-danger)]/20' :
+                  'bg-[var(--status-warning)]/10 text-[var(--status-warning)] border-[var(--status-warning)]/20'
                 }`}>
                   {problem.difficulty}
                 </span>
@@ -379,7 +379,7 @@ export default function PracticeSolvePage() {
               {/* Constraints */}
               {problem.constraints.length > 0 && (
                 <div className="mt-6">
-                  <h3 className="text-[13px] font-bold text-[var(--text-primary)] mb-3">Constraints</h3>
+                  <h3 className="text-[13px] font-semibold text-[var(--text-primary)] mb-3">Constraints</h3>
                   <ul className="space-y-1.5">
                     {problem.constraints.map((c, i) => (
                       <li key={i} className="text-[12px] text-[var(--text-secondary)] font-mono flex items-start gap-2">
@@ -393,7 +393,7 @@ export default function PracticeSolvePage() {
               {/* Visible Test Cases as Examples */}
               {visibleTestCases.length > 0 && (
                 <div className="mt-6 space-y-4">
-                  <h3 className="text-[13px] font-bold text-[var(--text-primary)]">Examples</h3>
+                  <h3 className="text-[13px] font-semibold text-[var(--text-primary)]">Examples</h3>
                   {visibleTestCases.map((tc, i) => (
                     <div key={i} className="border border-[var(--border-subtle)] rounded-lg overflow-hidden">
                       <div className="px-3 py-1.5 bg-[var(--bg-elevated)] border-b border-[var(--border-subtle)]">
@@ -401,12 +401,12 @@ export default function PracticeSolvePage() {
                       </div>
                       <div className="p-3 space-y-3">
                         <div>
-                          <span className="text-[11px] text-[var(--text-faint)] font-semibold">Input</span>
-                          <pre className="text-[12px] font-mono text-[var(--text-primary)] bg-[var(--bg-primary)] rounded-lg p-3 mt-1.5 whitespace-pre-wrap">{tc.input}</pre>
+                          <span className="text-[11px] text-[var(--text-faint)] font-semibold uppercase tracking-[0.05em]">Input</span>
+                          <pre className="text-[12px] font-mono text-[var(--text-primary)] bg-[var(--bg-primary)] rounded-[10px] p-3 mt-1.5 whitespace-pre-wrap">{tc.input}</pre>
                         </div>
                         <div>
-                          <span className="text-[11px] text-[var(--text-faint)] font-semibold">Output</span>
-                          <pre className="text-[12px] font-mono text-teal-400 bg-[var(--bg-primary)] rounded-lg p-3 mt-1.5 whitespace-pre-wrap">{tc.expectedOutput}</pre>
+                          <span className="text-[11px] text-[var(--status-success)] font-semibold uppercase tracking-[0.05em]">Expected Output</span>
+                          <pre className="text-[12px] font-mono text-[var(--status-success)] bg-[var(--bg-primary)] rounded-[10px] p-3 mt-1.5 whitespace-pre-wrap">{tc.expectedOutput}</pre>
                         </div>
                       </div>
                     </div>
@@ -438,7 +438,7 @@ export default function PracticeSolvePage() {
                         key={lang}
                         onClick={() => switchLanguage(lang)}
                         className={`w-full text-left px-4 py-2 text-[13px] hover:bg-[var(--bg-surface)] transition-colors ${
-                          language === lang ? 'text-[#4B8BBE] font-semibold bg-[#4B8BBE]/5' : 'text-[var(--text-secondary)]'
+                          language === lang ? 'text-[var(--accent-orange)] font-semibold bg-[var(--accent-orange)]/5' : 'text-[var(--text-secondary)]'
                         }`}
                       >
                         {lang}
@@ -452,7 +452,7 @@ export default function PracticeSolvePage() {
                 <button
                   onClick={() => executeCode(false)}
                   disabled={isRunning || isSubmitting}
-                  className="flex items-center gap-1.5 bg-[#4CAF50] hover:bg-[#43A047] text-white px-4 py-1.5 rounded-lg text-[13px] font-semibold disabled:opacity-50 transition-colors"
+                  className="flex items-center gap-1.5 bg-[var(--status-success)] hover:opacity-90 text-white px-4 py-1.5 rounded-[10px] text-[13px] font-semibold disabled:opacity-50 transition-colors"
                 >
                   {isRunning ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
                   Run
@@ -460,7 +460,7 @@ export default function PracticeSolvePage() {
                 <button
                   onClick={() => executeCode(true)}
                   disabled={isRunning || isSubmitting}
-                  className="flex items-center gap-1.5 bg-[#F59E0B] hover:bg-[#D97706] text-white px-4 py-1.5 rounded-lg text-[13px] font-semibold disabled:opacity-50 transition-colors"
+                  className="flex items-center gap-1.5 bg-[var(--accent-orange)] hover:bg-[var(--accent-orange-hover)] text-[var(--accent-ink)] px-4 py-1.5 rounded-[10px] text-[13px] font-semibold disabled:opacity-50 transition-colors"
                 >
                   {isSubmitting ? <Loader2 size={13} className="animate-spin" /> : <CloudUpload size={13} />}
                   Submit
@@ -503,19 +503,19 @@ export default function PracticeSolvePage() {
             <div className="flex bg-[var(--bg-elevated)] px-3 text-[13px] font-medium border-b border-[var(--border-subtle)]">
               <button
                 onClick={() => setConsoleTab('testcases')}
-                className={`px-4 py-2.5 transition-colors border-b-2 ${consoleTab === 'testcases' ? 'text-[var(--text-primary)] border-[#4B8BBE]' : 'text-[var(--text-faint)] border-transparent hover:text-[var(--text-secondary)]'}`}
+                className={`px-4 py-2.5 transition-colors border-b-2 ${consoleTab === 'testcases' ? 'text-[var(--text-primary)] border-[var(--accent-orange)]' : 'text-[var(--text-faint)] border-transparent hover:text-[var(--text-secondary)]'}`}
               >
                 Testcases
               </button>
               <button
                 onClick={() => setConsoleTab('result')}
-                className={`px-4 py-2.5 transition-colors flex items-center gap-1.5 border-b-2 ${consoleTab === 'result' ? 'text-[var(--text-primary)] border-[#4B8BBE]' : 'text-[var(--text-faint)] border-transparent hover:text-[var(--text-secondary)]'}`}
+                className={`px-4 py-2.5 transition-colors flex items-center gap-1.5 border-b-2 ${consoleTab === 'result' ? 'text-[var(--text-primary)] border-[var(--accent-orange)]' : 'text-[var(--text-faint)] border-transparent hover:text-[var(--text-secondary)]'}`}
               >
                 Result
                 {results && (
                   results.every(r => r.statusCode === 'AC')
-                    ? <CheckCircle2 size={12} className="text-[#4CAF50]" />
-                    : <XCircle size={12} className="text-[#EF4444]" />
+                    ? <CheckCircle2 size={12} className="text-[var(--status-success)]" />
+                    : <XCircle size={12} className="text-[var(--status-danger)]" />
                 )}
               </button>
 
@@ -539,8 +539,8 @@ export default function PracticeSolvePage() {
                     >
                       {isResult && r && (
                         r.statusCode === 'AC'
-                          ? <CheckCircle2 size={11} className="text-[#4CAF50]" />
-                          : <XCircle size={11} className="text-[#EF4444]" />
+                          ? <CheckCircle2 size={11} className="text-[var(--status-success)]" />
+                          : <XCircle size={11} className="text-[var(--status-danger)]" />
                       )}
                       Case {i + 1}
                     </button>
@@ -562,7 +562,7 @@ export default function PracticeSolvePage() {
                       </div>
                       <div>
                         <p className="text-[11px] text-[var(--text-faint)] font-semibold mb-1.5">Expected Output</p>
-                        <pre className="bg-[var(--bg-elevated)] p-3 rounded-lg font-mono text-[12px] text-teal-400 whitespace-pre-wrap">
+                        <pre className="bg-[var(--bg-elevated)] p-3 rounded-lg font-mono text-[12px] text-[var(--status-success)] whitespace-pre-wrap">
                           {visibleTestCases[activeTestCase].expectedOutput}
                         </pre>
                       </div>
@@ -578,8 +578,8 @@ export default function PracticeSolvePage() {
                   <div>
                     {/* Summary */}
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className={`text-[13px] font-bold ${
-                        results.every(r => r.statusCode === 'AC') ? 'text-[#4CAF50]' : 'text-[#EF4444]'
+                      <h3 className={`text-[13px] font-semibold ${
+                        results.every(r => r.statusCode === 'AC') ? 'text-[var(--status-success)]' : 'text-[var(--status-danger)]'
                       }`}>
                         {results.every(r => r.statusCode === 'AC') ? 'All Passed' : 'Failed'}
                       </h3>
@@ -594,7 +594,7 @@ export default function PracticeSolvePage() {
                     {results[activeTestCase] && (
                       <div className="space-y-3">
                         {results[activeTestCase].stderr ? (
-                          <div className="p-3 bg-[#EF4444]/5 text-[#EF4444] rounded-lg text-[12px] font-mono border border-[#EF4444]/20 whitespace-pre-wrap">
+                          <div className="p-3 bg-[var(--status-danger)]/5 text-[var(--status-danger)] rounded-lg text-[12px] font-mono border border-[var(--status-danger)]/20 whitespace-pre-wrap">
                             {results[activeTestCase].stderr}
                           </div>
                         ) : results[activeTestCase].isHidden ? (
@@ -617,7 +617,7 @@ export default function PracticeSolvePage() {
                             </div>
                             <div>
                               <p className="text-[11px] text-[var(--text-faint)] font-semibold mb-1.5">Expected</p>
-                              <pre className="bg-[var(--bg-elevated)] p-3 rounded-lg font-mono text-[12px] text-teal-400 whitespace-pre-wrap">
+                              <pre className="bg-[var(--bg-elevated)] p-3 rounded-lg font-mono text-[12px] text-[var(--status-success)] whitespace-pre-wrap">
                                 {results[activeTestCase].expectedOutput}
                               </pre>
                             </div>

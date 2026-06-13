@@ -39,7 +39,7 @@ export function CreateAccountView({ loading, adminUnivId, formData, submitting, 
   return (
     <div className="max-w-lg mx-auto animate-fade-in">
       <div className="mb-6">
-        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Register Student</h1>
+        <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Register Student</h1>
         <p className="text-[var(--text-tertiary)] text-[13px] mt-1">
           University ID: <span className="font-mono text-[#00A8E1]">{adminUnivId || 'Loading...'}</span>
         </p>
@@ -56,7 +56,7 @@ export function CreateAccountView({ loading, adminUnivId, formData, submitting, 
         <form id="form" onSubmit={onSubmit} className="space-y-4">
           {FIELDS.map((f) => (
             <div key={f.name}>
-              <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">{f.label} {f.required && '*'}</label>
+              <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">{f.label} {f.required && '*'}</label>
               <input
                 type={f.type} name={f.name} required={f.required}
                 value={formData[f.name as keyof CreateAccountFormData]}

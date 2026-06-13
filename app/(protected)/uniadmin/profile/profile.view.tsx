@@ -1,6 +1,6 @@
 'use client';
 
-import { Pencil, X } from 'lucide-react';
+import { Pencil, X } from '@/components/icons';
 
 export interface UniadminProfileViewProps {
   loading: boolean;
@@ -32,7 +32,7 @@ export function UniadminProfileView({
   return (
     <div className="max-w-lg mx-auto animate-fade-in">
       <div className="mb-6">
-        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Admin Profile</h1>
+        <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Admin Profile</h1>
         <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Your account details</p>
       </div>
 
@@ -42,7 +42,7 @@ export function UniadminProfileView({
 
       <div id="account-details" className="window p-6">
         <div className="flex justify-between items-center mb-5 pb-4 border-b border-[var(--border-subtle)]">
-          <h2 className="text-[14px] font-bold text-[var(--text-primary)]">Account Details</h2>
+          <h2 className="text-[14px] font-semibold text-[var(--text-primary)]">Account Details</h2>
           <button
             onClick={onToggleEdit}
             className="btn-secondary inline-flex items-center gap-1.5 text-[12px] px-3 py-1"
@@ -54,18 +54,18 @@ export function UniadminProfileView({
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">Email</label>
+              <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Email</label>
               <p className="text-[13px] text-[var(--text-tertiary)]">{profileData.email}</p>
             </div>
             <div>
-              <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">University ID</label>
+              <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">University ID</label>
               <p className="text-[13px] font-mono text-[#00A8E1]">{profileData.universityId}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">Full Name</label>
+              <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Full Name</label>
               {isEditing ? (
                 <input
                   type="text"
@@ -78,7 +78,7 @@ export function UniadminProfileView({
               )}
             </div>
             <div>
-              <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1.5">Phone</label>
+              <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Phone</label>
               {isEditing ? (
                 <input
                   type="text"

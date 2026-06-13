@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, getDocs, where, orderBy } from 'firebase/firestore';
+import { collection, query, getDocs, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Calendar, MapPin, Clock, ChevronLeft, ChevronRight, Briefcase, X, Info } from 'lucide-react';
+import { Calendar, MapPin, Clock, ChevronLeft, ChevronRight, Briefcase, X } from '@/components/icons';
 
 interface CalendarEvent {
   id: string;
@@ -30,12 +30,12 @@ function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-const TYPE_CONFIG: Record<string, { dot: string; badge: string; label: string; bg: string; border: string; text: string }> = {
-  event:      { dot: 'bg-[#4B8BBE]', badge: 'bg-[#4B8BBE]/10 text-[#4B8BBE] border-[#4B8BBE]/20', label: 'Event',      bg: 'rgba(75,139,190,0.12)',  border: 'rgba(75,139,190,0.3)',  text: '#4B8BBE' },
-  internship: { dot: 'bg-[#00C16E]', badge: 'bg-[#00C16E]/10 text-[#00C16E] border-[#00C16E]/20', label: 'Internship', bg: 'rgba(0,193,110,0.12)',   border: 'rgba(0,193,110,0.3)',   text: '#00C16E' },
-  hackathon:  { dot: 'bg-[#00A8E1]', badge: 'bg-[#00A8E1]/10 text-[#00A8E1] border-[#00A8E1]/20', label: 'Hackathon',  bg: 'rgba(0,168,225,0.12)',   border: 'rgba(0,168,225,0.3)',   text: '#00A8E1' },
-  research:   { dot: 'bg-[#F1A82C]', badge: 'bg-[#F1A82C]/10 text-[#F1A82C] border-[#F1A82C]/20', label: 'Research',   bg: 'rgba(241,168,44,0.12)',  border: 'rgba(241,168,44,0.3)',  text: '#F1A82C' },
-  workshop:   { dot: 'bg-[#E04DB0]', badge: 'bg-[#E04DB0]/10 text-[#E04DB0] border-[#E04DB0]/20', label: 'Workshop',   bg: 'rgba(224,77,176,0.12)',  border: 'rgba(224,77,176,0.3)',  text: '#E04DB0' },
+const TYPE_CONFIG: Record<string, { dot: string; chip: string; label: string; text: string }> = {
+  event:      { dot: 'bg-[#4B8BBE]', chip: 'bg-[#4B8BBE]/12 text-[#4B8BBE]', label: 'Event',      text: '#4B8BBE' },
+  internship: { dot: 'bg-[#00C16E]', chip: 'bg-[#00C16E]/12 text-[#00C16E]', label: 'Internship', text: '#00C16E' },
+  hackathon:  { dot: 'bg-[#00A8E1]', chip: 'bg-[#00A8E1]/12 text-[#00A8E1]', label: 'Hackathon',  text: '#00A8E1' },
+  research:   { dot: 'bg-[#F1A82C]', chip: 'bg-[#F1A82C]/12 text-[#F1A82C]', label: 'Research',   text: '#F1A82C' },
+  workshop:   { dot: 'bg-[#E04DB0]', chip: 'bg-[#E04DB0]/12 text-[#E04DB0]', label: 'Workshop',   text: '#E04DB0' },
 };
 
 export default function CalendarPage() {
@@ -142,44 +142,44 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="max-w-[1100px] mx-auto animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+    <div className="max-w-[1200px] mx-auto animate-fade-in">
+      {/* ── Header ── */}
+      <div className="pt-8 mb-7 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Calendar</h1>
-          <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Your events, tests & internship deadlines</p>
+          <h1 className="text-[26px] font-semibold text-[var(--text-primary)] tracking-[-0.025em]">Calendar</h1>
+          <p className="text-[var(--text-tertiary)] text-[13.5px] mt-1.5">Your events, tests &amp; internship deadlines</p>
         </div>
         <div className="flex items-center gap-2">
           {/* Legend */}
           <div className="hidden md:flex items-center gap-3 mr-3">
             {Object.entries(TYPE_CONFIG).map(([key, cfg]) => (
               <div key={key} className="flex items-center gap-1.5">
-                <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
-                <span className="text-[11px] text-[var(--text-muted)]">{cfg.label}</span>
+                <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                <span className="text-[11.5px] text-[var(--text-muted)]">{cfg.label}</span>
               </div>
             ))}
           </div>
-          <button onClick={goToday} className="btn-secondary text-[12px] px-3 py-1.5">Today</button>
+          <button onClick={goToday} className="btn-secondary !rounded-[10px] text-[12px] !px-4 !py-1.5">Today</button>
         </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-4">
-        {/* Calendar Grid */}
+        {/* ── Calendar grid ── */}
         <div className="flex-1">
-          <div className="window overflow-hidden">
+          <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
             {/* Month navigation */}
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--border-subtle)]">
-              <button onClick={prevMonth} className="p-1.5 rounded hover:bg-[var(--bg-elevated)] transition-colors"><ChevronLeft size={16} className="text-[var(--text-muted)]" /></button>
-              <h2 className="text-[15px] font-bold text-[var(--text-primary)] tracking-[-0.01em]">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-subtle)]">
+              <button onClick={prevMonth} aria-label="Previous month" className="p-2 rounded-full hover:bg-[var(--bg-elevated)] transition-colors"><ChevronLeft size={15} className="text-[var(--text-muted)]" /></button>
+              <h2 className="text-[14.5px] font-semibold text-[var(--text-primary)] tracking-[-0.01em]">
                 {MONTH_NAMES[currentMonth.getMonth()]} {currentMonth.getFullYear()}
               </h2>
-              <button onClick={nextMonth} className="p-1.5 rounded hover:bg-[var(--bg-elevated)] transition-colors"><ChevronRight size={16} className="text-[var(--text-muted)]" /></button>
+              <button onClick={nextMonth} aria-label="Next month" className="p-2 rounded-full hover:bg-[var(--bg-elevated)] transition-colors"><ChevronRight size={15} className="text-[var(--text-muted)]" /></button>
             </div>
 
             {/* Day headers */}
             <div className="grid grid-cols-7 border-b border-[var(--border-subtle)]">
               {DAY_LABELS.map(d => (
-                <div key={d} className="py-2.5 text-center text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)]">{d}</div>
+                <div key={d} className="py-2.5 text-center text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]">{d}</div>
               ))}
             </div>
 
@@ -196,16 +196,18 @@ export default function CalendarPage() {
                         key={ci}
                         onClick={() => setSelectedDate(isSelected ? null : cell.date)}
                         className={`
-                          relative min-h-[72px] md:min-h-[82px] p-1.5 text-left transition-colors duration-100 border-r border-[var(--border-subtle)] last:border-r-0
-                          ${cell.inMonth ? '' : 'opacity-35'}
-                          ${isSelected ? 'bg-[#4B8BBE]/8' : 'hover:bg-[var(--bg-elevated)]'}
+                          relative min-h-[68px] md:min-h-[80px] p-1.5 text-left transition-colors duration-100 border-r border-[var(--border-subtle)] last:border-r-0
+                          ${cell.inMonth ? '' : 'opacity-30'}
+                          ${isSelected ? 'bg-[var(--accent-orange)]/[0.07]' : 'hover:bg-[var(--bg-elevated)]'}
                         `}
                       >
-                        <span className={`
-                          inline-flex items-center justify-center w-6 h-6 text-[12px] font-bold tabular-nums rounded-full
-                          ${isTodayCell ? 'bg-[#00A8E1] text-white' : 'text-[var(--text-primary)]'}
-                          ${isSelected && !isTodayCell ? 'bg-[#4B8BBE] text-white' : ''}
-                        `}>
+                        <span className={`inline-flex items-center justify-center w-6 h-6 text-[12px] font-semibold tabular-nums rounded-full ${
+                          isTodayCell
+                            ? 'bg-[var(--accent-orange)] text-[var(--accent-ink)]'
+                            : isSelected
+                              ? 'text-[var(--accent-orange)] ring-1 ring-[var(--accent-orange)]'
+                              : 'text-[var(--text-primary)]'
+                        }`}>
                           {cell.day}
                         </span>
                         {/* Event dots */}
@@ -215,14 +217,14 @@ export default function CalendarPage() {
                               <span key={i} className={`w-1.5 h-1.5 rounded-full ${TYPE_CONFIG[ev.type]?.dot || 'bg-[#4B8BBE]'}`} />
                             ))}
                             {dayEvents.length > 3 && (
-                              <span className="text-[8px] font-bold text-[var(--text-faint)] ml-0.5">+{dayEvents.length - 3}</span>
+                              <span className="text-[8px] font-semibold text-[var(--text-faint)] ml-0.5">+{dayEvents.length - 3}</span>
                             )}
                           </div>
                         )}
                         {/* First event title preview on md+ */}
                         {dayEvents.length > 0 && cell.inMonth && (
                           <div className="hidden md:block mt-0.5">
-                            <p className={`text-[9px] font-semibold leading-tight truncate px-1 py-0.5 rounded ${TYPE_CONFIG[dayEvents[0].type]?.badge || ''}`}>
+                            <p className={`text-[9px] font-medium leading-tight truncate px-1.5 py-0.5 rounded-full ${TYPE_CONFIG[dayEvents[0].type]?.chip || ''}`}>
                               {dayEvents[0].title}
                             </p>
                           </div>
@@ -236,43 +238,35 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        {/* Sidebar */}
+        {/* ── Sidebar ── */}
         <div className="w-full lg:w-[300px] space-y-4">
           {/* Selected date detail */}
           {selectedDate && (
-            <div className="window p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-[13px] font-bold text-[var(--text-primary)]">
+            <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
+              <div className="flex items-center justify-between px-4 h-10 border-b border-[var(--border-subtle)]">
+                <h3 className="text-[13px] font-semibold text-[var(--text-primary)]">
                   {selectedDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                 </h3>
-                <button onClick={() => setSelectedDate(null)} className="p-1 rounded hover:bg-[var(--bg-elevated)] transition-colors">
-                  <X size={14} className="text-[var(--text-faint)]" />
+                <button onClick={() => setSelectedDate(null)} aria-label="Close" className="p-1.5 rounded-full hover:bg-[var(--bg-elevated)] transition-colors">
+                  <X size={13} className="text-[var(--text-faint)]" />
                 </button>
               </div>
-              {selectedEvents.length === 0 ? (
-                <p className="text-[12px] text-[var(--text-faint)]">No events on this day</p>
-              ) : (
-                <div className="space-y-2">
-                  {selectedEvents.map(ev => {
-                    const d = toDate(ev.date);
-                    const cfg = TYPE_CONFIG[ev.type] || TYPE_CONFIG.event;
-                    return (
-                      <div
-                        key={ev.id}
-                        className="flex items-start gap-3 px-3.5 py-2.5 rounded-lg border"
-                        style={{ background: cfg.bg, borderColor: cfg.border }}
-                      >
-                        <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 border mt-0.5" style={{ borderColor: cfg.text, color: cfg.text }}>
-                          <Info size={11} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <span className="text-[12px] font-bold" style={{ color: cfg.text }}>{cfg.label}</span>
-                            <span className="text-[12px] text-[var(--text-muted)]">—</span>
-                            <span className="text-[12px] font-semibold text-[var(--text-primary)] truncate">{ev.title}</span>
+              <div className="px-4 py-3">
+                {selectedEvents.length === 0 ? (
+                  <p className="text-[12px] text-[var(--text-faint)]">No events on this day</p>
+                ) : (
+                  <div className="flex flex-col">
+                    {selectedEvents.map(ev => {
+                      const d = toDate(ev.date);
+                      const cfg = TYPE_CONFIG[ev.type] || TYPE_CONFIG.event;
+                      return (
+                        <div key={ev.id} className="py-2.5 border-b border-[var(--border-subtle)] last:border-b-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`px-2 py-[2px] rounded-full text-[10px] font-medium ${cfg.chip}`}>{cfg.label}</span>
+                            <span className="text-[12.5px] font-semibold text-[var(--text-primary)] truncate">{ev.title}</span>
                           </div>
-                          {ev.description && <p className="text-[11px] text-[var(--text-muted)] line-clamp-2 mb-1">{ev.description}</p>}
-                          <div className="flex flex-wrap gap-3 text-[10px] text-[var(--text-faint)]">
+                          {ev.description && <p className="text-[11.5px] text-[var(--text-muted)] line-clamp-2 mb-1">{ev.description}</p>}
+                          <div className="flex flex-wrap gap-3 text-[10.5px] text-[var(--text-faint)]">
                             {d && (
                               <span className="flex items-center gap-1">
                                 <Clock size={9} />
@@ -293,24 +287,26 @@ export default function CalendarPage() {
                             )}
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
           {/* Upcoming */}
-          <div className="window p-4">
-            <h3 className="text-[11px] font-bold uppercase tracking-widest text-[var(--text-faint)] mb-3">Upcoming</h3>
+          <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
+            <div className="px-4 h-10 flex items-center border-b border-[var(--border-subtle)]">
+              <h3 className="text-[10.5px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]">Upcoming</h3>
+            </div>
             {upcoming.length === 0 ? (
-              <div className="text-center py-6">
-                <Calendar size={20} className="mx-auto text-[var(--text-faint)] mb-2" />
+              <div className="text-center py-8">
+                <Calendar size={18} className="mx-auto text-[var(--text-faint)] mb-2" />
                 <p className="text-[12px] text-[var(--text-faint)]">No upcoming events</p>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="flex flex-col">
                 {upcoming.map(ev => {
                   const d = toDate(ev.date);
                   const cfg = TYPE_CONFIG[ev.type] || TYPE_CONFIG.event;
@@ -318,25 +314,18 @@ export default function CalendarPage() {
                     <button
                       key={ev.id}
                       onClick={() => { if (d) { setCurrentMonth(new Date(d.getFullYear(), d.getMonth(), 1)); setSelectedDate(d); }}}
-                      className="w-full text-left rounded-lg transition-opacity hover:opacity-80"
+                      className="w-full text-left flex items-center gap-3 px-4 py-2.5 border-b border-[var(--border-subtle)] last:border-b-0 transition-colors hover:bg-[var(--bg-elevated)]"
                     >
-                      <div
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg border"
-                        style={{ background: cfg.bg, borderColor: cfg.border }}
-                      >
-                        <div className="flex flex-col items-center min-w-[28px] shrink-0">
-                          <span className="text-[13px] font-bold tabular-nums leading-none" style={{ color: cfg.text }}>{d?.getDate()}</span>
-                          <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-faint)] mt-0.5">
-                            {d?.toLocaleString('default', { month: 'short' })}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <Info size={11} style={{ color: cfg.text }} className="shrink-0" />
-                            <span className="text-[11px] font-semibold text-[var(--text-primary)] truncate">{ev.title}</span>
-                          </div>
-                          <p className="text-[10px] text-[var(--text-faint)] truncate mt-0.5">{ev.description || cfg.label}</p>
-                        </div>
+                      <div className="flex flex-col items-center w-7 shrink-0">
+                        <span className="text-[13px] font-semibold tabular-nums leading-none text-[var(--text-primary)]">{d?.getDate()}</span>
+                        <span className="text-[8.5px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)] mt-0.5">
+                          {d?.toLocaleString('default', { month: 'short' })}
+                        </span>
+                      </div>
+                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[12px] font-medium text-[var(--text-primary)] truncate">{ev.title}</p>
+                        <p className="text-[10.5px] text-[var(--text-faint)] truncate mt-0.5">{ev.description || cfg.label}</p>
                       </div>
                     </button>
                   );
@@ -346,18 +335,21 @@ export default function CalendarPage() {
           </div>
 
           {/* Month summary */}
-          <div className="window p-4">
-            <h3 className="text-[11px] font-bold uppercase tracking-widest text-[var(--text-faint)] mb-3">This Month</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {Object.entries(TYPE_CONFIG).map(([key, cfg]) => {
+          <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
+            <div className="px-4 h-10 flex items-center border-b border-[var(--border-subtle)]">
+              <h3 className="text-[10.5px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]">This Month</h3>
+            </div>
+            <div className="grid grid-cols-2">
+              {Object.entries(TYPE_CONFIG).map(([key, cfg], i, arr) => {
                 const count = eventsInMonth.filter(e => e.type === key).length;
+                const isLastRow = i >= arr.length - (arr.length % 2 === 0 ? 2 : 1);
                 return (
-                  <div key={key} className="p-2.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
+                  <div key={key} className={`px-4 py-3 border-r border-[var(--border-subtle)] [&:nth-child(2n)]:border-r-0 ${isLastRow ? '' : 'border-b'}`}>
                     <div className="flex items-center gap-1.5 mb-1">
-                      <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
-                      <span className="text-[10px] font-bold text-[var(--text-faint)] uppercase tracking-wider">{cfg.label}s</span>
+                      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                      <span className="text-[9.5px] font-semibold text-[var(--text-faint)] uppercase tracking-[0.07em]">{cfg.label}s</span>
                     </div>
-                    <p className="text-[18px] font-bold tabular-nums text-[var(--text-primary)]">{count}</p>
+                    <p className="text-[17px] font-semibold tabular-nums text-[var(--text-primary)]">{count}</p>
                   </div>
                 );
               })}

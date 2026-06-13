@@ -12,7 +12,7 @@ import {
   Wifi, CheckCircle2, XCircle, Monitor, Lock,
   MessageCircle, Send, ShieldCheck, MonitorPlay,
   Play, Terminal, Loader2, ChevronDown,
-} from 'lucide-react';
+} from '@/components/icons';
 
 // ── Interfaces ──
 interface Problem {
@@ -121,8 +121,8 @@ const LANG_MONACO: Record<number, string> = {
 
 const SEVERITY_CONFIG = {
   low:    { label: 'Low',    color: '#F1A82C', points: 1 },
-  medium: { label: 'Medium', color: '#00A8E1', points: 2 },
-  high:   { label: 'High',   color: '#DC2626', points: 3 },
+  medium: { label: 'Medium', color: 'var(--accent-orange)', points: 2 },
+  high:   { label: 'High',   color: 'var(--status-danger)', points: 3 },
 };
 
 const normalizeJudgeText = (value: string) => value.trim().replace(/\r\n/g, '\n').replace(/\s+/g, ' ').toLowerCase();
@@ -1006,10 +1006,10 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
     return (
       <div className="max-w-lg mx-auto animate-fade-in py-12">
         <div className="window p-8 text-center">
-          <div className="w-16 h-16 rounded-full bg-[#DC2626]/10 flex items-center justify-center mx-auto mb-5">
-            <Lock size={28} className="text-[#DC2626]" />
+          <div className="w-16 h-16 rounded-full bg-[var(--status-danger)]/10 flex items-center justify-center mx-auto mb-5">
+            <Lock size={28} className="text-[var(--status-danger)]" />
           </div>
-          <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">Test Already Attempted</h1>
+          <h1 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Test Already Attempted</h1>
           <p className="text-[var(--text-tertiary)] text-[13px] mb-6">
             You have already submitted this test. Each test can only be attempted once. Contact your administrator if you need a reattempt.
           </p>
@@ -1032,10 +1032,10 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
     return (
       <div className="fixed inset-0 z-[9999] bg-[var(--bg-primary)] flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-8">
-          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 ${wasForced ? 'bg-[#DC2626]/10' : 'bg-[#4CAF50]/10'}`}>
-            {wasForced ? <AlertTriangle size={28} className="text-[#DC2626]" /> : <CheckCircle2 size={28} className="text-[#4CAF50]" />}
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 ${wasForced ? 'bg-[var(--status-danger)]/10' : 'bg-[var(--status-success)]/10'}`}>
+            {wasForced ? <AlertTriangle size={28} className="text-[var(--status-danger)]" /> : <CheckCircle2 size={28} className="text-[var(--status-success)]" />}
           </div>
-          <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+          <h1 className="text-xl font-semibold text-[var(--text-primary)] mb-2">
             {wasForced ? 'Test Auto-Submitted' : 'Test Submitted Successfully'}
           </h1>
           <p className="text-[var(--text-tertiary)] text-[13px] mb-1">
@@ -1054,16 +1054,16 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
           {resultSummary && (
             <div className="mb-6 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4 text-left">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-faint)] mb-2">Exam Result</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)] mb-2">Exam Result</p>
               <div className="flex items-center justify-between">
                 <span className="text-[13px] text-[var(--text-tertiary)]">Score</span>
-                <span className="text-[14px] font-bold text-[var(--text-primary)] tabular-nums">
+                <span className="text-[14px] font-semibold text-[var(--text-primary)] tabular-nums">
                   {resultSummary.score} / {resultSummary.totalQuestions}
                 </span>
               </div>
               <div className="flex items-center justify-between mt-1.5">
                 <span className="text-[13px] text-[var(--text-tertiary)]">Percentage</span>
-                <span className="text-[14px] font-bold text-[#4CAF50] tabular-nums">{resultSummary.percentage}%</span>
+                <span className="text-[14px] font-semibold text-[var(--status-success)] tabular-nums">{resultSummary.percentage}%</span>
               </div>
               <div className="flex items-center justify-between mt-1.5">
                 <span className="text-[13px] text-[var(--text-tertiary)]">Attempted</span>
@@ -1099,11 +1099,11 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               <p className="text-[11px] text-[var(--text-faint)] mb-2">
                 Chat with proctor available for {formatTime(timeLeft)}
               </p>
-              <button onClick={toggleChat} className="inline-flex items-center gap-2 text-[12px] font-bold text-[#4B8BBE] hover:text-[#4C5ABF] transition-colors">
+              <button onClick={toggleChat} className="inline-flex items-center gap-2 text-[12px] font-semibold text-[#4B8BBE] hover:text-[#4C5ABF] transition-colors">
                 <MessageCircle size={14} />
                 {chatOpen ? 'Close Chat' : 'Open Chat'}
                 {newMsgCount > 0 && (
-                  <span className="w-4 h-4 rounded-full bg-[#DC2626] text-white text-[8px] font-bold flex items-center justify-center">
+                  <span className="w-4 h-4 rounded-full bg-[var(--status-danger)] text-white text-[8px] font-semibold flex items-center justify-center">
                     {newMsgCount}
                   </span>
                 )}
@@ -1117,7 +1117,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
                 <div className="flex items-center gap-2">
                   <MessageCircle size={14} className="text-[#4B8BBE]" />
-                  <span className="text-[12px] font-bold text-[var(--text-primary)]">Live Support</span>
+                  <span className="text-[12px] font-semibold text-[var(--text-primary)]">Live Support</span>
                 </div>
                 <button onClick={toggleChat} className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors">
                   <XCircle size={16} />
@@ -1168,10 +1168,10 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
     return (
       <div className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-8">
-          <div className="w-20 h-20 rounded-full bg-[#DC2626]/20 flex items-center justify-center mx-auto mb-5 animate-pulse">
-            <Lock size={32} className="text-[#DC2626]" />
+          <div className="w-20 h-20 rounded-full bg-[var(--status-danger)]/20 flex items-center justify-center mx-auto mb-5 animate-pulse">
+            <Lock size={32} className="text-[var(--status-danger)]" />
           </div>
-          <h1 className="text-xl font-bold text-white mb-2">Session Paused — Security Review</h1>
+          <h1 className="text-xl font-semibold text-white mb-2">Session Paused — Security Review</h1>
           <p className="text-white/60 text-[13px] mb-1">
             This session has been paused due to a critical security breach.
           </p>
@@ -1194,10 +1194,10 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         <div className="flex items-center gap-1.5">
           {status === 'pending' && <span className="text-[11px] text-[var(--text-faint)]">Waiting...</span>}
           {status === 'checking' && <div className="loading-dots" style={{ transform: 'scale(0.5)' }}><span /><span /><span /></div>}
-          {status === 'pass' && <><CheckCircle2 size={14} className="text-[#4CAF50]" /><span className="text-[11px] font-bold text-[#4CAF50]">Ready</span></>}
-          {status === 'slow' && <><AlertTriangle size={14} className="text-[#F1A82C]" /><span className="text-[11px] font-bold text-[#F1A82C]">Slow</span></>}
-          {status === 'fail' && <><XCircle size={14} className="text-[#DC2626]" /><span className="text-[11px] font-bold text-[#DC2626]">Failed</span></>}
-          {status === 'fail_surface' && <><XCircle size={14} className="text-[#DC2626]" /><span className="text-[11px] font-bold text-[#DC2626]">Entire Screen Required</span></>}
+          {status === 'pass' && <><CheckCircle2 size={14} className="text-[var(--status-success)]" /><span className="text-[11px] font-semibold text-[var(--status-success)]">Ready</span></>}
+          {status === 'slow' && <><AlertTriangle size={14} className="text-[#F1A82C]" /><span className="text-[11px] font-semibold text-[#F1A82C]">Slow</span></>}
+          {status === 'fail' && <><XCircle size={14} className="text-[var(--status-danger)]" /><span className="text-[11px] font-semibold text-[var(--status-danger)]">Failed</span></>}
+          {status === 'fail_surface' && <><XCircle size={14} className="text-[var(--status-danger)]" /><span className="text-[11px] font-semibold text-[var(--status-danger)]">Entire Screen Required</span></>}
         </div>
       </div>
     );
@@ -1210,7 +1210,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               <Monitor size={20} className="text-[#4B8BBE]" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-[var(--text-primary)]">System Readiness Check</h1>
+              <h1 className="text-lg font-semibold text-[var(--text-primary)]">System Readiness Check</h1>
               <p className="text-[var(--text-tertiary)] text-[12px]">Verifying your hardware before the exam</p>
             </div>
           </div>
@@ -1222,10 +1222,10 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           </div>
 
           {/* Security indicators */}
-          <div className="bg-[#4CAF50]/5 border border-[#4CAF50]/20 rounded-lg p-4 mb-6">
+          <div className="bg-[var(--status-success)]/5 border border-[var(--status-success)]/20 rounded-lg p-4 mb-6">
             <div className="flex items-center gap-2 mb-2">
-              <ShieldCheck size={14} className="text-[#4CAF50]" />
-              <span className="text-[11px] font-bold text-[#4CAF50] uppercase tracking-wider">Secure Connection</span>
+              <ShieldCheck size={14} className="text-[var(--status-success)]" />
+              <span className="text-[11px] font-semibold text-[var(--status-success)] uppercase tracking-wider">Secure Connection</span>
             </div>
             <div className="space-y-1.5 text-[11px] text-[var(--text-tertiary)]">
               <div className="flex items-center gap-2">
@@ -1240,10 +1240,10 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           </div>
 
           {checks.screen === 'fail' && (
-            <p className="text-[12px] text-[#DC2626] mb-4">Screen sharing denied. Please allow screen sharing and reload the page.</p>
+            <p className="text-[12px] text-[var(--status-danger)] mb-4">Screen sharing denied. Please allow screen sharing and reload the page.</p>
           )}
           {checks.screen === 'fail_surface' && (
-            <p className="text-[12px] text-[#DC2626] mb-4">You must share your <strong>entire screen</strong>, not a single tab or window. Please reload and select &quot;Entire Screen&quot;.</p>
+            <p className="text-[12px] text-[var(--status-danger)] mb-4">You must share your <strong>entire screen</strong>, not a single tab or window. Please reload and select &quot;Entire Screen&quot;.</p>
           )}
 
           <button
@@ -1265,11 +1265,11 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       <div className="max-w-lg mx-auto animate-fade-in py-12">
         <div className="window p-8">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-lg bg-[#00A8E1]/10 flex items-center justify-center">
-              <Shield size={20} className="text-[#00A8E1]" />
+            <div className="w-10 h-10 rounded-lg bg-[var(--accent-orange)]/10 flex items-center justify-center">
+              <Shield size={20} className="text-[var(--accent-orange)]" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-[var(--text-primary)]">{test.title || test.sourceFileName}</h1>
+              <h1 className="text-lg font-semibold text-[var(--text-primary)]">{test.title || test.sourceFileName}</h1>
               <p className="text-[var(--text-tertiary)] text-[12px]">Proctored Assessment — Read carefully</p>
             </div>
           </div>
@@ -1280,38 +1280,38 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           </div>
 
           <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg p-5 mb-5">
-            <p className="text-[10px] font-bold text-[var(--text-faint)] uppercase tracking-widest mb-4">Monitoring & Enforcement</p>
+            <p className="text-[10px] font-semibold text-[var(--text-faint)] uppercase tracking-[0.07em] mb-4">Monitoring & Enforcement</p>
             <div className="space-y-3 text-[12px] text-[var(--text-tertiary)]">
               <div className="flex items-start gap-2.5">
-                <Maximize size={13} className="text-[#00A8E1] mt-0.5 shrink-0" />
+                <Maximize size={13} className="text-[var(--accent-orange)] mt-0.5 shrink-0" />
                 <span>The test runs in <strong className="text-[var(--text-primary)]">fullscreen</strong>. Exiting fullscreen triggers a violation.</span>
               </div>
               <div className="flex items-start gap-2.5">
-                <Monitor size={13} className="text-[#00A8E1] mt-0.5 shrink-0" />
+                <Monitor size={13} className="text-[var(--accent-orange)] mt-0.5 shrink-0" />
                 <span><strong className="text-[var(--text-primary)]">Tab switching</strong>, copy-paste, right-click, and keyboard shortcuts are blocked and logged.</span>
               </div>
               <div className="flex items-start gap-2.5">
-                <MonitorPlay size={13} className="text-[#00A8E1] mt-0.5 shrink-0" />
+                <MonitorPlay size={13} className="text-[var(--accent-orange)] mt-0.5 shrink-0" />
                 <span>Your <strong className="text-[var(--text-primary)]">screen is being recorded</strong> and monitored. Stopping screen share triggers a violation.</span>
               </div>
               <div className="flex items-start gap-2.5">
-                <MessageCircle size={13} className="text-[#00A8E1] mt-0.5 shrink-0" />
+                <MessageCircle size={13} className="text-[var(--accent-orange)] mt-0.5 shrink-0" />
                 <span><strong className="text-[var(--text-primary)]">Live support</strong> is available during the exam via the chat button.</span>
               </div>
             </div>
           </div>
 
           <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg p-5 mb-6">
-            <p className="text-[10px] font-bold text-[var(--text-faint)] uppercase tracking-widest mb-3">Violation Severity</p>
+            <p className="text-[10px] font-semibold text-[var(--text-faint)] uppercase tracking-[0.07em] mb-3">Violation Severity</p>
             <div className="space-y-2">
               {[
                 { level: 'Low', color: '#F1A82C', desc: 'Ambient noise, minor disruption', action: '1 point' },
-                { level: 'Medium', color: '#00A8E1', desc: 'Fullscreen exit, copy/paste attempt, window blur', action: '2 points' },
-                { level: 'High', color: '#DC2626', desc: 'Tab switching, unauthorized key, screen share stopped', action: '3 points — session freeze after 3' },
+                { level: 'Medium', color: 'var(--accent-orange)', desc: 'Fullscreen exit, copy/paste attempt, window blur', action: '2 points' },
+                { level: 'High', color: 'var(--status-danger)', desc: 'Tab switching, unauthorized key, screen share stopped', action: '3 points — session freeze after 3' },
               ].map(v => (
                 <div key={v.level} className="flex items-center gap-3 text-[11px]">
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ background: v.color }} />
-                  <span className="font-bold text-[var(--text-primary)] w-14">{v.level}</span>
+                  <span className="font-semibold text-[var(--text-primary)] w-14">{v.level}</span>
                   <span className="text-[var(--text-tertiary)] flex-1">{v.desc}</span>
                   <span className="text-[var(--text-faint)] font-medium">{v.action}</span>
                 </div>
@@ -1344,8 +1344,8 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       {warningVisible && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[9999] max-w-md w-full px-4">
           <div className="rounded-lg shadow-lg border px-4 py-3 flex items-start gap-3 text-[13px]" style={{
-            background: `${SEVERITY_CONFIG[warningData.severity as keyof typeof SEVERITY_CONFIG]?.color || '#00A8E1'}15`,
-            borderColor: `${SEVERITY_CONFIG[warningData.severity as keyof typeof SEVERITY_CONFIG]?.color || '#00A8E1'}30`,
+            background: `${SEVERITY_CONFIG[warningData.severity as keyof typeof SEVERITY_CONFIG]?.color || 'var(--accent-orange)'}15`,
+            borderColor: `${SEVERITY_CONFIG[warningData.severity as keyof typeof SEVERITY_CONFIG]?.color || 'var(--accent-orange)'}30`,
           }}>
             <AlertTriangle size={16} className="shrink-0 mt-0.5" style={{ color: SEVERITY_CONFIG[warningData.severity as keyof typeof SEVERITY_CONFIG]?.color }} />
             <div>
@@ -1362,18 +1362,18 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       <div className="fixed top-0 left-0 right-0 z-50 bg-[var(--bg-primary)]/95 backdrop-blur border-b border-[var(--border-subtle)] px-4 py-2">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5 bg-[#4CAF50]/10 px-2 py-0.5 rounded">
-                  <Shield size={11} className="text-[#4CAF50]" />
-                  <span className="text-[10px] font-bold text-[#4CAF50] uppercase tracking-wider">Secure Environment Active</span>
+                <div className="flex items-center gap-1.5 bg-[var(--status-success)]/10 px-2 py-0.5 rounded">
+                  <Shield size={11} className="text-[var(--status-success)]" />
+                  <span className="text-[10px] font-semibold text-[var(--status-success)] uppercase tracking-wider">Secure Environment Active</span>
                 </div>
                 <span className="w-px h-4 bg-[var(--border-subtle)] hidden sm:block" />
                 <span className="text-[11px] text-[var(--text-faint)] hidden sm:block">Monitoring Enabled</span>
                 <span className="w-px h-4 bg-[var(--border-subtle)] hidden sm:block" />
-                <div className="hidden sm:flex items-center gap-1 text-[10px] text-[#4CAF50]">
+                <div className="hidden sm:flex items-center gap-1 text-[10px] text-[var(--status-success)]">
                   <Lock size={9} />
                   <span>SSL</span>
                 </div>
-                <div className="hidden sm:flex items-center gap-1 text-[10px] text-[#4CAF50]">
+                <div className="hidden sm:flex items-center gap-1 text-[10px] text-[var(--status-success)]">
                   <MonitorPlay size={9} />
                   <span>Screen</span>
                 </div>
@@ -1383,25 +1383,25 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
             <span className="w-px h-4 bg-[var(--border-subtle)]" />
             {/* Violations — only for proctored tests */}
             {violations.length > 0 && (
-              <span className="flex items-center gap-1 text-[11px] font-bold text-[#00A8E1]">
+              <span className="flex items-center gap-1 text-[11px] font-semibold text-[var(--accent-orange)]">
                 <AlertTriangle size={11} />
                 {violationPoints}/{MAX_VIOLATIONS}
               </span>
             )}
             {/* Timer */}
             {timeLeft !== null && (
-              <span className={`flex items-center gap-1 text-[12px] font-bold tabular-nums ${timeLeft <= 60 ? 'text-[#DC2626] animate-pulse' : timeLeft <= 300 ? 'text-[#00A8E1]' : 'text-[var(--text-primary)]'}`}>
+              <span className={`flex items-center gap-1 text-[12px] font-semibold tabular-nums ${timeLeft <= 60 ? 'text-[var(--status-danger)] animate-pulse' : timeLeft <= 300 ? 'text-[var(--accent-orange)]' : 'text-[var(--text-primary)]'}`}>
                 <Clock size={12} />
                 {formatTime(timeLeft)}
               </span>
             )}
                 <span className="w-px h-4 bg-[var(--border-subtle)]" />
                 {/* Live Support */}
-                <button onClick={toggleChat} className="relative flex items-center gap-1 text-[11px] font-bold text-[#4B8BBE] hover:text-[#4C5ABF] transition-colors">
+                <button onClick={toggleChat} className="relative flex items-center gap-1 text-[11px] font-semibold text-[#4B8BBE] hover:text-[#4C5ABF] transition-colors">
                   <MessageCircle size={12} />
                   <span className="hidden sm:inline">Support</span>
                   {newMsgCount > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#DC2626] text-white text-[8px] font-bold flex items-center justify-center">
+                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[var(--status-danger)] text-white text-[8px] font-semibold flex items-center justify-center">
                       {newMsgCount}
                     </span>
                   )}
@@ -1416,7 +1416,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
             <div className="flex items-center gap-2">
               <MessageCircle size={14} className="text-[#4B8BBE]" />
-              <span className="text-[12px] font-bold text-[var(--text-primary)]">Live Support</span>
+              <span className="text-[12px] font-semibold text-[var(--text-primary)]">Live Support</span>
             </div>
             <button onClick={toggleChat} className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors">
               <XCircle size={16} />
@@ -1462,7 +1462,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       <div className={`${isCoding ? 'max-w-7xl' : 'max-w-4xl'} mx-auto pt-14 pb-8 px-4`}>
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded" style={{ background: `${sectionColorMap[currentQ._sectionType]}20`, color: sectionColorMap[currentQ._sectionType] }}>
+            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded" style={{ background: `${sectionColorMap[currentQ._sectionType]}20`, color: sectionColorMap[currentQ._sectionType] }}>
               {currentQ._sectionTitle}
             </span>
             <p className="text-[var(--text-tertiary)] text-[13px]">
@@ -1479,7 +1479,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
             <div className="window p-6 sm:p-8">
               <div className="flex justify-between items-start mb-5">
                 <div className="flex items-center gap-2">
-                  <span className="inline-block text-white px-2.5 py-0.5 text-[11px] font-bold uppercase rounded" style={{ background: sectionColorMap[currentQ._sectionType] }}>
+                  <span className="inline-block text-white px-2.5 py-0.5 text-[11px] font-semibold uppercase rounded" style={{ background: sectionColorMap[currentQ._sectionType] }}>
                     Question {currentQuestion + 1}
                   </span>
                   {currentQ.topic && (
@@ -1496,8 +1496,8 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
               {currentQ.sampleTestCases && currentQ.sampleTestCases.length > 0 && (
                 <div className="mt-5 space-y-2">
-                  <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Sample Test Case:</p>
-                  <pre className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-4 rounded text-sm text-[#4CAF50] overflow-x-auto font-mono">
+                  <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em]">Sample Test Case:</p>
+                  <pre className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-4 rounded text-sm text-[var(--status-success)] overflow-x-auto font-mono">
                     <div className="mb-2"><span className="text-[var(--text-faint)]">Input:</span> {currentQ.sampleTestCases[0].input}</div>
                     <div><span className="text-[var(--text-faint)]">Output:</span> {currentQ.sampleTestCases[0].output}</div>
                   </pre>
@@ -1506,7 +1506,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
               {currentQ.constraints && currentQ.constraints.length > 0 && (
                 <div className="mt-5">
-                  <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-2">Constraints:</p>
+                  <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-2">Constraints:</p>
                   <ul className="list-disc list-inside text-sm space-y-1">
                     {currentQ.constraints.map((c, i) => <li key={i} className="text-[var(--text-tertiary)]">{c}</li>)}
                   </ul>
@@ -1515,7 +1515,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
               {currentQ.hints && currentQ.hints.length > 0 && (
                 <div className="mt-5">
-                  <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-2">Hints:</p>
+                  <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-2">Hints:</p>
                   <ul className="list-disc list-inside text-sm space-y-1">
                     {currentQ.hints.map((h, i) => <li key={i} className="text-[var(--text-tertiary)]">{h}</li>)}
                   </ul>
@@ -1549,7 +1549,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                   <button
                     onClick={runCode}
                     disabled={!answers[currentQuestion]?.trim() || compiling}
-                    className="flex items-center gap-1.5 bg-[#4CAF50] hover:bg-[#43A047] text-white px-3 py-1.5 rounded text-[12px] font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="flex items-center gap-1.5 bg-[var(--status-success)] hover:bg-[var(--status-success)] text-white px-3 py-1.5 rounded text-[12px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
                     {compiling ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
                     {compiling ? 'Running...' : 'Run Code'}
@@ -1557,7 +1557,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                   <button
                     onClick={submitCode}
                     disabled={!answers[currentQuestion]?.trim() || judgeSubmitting || compiling}
-                    className="flex items-center gap-1.5 bg-[#4B8BBE] hover:bg-[#4C5ABF] text-white px-3 py-1.5 rounded text-[12px] font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="flex items-center gap-1.5 bg-[#4B8BBE] hover:bg-[#4C5ABF] text-white px-3 py-1.5 rounded text-[12px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
                     {judgeSubmitting ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
                     {judgeSubmitting ? 'Submitting...' : 'Submit Code'}
@@ -1592,7 +1592,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
               {/* Stdin input */}
               <div className="mt-3">
-                <label className="block text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-widest mb-1.5">Input (stdin)</label>
+                <label className="block text-[11px] font-semibold text-[var(--text-faint)] uppercase tracking-[0.07em] mb-1.5">Input (stdin)</label>
                 <textarea
                   value={codeStdin}
                   onChange={e => setCodeStdin(e.target.value)}
@@ -1607,7 +1607,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-1.5">
                       <Terminal size={12} className="text-[var(--text-faint)]" />
-                      <span className="text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Output</span>
+                      <span className="text-[11px] font-semibold text-[var(--text-faint)] uppercase tracking-[0.07em]">Output</span>
                     </div>
                     {compileTime && (
                       <div className="flex items-center gap-3 text-[10px] text-[var(--text-faint)]">
@@ -1623,9 +1623,9 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                         <span>Compiling and executing...</span>
                       </div>
                     ) : codeError ? (
-                      <pre className="text-[#F87171] text-[12px] font-mono whitespace-pre-wrap">{codeError}</pre>
+                      <pre className="text-[var(--status-danger)] text-[12px] font-mono whitespace-pre-wrap">{codeError}</pre>
                     ) : (
-                      <pre className="text-[#4ADE80] text-[12px] font-mono whitespace-pre-wrap">{codeOutput}</pre>
+                      <pre className="text-[var(--status-success)] text-[12px] font-mono whitespace-pre-wrap">{codeOutput}</pre>
                     )}
                   </div>
                 </div>
@@ -1634,8 +1634,8 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               {judgeSummary && (
                 <div className="mt-3 rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-bold text-[var(--text-faint)] uppercase tracking-widest">Submission Verdict</span>
-                    <span className={`text-[12px] font-bold ${judgeSummary.verdict === 'AC' ? 'text-[#4CAF50]' : 'text-[#EF4444]'}`}>
+                    <span className="text-[11px] font-semibold text-[var(--text-faint)] uppercase tracking-[0.07em]">Submission Verdict</span>
+                    <span className={`text-[12px] font-semibold ${judgeSummary.verdict === 'AC' ? 'text-[var(--status-success)]' : 'text-[var(--status-danger)]'}`}>
                       {judgeSummary.verdict}
                     </span>
                   </div>
@@ -1648,13 +1648,13 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                       {judgeCaseResults.map((c) => (
                         <div key={c.caseNumber} className="flex items-start justify-between gap-3 text-[11px]">
                           <span className="text-[var(--text-tertiary)]">Case {c.caseNumber}</span>
-                          <span className={`font-bold ${c.statusCode === 'AC' ? 'text-[#4CAF50]' : 'text-[#EF4444]'}`}>{c.statusCode}</span>
+                          <span className={`font-semibold ${c.statusCode === 'AC' ? 'text-[var(--status-success)]' : 'text-[var(--status-danger)]'}`}>{c.statusCode}</span>
                         </div>
                       ))}
                     </div>
                   )}
                   {judgeCaseResults?.find((c) => c.stderr)?.stderr && (
-                    <pre className="mt-2 text-[#F87171] text-[11px] font-mono whitespace-pre-wrap">{judgeCaseResults.find((c) => c.stderr)?.stderr}</pre>
+                    <pre className="mt-2 text-[var(--status-danger)] text-[11px] font-mono whitespace-pre-wrap">{judgeCaseResults.find((c) => c.stderr)?.stderr}</pre>
                   )}
                 </div>
               )}
@@ -1665,7 +1665,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
             <div className="window p-6 sm:p-8 mb-5">
               <div className="flex justify-between items-start mb-5">
                 <div className="flex items-center gap-2">
-                  <span className="inline-block text-white px-2.5 py-0.5 text-[11px] font-bold uppercase rounded" style={{ background: sectionColorMap[currentQ._sectionType] }}>
+                  <span className="inline-block text-white px-2.5 py-0.5 text-[11px] font-semibold uppercase rounded" style={{ background: sectionColorMap[currentQ._sectionType] }}>
                     Question {currentQuestion + 1}
                   </span>
                   {currentQ.topic && (
@@ -1697,7 +1697,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                             : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:border-[var(--border-active)] hover:bg-[var(--bg-surface)]'
                         }`}
                       >
-                        <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0 ${
+                        <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-semibold shrink-0 ${
                           selected ? 'bg-[#4B8BBE] text-white' : 'bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-tertiary)]'
                         }`}>
                           {letter}
@@ -1711,7 +1711,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
               {currentQ.hints && currentQ.hints.length > 0 && (
                 <div className="mt-5">
-                  <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-2">Hints:</p>
+                  <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-2">Hints:</p>
                   <ul className="list-disc list-inside text-sm space-y-1">
                     {currentQ.hints.map((h, i) => <li key={i} className="text-[var(--text-tertiary)]">{h}</li>)}
                   </ul>
@@ -1739,7 +1739,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               <div className="window p-5 mb-5">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-semibold text-[var(--text-primary)]">Selected Answer:</label>
-                  <span className={`text-[13px] font-bold ${answers[currentQuestion] ? 'text-[#4B8BBE]' : 'text-[var(--text-faint)]'}`}>
+                  <span className={`text-[13px] font-semibold ${answers[currentQuestion] ? 'text-[#4B8BBE]' : 'text-[var(--text-faint)]'}`}>
                     {answers[currentQuestion] ? `Option ${answers[currentQuestion]}` : 'None selected'}
                   </span>
                 </div>
@@ -1756,7 +1756,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           <div className="flex gap-3">
             <button
               onClick={() => setReviewOpen(true)}
-              className="btn-secondary px-5 py-2.5 text-sm font-medium text-[#DC2626] border-[#DC2626]/30 hover:bg-[#DC2626]/10"
+              className="btn-secondary px-5 py-2.5 text-sm font-medium text-[var(--status-danger)] border-[var(--status-danger)]/30 hover:bg-[var(--status-danger)]/10"
             >
               Review & Submit
             </button>
@@ -1774,9 +1774,9 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               <button
                 key={idx}
                 onClick={() => setCurrentQuestion(idx)}
-                className={`w-9 h-9 rounded text-xs font-bold transition-all ${
+                className={`w-9 h-9 rounded text-xs font-semibold transition-all ${
                   idx === currentQuestion ? 'text-white'
-                  : answers[idx] ? 'bg-[#4CAF50] text-white'
+                  : answers[idx] ? 'bg-[var(--status-success)] text-white'
                   : 'bg-[var(--border-subtle)] text-[var(--text-tertiary)] hover:bg-[var(--border-active)]'
                 }`}
                 style={idx === currentQuestion ? { background: sectionColorMap[q._sectionType] } : undefined}
@@ -1802,7 +1802,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
             <div className="w-full max-w-3xl rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] shadow-xl max-h-[85vh] overflow-hidden">
               <div className="px-5 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
                 <div>
-                  <h3 className="text-[15px] font-bold text-[var(--text-primary)]">Review Before Final Submission</h3>
+                  <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">Review Before Final Submission</h3>
                   <p className="text-[12px] text-[var(--text-tertiary)] mt-0.5">
                     You answered {answeredCount} of {flatQuestions.length} questions.
                   </p>
@@ -1832,14 +1832,14 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                     >
                       <div className="flex items-center justify-between gap-3 mb-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ background: `${sectionColorMap[q._sectionType]}20`, color: sectionColorMap[q._sectionType] }}>
+                          <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ background: `${sectionColorMap[q._sectionType]}20`, color: sectionColorMap[q._sectionType] }}>
                             {q._sectionType}
                           </span>
                           <p className="text-[12px] font-semibold text-[var(--text-primary)]">
                             Q{idx + 1}. {q.questionDescription?.slice(0, 80) || 'Question'}{(q.questionDescription || '').length > 80 ? '...' : ''}
                           </p>
                         </div>
-                        <span className={`text-[10px] font-bold uppercase tracking-widest shrink-0 ${answered ? 'text-[#4CAF50]' : 'text-[#00A8E1]'}`}>
+                        <span className={`text-[10px] font-semibold uppercase tracking-[0.07em] shrink-0 ${answered ? 'text-[var(--status-success)]' : 'text-[var(--accent-orange)]'}`}>
                           {answered ? 'Answered' : 'Unanswered'}
                         </span>
                       </div>
@@ -1869,7 +1869,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                     setReviewOpen(false);
                     doSubmit('manual');
                   }}
-                  className="btn-primary px-5 py-2.5 text-sm font-semibold bg-[#DC2626] hover:bg-[#B91C1C] border-[#DC2626]"
+                  className="btn-primary px-5 py-2.5 text-sm font-semibold bg-[var(--status-danger)] hover:bg-[var(--status-danger)] border-[var(--status-danger)]"
                 >
                   Final Submit
                 </button>

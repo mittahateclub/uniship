@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, Trash2 } from 'lucide-react';
+import { Search, Trash2 } from '@/components/icons';
 
 export interface StudentAccount {
   id: string;
@@ -30,7 +30,7 @@ export function ManageView({ loading, loadingData, filteredStudents, searchTerm,
     <div className="animate-fade-in">
       <div className="mb-6 flex justify-between items-center">
         <div>
-          <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Manage Student Accounts</h1>
+          <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Manage Student Accounts</h1>
           <p className="text-[var(--text-tertiary)] text-[13px] mt-1">{filteredStudents.length} account{filteredStudents.length !== 1 ? 's' : ''}</p>
         </div>
         <div className="relative w-56">
@@ -54,10 +54,10 @@ export function ManageView({ loading, loadingData, filteredStudents, searchTerm,
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-[var(--border-subtle)]">
-                <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Name</th>
-                <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Email</th>
-                <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Student ID</th>
-                <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] text-right">Actions</th>
+                <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--text-muted)]">Name</th>
+                <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--text-muted)]">Email</th>
+                <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--text-muted)]">Student ID</th>
+                <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--text-muted)] text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border-subtle)]">

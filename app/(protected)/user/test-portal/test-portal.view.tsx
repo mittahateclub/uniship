@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FileText, Clock, HelpCircle, Tag, ArrowRight, Calendar } from 'lucide-react';
+import { FileText, Clock, HelpCircle, Tag, ArrowRight, Calendar } from '@/components/icons';
 
 export interface Test {
   id: string;
@@ -32,20 +32,20 @@ export function TestPortalView({ loading, tests }: TestPortalViewProps) {
   }
 
   return (
-    <div className="max-w-[1000px] mx-auto animate-fade-in">
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Tests</h1>
-        <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Select a test to begin.</p>
+    <div className="max-w-[1200px] mx-auto animate-fade-in">
+      <div className="pt-8 mb-7">
+        <h1 className="text-[26px] font-semibold text-[var(--text-primary)] tracking-[-0.025em]">Tests</h1>
+        <p className="text-[var(--text-tertiary)] text-[13.5px] mt-1.5">Select a test to begin.</p>
       </div>
 
       {tests.length === 0 ? (
-        <div className="text-center py-16 border border-dashed border-[var(--border-active)] rounded">
-          <FileText size={28} className="mx-auto text-[var(--text-faint)] mb-3" />
+        <div className="text-center py-16 border border-[var(--border-subtle)] rounded-[var(--radius)] bg-[var(--bg-surface)]">
+          <FileText size={26} className="mx-auto text-[var(--text-faint)] mb-3" />
           <p className="text-[var(--text-primary)] text-[13px] font-medium">No tests available at the moment.</p>
           <p className="text-[var(--text-faint)] text-[12px] mt-1">New tests will appear here when published.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
           {tests.map((test) => {
             const now = new Date();
             const start = test.examStart ? new Date(test.examStart) : null;
@@ -55,74 +55,82 @@ export function TestPortalView({ loading, tests }: TestPortalViewProps) {
             const isExpired = end && now > end;
 
             return (
-            <div key={test.id} className={`window group transition-colors duration-150 ${isActive ? 'hover:border-[var(--border-active)]' : 'opacity-70'}`}>
-              <div className="p-5">
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="inline-flex items-center gap-1 bg-[#00A8E1]/10 text-[#00A8E1] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
-                        <Tag size={9} />
-                        {test.category}
-                      </span>
-                      {isUpcoming && (
-                        <span className="inline-flex items-center gap-1 bg-[#4B8BBE]/10 text-[#4B8BBE] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
-                          Upcoming
-                        </span>
-                      )}
-                      {isExpired && (
-                        <span className="inline-flex items-center gap-1 bg-[var(--border-subtle)] text-[var(--text-faint)] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
-                          Ended
-                        </span>
-                      )}
-                      {isActive && start && (
-                        <span className="inline-flex items-center gap-1 bg-[#4CAF50]/10 text-[#4CAF50] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
-                          Live
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="text-[15px] font-bold text-[var(--text-primary)] leading-snug">{test.title}</h3>
-                  </div>
-                  <div className="w-9 h-9 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center shrink-0">
-                    <FileText size={16} className="text-[var(--text-faint)]" />
-                  </div>
+              <div
+                key={test.id}
+                className={`group flex items-start gap-4 px-4 sm:px-5 py-4 border-b border-[var(--border-subtle)] last:border-b-0 transition-colors duration-150 ${
+                  isActive ? 'hover:bg-[var(--bg-elevated)]' : 'opacity-60'
+                }`}
+              >
+                {/* Icon chip */}
+                <div className="hidden sm:flex w-9 h-9 rounded-[8px] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] items-center justify-center shrink-0 mt-0.5">
+                  <FileText size={15} className="text-[var(--text-tertiary)]" />
                 </div>
-                <p className="text-[12px] text-[var(--text-muted)] leading-relaxed mb-3 line-clamp-2">{test.description}</p>
-                {(start || end) && (
-                  <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-faint)] mb-3">
-                    <Calendar size={11} />
-                    {start && <span>{start.toLocaleDateString([], { month: 'short', day: 'numeric' })} {start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
-                    {start && end && <span>—</span>}
-                    {end && <span>{end.toLocaleDateString([], { month: 'short', day: 'numeric' })} {end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <h3 className="text-[14px] font-semibold text-[var(--text-primary)] tracking-[-0.01em]">{test.title}</h3>
+                    <span className="inline-flex items-center gap-1 bg-[var(--accent-orange)]/10 text-[var(--accent-orange)] px-2 py-[2px] rounded-full text-[10.5px] font-medium">
+                      <Tag size={9} />
+                      {test.category}
+                    </span>
+                    {isActive && start && (
+                      <span className="inline-flex items-center gap-1 bg-[var(--status-success)]/10 text-[var(--status-success)] px-2 py-[2px] rounded-full text-[10.5px] font-medium">
+                        <span className="w-1 h-1 rounded-full bg-current" />
+                        Live
+                      </span>
+                    )}
+                    {isUpcoming && (
+                      <span className="inline-flex items-center bg-[#4B8BBE]/12 text-[#4B8BBE] px-2 py-[2px] rounded-full text-[10.5px] font-medium">
+                        Upcoming
+                      </span>
+                    )}
+                    {isExpired && (
+                      <span className="inline-flex items-center bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-faint)] px-2 py-[2px] rounded-full text-[10.5px] font-medium">
+                        Ended
+                      </span>
+                    )}
                   </div>
-                )}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1.5 text-[var(--text-tertiary)] text-[12px]">
-                      <Clock size={12} className="text-[var(--text-faint)]" />
+
+                  <p className="text-[12.5px] text-[var(--text-muted)] leading-relaxed line-clamp-2 mb-1.5">{test.description}</p>
+
+                  <div className="flex items-center gap-3 flex-wrap text-[11.5px] text-[var(--text-faint)]">
+                    {(start || end) && (
+                      <span className="flex items-center gap-1.5">
+                        <Calendar size={11} />
+                        {start && <span>{start.toLocaleDateString([], { month: 'short', day: 'numeric' })} {start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
+                        {start && end && <span>—</span>}
+                        {end && <span>{end.toLocaleDateString([], { month: 'short', day: 'numeric' })} {end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1">
+                      <Clock size={11} />
                       {test.duration} min
                     </span>
-                    <span className="w-px h-3 bg-[var(--border-subtle)]" />
-                    <span className="flex items-center gap-1.5 text-[var(--text-tertiary)] text-[12px]">
-                      <HelpCircle size={12} className="text-[var(--text-faint)]" />
+                    <span className="flex items-center gap-1">
+                      <HelpCircle size={11} />
                       {test.totalQuestions} questions
                     </span>
                   </div>
+                </div>
+
+                {/* Action */}
+                <div className="shrink-0 self-center">
                   {isActive ? (
                     <Link
                       href={`/user/test-portal/${test.id}`}
-                      className="btn-primary flex items-center gap-1.5 text-[12px] !py-1.5 !px-3"
+                      className="btn-primary !rounded-[10px] flex items-center gap-1.5 text-[12px] !py-1.5 !px-3.5"
                     >
                       Start
                       <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform duration-150" />
                     </Link>
                   ) : (
-                    <span className="text-[11px] text-[var(--text-faint)] font-medium">
+                    <span className="text-[11.5px] text-[var(--text-faint)] font-medium whitespace-nowrap">
                       {isUpcoming ? `Opens ${start!.toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}` : 'Closed'}
                     </span>
                   )}
                 </div>
               </div>
-            </div>
             );
           })}
         </div>

@@ -260,7 +260,7 @@ function ScoreRing({ score, size = 80 }: { score: number; size?: number }) {
           style={{ transition: 'stroke-dashoffset 0.6s ease-out' }} />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-[18px] font-extrabold tabular-nums" style={{ color }}>
+        <span className="text-[18px] font-bold tabular-nums" style={{ color }}>
           {score}
         </span>
       </div>
@@ -278,7 +278,7 @@ function CategoryBar({ label, score, max }: { label: string; score: number; max:
     <div>
       <div className="flex justify-between items-baseline mb-1">
         <span className="text-[11px] font-semibold text-[var(--text-secondary)]">{label}</span>
-        <span className="text-[10px] font-bold tabular-nums" style={{ color }}>
+        <span className="text-[10px] font-semibold tabular-nums" style={{ color }}>
           {score}/{max}
         </span>
       </div>
@@ -317,8 +317,8 @@ export default function ATSScorePanel({ data, keywords = [], compact = false }: 
         <ScoreRing score={breakdown.total} size={compact ? 64 : 80} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">ATS Score</h3>
-            <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded"
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">ATS Score</h3>
+            <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded"
               style={{ background: `${gradeColor}15`, color: gradeColor }}>
               {gradeLabel}
             </span>
@@ -357,13 +357,13 @@ export default function ATSScorePanel({ data, keywords = [], compact = false }: 
             {/* Keywords */}
             {keywords.length > 0 && (
               <div>
-                <p className="font-bold text-[var(--text-secondary)] mb-1.5 uppercase tracking-widest text-[10px]">Keyword Match</p>
+                <p className="font-semibold text-[var(--text-secondary)] mb-1.5 uppercase tracking-[0.07em] text-[10px]">Keyword Match</p>
                 {breakdown.keywords.matched.length > 0 && (
                   <div className="mb-2">
                     <span className="text-[10px] text-[var(--text-muted)]">Matched ({breakdown.keywords.matched.length}):</span>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {breakdown.keywords.matched.map((kw, i) => (
-                        <span key={i} className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#4CAF50]/15 text-[#4CAF50] border border-[#4CAF50]/20">
+                        <span key={i} className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[#4CAF50]/15 text-[#4CAF50] border border-[#4CAF50]/20">
                           {kw}
                         </span>
                       ))}
@@ -375,7 +375,7 @@ export default function ATSScorePanel({ data, keywords = [], compact = false }: 
                     <span className="text-[10px] text-[var(--text-muted)]">Missing ({breakdown.keywords.missing.length}):</span>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {breakdown.keywords.missing.map((kw, i) => (
-                        <span key={i} className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#00A8E1]/10 text-[#00A8E1] border border-[#00A8E1]/20">
+                        <span key={i} className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[#00A8E1]/10 text-[#00A8E1] border border-[#00A8E1]/20">
                           {kw}
                         </span>
                       ))}
@@ -400,7 +400,7 @@ export default function ATSScorePanel({ data, keywords = [], compact = false }: 
 function DetailSection({ title, items }: { title: string; items: string[] }) {
   return (
     <div>
-      <p className="font-bold text-[var(--text-secondary)] mb-1 uppercase tracking-widest text-[10px]">{title}</p>
+      <p className="font-semibold text-[var(--text-secondary)] mb-1 uppercase tracking-[0.07em] text-[10px]">{title}</p>
       <div className="space-y-0.5">
         {items.map((item, i) => (
           <p key={i} className={`text-[11px] ${

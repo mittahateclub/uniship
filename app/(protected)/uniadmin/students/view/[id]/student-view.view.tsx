@@ -27,7 +27,7 @@ import {
   BookOpen,
   Star,
   Trophy,
-} from 'lucide-react';
+} from '@/components/icons';
 
 interface StudentData {
   id?: string;
@@ -163,7 +163,7 @@ function SectionHeader({ icon: Icon, title }: { icon: React.ComponentType<any>; 
   return (
     <div className="flex items-center gap-2 mb-3 mt-5 first:mt-0">
       <Icon size={15} className="text-[#4B8BBE]" />
-      <h2 className="text-[13px] font-bold uppercase tracking-widest text-[var(--text-primary)]">{title}</h2>
+      <h2 className="text-[13px] font-semibold uppercase tracking-[0.07em] text-[var(--text-primary)]">{title}</h2>
     </div>
   );
 }
@@ -196,7 +196,7 @@ function AdminResumePreview({ data }: { data: ResumeItem }) {
       return (
         <div key={i} className="mb-2">
           <div className="flex justify-between items-baseline">
-            <span className="font-bold text-[11.5px]" dangerouslySetInnerHTML={{ __html: boldMarkdown(parts[0] || '') }} />
+            <span className="font-semibold text-[11.5px]" dangerouslySetInnerHTML={{ __html: boldMarkdown(parts[0] || '') }} />
             <span className="text-[10.5px]">{parts[1]}</span>
           </div>
           <div className="flex justify-between items-baseline">
@@ -219,7 +219,7 @@ function AdminResumePreview({ data }: { data: ResumeItem }) {
       return (
         <div key={i} className="mb-3">
           <div className="flex justify-between items-baseline">
-            <span className="font-bold text-[11.5px]" dangerouslySetInnerHTML={{ __html: boldMarkdown(dateParts[0] || '') }} />
+            <span className="font-semibold text-[11.5px]" dangerouslySetInnerHTML={{ __html: boldMarkdown(dateParts[0] || '') }} />
             <span className="text-[10.5px]">{dateParts[1]}</span>
           </div>
           <div className="flex justify-between items-baseline">
@@ -242,7 +242,7 @@ function AdminResumePreview({ data }: { data: ResumeItem }) {
         <div key={i} className="mb-3">
           <div className="flex justify-between items-baseline">
             <span>
-              <span className="font-bold text-[11.5px]" dangerouslySetInnerHTML={{ __html: boldMarkdown(parts[0] || '') }} />
+              <span className="font-semibold text-[11.5px]" dangerouslySetInnerHTML={{ __html: boldMarkdown(parts[0] || '') }} />
               {parts[1] && (
                 <span className="text-[10.5px] italic" dangerouslySetInnerHTML={{ __html: ` | ${boldMarkdown(parts[1])}` }} />
               )}
@@ -261,7 +261,7 @@ function AdminResumePreview({ data }: { data: ResumeItem }) {
       const parts = line.split('|').map((p) => p.trim());
       return (
         <div key={i} className="flex justify-between items-baseline mb-1">
-          <span className="font-bold text-[11px]">{parts[0]}{parts[1] ? ` | ${parts[1]}` : ''}</span>
+          <span className="font-semibold text-[11px]">{parts[0]}{parts[1] ? ` | ${parts[1]}` : ''}</span>
           <span className="text-[10.5px]">{parts[2]}</span>
         </div>
       );
@@ -280,7 +280,7 @@ function AdminResumePreview({ data }: { data: ResumeItem }) {
       return (
         <div key={i} className="flex justify-between items-baseline mb-1">
           <span className="text-[11px]">
-            <span className="font-bold underline">{title}</span>
+            <span className="font-semibold underline">{title}</span>
             {sub && <span> – {sub}</span>}
           </span>
           <span className="text-[10.5px]">{date}</span>
@@ -308,7 +308,7 @@ function AdminResumePreview({ data }: { data: ResumeItem }) {
 
   const SectionTitle = ({ title }: { title: string }) => (
     <div className="mt-4 mb-1">
-      <h2 className="text-[12px] font-bold tracking-widest uppercase" style={{ fontVariant: 'small-caps' }}>{title}</h2>
+      <h2 className="text-[12px] font-semibold tracking-[0.07em] uppercase" style={{ fontVariant: 'small-caps' }}>{title}</h2>
       <hr className="border-t border-black mt-0.5" />
     </div>
   );
@@ -324,7 +324,7 @@ function AdminResumePreview({ data }: { data: ResumeItem }) {
   return (
     <div className="bg-white text-black font-serif mx-auto" style={{ width: '210mm', minHeight: '297mm', padding: '18mm', fontSize: '11px', lineHeight: '1.4', boxSizing: 'border-box' }}>
       <div className="text-center mb-1">
-        <h1 className="text-[28px] font-extrabold tracking-tight leading-tight">{data.fullName || 'Student Resume'}</h1>
+        <h1 className="text-[28px] font-bold tracking-tight leading-tight">{data.fullName || 'Student Resume'}</h1>
       </div>
 
       {contactItems.length > 0 && (
@@ -560,26 +560,26 @@ export default function StudentViewPage() {
             {student.photoURL ? (
               <img src={student.photoURL} alt={student.name || 'Student'} className="w-24 h-24 rounded-full object-cover border-2 border-[var(--border-subtle)]" />
             ) : (
-              <div className="w-24 h-24 rounded-full bg-[#4B8BBE]/10 flex items-center justify-center text-[#4B8BBE] text-3xl font-bold">
+              <div className="w-24 h-24 rounded-full bg-[#4B8BBE]/10 flex items-center justify-center text-[#4B8BBE] text-3xl font-semibold">
                 {student.name?.charAt(0)?.toUpperCase() || '?'}
               </div>
             )}
-            <h1 className="text-[20px] font-bold text-[var(--text-primary)] mt-3">{student.name || 'Unnamed'}</h1>
+            <h1 className="text-[20px] font-semibold text-[var(--text-primary)] mt-3">{student.name || 'Unnamed'}</h1>
             <p className="text-[13px] text-[var(--text-tertiary)]">{student.title || 'Student'}</p>
             <p className="text-[12px] font-mono text-[#00A8E1] mt-1">{student.rollNumber || student.studentId || 'N/A'}</p>
 
             <div className="w-full mt-5 space-y-3">
               <div className="rounded bg-[var(--bg-elevated)] p-3 border border-[var(--border-subtle)]">
                 <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-wider">CGPA</p>
-                <p className="text-3xl font-bold text-[var(--text-primary)] tabular-nums">{cgpa}</p>
+                <p className="text-3xl font-semibold text-[var(--text-primary)] tabular-nums">{cgpa}</p>
               </div>
               <div className="rounded bg-[var(--bg-elevated)] p-3 border border-[var(--border-subtle)]">
                 <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-wider">Applications</p>
-                <p className="text-3xl font-bold text-[var(--text-primary)] tabular-nums">{applicationsCount}</p>
+                <p className="text-3xl font-semibold text-[var(--text-primary)] tabular-nums">{applicationsCount}</p>
               </div>
               <div className="rounded bg-[var(--bg-elevated)] p-3 border border-[var(--border-subtle)]">
                 <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-wider">Offers</p>
-                <p className="text-3xl font-bold text-[var(--text-primary)] tabular-nums">{offersCount}</p>
+                <p className="text-3xl font-semibold text-[var(--text-primary)] tabular-nums">{offersCount}</p>
               </div>
             </div>
           </div>
@@ -622,20 +622,20 @@ export default function StudentViewPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-                    <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest">Total Applications</p>
-                    <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{applicationsCount}</p>
+                    <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Total Applications</p>
+                    <p className="text-2xl font-semibold text-[var(--text-primary)] tabular-nums">{applicationsCount}</p>
                   </div>
                   <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-                    <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest">Pending</p>
-                    <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{applications.filter((a) => (a.status || 'pending') === 'pending').length}</p>
+                    <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Pending</p>
+                    <p className="text-2xl font-semibold text-[var(--text-primary)] tabular-nums">{applications.filter((a) => (a.status || 'pending') === 'pending').length}</p>
                   </div>
                   <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-                    <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest">Shortlisted</p>
-                    <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{shortlistedCount}</p>
+                    <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Shortlisted</p>
+                    <p className="text-2xl font-semibold text-[var(--text-primary)] tabular-nums">{shortlistedCount}</p>
                   </div>
                   <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-                    <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest">Selected</p>
-                    <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{offersCount}</p>
+                    <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Selected</p>
+                    <p className="text-2xl font-semibold text-[var(--text-primary)] tabular-nums">{offersCount}</p>
                   </div>
                 </div>
 
@@ -662,7 +662,7 @@ export default function StudentViewPage() {
                             <p className="text-[11px] text-[var(--text-tertiary)]">{app.companyName || 'Unknown company'}</p>
                             <p className="text-[10px] text-[var(--text-faint)] mt-0.5">Applied: {toDateLabel(app.appliedAt)}</p>
                           </div>
-                          <span className={`px-2 py-1 rounded border text-[10px] font-bold uppercase tracking-wider ${statusClass}`}>
+                          <span className={`px-2 py-1 rounded border text-[10px] font-semibold uppercase tracking-wider ${statusClass}`}>
                             {status}
                           </span>
                         </div>
@@ -753,7 +753,7 @@ export default function StudentViewPage() {
                       {eduEntries.map((e: any, i: number) => (
                         <div key={i} className="border-l-2 border-[#4B8BBE]/30 pl-3">
                           <div className="flex justify-between items-baseline">
-                            <h3 className="text-[13px] font-bold text-[var(--text-primary)]">{e.institution}</h3>
+                            <h3 className="text-[13px] font-semibold text-[var(--text-primary)]">{e.institution}</h3>
                             <span className="text-[11px] text-[var(--text-faint)]">{formatDateRange(e.fromDate, e.toDate)}</span>
                           </div>
                           <p className="text-[12px] text-[var(--text-muted)]">{e.degree}</p>
@@ -774,7 +774,7 @@ export default function StudentViewPage() {
                       {expEntries.map((e: any, i: number) => (
                         <div key={i} className="border-l-2 border-[#00C16E]/30 pl-3">
                           <div className="flex justify-between items-baseline">
-                            <h3 className="text-[13px] font-bold text-[var(--text-primary)]">{e.role}</h3>
+                            <h3 className="text-[13px] font-semibold text-[var(--text-primary)]">{e.role}</h3>
                             <span className="text-[11px] text-[var(--text-faint)]">{formatDateRange(e.fromDate, e.toDate)}</span>
                           </div>
                           <p className="text-[12px] text-[var(--text-muted)]">{e.company}</p>
@@ -792,7 +792,7 @@ export default function StudentViewPage() {
                       {projEntries.map((p: any, i: number) => (
                         <div key={i} className="border-l-2 border-[#00A8E1]/30 pl-3">
                           <div className="flex justify-between items-baseline">
-                            <h3 className="text-[13px] font-bold text-[var(--text-primary)]">{p.title}</h3>
+                            <h3 className="text-[13px] font-semibold text-[var(--text-primary)]">{p.title}</h3>
                             <span className="text-[11px] text-[var(--text-faint)]">{formatDateRange(p.fromDate, p.toDate)}</span>
                           </div>
                           {p.techStack && <p className="text-[11px] text-[#4B8BBE] mt-1">{p.techStack}</p>}
@@ -854,7 +854,7 @@ export default function StudentViewPage() {
                 ) : (
                   <>
                     <div>
-                      <h3 className="text-[22px] font-bold text-[var(--text-primary)]">Student Resumes</h3>
+                      <h3 className="text-[22px] font-semibold text-[var(--text-primary)]">Student Resumes</h3>
                       <p className="text-[13px] text-[var(--text-faint)] mt-1">All resumes generated by this student are listed below.</p>
                     </div>
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -874,7 +874,7 @@ export default function StudentViewPage() {
                                 <FileText size={22} className="text-[#00A8E1]" />
                               </div>
                               <div className="min-w-0">
-                                <p className="text-[15px] font-bold text-[var(--text-primary)] truncate">{title}</p>
+                                <p className="text-[15px] font-semibold text-[var(--text-primary)] truncate">{title}</p>
                                 <p className="text-[12px] text-[var(--text-faint)]">{toDateLabel(resume.updatedAt)}</p>
                               </div>
                             </div>
@@ -885,8 +885,8 @@ export default function StudentViewPage() {
 
                             {atsScore !== null && (
                               <div className="mt-2 inline-flex items-center gap-2 rounded border border-[#4B8BBE]/30 bg-[#4B8BBE]/10 px-2 py-1">
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-[#4B8BBE]">ATS</span>
-                                <span className="text-[12px] font-bold text-[#4B8BBE] tabular-nums">{atsScore}/100</span>
+                                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#4B8BBE]">ATS</span>
+                                <span className="text-[12px] font-semibold text-[#4B8BBE] tabular-nums">{atsScore}/100</span>
                               </div>
                             )}
 
@@ -936,24 +936,24 @@ export default function StudentViewPage() {
                   <>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                       <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-                        <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest">Tests Taken</p>
-                        <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{results.length}</p>
+                        <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Tests Taken</p>
+                        <p className="text-2xl font-semibold text-[var(--text-primary)] tabular-nums">{results.length}</p>
                       </div>
                       <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-                        <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest">Avg Score</p>
-                        <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{avgScore.toFixed(1)}%</p>
+                        <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Avg Score</p>
+                        <p className="text-2xl font-semibold text-[var(--text-primary)] tabular-nums">{avgScore.toFixed(1)}%</p>
                       </div>
                       <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-                        <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest">Reliability</p>
-                        <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{reliability}/100</p>
+                        <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Reliability</p>
+                        <p className="text-2xl font-semibold text-[var(--text-primary)] tabular-nums">{reliability}/100</p>
                       </div>
                       <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-                        <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest">Consistency</p>
-                        <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{consistency}%</p>
+                        <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Consistency</p>
+                        <p className="text-2xl font-semibold text-[var(--text-primary)] tabular-nums">{consistency}%</p>
                       </div>
                       <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-                        <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-widest">Violations</p>
-                        <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{totalViolations}</p>
+                        <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Violations</p>
+                        <p className="text-2xl font-semibold text-[var(--text-primary)] tabular-nums">{totalViolations}</p>
                       </div>
                     </div>
 
@@ -986,16 +986,16 @@ export default function StudentViewPage() {
                       <SectionHeader icon={TrendingUp} title="Performance Trend" />
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div>
-                          <p className="text-[11px] text-[var(--text-faint)] uppercase tracking-widest">Baseline</p>
-                          <p className="text-xl font-bold text-[var(--text-primary)] tabular-nums">{baselineScore.toFixed(1)}%</p>
+                          <p className="text-[11px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Baseline</p>
+                          <p className="text-xl font-semibold text-[var(--text-primary)] tabular-nums">{baselineScore.toFixed(1)}%</p>
                         </div>
                         <div>
-                          <p className="text-[11px] text-[var(--text-faint)] uppercase tracking-widest">Latest</p>
-                          <p className="text-xl font-bold text-[var(--text-primary)] tabular-nums">{latestScore.toFixed(1)}%</p>
+                          <p className="text-[11px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Latest</p>
+                          <p className="text-xl font-semibold text-[var(--text-primary)] tabular-nums">{latestScore.toFixed(1)}%</p>
                         </div>
                         <div>
-                          <p className="text-[11px] text-[var(--text-faint)] uppercase tracking-widest">Progress</p>
-                          <p className={`text-xl font-bold tabular-nums ${scoreDelta >= 0 ? 'text-[#4CAF50]' : 'text-[#00A8E1]'}`}>
+                          <p className="text-[11px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Progress</p>
+                          <p className={`text-xl font-semibold tabular-nums ${scoreDelta >= 0 ? 'text-[#4CAF50]' : 'text-[#00A8E1]'}`}>
                             {scoreDelta >= 0 ? '+' : ''}{scoreDelta.toFixed(1)}%
                           </p>
                         </div>
@@ -1014,7 +1014,7 @@ export default function StudentViewPage() {
                                 <p className="text-[12px] font-semibold text-[var(--text-primary)]">{section.name}</p>
                                 <p className="text-[10px] text-[var(--text-faint)]">Based on {section.attempts} test{section.attempts === 1 ? '' : 's'}</p>
                               </div>
-                              <p className="text-[12px] font-bold text-[var(--text-primary)] tabular-nums">{section.average.toFixed(1)}%</p>
+                              <p className="text-[12px] font-semibold text-[var(--text-primary)] tabular-nums">{section.average.toFixed(1)}%</p>
                             </div>
                           ))}
                         </div>
@@ -1033,7 +1033,7 @@ export default function StudentViewPage() {
           <div className="w-full max-w-6xl rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] shadow-xl max-h-[92vh] overflow-hidden">
             <div className="px-5 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
               <div>
-                <h3 className="text-[15px] font-bold text-[var(--text-primary)]">Student Marked Answers</h3>
+                <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">Student Marked Answers</h3>
                 <p className="text-[12px] text-[var(--text-tertiary)] mt-0.5">
                   {answerReviewResult.testTitle || 'Untitled Test'} • Submitted {toDateLabel(answerReviewResult.submittedAt)}
                 </p>
@@ -1051,7 +1051,7 @@ export default function StudentViewPage() {
               {answerReviewResult.questionSnapshots && answerReviewResult.questionSnapshots.length > 0 ? (
                 answerReviewResult.questionSnapshots.map((q, idx) => (
                   <div key={idx} className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--text-faint)] mb-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)] mb-1">
                       Q{idx + 1} • {(q.sectionType || 'question').toUpperCase()}
                     </p>
                     <p className="text-[12px] text-[var(--text-primary)] whitespace-pre-line">{q.questionDescription || 'Question text not available.'}</p>
@@ -1081,7 +1081,7 @@ export default function StudentViewPage() {
           <div className="w-full max-w-5xl rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] shadow-xl max-h-[92vh] overflow-hidden">
             <div className="px-5 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
               <div>
-                <h3 className="text-[15px] font-bold text-[var(--text-primary)]">Resume Preview</h3>
+                <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">Resume Preview</h3>
                 <p className="text-[12px] text-[var(--text-tertiary)] mt-0.5">
                   {resumePreview.targetCompany || 'General Resume'} • Updated {toDateLabel(resumePreview.updatedAt)}
                 </p>

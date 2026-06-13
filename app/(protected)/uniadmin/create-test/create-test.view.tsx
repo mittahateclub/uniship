@@ -11,7 +11,7 @@ import {
   Upload, FileText, Clock, Type, AlignLeft, Calendar,
   ChevronLeft, ChevronRight, Trash2, CheckCircle, XCircle,
   Tag, Pencil, X, Save, ChevronDown, ChevronUp, Copy, Check, RefreshCw,
-} from 'lucide-react';
+} from '@/components/icons';
 
 export default function TestsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -340,7 +340,7 @@ export default function TestsPage() {
       )}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Tests</h1>
+          <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Tests</h1>
           <p className="text-[var(--text-tertiary)] text-[13px] mt-1">{testUploads.length} test{testUploads.length !== 1 ? 's' : ''} available</p>
         </div>
         <button
@@ -511,7 +511,7 @@ export default function TestsPage() {
                       <option key={h} value={h}>{String(h).padStart(2, '0')}</option>
                     ))}
                   </select>
-                  <span className="text-[13px] text-[var(--text-faint)] font-bold">:</span>
+                  <span className="text-[13px] text-[var(--text-faint)] font-semibold">:</span>
                   <select value={startMinute} onChange={e => setStartMinute(Number(e.target.value))} className="bg-transparent text-[13px] text-[var(--text-primary)] focus:outline-none appearance-none text-center w-10 cursor-pointer">
                     {Array.from({ length: 12 }, (_, i) => i * 5).map(m => (
                       <option key={m} value={m}>{String(m).padStart(2, '0')}</option>
@@ -534,7 +534,7 @@ export default function TestsPage() {
                       <option key={h} value={h}>{String(h).padStart(2, '0')}</option>
                     ))}
                   </select>
-                  <span className="text-[13px] text-[var(--text-faint)] font-bold">:</span>
+                  <span className="text-[13px] text-[var(--text-faint)] font-semibold">:</span>
                   <select value={endMinute} onChange={e => setEndMinute(Number(e.target.value))} className="bg-transparent text-[13px] text-[var(--text-primary)] focus:outline-none appearance-none text-center w-10 cursor-pointer">
                     {Array.from({ length: 12 }, (_, i) => i * 5).map(m => (
                       <option key={m} value={m}>{String(m).padStart(2, '0')}</option>
@@ -683,7 +683,7 @@ export default function TestsPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Calendar size={16} className="text-[#4B8BBE]" />
-                <h2 className="text-[15px] font-bold text-[var(--text-primary)]">Edit Exam Schedule</h2>
+                <h2 className="text-[15px] font-semibold text-[var(--text-primary)]">Edit Exam Schedule</h2>
               </div>
               <button onClick={() => setEditingTest(null)} className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors">
                 <X size={16} />
@@ -767,7 +767,7 @@ export default function TestsPage() {
                   <select value={editStartHour} onChange={e => setEditStartHour(Number(e.target.value))} className="bg-transparent text-[13px] text-[var(--text-primary)] focus:outline-none appearance-none text-center w-10 cursor-pointer">
                     {Array.from({ length: 12 }, (_, i) => i + 1).map(h => <option key={h} value={h}>{String(h).padStart(2, '0')}</option>)}
                   </select>
-                  <span className="text-[13px] text-[var(--text-faint)] font-bold">:</span>
+                  <span className="text-[13px] text-[var(--text-faint)] font-semibold">:</span>
                   <select value={editStartMinute} onChange={e => setEditStartMinute(Number(e.target.value))} className="bg-transparent text-[13px] text-[var(--text-primary)] focus:outline-none appearance-none text-center w-10 cursor-pointer">
                     {Array.from({ length: 12 }, (_, i) => i * 5).map(m => <option key={m} value={m}>{String(m).padStart(2, '0')}</option>)}
                   </select>
@@ -783,7 +783,7 @@ export default function TestsPage() {
                   <select value={editEndHour} onChange={e => setEditEndHour(Number(e.target.value))} className="bg-transparent text-[13px] text-[var(--text-primary)] focus:outline-none appearance-none text-center w-10 cursor-pointer">
                     {Array.from({ length: 12 }, (_, i) => i + 1).map(h => <option key={h} value={h}>{String(h).padStart(2, '0')}</option>)}
                   </select>
-                  <span className="text-[13px] text-[var(--text-faint)] font-bold">:</span>
+                  <span className="text-[13px] text-[var(--text-faint)] font-semibold">:</span>
                   <select value={editEndMinute} onChange={e => setEditEndMinute(Number(e.target.value))} className="bg-transparent text-[13px] text-[var(--text-primary)] focus:outline-none appearance-none text-center w-10 cursor-pointer">
                     {Array.from({ length: 12 }, (_, i) => i * 5).map(m => <option key={m} value={m}>{String(m).padStart(2, '0')}</option>)}
                   </select>

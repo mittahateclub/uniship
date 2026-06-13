@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { UserPlus, ShieldCheck, Users, GraduationCap, ArrowUpRight, Building2 } from 'lucide-react';
+import { UserPlus, ShieldCheck, Users, GraduationCap, ArrowUpRight, Building2 } from '@/components/icons';
 
 export interface SuperadminDashboardStats {
   totalUniadmins: number;
@@ -32,7 +32,7 @@ export function SuperadminDashboardView({ loading, userEmail, stats }: Superadmi
   return (
     <div className="max-w-[1100px] mx-auto animate-fade-in">
       <div className="mb-8">
-        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">Superadmin Dashboard</h1>
+        <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Superadmin Dashboard</h1>
         <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Welcome back, <span className="text-[var(--text-primary)]">{userEmail?.split('@')[0]}</span></p>
       </div>
 
@@ -44,12 +44,12 @@ export function SuperadminDashboardView({ loading, userEmail, stats }: Superadmi
         ].map((s, i) => (
           <div key={i} className="window p-5 hover:border-[var(--border-active)] transition-colors duration-150">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-bold text-[var(--text-faint)] uppercase tracking-widest">{s.label}</span>
+              <span className="text-[10px] font-semibold text-[var(--text-faint)] uppercase tracking-[0.07em]">{s.label}</span>
               <div className="w-7 h-7 rounded-lg bg-[#00A8E1]/10 flex items-center justify-center">
                 <s.icon size={14} className="text-[#00A8E1]" />
               </div>
             </div>
-            <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{s.value}</p>
+            <p className="text-2xl font-semibold text-[var(--text-primary)] tabular-nums">{s.value}</p>
           </div>
         ))}
       </div>

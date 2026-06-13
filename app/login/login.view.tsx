@@ -1,7 +1,10 @@
 'use client';
 
-import { Mail, Lock, ArrowRight } from 'lucide-react';
+import { useState } from 'react';
+import { Mail, Lock, ArrowRight, Eye, EyeOff } from '@/components/icons';
 import Image from 'next/image';
+import Link from 'next/link';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export interface LoginViewProps {
   email: string;
@@ -14,86 +17,450 @@ export interface LoginViewProps {
 }
 
 export function LoginView({ email, password, error, isLoading, onEmailChange, onPasswordChange, onSubmit }: LoginViewProps) {
+  const [showPassword, setShowPassword] = useState(false);
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-[var(--bg-primary)]">
-      <div className="absolute inset-0 pointer-events-none" style={{
-        backgroundImage: 'linear-gradient(var(--border-subtle) 1px, transparent 1px), linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px)',
-        backgroundSize: '48px 48px',
-        opacity: 0.4,
-      }} />
-      <div className="absolute inset-0 pointer-events-none" style={{
-        background: 'radial-gradient(ellipse 70% 60% at 50% 50%, transparent 0%, var(--bg-primary) 100%)',
-      }} />
+    <div className="login-root" id="main-content">
+      {/* Brand panel — fills the space with the product story (desktop) */}
+      <aside className="login-brand">
+        <Link href="/" className="login-wordmark">
+          <Image src="/logo.png" alt="Uniship" width={40} height={40} priority className="login-wordmark-img" />
+          <span>UNISHIP</span>
+        </Link>
 
+        <div className="login-brand-copy">
+          <h2>Your Career <em>Launchpad</em> Starts Here</h2>
+          <p>
+            Uniship connects students with placement opportunities, internships, and full-time roles - matched to your skills, your college, your future.
+          </p>
+        </div>
 
-      <div className="w-full max-w-sm animate-fade-in relative z-10">
-        <div className="absolute inset-0 -z-10 pointer-events-none" style={{
-          background: 'radial-gradient(ellipse 90% 80% at 50% 60%, rgba(0,168,225,0.18) 0%, transparent 70%)',
-          filter: 'blur(24px)',
-        }} />
-        <div className="text-center mb-4">
-          <div className="flex justify-center -mb-10">
-            <Image src="/logo.png" alt="Uniship" width={1775} height={490} priority className="object-contain w-auto" style={{ maxHeight: 490 }} />
+        <div className="login-brand-foot">
+          <span>© 2026 Uniship</span>
+        </div>
+      </aside>
+
+      {/* Form panel */}
+      <div className="login-main">
+        <div className="login-chrome">
+          <Link href="/" className="login-wordmark login-wordmark-mobile">
+            <Image src="/logo.png" alt="Uniship" width={36} height={36} priority className="login-wordmark-img" />
+            <span>UNISHIP</span>
+          </Link>
+          <ThemeToggle className="login-theme-btn" />
+        </div>
+
+        <div className="login-stage">
+          <div className="login-box">
+            <h1 className="login-title">Sign in to your Uniship account</h1>
+
+            {error && <div className="login-error" role="alert">{error}</div>}
+
+            <form onSubmit={onSubmit} className="login-form">
+              <div className="login-field">
+                <label htmlFor="login-email">Email</label>
+                <div className="login-input-wrap">
+                  <Mail size={14} aria-hidden="true" />
+                  <input
+                    id="login-email"
+                    type="email"
+                    placeholder="you@university.edu"
+                    value={email}
+                    onChange={(e) => onEmailChange(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="login-field">
+                <label htmlFor="login-password">Password</label>
+                <div className="login-input-wrap">
+                  <Lock size={14} aria-hidden="true" />
+                  <input
+                    id="login-password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => onPasswordChange(e.target.value)}
+                    required
+                    style={{ paddingRight: 40 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="login-eye"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" disabled={isLoading} className="login-btn">
+                {isLoading ? (
+                  <div className="loading-dots"><span /><span /><span /></div>
+                ) : (
+                  <>
+                    Sign In
+                    <ArrowRight size={15} />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <p className="login-foot">Powered by Uniship</p>
           </div>
-          <p className="text-[var(--text-tertiary)] text-[13px] mt-0">Sign in to your Uniship account</p>
         </div>
-
-        <div className="bg-[var(--bg-surface)] rounded border border-[var(--border-subtle)] p-6">
-          {error && (
-            <div className="bg-red-500/10 text-red-500 px-3 py-2 rounded text-[13px] font-medium mb-5 border border-red-500/20">
-              {error}
-            </div>
-          )}
-          <form onSubmit={onSubmit} className="space-y-4">
-            <div>
-              <label className="block text-[12px] font-medium text-[var(--text-tertiary)] mb-1.5 uppercase tracking-wider">Email</label>
-              <div className="relative">
-                <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)]" />
-                <input
-                  type="email"
-                  placeholder="you@university.edu"
-                  className="w-full pl-9 pr-3 py-2 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#4B8BBE] transition-all duration-150 text-[13px]"
-                  value={email}
-                  onChange={(e) => onEmailChange(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-[12px] font-medium text-[var(--text-tertiary)] mb-1.5 uppercase tracking-wider">Password</label>
-              <div className="relative">
-                <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)]" />
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  className="w-full pl-9 pr-3 py-2 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#4B8BBE] transition-all duration-150 text-[13px]"
-                  value={password}
-                  onChange={(e) => onPasswordChange(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-[#00A8E1] text-white font-bold py-2 rounded hover:brightness-110 transition-all duration-150 text-[13px] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2 uppercase tracking-wider"
-            >
-              {isLoading ? (
-                <div className="loading-dots"><span /><span /><span /></div>
-              ) : (
-                <>
-                  Sign In
-                  <ArrowRight size={14} />
-                </>
-              )}
-            </button>
-          </form>
-        </div>
-
-        <p className="text-center text-[11px] text-[var(--text-faint)] mt-6 uppercase tracking-widest">
-          Powered by Uniship
-        </p>
       </div>
+
+      <style jsx global>{`
+        .login-root,
+        .login-root * {
+          box-sizing: border-box;
+        }
+
+        /* Linear-style tokens — dark default, light reacts to the theme toggle */
+        .login-root {
+          --l-bg: #08090a;
+          --l-panel: #0e0f10;
+          --l-border: rgba(255, 255, 255, 0.08);
+          --l-heading: #f7f8f8;
+          --l-text: #8a8f98;
+          --l-dim: #5e6269;
+          --l-nav-link: #c9cdd3;
+          --l-accent: #00a8e1;
+          --l-icon-bg: rgba(255, 255, 255, 0.05);
+          --l-btn-bg: #e9eaeb;
+          --l-btn-bg-hover: #ffffff;
+          --l-btn-fg: #08090a;
+          --l-input-bg: #0e0f10;
+          --l-error-fg: #ec5a5a;
+          --l-error-bg: rgba(236, 90, 90, 0.09);
+          --l-error-border: rgba(236, 90, 90, 0.25);
+          --l-ambient: rgba(120, 160, 190, 0.09);
+
+          min-height: 100vh;
+          min-height: 100svh;
+          display: flex;
+          background: var(--l-bg);
+          color: var(--l-text);
+          font-family: var(--font-geist), system-ui, sans-serif;
+          font-size: 15px;
+          line-height: 1.6;
+          transition: background 0.3s ease;
+        }
+
+        [data-theme='light'] .login-root {
+          --l-bg: #fcfcfd;
+          --l-panel: #f5f6f7;
+          --l-border: rgba(0, 0, 0, 0.08);
+          --l-heading: #0e0f11;
+          --l-text: #5c6066;
+          --l-dim: #82868d;
+          --l-nav-link: #3c4046;
+          --l-accent: #0082be;
+          --l-icon-bg: rgba(0, 0, 0, 0.04);
+          --l-btn-bg: #121316;
+          --l-btn-bg-hover: #000000;
+          --l-btn-fg: #ffffff;
+          --l-input-bg: #ffffff;
+          --l-error-fg: #c8323b;
+          --l-error-bg: rgba(200, 50, 59, 0.07);
+          --l-error-border: rgba(200, 50, 59, 0.25);
+          --l-ambient: rgba(70, 130, 170, 0.09);
+        }
+
+        /* ── Brand panel ── */
+        .login-root .login-brand {
+          position: relative;
+          width: 44%;
+          max-width: 560px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          padding: 32px 48px 28px;
+          background: var(--l-panel);
+          border-right: 1px solid var(--l-border);
+          overflow: hidden;
+          transition: background 0.3s ease;
+        }
+
+        .login-root .login-brand::before {
+          content: '';
+          position: absolute;
+          top: -200px;
+          left: -100px;
+          width: 700px;
+          height: 480px;
+          background: radial-gradient(ellipse at center, var(--l-ambient) 0%, transparent 65%);
+          pointer-events: none;
+        }
+
+        .login-root .login-wordmark {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          gap: 2px;
+          text-decoration: none;
+          width: fit-content;
+        }
+
+        .login-root .login-wordmark-img {
+          object-fit: contain;
+        }
+
+        .login-root .login-wordmark span {
+          font-size: 14px;
+          font-weight: 600;
+          letter-spacing: 0.04em;
+          color: var(--l-heading);
+          padding-top: 0.15em;
+        }
+
+        .login-root .login-brand-copy {
+          position: relative;
+        }
+
+        .login-root .login-brand-copy h2 {
+          font-size: clamp(1.7rem, 2.6vw, 2.4rem);
+          font-weight: 560;
+          font-variation-settings: 'wght' 560;
+          letter-spacing: -0.025em;
+          line-height: 1.12;
+          color: var(--l-heading);
+          margin: 0 0 16px;
+        }
+
+        .login-root .login-brand-copy h2 em {
+          font-style: normal;
+        }
+
+        .login-root .login-brand-copy p {
+          font-size: 14.5px;
+          line-height: 1.6;
+          color: var(--l-text);
+          margin: 0;
+          max-width: 380px;
+        }
+
+        .login-root .login-brand-foot {
+          position: relative;
+          font-size: 12.5px;
+          color: var(--l-dim);
+        }
+
+        /* ── Form panel ── */
+        .login-root .login-main {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          min-width: 0;
+        }
+
+        .login-root .login-chrome {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 8px;
+          padding: 20px 24px 0;
+        }
+
+        .login-root .login-wordmark-mobile {
+          display: none;
+          margin-right: auto;
+        }
+
+        .login-root .login-theme-btn {
+          appearance: none;
+          background: none;
+          border: none;
+          width: 36px;
+          height: 36px;
+          border-radius: 999px;
+          display: grid;
+          place-items: center;
+          color: var(--l-nav-link);
+          cursor: pointer;
+          transition: color 0.15s ease, background 0.15s ease;
+        }
+
+        .login-root .login-theme-btn:hover {
+          color: var(--l-heading);
+          background: var(--l-icon-bg);
+        }
+
+        .login-root .login-stage {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px 24px 64px;
+        }
+
+        .login-root .login-box {
+          width: min(360px, 100%);
+        }
+
+        .login-root .login-title {
+          font-size: 21px;
+          font-weight: 560;
+          font-variation-settings: 'wght' 560;
+          letter-spacing: -0.018em;
+          line-height: 1.3;
+          color: var(--l-heading);
+          margin: 0 0 26px;
+        }
+
+        .login-root .login-error {
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--l-error-fg);
+          background: var(--l-error-bg);
+          border: 1px solid var(--l-error-border);
+          border-radius: 10px;
+          padding: 10px 12px;
+          margin-bottom: 18px;
+        }
+
+        .login-root .login-form {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .login-root .login-field label {
+          display: block;
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--l-text);
+          margin-bottom: 6px;
+        }
+
+        .login-root .login-input-wrap {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+
+        .login-root .login-input-wrap > svg {
+          position: absolute;
+          left: 12px;
+          color: var(--l-dim);
+          pointer-events: none;
+        }
+
+        .login-root .login-eye {
+          position: absolute;
+          right: 6px;
+          top: 50%;
+          transform: translateY(-50%);
+          display: grid;
+          place-items: center;
+          width: 30px;
+          height: 30px;
+          border: none;
+          background: none;
+          border-radius: 8px;
+          color: var(--l-dim);
+          cursor: pointer;
+          transition: color 0.15s ease, background 0.15s ease;
+        }
+
+        .login-root .login-eye:hover {
+          color: var(--l-heading);
+          background: var(--l-icon-bg);
+        }
+
+        .login-root .login-input-wrap input {
+          width: 100%;
+          height: 40px;
+          padding: 0 12px 0 34px;
+          font-family: inherit;
+          font-size: 13.5px;
+          color: var(--l-heading);
+          background: var(--l-input-bg);
+          border: 1px solid var(--l-border);
+          border-radius: 10px;
+          outline: none;
+          transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.3s ease;
+        }
+
+        .login-root .login-input-wrap input::placeholder {
+          color: var(--l-dim);
+        }
+
+        .login-root .login-input-wrap input:focus {
+          border-color: var(--l-accent);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--l-accent) 18%, transparent);
+        }
+
+        .login-root .login-btn {
+          appearance: none;
+          border: none;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          width: 100%;
+          height: 42px;
+          margin-top: 6px;
+          padding: 0 20px;
+          background: var(--l-btn-bg);
+          color: var(--l-btn-fg);
+          font-family: inherit;
+          font-size: 14px;
+          font-weight: 600;
+          border-radius: 10px;
+          cursor: pointer;
+          transition: background 0.15s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .login-root .login-btn:hover:not(:disabled) {
+          background: var(--l-btn-bg-hover);
+          transform: translateY(-1px);
+        }
+
+        .login-root .login-btn:disabled {
+          opacity: 0.75;
+          cursor: default;
+        }
+
+        .login-root .login-btn:focus-visible,
+        .login-root .login-input-wrap input:focus-visible,
+        .login-root .login-wordmark:focus-visible,
+        .login-root .login-theme-btn:focus-visible {
+          outline: 2px solid var(--l-accent);
+          outline-offset: 2px;
+        }
+
+        .login-root .login-foot {
+          margin: 30px 0 0;
+          font-size: 12.5px;
+          color: var(--l-dim);
+        }
+
+        @media (max-width: 960px) {
+          .login-root .login-brand {
+            display: none;
+          }
+          .login-root .login-wordmark-mobile {
+            display: inline-flex;
+          }
+          .login-root .login-chrome {
+            padding: 16px 16px 0 20px;
+          }
+          .login-root .login-stage {
+            padding-bottom: 96px;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .login-root .login-btn {
+            transition: none;
+          }
+        }
+      `}</style>
     </div>
   );
 }

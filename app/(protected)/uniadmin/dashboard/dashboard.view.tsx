@@ -4,7 +4,7 @@ import Link from 'next/link';
 import {
   ClipboardCheck, UserPlus, CalendarPlus,
   Database, Settings, PlusCircle, ArrowRight,
-} from 'lucide-react';
+} from '@/components/icons';
 
 export interface UniAdminDashboardViewProps {
   loading: boolean;
@@ -162,7 +162,7 @@ export function UniAdminDashboardView({ loading, userEmail }: UniAdminDashboardV
       `}</style>
 
       <div className="mb-8 mt-5">
-        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-[-0.02em]">University Admin Dashboard</h1>
+        <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-[-0.02em]">University Admin Dashboard</h1>
         <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Welcome back, <span className="text-[var(--text-primary)]">{userEmail?.split('@')[0]}</span></p>
       </div>
 
