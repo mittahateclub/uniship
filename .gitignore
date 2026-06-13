@@ -40,6 +40,10 @@ firebase-debug.log*
 # firebase emulator / deploy artifacts
 .firebase/
 
+# Claude screenshot/browser artifacts
+.claude/shots/out/
+.claude/shots/profile/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
