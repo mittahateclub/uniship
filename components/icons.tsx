@@ -15,7 +15,7 @@ import {
   Question, Keyboard as PKeyboard, SquaresFour, CircleNotch, Lock as PLock, SignIn, SignOut,
   EnvelopeSimple, MapPin as PMapPin, ArrowsOut, ChatCircle, Microphone, MinusCircle as PMinusCircle,
   Monitor as PMonitor, MonitorPlay as PMonitorPlay, Moon as PMoon, SidebarSimple,
-  PencilSimple, Phone as PPhone, PushPin, Play as PPlay, Plus as PPlus, PlusCircle as PPlusCircle,
+  PencilSimple, Phone as PPhone, PushPin, Play as PPlay, Plus as PPlus, PlusCircle as PPlusCircle, Paperclip as PPaperclip, Image as PImage, FilePdf as PFilePdf, Heart as PHeart,
   PresentationChart, ArrowsClockwise, ArrowCounterClockwise, FloppyDisk, MagnifyingGlass,
   PaperPlaneTilt, GearSix, Shield as PShield, ShieldCheck as PShieldCheck, Sparkle, Star as PStar,
   Sun as PSun, Tag as PTag, Target as PTarget, Terminal as PTerminal, Trash, TrendUp,
@@ -107,6 +107,10 @@ export const Moon = smooth(PMoon);
 export const PanelLeftClose = smooth(SidebarSimple);
 export const PanelLeftOpen = smooth(SidebarSimple);
 export const Pencil = smooth(PencilSimple);
+export const Paperclip = smooth(PPaperclip, 'bold');
+export const ImageIcon = smooth(PImage);
+export const FilePdf = smooth(PFilePdf);
+export const Heart = smooth(PHeart);
 export const Phone = smooth(PPhone);
 export const Pin = smooth(PushPin);
 export const Play = smooth(PPlay);

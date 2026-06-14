@@ -41,6 +41,7 @@ import {
   Upload,
   Sparkles,
   X,
+  MessageCircle,
 } from '@/components/icons';
 
 interface NavLink {
@@ -73,6 +74,7 @@ const uniadminNavLinks: NavLink[] = [
   { href: '/uniadmin/practice', label: 'Practice', icon: Code, group: 'Manage' },
   { href: '/uniadmin/proctoring', label: 'Proctoring', icon: ShieldCheck, group: 'Manage' },
   { href: '/uniadmin/create-event', label: 'Create Event', icon: CalendarPlus, group: 'Manage' },
+  { href: '/uniadmin/inbox', label: 'Support Inbox', icon: MessageCircle, group: 'Manage' },
   { href: '/uniadmin/create-account', label: 'Create Account', icon: UserPlus, group: 'Admin' },
   { href: '/uniadmin/student-database', label: 'Students', icon: Database, group: 'Admin' },
   { href: '/uniadmin/profile', label: 'Profile', icon: User, group: 'Admin' },
@@ -135,6 +137,7 @@ const uniadminSearchItems: SearchableItem[] = [
   { href: '/uniadmin/student-database', label: 'Student Database', desc: 'Browse all students', icon: Database, category: 'Pages' },
   { href: '/uniadmin/profile', label: 'Profile', desc: 'Admin profile settings', icon: User, category: 'Pages' },
   { href: '/uniadmin/proctoring', label: 'Proctoring', desc: 'Monitor live exams & chat', icon: ShieldCheck, category: 'Pages' },
+  { href: '/uniadmin/inbox', label: 'Support Inbox', desc: 'Reply to student support chats', icon: MessageCircle, category: 'Pages' },
   { href: '/uniadmin/practice', label: 'Practice', desc: 'Manage coding practice problems', icon: Code, category: 'Pages' },
   // Dashboard — In-page sections
   { href: '/uniadmin/dashboard#stats', label: 'Active Tests', desc: 'Count of currently active tests', icon: FileText, category: 'Dashboard' },

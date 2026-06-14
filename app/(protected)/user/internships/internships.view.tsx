@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { Bookmark, BookmarkCheck, MapPin, Clock, Calendar, Briefcase, Code, FlaskConical, Presentation, GraduationCap, Search } from '@/components/icons';
+import { useRouter } from 'next/navigation';
+import { buildResumePrefill, setResumePrefill } from '@/lib/resume-prefill';
+import { Bookmark, BookmarkCheck, MapPin, Clock, Calendar, Briefcase, Code, FlaskConical, Presentation, GraduationCap, Search, Check, ExternalLink, Send, FileText } from '@/components/icons';
 
 export interface CollegeEvent {
   id: string;
@@ -16,6 +18,9 @@ export interface CollegeEvent {
   stipend?: string;
   duration?: string;
   deadline?: any;
+  // event-specific
+  link?: string;
+  universityId?: string;
   source: 'event' | 'internship';
 }
 
@@ -29,6 +34,9 @@ export interface InternshipsViewProps {
   savedIds: Map<string, string>;
   savingIds: Set<string>;
   onToggleSave: (item: CollegeEvent) => void;
+  appliedIds: Set<string>;
+  applyingIds: Set<string>;
+  onApply: (item: CollegeEvent) => void;
 }
 
 const TYPE_CONFIG: Record<string, { chip: string; icon: React.ComponentType<any>; label: string }> = {
@@ -56,7 +64,18 @@ export function InternshipsView({
   savedIds,
   savingIds,
   onToggleSave,
+  appliedIds,
+  applyingIds,
+  onApply,
 }: InternshipsViewProps) {
+  const router = useRouter();
+  const generateResume = (item: CollegeEvent) => {
+    setResumePrefill(buildResumePrefill({
+      title: item.title, company: item.companyName, location: item.location, description: item.description,
+    }));
+    router.push('/user/resume#ai-tailor');
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -196,6 +215,31 @@ export function InternshipsView({
                     >
                       Details
                     </Link>
+                  )}
+                  {item.source === 'event' && (
+                    <button
+                      onClick={() => generateResume(item)}
+                      title="Tailor your resume to this role"
+                      className="btn-secondary !rounded-[10px] text-[11.5px] !px-3 !py-1.5 inline-flex items-center gap-1"
+                    >
+                      <FileText size={12} /> Resume
+                    </button>
+                  )}
+                  {item.source === 'event' && (
+                    appliedIds.has(item.id) ? (
+                      <span className="inline-flex items-center gap-1 text-[11.5px] font-semibold rounded-[10px] px-3 py-1.5 bg-[var(--status-success)]/12 text-[var(--status-success)]">
+                        <Check size={13} /> Applied
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => onApply(item)}
+                        disabled={applyingIds.has(item.id)}
+                        className="btn-primary !rounded-[10px] text-[11.5px] !px-3.5 !py-1.5 inline-flex items-center gap-1 disabled:opacity-50"
+                      >
+                        {item.link ? <ExternalLink size={12} /> : <Send size={12} />}
+                        Apply
+                      </button>
+                    )
                   )}
                 </div>
               </div>

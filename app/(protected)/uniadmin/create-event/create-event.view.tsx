@@ -4,8 +4,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { collection, addDoc, serverTimestamp, doc, getDoc, getDocs, query, where, updateDoc, deleteDoc, Timestamp } from 'firebase/firestore';
+import Link from 'next/link';
 import { db } from '@/lib/firebase';
-import { ChevronLeft, ChevronRight, Calendar, Clock, Trash2, Pencil } from '@/components/icons';
+import { ChevronLeft, ChevronRight, Calendar, Clock, Trash2, Pencil, Users, X, Sparkles, CheckCircle2, AlertCircle, Loader2 } from '@/components/icons';
+import { kBranches, kGpaCutoffs } from '@/lib/college';
+import { scrapeEvent } from '@/app/actions/scrape-event';
 
 interface ExistingEvent {
   id: string;
@@ -228,8 +231,17 @@ export default function CreateEventPage() {
   const [adminUnivId, setAdminUnivId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    title: '', description: '', date: '', location: '', type: 'event',
+    title: '', description: '', date: '', location: '', type: 'event', company: '', link: '', expiry: '',
   });
+  // Audience targeting — empty set = all branches; null minGpa = any GPA.
+  const [targetBranches, setTargetBranches] = useState<Set<string>>(new Set());
+  const [minGpa, setMinGpa] = useState<number | null>(null);
+  // Link auto-fill (mirrors the app's EventScraper): the scraped og:image URL
+  // is stored as the post picture in both the website feed and the app.
+  const [scrapedImageUrl, setScrapedImageUrl] = useState<string | null>(null);
+  const [scraping, setScraping] = useState(false);
+  const [scrapeNote, setScrapeNote] = useState<string | null>(null);
+  const [scrapeError, setScrapeError] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -252,6 +264,38 @@ export default function CreateEventPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Scrapes the pasted link and auto-fills the form. The image is only attached
+  // when the page actually exposes an og:image.
+  const handleScrape = async () => {
+    if (!formData.link.trim()) { setScrapeNote('Enter a link first.'); setScrapeError(true); return; }
+    setScraping(true);
+    setScrapeNote(null);
+    setScrapeError(false);
+    try {
+      const r = await scrapeEvent(formData.link);
+      if (!r.ok) { setScrapeNote(r.error ?? 'Could not read the page.'); setScrapeError(true); return; }
+      setFormData((prev) => ({
+        ...prev,
+        title: r.title ?? prev.title,
+        company: r.company ?? prev.company,
+        description: r.description ?? prev.description,
+        location: r.location ?? prev.location,
+        type: r.type ?? prev.type,
+        expiry: r.deadline ? `${r.deadline}T10:00` : prev.expiry,
+      }));
+      setScrapedImageUrl(r.imageUrl ?? null);
+      setScrapeNote(r.note ?? 'Details filled — review below.');
+      setScrapeError(false);
+    } catch {
+      setScrapeNote('Something went wrong while reading the link.');
+      setScrapeError(true);
+    } finally {
+      setScraping(false);
+    }
+  };
+
+  const clearImage = () => setScrapedImageUrl(null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!adminUnivId) { setMessage({ type: 'error', text: 'Profile error: University ID not found.' }); return; }
@@ -261,6 +305,7 @@ export default function CreateEventPage() {
       const eventDate = new Date(formData.date);
       await addDoc(collection(db, 'events'), {
         title: formData.title,
+        company: formData.company.trim() || null,
         description: formData.description,
         date: Timestamp.fromDate(eventDate),
         location: formData.location,
@@ -269,9 +314,19 @@ export default function CreateEventPage() {
         createdBy: user?.uid,
         createdAt: serverTimestamp(),
         attendees: [],
+        link: formData.link.trim() || null,
+        imageUrl: scrapedImageUrl,
+        expiresAt: formData.expiry ? Timestamp.fromDate(new Date(formData.expiry)) : null,
+        // Audience: ['all'] or specific branches; minGpa null = everyone.
+        targetBranches: targetBranches.size === 0 ? ['all'] : Array.from(targetBranches),
+        minGpa,
       });
       setMessage({ type: 'success', text: 'Event created successfully!' });
-      setFormData({ title: '', description: '', date: '', location: '', type: 'event' });
+      setFormData({ title: '', description: '', date: '', location: '', type: 'event', company: '', link: '', expiry: '' });
+      setTargetBranches(new Set());
+      setMinGpa(null);
+      setScrapedImageUrl(null);
+      setScrapeNote(null);
       fetchEvents();
     } catch (error: any) {
       setMessage({ type: 'error', text: `Permission Denied: ${error.message}` });
@@ -354,6 +409,33 @@ export default function CreateEventPage() {
             <input name="title" type="text" required placeholder="Event Title" value={formData.title} onChange={handleChange} className={inputClass} />
           </div>
           <div>
+            <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Company / Organizer</label>
+            <input name="company" type="text" placeholder="e.g. Google, IEEE chapter…" value={formData.company} onChange={handleChange} className={inputClass} />
+          </div>
+          <div>
+            <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Apply / Event Link</label>
+            <input name="link" type="url" placeholder="https://company.com/careers/role (leave blank for in-app apply)" value={formData.link} onChange={handleChange} className={inputClass} />
+            <button
+              type="button"
+              onClick={handleScrape}
+              disabled={scraping}
+              className="btn-secondary mt-2 inline-flex items-center gap-1.5 text-[11.5px] !py-1.5 disabled:opacity-60"
+            >
+              {scraping ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+              {scraping ? 'Reading page…' : 'Auto-fill from link'}
+            </button>
+            {scrapeNote && (
+              <div className={`mt-2 flex items-start gap-2 px-3 py-2 rounded-[10px] text-[11.5px] font-medium border ${
+                scrapeError
+                  ? 'bg-[var(--status-danger)]/10 text-[var(--status-danger)] border-[var(--status-danger)]/30'
+                  : 'bg-[var(--status-success)]/10 text-[var(--status-success)] border-[var(--status-success)]/30'
+              }`}>
+                {scrapeError ? <AlertCircle size={13} className="mt-px shrink-0" /> : <CheckCircle2 size={13} className="mt-px shrink-0" />}
+                <span>{scrapeNote}</span>
+              </div>
+            )}
+          </div>
+          <div>
             <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Type</label>
             <select name="type" value={formData.type} onChange={handleChange} className={inputClass}>
               <option value="event">Event</option>
@@ -368,6 +450,11 @@ export default function CreateEventPage() {
             <DateTimePicker value={formData.date} onChange={(val) => setFormData({ ...formData, date: val })} />
           </div>
           <div>
+            <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Apply By / Expiry</label>
+            <DateTimePicker value={formData.expiry} onChange={(val) => setFormData({ ...formData, expiry: val })} />
+            <p className="text-[10.5px] text-[var(--text-faint)] mt-1">Students stop seeing the listing after this date. Defaults to the event date.</p>
+          </div>
+          <div>
             <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Location *</label>
             <input name="location" type="text" required placeholder="Location" value={formData.location} onChange={handleChange} className={inputClass} />
           </div>
@@ -375,6 +462,83 @@ export default function CreateEventPage() {
             <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Description *</label>
             <textarea name="description" required rows={4} placeholder="Description" value={formData.description} onChange={handleChange} className={inputClass + ' resize-none'} />
           </div>
+
+          {/* ── Scraped post image (only when the linked page exposed one) ── */}
+          {scrapedImageUrl && (
+            <div>
+              <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Post Image</label>
+              <div className="relative rounded-[10px] overflow-hidden border border-[var(--border-subtle)]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={scrapedImageUrl}
+                  alt="Event preview"
+                  className="w-full max-h-[220px] object-cover"
+                  onError={() => setScrapedImageUrl(null)}
+                />
+                <button
+                  type="button"
+                  onClick={clearImage}
+                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/55 text-white flex items-center justify-center hover:bg-black/75 transition-colors"
+                  title="Remove image"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Audience targeting ── */}
+          <div className="pt-2 border-t border-[var(--border-subtle)]">
+            <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-2">Send to branches</label>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => setTargetBranches(new Set())}
+                className={`px-2.5 py-1 text-[11.5px] font-semibold rounded-full border transition-colors ${
+                  targetBranches.size === 0
+                    ? 'bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border-[var(--accent-orange)]/40'
+                    : 'text-[var(--text-muted)] border-[var(--border-subtle)] hover:border-[var(--border-active)]'
+                }`}
+              >
+                All students
+              </button>
+              {kBranches.map((b) => {
+                const on = targetBranches.has(b);
+                return (
+                  <button
+                    key={b}
+                    type="button"
+                    onClick={() => setTargetBranches((prev) => {
+                      const s = new Set(prev);
+                      if (s.has(b)) s.delete(b); else s.add(b);
+                      return s;
+                    })}
+                    className={`px-2.5 py-1 text-[11.5px] font-semibold rounded-full border transition-colors ${
+                      on
+                        ? 'bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border-[var(--accent-orange)]/40'
+                        : 'text-[var(--text-muted)] border-[var(--border-subtle)] hover:border-[var(--border-active)]'
+                    }`}
+                  >
+                    {b}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div>
+            <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Minimum CGPA</label>
+            <select
+              value={minGpa ?? ''}
+              onChange={(e) => setMinGpa(e.target.value === '' ? null : parseFloat(e.target.value))}
+              className={inputClass}
+            >
+              <option value="">All students (no cutoff)</option>
+              {kGpaCutoffs.map((g) => (
+                <option key={g} value={g}>{g} and above</option>
+              ))}
+            </select>
+          </div>
+
           <button type="submit" disabled={submitting || !adminUnivId} className="btn-primary w-full mt-2">
             {submitting ? 'Posting...' : 'Post Event'}
           </button>
@@ -436,6 +600,15 @@ export default function CreateEventPage() {
                       <Pencil size={9} />
                     </button>
                   )}
+
+                  {/* Applicants */}
+                  <Link
+                    href={`/uniadmin/events/${ev.id}/applicants`}
+                    className="p-1.5 rounded text-[var(--text-faint)] hover:text-[var(--accent-orange)] hover:bg-[var(--accent-orange)]/10 transition-colors"
+                    title="View applicants"
+                  >
+                    <Users size={14} />
+                  </Link>
 
                   {/* Delete */}
                   <button

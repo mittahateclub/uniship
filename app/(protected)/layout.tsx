@@ -3,6 +3,8 @@
 import React from "react";
 import Navbar from "@/components/Navbar";
 import ThemeToggle from "@/components/ThemeToggle";
+import SupportChat from "@/components/SupportChat";
+import AdminSupportChat from "@/components/AdminSupportChat";
 import Link from "next/link";
 import Image from "next/image";
 import { Search, Command, Menu } from "lucide-react";
@@ -78,6 +80,8 @@ export default function ProtectedLayout({
           </main>
         </div>
       </div>
+      <SupportChat />
+      <AdminSupportChat />
     </div>
   );
 }

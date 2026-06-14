@@ -12,6 +12,8 @@ interface AuthContextType {
   universityName: string | null;
   userName: string | null;
   userPhotoURL: string | null;
+  branch: string | null;
+  gpa: number | null;
   loading: boolean;
   logout: () => Promise<void>;
 }
@@ -23,6 +25,8 @@ const AuthContext = createContext<AuthContextType>({
   universityName: null,
   userName: null,
   userPhotoURL: null,
+  branch: null,
+  gpa: null,
   loading: true,
   logout: async () => {},
 });
@@ -35,10 +39,25 @@ interface UserMeta {
   universityName: string | null;
   userName: string | null;
   userPhotoURL: string | null;
+  branch: string | null;
+  gpa: number | null;
 }
 
-const EMPTY_META: UserMeta = { role: null, universityId: null, universityName: null, userName: null, userPhotoURL: null };
-const DEFAULT_META: UserMeta = { role: 'user', universityId: null, universityName: null, userName: null, userPhotoURL: null };
+const EMPTY_META: UserMeta = { role: null, universityId: null, universityName: null, userName: null, userPhotoURL: null, branch: null, gpa: null };
+const DEFAULT_META: UserMeta = { role: 'user', universityId: null, universityName: null, userName: null, userPhotoURL: null, branch: null, gpa: null };
+
+/// First parseable CGPA from a user profile's education entries — mirrors the
+/// app's cgpaFromProfile so both clients target events identically.
+function cgpaFromProfile(data: Record<string, any>): number | null {
+  const entries = Array.isArray(data.educationEntries) ? data.educationEntries : [];
+  for (const entry of entries) {
+    if (entry && entry.cgpa != null) {
+      const v = parseFloat(String(entry.cgpa).replace(/[^0-9.]/g, ''));
+      if (!Number.isNaN(v)) return v;
+    }
+  }
+  return null;
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -59,6 +78,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               universityName: data.universityName || null,
               userName: data.name || null,
               userPhotoURL: data.photoURL || null,
+              branch: data.branch || null,
+              gpa: cgpaFromProfile(data),
             });
           } else {
             setMeta(DEFAULT_META);

@@ -1,217 +1,308 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { EventComments } from '@/components/EventComments';
+import { buildResumePrefill, setResumePrefill } from '@/lib/resume-prefill';
 import {
-  FileText,
-  Briefcase,
-  ClipboardCheck,
-  BarChart3,
-  Calendar as CalendarIcon,
-  User,
-  ArrowRight,
-  Download,
-  Sparkles,
-  TrendingUp,
-  MapPin,
-  Clock,
+  MessageCircle, Bookmark, BookmarkCheck, MapPin, Clock, Calendar, Briefcase,
+  Code, FlaskConical, Presentation, Check, ExternalLink, Send, Sparkles, ArrowRight, FileText,
 } from '@/components/icons';
 
-export interface CalendarEvent {
+export interface FeedPost {
   id: string;
   title: string;
-  date: Date | null;
   type: string;
   description: string;
   location?: string;
   company?: string;
+  date: Date | null;
+  imageUrl?: string;
+  link?: string;
+  universityId?: string;
+}
+
+export interface SidebarEvent {
+  id: string;
+  title: string;
+  type: string;
+  date: Date | null;
+}
+
+export interface Suggestion {
+  id: string;
+  title: string;
+  companyName?: string;
+  stipend?: string;
 }
 
 export interface DashboardViewProps {
   loading: boolean;
-  todayEvents: CalendarEvent[];
+  posts: FeedPost[];
+  savedIds: Map<string, string>;
+  savingIds: Set<string>;
+  onToggleSave: (post: FeedPost) => void;
+  appliedIds: Set<string>;
+  applyingIds: Set<string>;
+  onApply: (post: FeedPost) => void;
+  upcoming: SidebarEvent[];
+  suggestions: Suggestion[];
+  userName: string | null;
+  userPhotoURL: string | null;
+  universityName: string | null;
+  branch: string | null;
+  savedCount: number;
 }
 
-const EVENT_TYPE_STYLES: Record<string, { bg: string; border: string; text: string; icon: string; label: string }> = {
-  event:      { bg: 'rgba(75,139,190,0.12)', border: 'rgba(75,139,190,0.3)',  text: '#4B8BBE', icon: '#4B8BBE', label: 'Event' },
-  internship: { bg: 'rgba(0,193,110,0.12)',  border: 'rgba(0,193,110,0.3)',   text: '#00C16E', icon: '#00C16E', label: 'Internship' },
-  hackathon:  { bg: 'rgba(0,168,225,0.12)',  border: 'rgba(0,168,225,0.3)',   text: '#00A8E1', icon: '#00A8E1', label: 'Hackathon' },
-  research:   { bg: 'rgba(241,168,44,0.12)', border: 'rgba(241,168,44,0.3)',  text: '#F1A82C', icon: '#F1A82C', label: 'Research' },
-  workshop:   { bg: 'rgba(224,77,176,0.12)', border: 'rgba(224,77,176,0.3)',  text: '#E04DB0', icon: '#E04DB0', label: 'Workshop' },
+// Route external post images through our own origin so hotlink/referrer-protected
+// URLs (which load in the native app but not the browser) render on the web too.
+function proxiedImage(url: string): string {
+  if (/^https?:\/\//i.test(url) && !url.includes('firebasestorage.googleapis.com')) {
+    return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+  }
+  return url;
+}
+
+const TYPE_CONFIG: Record<string, { chip: string; icon: React.ComponentType<any>; label: string }> = {
+  event:      { chip: 'bg-[#4B8BBE]/12 text-[#4B8BBE]', icon: Calendar, label: 'Event' },
+  internship: { chip: 'bg-[#00C16E]/12 text-[#00C16E]', icon: Briefcase, label: 'Internship' },
+  hackathon:  { chip: 'bg-[#00A8E1]/12 text-[#00A8E1]', icon: Code, label: 'Hackathon' },
+  research:   { chip: 'bg-[#F1A82C]/12 text-[#F1A82C]', icon: FlaskConical, label: 'Research' },
+  workshop:   { chip: 'bg-[#E04DB0]/12 text-[#E04DB0]', icon: Presentation, label: 'Workshop' },
 };
 
-export function DashboardView({ loading, todayEvents }: DashboardViewProps) {
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="loading-dots"><span /><span /><span /></div>
-      </div>
-    );
-  }
+function PostCard({
+  post, saved, saving, onToggleSave, applied, applying, onApply, onOpenComments,
+}: {
+  post: FeedPost; saved: boolean; saving: boolean; onToggleSave: () => void;
+  applied: boolean; applying: boolean; onApply: () => void; onOpenComments: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const router = useRouter();
+  const cfg = TYPE_CONFIG[post.type] || TYPE_CONFIG.event;
+  const TypeIcon = cfg.icon;
+  const initial = (post.company || post.title)[0]?.toUpperCase() ?? '•';
 
-  const menuItems = [
-    { title: 'Test Portal', desc: 'Take assessments, mock tests, and track your exam readiness', href: '/user/test-portal', icon: FileText },
-    { title: 'College Space', desc: 'Explore events, internships, and campus opportunities', href: '/user/internships', icon: Briefcase },
-    { title: 'Applications', desc: 'Track your submissions and application statuses in one place', href: '/user/applications', icon: ClipboardCheck },
-    { title: 'AI Resume Builder', desc: 'Craft a professional resume with intelligent AI suggestions', href: '/user/resume', icon: Sparkles },
-    { title: 'Export Resume', desc: 'Download your polished resume as a print-ready A4 PDF', href: '/user/resume/download', icon: Download },
-    { title: 'Results', desc: 'View scores, percentiles, and detailed performance breakdowns', href: '/user/results', icon: BarChart3 },
-    { title: 'Practice', desc: 'Sharpen your skills with curated problems and timed challenges', href: '/user/practice', icon: TrendingUp },
-    { title: 'Profile', desc: 'Manage your academic details and account preferences', href: '/user/profile', icon: User },
-  ];
+  const generateResume = () => {
+    setResumePrefill(buildResumePrefill({
+      title: post.title, company: post.company, location: post.location, description: post.description,
+    }));
+    router.push('/user/resume#ai-tailor');
+  };
 
   return (
-    <div className="max-w-[1200px] mx-auto animate-fade-in">
-      <style>{`
-        .dash-card {
-          position: relative;
-          overflow: hidden;
-          border-radius: var(--radius);
-          border: 1px solid var(--border-subtle);
-          background: var(--bg-surface);
-          transition: border-color 0.2s ease, background 0.2s ease;
-          cursor: pointer;
-        }
-        .dash-card:hover {
-          border-color: var(--border-active);
-          background: var(--bg-elevated);
-        }
-        .dash-card::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          opacity: 0;
-          transition: opacity 0.2s ease;
-          background: radial-gradient(420px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.04), transparent 40%);
-          pointer-events: none;
-        }
-        .dash-card:hover::before {
-          opacity: 1;
-        }
-        [data-theme='light'] .dash-card::before {
-          background: radial-gradient(420px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0,0,0,0.025), transparent 40%);
-        }
-        .dash-card-icon {
-          width: 32px;
-          height: 32px;
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: var(--bg-elevated);
-          border: 1px solid var(--border-subtle);
-          color: var(--text-tertiary);
-          transition: color 0.2s ease, border-color 0.2s ease;
-        }
-        .dash-card:hover .dash-card-icon {
-          color: var(--text-primary);
-          border-color: var(--border-active);
-        }
-        .dash-card .card-arrow {
-          transition: all 0.2s ease;
-          opacity: 0;
-          transform: translateX(-4px);
-        }
-        .dash-card:hover .card-arrow {
-          opacity: 0.6;
-          transform: translateX(0);
-        }
-      `}</style>
-
-      {/* ── Page header ── */}
-      <div className="pt-8 mb-6">
-        <h1 className="text-[26px] font-semibold tracking-[-0.025em] text-[var(--text-primary)]">Dashboard</h1>
+    <article className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 py-3">
+        <span className="w-9 h-9 rounded-full bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] flex items-center justify-center text-[14px] font-bold shrink-0">
+          {initial}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-semibold text-[var(--text-primary)] truncate">{post.company || post.title}</p>
+          <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)]">
+            {post.location && <span className="flex items-center gap-0.5 truncate"><MapPin size={10} />{post.location}</span>}
+            {post.date && <span className="flex items-center gap-0.5"><Clock size={10} />{post.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>}
+          </div>
+        </div>
+        <span className={`inline-flex items-center gap-1 px-2 py-[3px] text-[10.5px] font-medium rounded-full shrink-0 ${cfg.chip}`}>
+          <TypeIcon size={10} />{cfg.label}
+        </span>
       </div>
 
-      {/* ── Today's Events ── */}
-      <Link
-        href="/user/calendar"
-        className="group block rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] mb-8 no-underline hover:border-[var(--border-active)] transition-colors duration-200 overflow-hidden"
-        style={{ textDecoration: 'none' }}
-      >
-        <div className="flex items-center justify-between px-5 h-11 border-b border-[var(--border-subtle)]">
-          <div className="flex items-baseline gap-2.5">
-            <h2 className="text-[13px] font-semibold text-[var(--text-primary)] tracking-[-0.01em]">Today&apos;s Events</h2>
-            <span className="text-[11.5px] text-[var(--text-faint)]">
-              {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-            </span>
-          </div>
-          <span className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--accent-orange)]">
-            <CalendarIcon size={12} />
-            View Calendar
-            <ArrowRight size={12} className="transition-transform duration-200 group-hover:translate-x-0.5" />
-          </span>
-        </div>
+      {/* Image — proxied through our origin so app-scraped URLs load on the web;
+          still hidden if genuinely broken. */}
+      {post.imageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={proxiedImage(post.imageUrl)}
+          alt={post.title}
+          referrerPolicy="no-referrer"
+          className="w-full max-h-[360px] object-cover border-y border-[var(--border-subtle)]"
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+        />
+      )}
 
-        <div className="px-5 py-3.5">
-          {todayEvents.length === 0 ? (
-            <p className="flex items-center gap-2 text-[12.5px] text-[var(--text-muted)]">
-              <CalendarIcon size={13} className="text-[var(--text-faint)]" />
-              No events scheduled for today
-            </p>
-          ) : (
-            <div className="flex flex-col">
-              {todayEvents.map(ev => {
-                const style = EVENT_TYPE_STYLES[ev.type] || EVENT_TYPE_STYLES.event;
-                return (
-                  <div
-                    key={ev.id}
-                    className="flex items-center gap-3 py-2.5 border-b border-[var(--border-subtle)] last:border-b-0"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: style.text }} />
-                    <span className="text-[11.5px] font-medium shrink-0" style={{ color: style.text }}>
-                      {style.label}
-                    </span>
-                    <span className="text-[13px] text-[var(--text-primary)] truncate">{ev.title}</span>
-                    <div className="flex items-center gap-3 shrink-0 ml-auto text-[11.5px] text-[var(--text-muted)]">
-                      {ev.date && (
-                        <span className="flex items-center gap-1">
-                          <Clock size={10} />
-                          {ev.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      )}
-                      {ev.location && (
-                        <span className="hidden sm:flex items-center gap-1">
-                          <MapPin size={10} />
-                          {ev.location}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+      {/* Body */}
+      <div className="px-4 pt-3">
+        <h2 className="text-[14.5px] font-semibold text-[var(--text-primary)] tracking-[-0.01em]">{post.title}</h2>
+        {post.description && (
+          <p className={`text-[12.5px] text-[var(--text-muted)] mt-1 leading-relaxed ${expanded ? '' : 'line-clamp-3'}`}>
+            {post.description}
+          </p>
+        )}
+        {post.description && post.description.length > 140 && (
+          <button onClick={() => setExpanded((v) => !v)} className="text-[11.5px] font-semibold text-[var(--text-faint)] mt-1 hover:text-[var(--text-secondary)]">
+            {expanded ? 'less' : 'more'}
+          </button>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-1 px-2.5 py-2.5 mt-1">
+        <button onClick={onOpenComments} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-[12px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors">
+          <MessageCircle size={16} /> Comment
+        </button>
+        <button onClick={onToggleSave} disabled={saving} className={`flex items-center px-2 py-1.5 rounded-[8px] transition-colors ${saved ? 'text-[var(--accent-orange)]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'}`}>
+          {saved ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
+        </button>
+        <div className="flex-1" />
+        <button
+          onClick={generateResume}
+          title="Tailor your resume to this role"
+          className="btn-secondary !rounded-[10px] text-[11.5px] !px-3 !py-1.5 inline-flex items-center gap-1"
+        >
+          <FileText size={12} /> Resume
+        </button>
+        {applied ? (
+          <span className="inline-flex items-center gap-1 text-[11.5px] font-semibold rounded-[10px] px-3 py-1.5 bg-[var(--status-success)]/12 text-[var(--status-success)]">
+            <Check size={13} /> Applied
+          </span>
+        ) : (
+          <button onClick={onApply} disabled={applying} className="btn-primary !rounded-[10px] text-[11.5px] !px-4 !py-1.5 inline-flex items-center gap-1 disabled:opacity-50">
+            {post.link ? <ExternalLink size={12} /> : <Send size={12} />} Apply
+          </button>
+        )}
+      </div>
+    </article>
+  );
+}
+
+export function DashboardView(props: DashboardViewProps) {
+  const {
+    loading, posts, savedIds, savingIds, onToggleSave, appliedIds, applyingIds, onApply,
+    upcoming, suggestions, userName, userPhotoURL, universityName, branch, savedCount,
+  } = props;
+  const [commentsFor, setCommentsFor] = useState<string | null>(null);
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-64"><div className="loading-dots"><span /><span /><span /></div></div>;
+  }
+
+  return (
+    <div className="max-w-[935px] mx-auto animate-fade-in pt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,600px)_300px] gap-7 justify-center">
+        {/* ── Feed ── */}
+        <div className="min-w-0 flex flex-col gap-5">
+          {posts.length === 0 ? (
+            <div className="text-center py-20 border border-[var(--border-subtle)] rounded-[var(--radius)] bg-[var(--bg-surface)]">
+              <Calendar size={26} className="mx-auto text-[var(--text-faint)] mb-3" />
+              <p className="text-[var(--text-primary)] text-[13px] font-medium">No posts yet</p>
+              <p className="text-[var(--text-faint)] text-[12px] mt-1">Events and opportunities from your university will appear here</p>
             </div>
+          ) : (
+            posts.map((post) => {
+              const key = `event-${post.id}`;
+              return (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  saved={savedIds.has(key)}
+                  saving={savingIds.has(key)}
+                  onToggleSave={() => onToggleSave(post)}
+                  applied={appliedIds.has(post.id)}
+                  applying={applyingIds.has(post.id)}
+                  onApply={() => onApply(post)}
+                  onOpenComments={() => setCommentsFor(post.id)}
+                />
+              );
+            })
           )}
         </div>
-      </Link>
 
-      {/* ── Tools ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 stagger-children">
-        {menuItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="dash-card group"
-            onMouseMove={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
-              e.currentTarget.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
-              e.currentTarget.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
-            }}
-          >
-            <div className="relative z-10 p-4 flex flex-col h-full min-h-[128px]">
-              <div className="dash-card-icon">
-                <item.icon size={15} />
-              </div>
-              <div className="mt-auto pt-4">
-                <div className="flex items-center gap-1.5">
-                  <h3 className="text-[13.5px] font-semibold text-[var(--text-primary)] tracking-[-0.01em]">{item.title}</h3>
-                  <ArrowRight size={12} className="card-arrow text-[var(--text-faint)]" />
-                </div>
-                <p className="text-[var(--text-muted)] text-[12px] mt-1 leading-relaxed">{item.desc}</p>
-              </div>
+        {/* ── Right rail ── */}
+        <aside className="hidden lg:flex flex-col gap-5">
+          {/* Profile mini-card */}
+          <div className="flex items-center gap-3">
+            {userPhotoURL ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={userPhotoURL} alt="" className="w-12 h-12 rounded-full object-cover" />
+            ) : (
+              <span className="w-12 h-12 rounded-full bg-[#00A8E1] text-white flex items-center justify-center text-[18px] font-semibold">
+                {(userName || 'U')[0]?.toUpperCase()}
+              </span>
+            )}
+            <div className="min-w-0">
+              <p className="text-[13.5px] font-semibold text-[var(--text-primary)] truncate">{userName || 'Student'}</p>
+              <p className="text-[11.5px] text-[var(--text-muted)] truncate">{[branch, universityName].filter(Boolean).join(' · ') || 'Welcome back'}</p>
             </div>
+          </div>
+
+          {/* Messages */}
+          <button
+            onClick={() => document.dispatchEvent(new CustomEvent('open-support-chat'))}
+            className="flex items-center gap-3 px-3.5 py-3 rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] hover:border-[var(--border-active)] transition-colors text-left"
+          >
+            <span className="w-9 h-9 rounded-full bg-[var(--accent-indigo)]/12 text-[var(--accent-indigo)] flex items-center justify-center shrink-0">
+              <MessageCircle size={17} />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[12.5px] font-semibold text-[var(--text-primary)]">Messages</span>
+              <span className="block text-[11px] text-[var(--text-muted)]">Chat with the placement cell</span>
+            </span>
+          </button>
+
+          {/* Upcoming deadlines */}
+          <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
+            <div className="flex items-center justify-between px-4 h-10 border-b border-[var(--border-subtle)]">
+              <span className="text-[12px] font-semibold text-[var(--text-primary)]">Upcoming</span>
+              <Link href="/user/calendar" className="text-[11px] font-medium text-[var(--accent-orange)] flex items-center gap-0.5">Calendar <ArrowRight size={11} /></Link>
+            </div>
+            <div className="px-4 py-2">
+              {upcoming.length === 0 ? (
+                <p className="text-[11.5px] text-[var(--text-faint)] py-2">Nothing scheduled yet</p>
+              ) : (
+                upcoming.map((ev) => {
+                  const cfg = TYPE_CONFIG[ev.type] || TYPE_CONFIG.event;
+                  return (
+                    <div key={ev.id} className="flex items-center gap-2.5 py-2 border-b border-[var(--border-subtle)] last:border-b-0">
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'currentColor' }} />
+                      <span className="text-[12px] text-[var(--text-secondary)] truncate flex-1">{ev.title}</span>
+                      {ev.date && <span className="text-[10.5px] text-[var(--text-faint)] shrink-0">{ev.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Suggested internships */}
+          <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
+            <div className="flex items-center justify-between px-4 h-10 border-b border-[var(--border-subtle)]">
+              <span className="text-[12px] font-semibold text-[var(--text-primary)]">Suggested for you</span>
+              <Link href="/user/internships" className="text-[11px] font-medium text-[var(--accent-orange)] flex items-center gap-0.5">All <ArrowRight size={11} /></Link>
+            </div>
+            <div className="px-4 py-2">
+              {suggestions.length === 0 ? (
+                <p className="text-[11.5px] text-[var(--text-faint)] py-2">No internships posted yet</p>
+              ) : (
+                suggestions.map((s) => (
+                  <Link key={s.id} href={`/user/internships/${s.id}`} className="flex items-center gap-2.5 py-2 border-b border-[var(--border-subtle)] last:border-b-0 group">
+                    <span className="w-7 h-7 rounded-full bg-[#00C16E]/12 text-[#00C16E] flex items-center justify-center shrink-0"><Briefcase size={13} /></span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[12px] font-medium text-[var(--text-primary)] truncate group-hover:text-[var(--accent-orange)] transition-colors">{s.title}</span>
+                      <span className="block text-[10.5px] text-[var(--text-faint)] truncate">{[s.companyName, s.stipend].filter(Boolean).join(' · ') || 'View details'}</span>
+                    </span>
+                  </Link>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* AI resume nudge */}
+          <Link href="/user/resume" className="flex items-center gap-3 px-3.5 py-3 rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] hover:border-[var(--border-active)] transition-colors">
+            <span className="w-9 h-9 rounded-full bg-[var(--accent-orange)]/12 text-[var(--accent-orange)] flex items-center justify-center shrink-0"><Sparkles size={17} /></span>
+            <span className="min-w-0">
+              <span className="block text-[12.5px] font-semibold text-[var(--text-primary)]">AI Resume Builder</span>
+              <span className="block text-[11px] text-[var(--text-muted)]">{savedCount > 0 ? `${savedCount} saved items to tailor for` : 'Craft a tailored resume'}</span>
+            </span>
           </Link>
-        ))}
+
+          <p className="text-[10.5px] text-[var(--text-faint)] px-1 leading-relaxed">UNISHIP · Placement & Testing Ecosystem</p>
+        </aside>
       </div>
+
+      {commentsFor && <EventComments eventId={commentsFor} onClose={() => setCommentsFor(null)} />}
     </div>
   );
 }

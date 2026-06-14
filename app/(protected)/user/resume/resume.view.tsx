@@ -8,6 +8,7 @@ import { db } from '@/lib/firebase';
 import { generateTailoredResume } from './actions';
 import ATSScorePanel from './ats-score';
 import Link from 'next/link';
+import { takeResumePrefill } from '@/lib/resume-prefill';
 
 interface ResumeData {
   fullName: string;
@@ -373,6 +374,18 @@ export default function ResumeBuilder() {
   };
 
   const [formData, setFormData] = useState<ResumeData>(emptyForm);
+
+  // One-shot handoff from a College Space / feed "Resume" button: prefill the
+  // AI-tailor fields with the posting's company + description, then jump to it.
+  useEffect(() => {
+    const prefill = takeResumePrefill();
+    if (!prefill) return;
+    setCompanyName(prefill.company);
+    setJobDescription(prefill.jobDescription);
+    const scroll = () => document.getElementById('ai-tailor')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(scroll, 300);
+    setTimeout(scroll, 900);
+  }, []);
 
   // Scale the A4 live preview to fill the preview width. The page scroll owns overflow.
   const previewColRef = useRef<HTMLDivElement>(null);
