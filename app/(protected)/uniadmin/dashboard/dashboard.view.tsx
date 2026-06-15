@@ -5,6 +5,7 @@ import {
   ClipboardCheck, UserPlus, CalendarPlus,
   Database, Settings, PlusCircle, ArrowRight,
 } from '@/components/icons';
+import { CardGridSkeleton } from '@/components/Skeleton';
 
 export interface UniAdminDashboardViewProps {
   loading: boolean;
@@ -84,11 +85,7 @@ const cardArt: Record<string, React.ReactNode> = {
 };
 
 export function UniAdminDashboardView({ loading, userEmail }: UniAdminDashboardViewProps) {
-  if (loading) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="loading-dots"><span /><span /><span /></div>
-    </div>
-  );
+  if (loading) return <CardGridSkeleton />;
 
   const tools = [
     { title: 'Create AI Test', desc: 'Upload PDFs to automatically generate structured exam questions', href: '/uniadmin/create-test', icon: PlusCircle, art: cardArt.createTest },
@@ -161,9 +158,9 @@ export function UniAdminDashboardView({ loading, userEmail }: UniAdminDashboardV
         }
       `}</style>
 
-      <div className="mb-8 mt-5">
-        <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-[-0.02em]">University Admin Dashboard</h1>
-        <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Welcome back, <span className="text-[var(--text-primary)]">{userEmail?.split('@')[0]}</span></p>
+      <div className="pt-8 mb-7">
+        <h1 className="text-[26px] font-semibold text-[var(--text-primary)] tracking-[-0.025em]">University Admin Dashboard</h1>
+        <p className="text-[var(--text-tertiary)] text-[13.5px] mt-1.5">Welcome back, <span className="text-[var(--text-primary)]">{userEmail?.split('@')[0]}</span></p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 stagger-children">
@@ -185,7 +182,7 @@ export function UniAdminDashboardView({ loading, userEmail }: UniAdminDashboardV
             <div className="relative z-10 p-5 flex flex-col h-full min-h-[150px]">
               <div className="flex items-start justify-between mb-auto">
                 <div className="dash-card-icon">
-                  <item.icon size={16} className="text-[#00A8E1]" />
+                  <item.icon size={16} className="text-[var(--accent-orange)]" />
                 </div>
               </div>
               <div className="mt-4">

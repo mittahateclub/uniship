@@ -62,7 +62,7 @@ export default function EventApplicantsPage() {
 
       <div className="flex items-start justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-[-0.02em]">{eventTitle}</h1>
+          <h1 className="text-[26px] font-semibold text-[var(--text-primary)] tracking-[-0.025em]">{eventTitle}</h1>
           <p className="text-[var(--text-tertiary)] text-[13px] mt-1">
             {apps.length} {apps.length === 1 ? 'student has' : 'students have'} applied in-app
           </p>
@@ -103,7 +103,7 @@ export default function EventApplicantsPage() {
                   <p className="text-[13px] font-semibold text-[var(--text-primary)] truncate">{name}</p>
                   {email && <p className="text-[11px] text-[var(--text-faint)] truncate">{email}</p>}
                   <div className="flex flex-wrap gap-1.5 mt-1">
-                    {branch && <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-[#4B8BBE]/12 text-[#4B8BBE]">{branch}</span>}
+                    {branch && <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-[var(--type-event)]/12 text-[var(--type-event)]">{branch}</span>}
                     {gpa != null && <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-[var(--accent-orange)]/12 text-[var(--accent-orange)]">CGPA {gpa}</span>}
                   </div>
                 </div>

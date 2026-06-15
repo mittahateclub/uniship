@@ -23,20 +23,23 @@ const panel = 'rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[
 export function ListSkeleton({
   rows = 5,
   withStats = false,
+  statCount = 4,
   leadingChip = true,
 }: {
   rows?: number;
   withStats?: boolean;
+  statCount?: number;
   leadingChip?: boolean;
 }) {
+  const statGrid = statCount === 3 ? 'md:grid-cols-3' : 'md:grid-cols-4';
   return (
     <div className="max-w-[1200px] mx-auto animate-fade-in">
       <PageHeaderSkeleton />
 
       {withStats && (
-        <div className={`grid grid-cols-2 md:grid-cols-4 ${panel} overflow-hidden mb-6`}>
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="p-4 border-b md:border-b-0 border-r border-[var(--border-subtle)] [&:nth-child(2n)]:border-r-0 md:[&:nth-child(2n)]:border-r md:last:!border-r-0">
+        <div className={`grid grid-cols-2 ${statGrid} ${panel} overflow-hidden mb-6`}>
+          {Array.from({ length: statCount }).map((_, i) => (
+            <div key={i} className="p-4 border-b sm:border-b-0 border-r border-[var(--border-subtle)] last:border-r-0">
               <Skeleton className="h-3 w-20 !rounded-[5px] mb-3" />
               <Skeleton className="h-5 w-12 !rounded-[6px]" />
             </div>
@@ -54,6 +57,27 @@ export function ListSkeleton({
               <Skeleton className="h-3 w-2/5 !rounded-[5px]" />
             </div>
             <Skeleton className="h-6 w-20 !rounded-full shrink-0" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Card grid (uniadmin dashboard tool tiles) ──
+export function CardGridSkeleton({ cards = 6 }: { cards?: number }) {
+  return (
+    <div className="max-w-[1200px] mx-auto animate-fade-in">
+      <PageHeaderSkeleton />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {Array.from({ length: cards }).map((_, i) => (
+          <div key={i} className={`${panel} p-5 min-h-[150px] flex flex-col`}>
+            <Skeleton className="w-9 h-9 !rounded-[8px]" />
+            <div className="mt-auto space-y-2">
+              <Skeleton className="h-3.5 w-28 !rounded-[6px]" />
+              <Skeleton className="h-2.5 w-full !rounded-[4px]" />
+              <Skeleton className="h-2.5 w-2/3 !rounded-[4px]" />
+            </div>
           </div>
         ))}
       </div>

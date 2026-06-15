@@ -1,6 +1,7 @@
 'use client';
 
 import { Search, Trash2 } from '@/components/icons';
+import { ListSkeleton } from '@/components/Skeleton';
 
 export interface StudentAccount {
   id: string;
@@ -20,25 +21,21 @@ export interface ManageViewProps {
 }
 
 export function ManageView({ loading, loadingData, filteredStudents, searchTerm, onSearchTermChange, onDelete }: ManageViewProps) {
-  if (loading) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="loading-dots"><span /><span /><span /></div>
-    </div>
-  );
+  if (loading) return <ListSkeleton rows={6} leadingChip={false} />;
 
   return (
-    <div className="animate-fade-in">
-      <div className="mb-6 flex justify-between items-center">
+    <div className="max-w-[1200px] mx-auto animate-fade-in">
+      <div className="pt-8 mb-7 flex justify-between items-center">
         <div>
-          <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Manage Student Accounts</h1>
-          <p className="text-[var(--text-tertiary)] text-[13px] mt-1">{filteredStudents.length} account{filteredStudents.length !== 1 ? 's' : ''}</p>
+          <h1 className="text-[26px] font-semibold text-[var(--text-primary)] tracking-[-0.025em]">Manage Student Accounts</h1>
+          <p className="text-[var(--text-tertiary)] text-[13.5px] mt-1.5">{filteredStudents.length} account{filteredStudents.length !== 1 ? 's' : ''}</p>
         </div>
         <div className="relative w-56">
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)]" />
           <input
             type="text"
             placeholder="Search students..."
-            className="w-full pl-8 pr-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-faint)] text-[13px] focus:outline-none focus:border-[#4B8BBE] transition-all duration-150"
+            className="w-full pl-8 pr-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-faint)] text-[13px] focus:outline-none focus:border-[var(--type-event)] transition-all duration-150"
             value={searchTerm}
             onChange={(e) => onSearchTermChange(e.target.value)}
           />
@@ -71,7 +68,7 @@ export function ManageView({ loading, loadingData, filteredStudents, searchTerm,
                       <button className="btn-secondary text-[11px] px-3 py-1">Edit</button>
                       <button
                         onClick={() => onDelete(student.id)}
-                        className="p-1.5 rounded text-[var(--text-faint)] hover:text-[#00A8E1] hover:bg-[#00A8E1]/10 transition-colors duration-150"
+                        className="p-1.5 rounded text-[var(--text-faint)] hover:text-[var(--status-danger)] hover:bg-[var(--status-danger)]/10 transition-colors duration-150"
                       >
                         <Trash2 size={13} />
                       </button>

@@ -13,6 +13,7 @@ import {
   Mic, Camera, MonitorPlay, ShieldCheck, RotateCcw, Calendar, LogIn, X,
   Flag, Bell,
 } from '@/components/icons';
+import { ListSkeleton } from '@/components/Skeleton';
 
 interface ExamSession {
   id: string;
@@ -595,11 +596,7 @@ export default function ProctorDashboard() {
   }, [recentResults]);
 
   if (authLoading || !universityId) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="loading-dots"><span /><span /><span /></div>
-      </div>
-    );
+    return <ListSkeleton withStats statCount={3} rows={5} />;
   }
 
   return (
@@ -617,15 +614,15 @@ export default function ProctorDashboard() {
               }
               setChatNotification(null);
             }}
-            className="w-full text-left bg-[var(--bg-primary)] border border-[#4B8BBE]/40 rounded-lg shadow-lg p-4 hover:border-[#4B8BBE] transition-colors"
+            className="w-full text-left bg-[var(--bg-primary)] border border-[var(--type-event)]/40 rounded-lg shadow-lg p-4 hover:border-[var(--type-event)] transition-colors"
           >
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#4B8BBE]/10 flex items-center justify-center shrink-0 mt-0.5">
-                <Bell size={14} className="text-[#4B8BBE]" />
+              <div className="w-8 h-8 rounded-full bg-[var(--type-event)]/10 flex items-center justify-center shrink-0 mt-0.5">
+                <Bell size={14} className="text-[var(--type-event)]" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-0.5">
-                  <span className="text-[11px] font-semibold text-[#4B8BBE]">New Message</span>
+                  <span className="text-[11px] font-semibold text-[var(--type-event)]">New Message</span>
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); setChatNotification(null); }}
@@ -645,8 +642,8 @@ export default function ProctorDashboard() {
         <div className="fixed top-4 right-4 z-[140] max-w-sm animate-fade-in">
           <div className={`w-full text-left rounded-lg shadow-lg p-4 border ${
             actionPopup.type === 'success'
-              ? 'bg-green-50 border-green-300 dark:bg-[#0B2E1A] dark:border-[#4CAF50]/40'
-              : 'bg-red-50 border-red-300 dark:bg-[#2C1212] dark:border-[#DC2626]/40'
+              ? 'bg-green-50 border-green-300 dark:bg-[#0B2E1A] dark:border-[var(--status-success)]/40'
+              : 'bg-red-50 border-red-300 dark:bg-[#2C1212] dark:border-[var(--status-danger)]/40'
           }`}>
             <p className={`text-[12px] font-semibold ${
               actionPopup.type === 'success' ? 'text-green-700 dark:text-[#8DE2AA]' : 'text-red-700 dark:text-[#FCA5A5]'
@@ -659,11 +656,11 @@ export default function ProctorDashboard() {
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-1">
-          <div className="w-9 h-9 rounded-lg bg-[#4B8BBE]/10 flex items-center justify-center">
-            <Shield size={18} className="text-[#4B8BBE]" />
+          <div className="w-9 h-9 rounded-lg bg-[var(--type-event)]/10 flex items-center justify-center">
+            <Shield size={18} className="text-[var(--type-event)]" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Proctoring Dashboard</h1>
+            <h1 className="text-[26px] font-semibold text-[var(--text-primary)] tracking-[-0.025em]">Proctoring Dashboard</h1>
             <p className="text-[var(--text-tertiary)] text-[12px]">Monitor live exams, respond to student queries, and manage submissions</p>
           </div>
         </div>
@@ -674,7 +671,7 @@ export default function ProctorDashboard() {
         <div className="window mb-6 overflow-hidden">
           <div className="px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Calendar size={14} className="text-[#4B8BBE]" />
+              <Calendar size={14} className="text-[var(--type-event)]" />
               <span className="text-[12px] font-semibold text-[var(--text-primary)]">Upcoming in 24 Hours</span>
             </div>
             <span className="text-[10px] text-[var(--text-faint)]">{upcomingTests.length} test{upcomingTests.length !== 1 ? 's' : ''}</span>
@@ -691,20 +688,20 @@ export default function ProctorDashboard() {
               return (
                 <div key={test.id} className="px-4 py-3 flex items-center gap-3">
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                    isLive ? 'bg-[#4CAF50]/10' : 'bg-[#4B8BBE]/10'
+                    isLive ? 'bg-[var(--status-success)]/10' : 'bg-[var(--type-event)]/10'
                   }`}>
-                    {isLive ? <Monitor size={14} className="text-[#4CAF50]" /> : <Clock size={14} className="text-[#4B8BBE]" />}
+                    {isLive ? <Monitor size={14} className="text-[var(--status-success)]" /> : <Clock size={14} className="text-[var(--type-event)]" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-[12px] font-semibold text-[var(--text-primary)] truncate">{test.title}</span>
                       {isLive ? (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[#4CAF50] bg-[#4CAF50]/10 px-1.5 py-0.5 rounded shrink-0">
-                          <div className="w-1 h-1 rounded-full bg-[#4CAF50] animate-pulse" />
+                        <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[var(--status-success)] bg-[var(--status-success)]/10 px-1.5 py-0.5 rounded shrink-0">
+                          <div className="w-1 h-1 rounded-full bg-[var(--status-success)] animate-pulse" />
                           LIVE NOW
                         </span>
                       ) : (
-                        <span className="text-[9px] font-semibold text-[#4B8BBE] bg-[#4B8BBE]/10 px-1.5 py-0.5 rounded shrink-0">
+                        <span className="text-[9px] font-semibold text-[var(--type-event)] bg-[var(--type-event)]/10 px-1.5 py-0.5 rounded shrink-0">
                           {diffH > 0 ? `in ${diffH}h ${diffM}m` : `in ${diffM}m`}
                         </span>
                       )}
@@ -725,8 +722,8 @@ export default function ProctorDashboard() {
                       onClick={() => { setActiveTestId(test.id); setSelectedSession(null); }}
                       className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
                         activeTestId === test.id
-                          ? 'bg-[#4CAF50] text-white'
-                          : 'bg-[#4CAF50]/10 text-[#4CAF50] hover:bg-[#4CAF50]/20'
+                          ? 'bg-[var(--status-success)] text-white'
+                          : 'bg-[var(--status-success)]/10 text-[var(--status-success)] hover:bg-[var(--status-success)]/20'
                       }`}
                     >
                       <LogIn size={12} />
@@ -746,30 +743,30 @@ export default function ProctorDashboard() {
           type="button"
           onClick={() => { if (isProctoringMode) setStatsPopup('live'); }}
           disabled={!isProctoringMode}
-          className={`window p-4 text-left transition-colors ${isProctoringMode ? 'hover:border-[#4CAF50]/40 cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
+          className={`window p-4 text-left transition-colors ${isProctoringMode ? 'hover:border-[var(--status-success)]/40 cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
         >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[11px] font-semibold text-[var(--text-faint)] uppercase tracking-wider">Live Sessions</p>
               <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">{filteredSessions.length}</p>
             </div>
-            <div className="w-9 h-9 rounded-lg bg-[#4CAF50]/10 flex items-center justify-center">
-              <Monitor size={16} className="text-[#4CAF50]" />
+            <div className="w-9 h-9 rounded-lg bg-[var(--status-success)]/10 flex items-center justify-center">
+              <Monitor size={16} className="text-[var(--status-success)]" />
             </div>
           </div>
         </button>
-        <button type="button" onClick={() => setStatsPopup('submissions')} className="window p-4 text-left hover:border-[#4B8BBE]/40 transition-colors cursor-pointer">
+        <button type="button" onClick={() => setStatsPopup('submissions')} className="window p-4 text-left hover:border-[var(--type-event)]/40 transition-colors cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[11px] font-semibold text-[var(--text-faint)] uppercase tracking-wider">Recent Submissions</p>
               <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">{recentResults.length}</p>
             </div>
-            <div className="w-9 h-9 rounded-lg bg-[#4B8BBE]/10 flex items-center justify-center">
-              <CheckCircle2 size={16} className="text-[#4B8BBE]" />
+            <div className="w-9 h-9 rounded-lg bg-[var(--type-event)]/10 flex items-center justify-center">
+              <CheckCircle2 size={16} className="text-[var(--type-event)]" />
             </div>
           </div>
         </button>
-        <button type="button" onClick={() => setStatsPopup('flagged')} className="window p-4 text-left hover:border-[#DC2626]/40 transition-colors cursor-pointer">
+        <button type="button" onClick={() => setStatsPopup('flagged')} className="window p-4 text-left hover:border-[var(--status-danger)]/40 transition-colors cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[11px] font-semibold text-[var(--text-faint)] uppercase tracking-wider">Flagged</p>
@@ -777,8 +774,8 @@ export default function ProctorDashboard() {
                 {flaggedResults.length}
               </p>
             </div>
-            <div className="w-9 h-9 rounded-lg bg-[#DC2626]/10 flex items-center justify-center">
-              <AlertTriangle size={16} className="text-[#DC2626]" />
+            <div className="w-9 h-9 rounded-lg bg-[var(--status-danger)]/10 flex items-center justify-center">
+              <AlertTriangle size={16} className="text-[var(--status-danger)]" />
             </div>
           </div>
         </button>
@@ -790,7 +787,7 @@ export default function ProctorDashboard() {
           <div className="window">
             <div className="px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[#4CAF50] animate-pulse" />
+                <div className="w-2 h-2 rounded-full bg-[var(--status-success)] animate-pulse" />
                 <span className="text-[12px] font-semibold text-[var(--text-primary)]">Live Sessions</span>
               </div>
               <span className="text-[10px] text-[var(--text-faint)]">{isProctoringMode ? `${filteredSessions.length} active` : 'Enter proctoring mode'}</span>
@@ -798,8 +795,8 @@ export default function ProctorDashboard() {
 
             {/* Active test filter banner */}
             {activeTestId && (
-              <div className="px-4 py-2 bg-[#4CAF50]/5 border-b border-[#4CAF50]/20 flex items-center justify-between">
-                <span className="text-[10px] font-medium text-[#4CAF50]">
+              <div className="px-4 py-2 bg-[var(--status-success)]/5 border-b border-[var(--status-success)]/20 flex items-center justify-between">
+                <span className="text-[10px] font-medium text-[var(--status-success)]">
                   Filtering: {upcomingTests.find(t => t.id === activeTestId)?.title || 'Selected Test'}
                 </span>
                 <button onClick={() => setActiveTestId(null)} className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors">
@@ -827,8 +824,8 @@ export default function ProctorDashboard() {
                     key={session.id}
                     onClick={() => selectSession(session)}
                     className={`w-full text-left px-4 py-3 border-b border-[var(--border-subtle)] last:border-0 transition-colors hover:bg-[var(--bg-elevated)] ${
-                      activeSelectedSession?.id === session.id ? 'bg-[var(--bg-elevated)] border-l-2 border-l-[#4B8BBE]' : ''
-                    } ${unreadSessions.has(session.id) ? 'bg-[#4B8BBE]/5' : ''}`}
+                      activeSelectedSession?.id === session.id ? 'bg-[var(--bg-elevated)] border-l-2 border-l-[var(--type-event)]' : ''
+                    } ${unreadSessions.has(session.id) ? 'bg-[var(--type-event)]/5' : ''}`}
                   >
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[12px] font-semibold text-[var(--text-primary)] truncate max-w-[180px]">
@@ -836,7 +833,7 @@ export default function ProctorDashboard() {
                       </span>
                       <div className="flex items-center gap-1.5">
                         {unreadSessions.has(session.id) && (
-                          <span className="flex items-center gap-1 text-[9px] font-semibold text-[#4B8BBE] bg-[#4B8BBE]/10 px-1.5 py-0.5 rounded">
+                          <span className="flex items-center gap-1 text-[9px] font-semibold text-[var(--type-event)] bg-[var(--type-event)]/10 px-1.5 py-0.5 rounded">
                             <MessageCircle size={9} />
                             New
                           </span>
@@ -848,8 +845,8 @@ export default function ProctorDashboard() {
                       <span className="text-[10px] text-[var(--text-tertiary)] truncate">{session.testTitle}</span>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[#4CAF50] bg-[#4CAF50]/10 px-1.5 py-0.5 rounded">
-                        <div className="w-1 h-1 rounded-full bg-[#4CAF50] animate-pulse" />
+                      <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[var(--status-success)] bg-[var(--status-success)]/10 px-1.5 py-0.5 rounded">
+                        <div className="w-1 h-1 rounded-full bg-[var(--status-success)] animate-pulse" />
                         LIVE
                       </span>
                       <span className="text-[10px] text-[var(--text-faint)]">
@@ -874,8 +871,8 @@ export default function ProctorDashboard() {
                   <div>
                     <div className="flex items-center gap-2 mb-0.5">
                       <span className="text-[13px] font-semibold text-[var(--text-primary)]">{activeSelectedSession.userEmail}</span>
-                      <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[#4CAF50] bg-[#4CAF50]/10 px-1.5 py-0.5 rounded">
-                        <div className="w-1 h-1 rounded-full bg-[#4CAF50] animate-pulse" />
+                      <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[var(--status-success)] bg-[var(--status-success)]/10 px-1.5 py-0.5 rounded">
+                        <div className="w-1 h-1 rounded-full bg-[var(--status-success)] animate-pulse" />
                         LIVE
                       </span>
                     </div>
@@ -901,7 +898,7 @@ export default function ProctorDashboard() {
               <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
                 <div className="text-center py-4">
                   <div className="inline-flex items-center gap-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-full px-3 py-1">
-                    <ShieldCheck size={11} className="text-[#4CAF50]" />
+                    <ShieldCheck size={11} className="text-[var(--status-success)]" />
                     <span className="text-[10px] text-[var(--text-faint)]">Secure session started — messages are end-to-end between proctor and student</span>
                   </div>
                 </div>
@@ -911,7 +908,7 @@ export default function ProctorDashboard() {
                     <div className="max-w-[70%]">
                       <div className={`px-3 py-2 rounded-lg text-[13px] ${
                         msg.sender === 'proctor'
-                          ? 'bg-[#4B8BBE] text-white rounded-br-none'
+                          ? 'bg-[var(--type-event)] text-white rounded-br-none'
                           : 'bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-bl-none'
                       }`}>
                         {msg.message}
@@ -933,12 +930,12 @@ export default function ProctorDashboard() {
                   onChange={e => setChatInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
                   placeholder="Reply to student..."
-                  className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg px-4 py-2.5 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#4B8BBE] transition-colors"
+                  className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg px-4 py-2.5 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--type-event)] transition-colors"
                 />
                 <button
                   onClick={sendMessage}
                   disabled={!chatInput.trim()}
-                  className="px-4 py-2.5 rounded-lg bg-[#4B8BBE] text-white text-[13px] font-semibold disabled:opacity-40 transition-opacity flex items-center gap-2 hover:bg-[#4C5ABF]"
+                  className="px-4 py-2.5 rounded-lg bg-[var(--type-event)] text-white text-[13px] font-semibold disabled:opacity-40 transition-opacity flex items-center gap-2 hover:bg-[#4C5ABF]"
                 >
                   <Send size={14} />
                   Send
@@ -959,15 +956,15 @@ export default function ProctorDashboard() {
                 </p>
                 <div className="mt-6 grid grid-cols-3 gap-3">
                   <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg p-3 text-center">
-                    <MessageCircle size={16} className="mx-auto text-[#4B8BBE] mb-1" />
+                    <MessageCircle size={16} className="mx-auto text-[var(--type-event)] mb-1" />
                     <p className="text-[10px] text-[var(--text-faint)]">Reply to queries</p>
                   </div>
                   <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg p-3 text-center">
-                    <Eye size={16} className="mx-auto text-[#4CAF50] mb-1" />
+                    <Eye size={16} className="mx-auto text-[var(--status-success)] mb-1" />
                     <p className="text-[10px] text-[var(--text-faint)]">Monitor sessions</p>
                   </div>
                   <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg p-3 text-center">
-                    <RotateCcw size={16} className="mx-auto text-[#00A8E1] mb-1" />
+                    <RotateCcw size={16} className="mx-auto text-[var(--accent-orange)] mb-1" />
                     <p className="text-[10px] text-[var(--text-faint)]">Allow re-attempts</p>
                   </div>
                 </div>

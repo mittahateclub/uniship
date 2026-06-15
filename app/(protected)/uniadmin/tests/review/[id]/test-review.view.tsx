@@ -1,11 +1,13 @@
 'use client';
 
-import { CheckCircle2, BookOpen, Brain, Code2 } from '@/components/icons';
+import Link from 'next/link';
+import { CheckCircle2, BookOpen, Brain, Code2, ArrowLeft } from '@/components/icons';
+import { ReviewSkeleton } from '@/components/Skeleton';
 
 const sectionMeta: Record<string, { icon: typeof BookOpen; color: string; label: string }> = {
-  aptitude: { icon: BookOpen, color: 'text-teal-400', label: 'Aptitude' },
-  mcq: { icon: Brain, color: 'text-amber-400', label: 'Coding MCQs' },
-  coding: { icon: Code2, color: 'text-[#4B8BBE]', label: 'Live Coding' },
+  aptitude: { icon: BookOpen, color: 'text-[var(--type-aptitude)]', label: 'Aptitude' },
+  mcq: { icon: Brain, color: 'text-[var(--type-mcq)]', label: 'Coding MCQs' },
+  coding: { icon: Code2, color: 'text-[var(--type-event)]', label: 'Live Coding' },
 };
 
 export interface TestReviewViewProps {
@@ -16,14 +18,12 @@ export interface TestReviewViewProps {
 }
 
 export function TestReviewView({ loading, testData, publishing, onPublish }: TestReviewViewProps) {
-  if (loading) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="loading-dots"><span /><span /><span /></div>
-    </div>
-  );
+  if (loading) return <ReviewSkeleton />;
   if (!testData) return (
-    <div className="window p-12 text-center">
-      <p className="text-[#00A8E1] text-[13px]">Test not found.</p>
+    <div className="max-w-[1200px] mx-auto animate-fade-in pt-8">
+      <div className="text-center py-16 border border-[var(--border-subtle)] rounded-[var(--radius)] bg-[var(--bg-surface)]">
+        <p className="text-[var(--text-primary)] text-[13px] font-medium">Test not found.</p>
+      </div>
     </div>
   );
 
@@ -31,14 +31,28 @@ export function TestReviewView({ loading, testData, publishing, onPublish }: Tes
   const hasOnlyCodingProblems = sections.length === 0 && testData.problems?.length > 0;
 
   return (
-    <div className="max-w-4xl mx-auto animate-fade-in">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-[-0.02em]">{testData.title || testData.sourceFileName}</h1>
-        {testData.published && (
-          <span className="inline-flex items-center gap-1 mt-2 text-[10px] font-semibold uppercase tracking-[0.07em] text-[#4CAF50] bg-[#4CAF50]/10 px-2 py-0.5 rounded">
-            <CheckCircle2 size={10} /> Published
-          </span>
-        )}
+    <div className="max-w-[1200px] mx-auto animate-fade-in">
+      <div className="pt-8 mb-7">
+        <Link href="/uniadmin/tests" className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors mb-4">
+          <ArrowLeft size={14} /> Tests
+        </Link>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-[26px] font-semibold text-[var(--text-primary)] tracking-[-0.025em]">{testData.title || testData.sourceFileName}</h1>
+            {testData.published && (
+              <span className="inline-flex items-center gap-1 mt-2 text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--status-success)] bg-[var(--status-success)]/10 px-2 py-0.5 rounded-full">
+                <CheckCircle2 size={10} /> Published
+              </span>
+            )}
+          </div>
+          <button
+            onClick={onPublish}
+            disabled={publishing || testData.published}
+            className="btn-primary !rounded-[10px] !px-4 !py-2 text-[12.5px] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {publishing ? 'Publishing…' : testData.published ? 'Already Published' : 'Approve & Publish'}
+          </button>
+        </div>
       </div>
 
       <div className="space-y-6">
@@ -62,8 +76,8 @@ export function TestReviewView({ loading, testData, publishing, onPublish }: Tes
                   <div key={qIdx} className="window p-5">
                     <div className="flex items-center gap-2 mb-3">
                       <span className={`text-[10px] font-semibold uppercase tracking-[0.07em] px-2 py-0.5 rounded ${
-                        section.type === 'mcq' ? 'text-amber-400 bg-amber-400/10'
-                        : 'text-[#4B8BBE] bg-[#4B8BBE]/10'
+                        section.type === 'mcq' ? 'text-[var(--type-mcq)] bg-[var(--type-mcq)]/10'
+                        : 'text-[var(--type-event)] bg-[var(--type-event)]/10'
                       }`}>
                         Q{qIdx + 1}
                       </span>
@@ -81,7 +95,7 @@ export function TestReviewView({ loading, testData, publishing, onPublish }: Tes
                           return (
                             <div key={oIdx} className={`flex items-center gap-2 px-3 py-2 rounded text-[13px] border ${
                               isCorrect
-                                ? 'border-[#4CAF50]/30 bg-[#4CAF50]/10 text-[#4CAF50] font-medium'
+                                ? 'border-[var(--status-success)]/30 bg-[var(--status-success)]/10 text-[var(--status-success)] font-medium'
                                 : 'border-[var(--border-subtle)] text-[var(--text-secondary)]'
                             }`}>
                               <span className="font-semibold text-[12px]">{letter}.</span>
@@ -94,7 +108,7 @@ export function TestReviewView({ loading, testData, publishing, onPublish }: Tes
                     )}
 
                     {section.type === 'aptitude' && q.correctAnswer && (
-                      <div className="flex items-center gap-2 px-3 py-2 rounded border border-[#4CAF50]/30 bg-[#4CAF50]/10 text-[13px] text-[#4CAF50] font-medium">
+                      <div className="flex items-center gap-2 px-3 py-2 rounded border border-[var(--status-success)]/30 bg-[var(--status-success)]/10 text-[13px] text-[var(--status-success)] font-medium">
                         <CheckCircle2 size={12} />
                         Answer: {q.correctAnswer}
                       </div>
@@ -115,19 +129,19 @@ export function TestReviewView({ loading, testData, publishing, onPublish }: Tes
                         {q.sampleTestCases && q.sampleTestCases.length > 0 && (
                           <div>
                             <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1">Sample Case:</p>
-                            <pre className="bg-[var(--bg-elevated)] p-3 rounded text-[12px] text-[#4CAF50] font-mono">
+                            <pre className="bg-[var(--bg-elevated)] p-3 rounded text-[12px] text-[var(--status-success)] font-mono">
 {`Input: ${q.sampleTestCases[0]?.input}\nOutput: ${q.sampleTestCases[0]?.output}`}
                             </pre>
                           </div>
                         )}
                         {q.hiddenTestCases && q.hiddenTestCases.length > 0 && (
                           <div>
-                            <p className="text-[10px] font-semibold text-[#4B8BBE] uppercase tracking-[0.07em] mb-1">
+                            <p className="text-[10px] font-semibold text-[var(--type-event)] uppercase tracking-[0.07em] mb-1">
                               Hidden Test Cases ({q.hiddenTestCases.length}):
                             </p>
                             <div className="space-y-1">
                               {q.hiddenTestCases.map((tc: any, tci: number) => (
-                                <pre key={tci} className="bg-[var(--bg-elevated)] border border-[#4B8BBE]/20 p-3 rounded text-[12px] text-[#4B8BBE] font-mono">
+                                <pre key={tci} className="bg-[var(--bg-elevated)] border border-[var(--type-event)]/20 p-3 rounded text-[12px] text-[var(--type-event)] font-mono">
 {`[${tci + 1}] Input:  ${tc.input}\n      Output: ${tc.output}`}
                                 </pre>
                               ))}
@@ -146,7 +160,7 @@ export function TestReviewView({ loading, testData, publishing, onPublish }: Tes
         {hasOnlyCodingProblems && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <Code2 size={16} className="text-[#4B8BBE]" />
+              <Code2 size={16} className="text-[var(--type-event)]" />
               <h2 className="text-[14px] font-semibold text-[var(--text-primary)]">Coding Problems</h2>
               <span className="text-[11px] text-[var(--text-faint)]">({testData.problems.length} questions)</span>
             </div>
@@ -154,7 +168,7 @@ export function TestReviewView({ loading, testData, publishing, onPublish }: Tes
               {testData.problems.map((q: any, index: number) => (
                 <div key={index} className="window p-5">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[#4B8BBE] bg-[#4B8BBE]/10 px-2 py-0.5 rounded">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--type-event)] bg-[var(--type-event)]/10 px-2 py-0.5 rounded">
                       {q.difficulty || 'Q'} — Q{index + 1}
                     </span>
                   </div>
@@ -162,7 +176,7 @@ export function TestReviewView({ loading, testData, publishing, onPublish }: Tes
                   {q.sampleTestCases && q.sampleTestCases.length > 0 && (
                     <div className="mt-3 space-y-1">
                       <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em]">Sample Case:</p>
-                      <pre className="bg-[var(--bg-elevated)] p-3 rounded text-[12px] text-[#4CAF50] font-mono">
+                      <pre className="bg-[var(--bg-elevated)] p-3 rounded text-[12px] text-[var(--status-success)] font-mono">
 {`Input: ${q.sampleTestCases[0]?.input}\nOutput: ${q.sampleTestCases[0]?.output}`}
                       </pre>
                     </div>
@@ -173,15 +187,6 @@ export function TestReviewView({ loading, testData, publishing, onPublish }: Tes
           </div>
         )}
 
-        <div className="pt-6 flex justify-center">
-          <button
-            onClick={onPublish}
-            disabled={publishing || testData.published}
-            className="btn-primary px-8 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {publishing ? 'Publishing...' : testData.published ? 'Already Published' : 'Approve & Publish Test'}
-          </button>
-        </div>
       </div>
     </div>
   );

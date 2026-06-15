@@ -8,6 +8,7 @@ import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'fireb
 import { db } from '@/lib/firebase';
 import { calculateATSScore } from '@/app/(protected)/user/resume/ats-score';
 import Link from 'next/link';
+import { DetailSkeleton } from '@/components/Skeleton';
 import {
   AlertCircle,
   ArrowLeft,
@@ -162,7 +163,7 @@ function getResultSections(result: ResultItem): Array<{ name: string; percentage
 function SectionHeader({ icon: Icon, title }: { icon: React.ComponentType<any>; title: string }) {
   return (
     <div className="flex items-center gap-2 mb-3 mt-5 first:mt-0">
-      <Icon size={15} className="text-[#4B8BBE]" />
+      <Icon size={15} className="text-[var(--type-event)]" />
       <h2 className="text-[13px] font-semibold uppercase tracking-[0.07em] text-[var(--text-primary)]">{title}</h2>
     </div>
   );
@@ -461,17 +462,15 @@ export default function StudentViewPage() {
   };
 
   if (loading || fetching) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="loading-dots"><span /><span /><span /></div>
-      </div>
-    );
+    return <DetailSkeleton />;
   }
 
   if (!student) {
     return (
-      <div className="window p-12 text-center">
-        <p className="text-[#00A8E1] text-[13px]">Student not found.</p>
+      <div className="max-w-[1200px] mx-auto animate-fade-in pt-8">
+        <div className="text-center py-16 border border-[var(--border-subtle)] rounded-[var(--radius)] bg-[var(--bg-surface)]">
+          <p className="text-[var(--text-primary)] text-[13px] font-medium">Student not found.</p>
+        </div>
       </div>
     );
   }
@@ -543,13 +542,13 @@ export default function StudentViewPage() {
     .sort((a, b) => b.average - a.average);
 
   return (
-    <div className="max-w-6xl mx-auto animate-fade-in">
-      <Link href="/uniadmin/student-database" className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--text-muted)] hover:text-[var(--text-primary)] mb-5 transition-colors">
+    <div className="max-w-[1200px] mx-auto animate-fade-in pt-8">
+      <Link href="/uniadmin/student-database" className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-[var(--text-tertiary)] hover:text-[var(--text-primary)] mb-5 transition-colors">
         <ArrowLeft size={14} /> Back to Database
       </Link>
 
       {notice && (
-        <div className={`mb-4 p-3 rounded border text-[13px] ${notice.type === 'success' ? 'border-[#4CAF50]/20 bg-[#4CAF50]/10 text-[#4CAF50]' : 'border-[#00A8E1]/20 bg-[#00A8E1]/10 text-[#00A8E1]'}`}>
+        <div className={`mb-4 p-3 rounded-[var(--radius)] border text-[13px] ${notice.type === 'success' ? 'border-[var(--status-success)]/20 bg-[var(--status-success)]/10 text-[var(--status-success)]' : 'border-[var(--status-danger)]/20 bg-[var(--status-danger)]/10 text-[var(--status-danger)]'}`}>
           {notice.message}
         </div>
       )}
@@ -560,13 +559,13 @@ export default function StudentViewPage() {
             {student.photoURL ? (
               <img src={student.photoURL} alt={student.name || 'Student'} className="w-24 h-24 rounded-full object-cover border-2 border-[var(--border-subtle)]" />
             ) : (
-              <div className="w-24 h-24 rounded-full bg-[#4B8BBE]/10 flex items-center justify-center text-[#4B8BBE] text-3xl font-semibold">
+              <div className="w-24 h-24 rounded-full bg-[var(--type-event)]/10 flex items-center justify-center text-[var(--type-event)] text-3xl font-semibold">
                 {student.name?.charAt(0)?.toUpperCase() || '?'}
               </div>
             )}
             <h1 className="text-[20px] font-semibold text-[var(--text-primary)] mt-3">{student.name || 'Unnamed'}</h1>
             <p className="text-[13px] text-[var(--text-tertiary)]">{student.title || 'Student'}</p>
-            <p className="text-[12px] font-mono text-[#00A8E1] mt-1">{student.rollNumber || student.studentId || 'N/A'}</p>
+            <p className="text-[12px] font-mono text-[var(--accent-orange)] mt-1">{student.rollNumber || student.studentId || 'N/A'}</p>
 
             <div className="w-full mt-5 space-y-3">
               <div className="rounded bg-[var(--bg-elevated)] p-3 border border-[var(--border-subtle)]">
@@ -593,7 +592,7 @@ export default function StudentViewPage() {
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-3 py-2 text-[12px] font-semibold transition-colors ${activeTab === tab.id ? 'bg-[#4B8BBE]/10 text-[#4B8BBE]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
+                  className={`px-3 py-2 text-[12px] font-semibold transition-colors ${activeTab === tab.id ? 'bg-[var(--type-event)]/10 text-[var(--type-event)]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
                 >
                   {tab.label}
                 </button>
@@ -648,11 +647,11 @@ export default function StudentViewPage() {
                       const status = (app.status || 'pending').toLowerCase();
                       const statusClass =
                         status === 'selected'
-                          ? 'text-[#4CAF50] bg-[#4CAF50]/10 border-[#4CAF50]/20'
+                          ? 'text-[var(--status-success)] bg-[var(--status-success)]/10 border-[var(--status-success)]/20'
                           : status === 'shortlisted'
-                            ? 'text-[#00A8E1] bg-[#00A8E1]/10 border-[#00A8E1]/20'
+                            ? 'text-[var(--accent-orange)] bg-[var(--accent-orange)]/10 border-[var(--accent-orange)]/20'
                             : status === 'rejected'
-                              ? 'text-[#EF4444] bg-[#EF4444]/10 border-[#EF4444]/20'
+                              ? 'text-[var(--status-danger)] bg-[var(--status-danger)]/10 border-[var(--status-danger)]/20'
                               : 'text-[var(--text-faint)] bg-[var(--bg-surface)] border-[var(--border-subtle)]';
 
                       return (
@@ -732,7 +731,7 @@ export default function StudentViewPage() {
                         <SectionHeader icon={Code} title="Technical Skills" />
                         <div className="flex flex-wrap gap-1.5">
                           {student.technicalSkills.split(/[,\n]+/).map((s) => s.trim()).filter(Boolean).map((skill, i) => (
-                            <span key={i} className="px-2 py-0.5 text-[11px] font-medium rounded bg-[#4B8BBE]/8 text-[#4B8BBE] border border-[#4B8BBE]/15">{skill}</span>
+                            <span key={i} className="px-2 py-0.5 text-[11px] font-medium rounded bg-[var(--type-event)]/8 text-[var(--type-event)] border border-[var(--type-event)]/15">{skill}</span>
                           ))}
                         </div>
                       </>
@@ -751,14 +750,14 @@ export default function StudentViewPage() {
                     <SectionHeader icon={GraduationCap} title="Education" />
                     <div className="space-y-3">
                       {eduEntries.map((e: any, i: number) => (
-                        <div key={i} className="border-l-2 border-[#4B8BBE]/30 pl-3">
+                        <div key={i} className="border-l-2 border-[var(--type-event)]/30 pl-3">
                           <div className="flex justify-between items-baseline">
                             <h3 className="text-[13px] font-semibold text-[var(--text-primary)]">{e.institution}</h3>
                             <span className="text-[11px] text-[var(--text-faint)]">{formatDateRange(e.fromDate, e.toDate)}</span>
                           </div>
                           <p className="text-[12px] text-[var(--text-muted)]">{e.degree}</p>
                           <div className="flex gap-3 mt-1">
-                            {e.cgpa && <span className="text-[11px] text-[#4CAF50] font-semibold">CGPA: {e.cgpa}</span>}
+                            {e.cgpa && <span className="text-[11px] text-[var(--status-success)] font-semibold">CGPA: {e.cgpa}</span>}
                             {e.location && <span className="flex items-center gap-1 text-[11px] text-[var(--text-faint)]"><MapPin size={10} />{e.location}</span>}
                           </div>
                         </div>
@@ -772,7 +771,7 @@ export default function StudentViewPage() {
                     <SectionHeader icon={Briefcase} title="Experience" />
                     <div className="space-y-3">
                       {expEntries.map((e: any, i: number) => (
-                        <div key={i} className="border-l-2 border-[#00C16E]/30 pl-3">
+                        <div key={i} className="border-l-2 border-[var(--type-internship)]/30 pl-3">
                           <div className="flex justify-between items-baseline">
                             <h3 className="text-[13px] font-semibold text-[var(--text-primary)]">{e.role}</h3>
                             <span className="text-[11px] text-[var(--text-faint)]">{formatDateRange(e.fromDate, e.toDate)}</span>
@@ -790,12 +789,12 @@ export default function StudentViewPage() {
                     <SectionHeader icon={FolderKanban} title="Projects" />
                     <div className="space-y-3">
                       {projEntries.map((p: any, i: number) => (
-                        <div key={i} className="border-l-2 border-[#00A8E1]/30 pl-3">
+                        <div key={i} className="border-l-2 border-[var(--accent-orange)]/30 pl-3">
                           <div className="flex justify-between items-baseline">
                             <h3 className="text-[13px] font-semibold text-[var(--text-primary)]">{p.title}</h3>
                             <span className="text-[11px] text-[var(--text-faint)]">{formatDateRange(p.fromDate, p.toDate)}</span>
                           </div>
-                          {p.techStack && <p className="text-[11px] text-[#4B8BBE] mt-1">{p.techStack}</p>}
+                          {p.techStack && <p className="text-[11px] text-[var(--type-event)] mt-1">{p.techStack}</p>}
                           {p.description && <p className="text-[11px] text-[var(--text-tertiary)] mt-1 whitespace-pre-line">{p.description}</p>}
                         </div>
                       ))}
@@ -870,8 +869,8 @@ export default function StudentViewPage() {
                         return (
                           <div key={resume.id} className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4">
                             <div className="flex items-start gap-3">
-                              <div className="w-12 h-12 rounded bg-[#00A8E1]/15 flex items-center justify-center">
-                                <FileText size={22} className="text-[#00A8E1]" />
+                              <div className="w-12 h-12 rounded bg-[var(--accent-orange)]/15 flex items-center justify-center">
+                                <FileText size={22} className="text-[var(--accent-orange)]" />
                               </div>
                               <div className="min-w-0">
                                 <p className="text-[15px] font-semibold text-[var(--text-primary)] truncate">{title}</p>
@@ -884,9 +883,9 @@ export default function StudentViewPage() {
                             </p>
 
                             {atsScore !== null && (
-                              <div className="mt-2 inline-flex items-center gap-2 rounded border border-[#4B8BBE]/30 bg-[#4B8BBE]/10 px-2 py-1">
-                                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#4B8BBE]">ATS</span>
-                                <span className="text-[12px] font-semibold text-[#4B8BBE] tabular-nums">{atsScore}/100</span>
+                              <div className="mt-2 inline-flex items-center gap-2 rounded border border-[var(--type-event)]/30 bg-[var(--type-event)]/10 px-2 py-1">
+                                <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--type-event)]">ATS</span>
+                                <span className="text-[12px] font-semibold text-[var(--type-event)] tabular-nums">{atsScore}/100</span>
                               </div>
                             )}
 
@@ -904,7 +903,7 @@ export default function StudentViewPage() {
                                   href={resume.uploadedFileUrl}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="flex-1 rounded border border-[var(--border-subtle)] px-3 py-2 text-[12px] font-semibold text-center text-[var(--text-primary)] hover:border-[#4B8BBE] hover:text-[#4B8BBE] transition-colors"
+                                  className="flex-1 rounded border border-[var(--border-subtle)] px-3 py-2 text-[12px] font-semibold text-center text-[var(--text-primary)] hover:border-[var(--type-event)] hover:text-[var(--type-event)] transition-colors"
                                 >
                                   Open Uploaded File
                                 </a>
@@ -913,7 +912,7 @@ export default function StudentViewPage() {
                                   type="button"
                                   onClick={() => setResumePreview(resume)}
                                   disabled={!hasStructuredContent}
-                                  className="flex-1 rounded border border-[var(--border-subtle)] px-3 py-2 text-[12px] font-semibold text-[var(--text-primary)] hover:border-[#4B8BBE] hover:text-[#4B8BBE] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                  className="flex-1 rounded border border-[var(--border-subtle)] px-3 py-2 text-[12px] font-semibold text-[var(--text-primary)] hover:border-[var(--type-event)] hover:text-[var(--type-event)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                 >
                                   View Resume
                                 </button>
@@ -972,7 +971,7 @@ export default function StudentViewPage() {
                               <button
                                 type="button"
                                 onClick={() => setAnswerReviewResult(result)}
-                                className="mt-1 text-[11px] font-semibold text-[#4B8BBE] hover:underline"
+                                className="mt-1 text-[11px] font-semibold text-[var(--type-event)] hover:underline"
                               >
                                 View Answers
                               </button>
@@ -995,7 +994,7 @@ export default function StudentViewPage() {
                         </div>
                         <div>
                           <p className="text-[11px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Progress</p>
-                          <p className={`text-xl font-semibold tabular-nums ${scoreDelta >= 0 ? 'text-[#4CAF50]' : 'text-[#00A8E1]'}`}>
+                          <p className={`text-xl font-semibold tabular-nums ${scoreDelta >= 0 ? 'text-[var(--status-success)]' : 'text-[var(--accent-orange)]'}`}>
                             {scoreDelta >= 0 ? '+' : ''}{scoreDelta.toFixed(1)}%
                           </p>
                         </div>
@@ -1089,7 +1088,7 @@ export default function StudentViewPage() {
                   resumePreview.education || resumePreview.experience || resumePreview.skills || resumePreview.projects ||
                   resumePreview.coursework || resumePreview.extracurriculars || resumePreview.achievements
                 ) && (
-                  <p className="text-[11px] text-[#4B8BBE] mt-1 font-semibold">
+                  <p className="text-[11px] text-[var(--type-event)] mt-1 font-semibold">
                     ATS Score: {getResumeAts(resumePreview)}/100
                   </p>
                 )}

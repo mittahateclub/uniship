@@ -12,6 +12,7 @@ import {
   ChevronLeft, ChevronRight, Trash2, CheckCircle, XCircle,
   Tag, Pencil, X, Save, ChevronDown, ChevronUp, Copy, Check, RefreshCw,
 } from '@/components/icons';
+import { ListSkeleton } from '@/components/Skeleton';
 
 export default function TestsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -314,20 +315,16 @@ export default function TestsPage() {
     }
   };
 
-  if (authLoading || fetching) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="loading-dots"><span /><span /><span /></div>
-    </div>
-  );
+  if (authLoading || fetching) return <ListSkeleton rows={5} />;
 
   return (
-    <div className="max-w-4xl mx-auto animate-fade-in">
+    <div className="max-w-[1200px] mx-auto animate-fade-in">
       {/* Reassign success toast */}
       {reassignedTitle && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
-          <div className="flex items-center gap-3 bg-[var(--bg-primary)] border border-[#4CAF50]/40 rounded-lg shadow-lg px-5 py-3">
-            <div className="w-7 h-7 rounded-full bg-[#4CAF50]/10 flex items-center justify-center shrink-0">
-              <CheckCircle size={15} className="text-[#4CAF50]" />
+          <div className="flex items-center gap-3 bg-[var(--bg-primary)] border border-[var(--status-success)]/40 rounded-lg shadow-lg px-5 py-3">
+            <div className="w-7 h-7 rounded-full bg-[var(--status-success)]/10 flex items-center justify-center shrink-0">
+              <CheckCircle size={15} className="text-[var(--status-success)]" />
             </div>
             <div>
               <p className="text-[13px] font-semibold text-[var(--text-primary)]">
@@ -338,14 +335,14 @@ export default function TestsPage() {
           </div>
         </div>
       )}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="pt-8 mb-7 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Tests</h1>
-          <p className="text-[var(--text-tertiary)] text-[13px] mt-1">{testUploads.length} test{testUploads.length !== 1 ? 's' : ''} available</p>
+          <h1 className="text-[26px] font-semibold text-[var(--text-primary)] tracking-[-0.025em]">Tests</h1>
+          <p className="text-[var(--text-tertiary)] text-[13.5px] mt-1.5">{testUploads.length} test{testUploads.length !== 1 ? 's' : ''} available · upload a PDF to generate a new one</p>
         </div>
         <button
           onClick={() => setShowUploadForm(!showUploadForm)}
-          className="btn-primary flex items-center gap-1.5 text-[12px] px-4 py-2"
+          className="btn-primary !rounded-[10px] flex items-center gap-1.5 text-[12.5px] !px-3.5 !py-2"
         >
           <Upload size={14} />
           {showUploadForm ? 'Hide' : 'Upload PDF'}
@@ -357,10 +354,10 @@ export default function TestsPage() {
       {showUploadForm && (
         <div className="window p-6 mb-6">
           {status.message && (
-            <div className={`mb-4 p-3 rounded text-[13px] font-medium border ${
-              status.type === 'error' ? 'bg-[#00A8E1]/10 text-[#00A8E1] border-[#00A8E1]/20'
-              : status.type === 'success' ? 'bg-[#4CAF50]/10 text-[#4CAF50] border-[#4CAF50]/20'
-              : 'bg-[#4B8BBE]/10 text-[#4B8BBE] border-[#4B8BBE]/20'
+            <div className={`mb-4 p-3 rounded-[var(--radius)] text-[13px] font-medium border ${
+              status.type === 'error' ? 'bg-[var(--status-danger)]/10 text-[var(--status-danger)] border-[var(--status-danger)]/20'
+              : status.type === 'success' ? 'bg-[var(--status-success)]/10 text-[var(--status-success)] border-[var(--status-success)]/20'
+              : 'bg-[var(--type-event)]/10 text-[var(--type-event)] border-[var(--type-event)]/20'
             }`}>
               {status.message}
             </div>
@@ -383,7 +380,7 @@ export default function TestsPage() {
                   onClick={() => copyLink(createdTestId)}
                   className="flex items-center gap-1.5 px-3 py-2 rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[12px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-active)] transition-colors shrink-0"
                 >
-                  {copiedId === createdTestId ? <Check size={13} className="text-[#4CAF50]" /> : <Copy size={13} />}
+                  {copiedId === createdTestId ? <Check size={13} className="text-[var(--status-success)]" /> : <Copy size={13} />}
                   {copiedId === createdTestId ? 'Copied!' : 'Copy Link'}
                 </button>
               </div>
@@ -482,11 +479,11 @@ export default function TestsPage() {
                         onClick={() => setExamDate(date)}
                         className={`text-[12px] py-1.5 rounded transition-colors ${
                           isSelected
-                            ? 'bg-[#4B8BBE] text-white font-semibold'
+                            ? 'bg-[var(--type-event)] text-white font-semibold'
                             : isPast
                             ? 'text-[var(--text-faint)]/40 cursor-not-allowed'
                             : isToday
-                            ? 'text-[#4B8BBE] font-semibold hover:bg-[#4B8BBE]/10'
+                            ? 'text-[var(--type-event)] font-semibold hover:bg-[var(--type-event)]/10'
                             : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]'
                         }`}
                       >
@@ -518,8 +515,8 @@ export default function TestsPage() {
                     ))}
                   </select>
                   <div className="flex rounded overflow-hidden border border-[var(--border-subtle)] ml-auto">
-                    <button type="button" onClick={() => setStartAmPm('AM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${startAmPm === 'AM' ? 'bg-[#4B8BBE] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>AM</button>
-                    <button type="button" onClick={() => setStartAmPm('PM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${startAmPm === 'PM' ? 'bg-[#4B8BBE] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>PM</button>
+                    <button type="button" onClick={() => setStartAmPm('AM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${startAmPm === 'AM' ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>AM</button>
+                    <button type="button" onClick={() => setStartAmPm('PM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${startAmPm === 'PM' ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>PM</button>
                   </div>
                 </div>
               </div>
@@ -541,8 +538,8 @@ export default function TestsPage() {
                     ))}
                   </select>
                   <div className="flex rounded overflow-hidden border border-[var(--border-subtle)] ml-auto">
-                    <button type="button" onClick={() => setEndAmPm('AM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${endAmPm === 'AM' ? 'bg-[#4B8BBE] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>AM</button>
-                    <button type="button" onClick={() => setEndAmPm('PM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${endAmPm === 'PM' ? 'bg-[#4B8BBE] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>PM</button>
+                    <button type="button" onClick={() => setEndAmPm('AM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${endAmPm === 'AM' ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>AM</button>
+                    <button type="button" onClick={() => setEndAmPm('PM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${endAmPm === 'PM' ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>PM</button>
                   </div>
                 </div>
               </div>
@@ -556,7 +553,7 @@ export default function TestsPage() {
                 <FileText size={12} className="text-[var(--text-faint)]" />
                 Test PDF <span className="text-[10px] text-[var(--text-faint)]">(questions, answers & explanations in one file)</span>
               </label>
-              <div className="relative overflow-hidden border border-dashed border-[var(--border-active)] rounded p-4 text-center bg-[var(--bg-elevated)] hover:border-[#00A8E1]/40 transition-colors duration-150 cursor-pointer">
+              <div className="relative overflow-hidden border border-dashed border-[var(--border-active)] rounded p-4 text-center bg-[var(--bg-elevated)] hover:border-[var(--accent-orange)]/40 transition-colors duration-150 cursor-pointer">
                 <input
                   type="file"
                   accept=".pdf,.docx"
@@ -605,7 +602,7 @@ export default function TestsPage() {
           {testUploads.map((test) => (
             <div key={test.id} className="window px-5 py-4 flex items-center justify-between group hover:border-[var(--border-active)] transition-colors duration-150">
               <div className="flex items-center gap-3 min-w-0">
-                <FileText size={16} className="text-[#00A8E1] shrink-0" />
+                <FileText size={16} className="text-[var(--accent-orange)] shrink-0" />
                 <div className="min-w-0">
                   <h3 className="text-[14px] font-semibold text-[var(--text-primary)] truncate">{test.title}</h3>
                   <div className="flex items-center gap-2 mt-0.5">
@@ -631,7 +628,7 @@ export default function TestsPage() {
                   disabled={togglingId === test.id}
                   className={`flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
                     test.approved
-                      ? 'bg-[#4CAF50]/10 text-[#4CAF50] hover:bg-[#4CAF50]/20'
+                      ? 'bg-[var(--status-success)]/10 text-[var(--status-success)] hover:bg-[var(--status-success)]/20'
                       : 'bg-[var(--bg-elevated)] text-[var(--text-faint)] hover:text-[var(--text-secondary)] border border-[var(--border-subtle)]'
                   }`}
                   title={test.approved ? 'Click to unapprove' : 'Click to approve'}
@@ -642,7 +639,7 @@ export default function TestsPage() {
                 <button
                   onClick={() => handleReassignTest(test.id, test.title)}
                   disabled={reassigningId === test.id}
-                  className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 bg-[#4B8BBE]/10 text-[#4B8BBE] hover:bg-[#4B8BBE]/20"
+                  className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 bg-[var(--type-event)]/10 text-[var(--type-event)] hover:bg-[var(--type-event)]/20"
                   title="Allow all students to reattempt this test"
                 >
                   <RefreshCw size={13} className={reassigningId === test.id ? 'animate-spin' : ''} />
@@ -651,22 +648,22 @@ export default function TestsPage() {
                 <Link href={`/uniadmin/tests/review/${test.id}`} className="btn-primary text-[12px] px-4 py-1.5">Review</Link>
                 <button
                   onClick={() => openEdit(test)}
-                  className="p-2 rounded text-[var(--text-faint)] hover:text-[#4B8BBE] hover:bg-[#4B8BBE]/10 transition-colors duration-150"
+                  className="p-2 rounded text-[var(--text-faint)] hover:text-[var(--type-event)] hover:bg-[var(--type-event)]/10 transition-colors duration-150"
                   title="Edit schedule"
                 >
                   <Pencil size={14} />
                 </button>
                 <button
                   onClick={() => copyLink(test.id)}
-                  className="p-2 rounded text-[var(--text-faint)] hover:text-[#4B8BBE] hover:bg-[#4B8BBE]/10 transition-colors duration-150"
+                  className="p-2 rounded text-[var(--text-faint)] hover:text-[var(--type-event)] hover:bg-[var(--type-event)]/10 transition-colors duration-150"
                   title="Copy student link"
                 >
-                  {copiedId === test.id ? <Check size={14} className="text-[#4CAF50]" /> : <Copy size={14} />}
+                  {copiedId === test.id ? <Check size={14} className="text-[var(--status-success)]" /> : <Copy size={14} />}
                 </button>
                 <button
                   onClick={() => handleDelete(test.id)}
                   disabled={deletingId === test.id}
-                  className="p-2 rounded text-[var(--text-faint)] hover:text-[#00A8E1] hover:bg-[#00A8E1]/10 transition-colors duration-150 disabled:opacity-50"
+                  className="p-2 rounded text-[var(--text-faint)] hover:text-[var(--accent-orange)] hover:bg-[var(--accent-orange)]/10 transition-colors duration-150 disabled:opacity-50"
                 >
                   <Trash2 size={14} />
                 </button>
@@ -682,7 +679,7 @@ export default function TestsPage() {
           <div className="window w-full max-w-md p-6 animate-fade-in overflow-y-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Calendar size={16} className="text-[#4B8BBE]" />
+                <Calendar size={16} className="text-[var(--type-event)]" />
                 <h2 className="text-[15px] font-semibold text-[var(--text-primary)]">Edit Exam Schedule</h2>
               </div>
               <button onClick={() => setEditingTest(null)} className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors">
@@ -745,9 +742,9 @@ export default function TestsPage() {
                         disabled={isPast}
                         onClick={() => setEditExamDate(date)}
                         className={`text-[12px] py-1.5 rounded transition-colors ${
-                          isSelected ? 'bg-[#4B8BBE] text-white font-semibold'
+                          isSelected ? 'bg-[var(--type-event)] text-white font-semibold'
                           : isPast ? 'text-[var(--text-faint)]/40 cursor-not-allowed'
-                          : isToday ? 'text-[#4B8BBE] font-semibold hover:bg-[#4B8BBE]/10'
+                          : isToday ? 'text-[var(--type-event)] font-semibold hover:bg-[var(--type-event)]/10'
                           : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]'
                         }`}
                       >
@@ -772,8 +769,8 @@ export default function TestsPage() {
                     {Array.from({ length: 12 }, (_, i) => i * 5).map(m => <option key={m} value={m}>{String(m).padStart(2, '0')}</option>)}
                   </select>
                   <div className="flex rounded overflow-hidden border border-[var(--border-subtle)] ml-auto">
-                    <button type="button" onClick={() => setEditStartAmPm('AM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${editStartAmPm === 'AM' ? 'bg-[#4B8BBE] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>AM</button>
-                    <button type="button" onClick={() => setEditStartAmPm('PM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${editStartAmPm === 'PM' ? 'bg-[#4B8BBE] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>PM</button>
+                    <button type="button" onClick={() => setEditStartAmPm('AM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${editStartAmPm === 'AM' ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>AM</button>
+                    <button type="button" onClick={() => setEditStartAmPm('PM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${editStartAmPm === 'PM' ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>PM</button>
                   </div>
                 </div>
               </div>
@@ -788,8 +785,8 @@ export default function TestsPage() {
                     {Array.from({ length: 12 }, (_, i) => i * 5).map(m => <option key={m} value={m}>{String(m).padStart(2, '0')}</option>)}
                   </select>
                   <div className="flex rounded overflow-hidden border border-[var(--border-subtle)] ml-auto">
-                    <button type="button" onClick={() => setEditEndAmPm('AM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${editEndAmPm === 'AM' ? 'bg-[#4B8BBE] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>AM</button>
-                    <button type="button" onClick={() => setEditEndAmPm('PM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${editEndAmPm === 'PM' ? 'bg-[#4B8BBE] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>PM</button>
+                    <button type="button" onClick={() => setEditEndAmPm('AM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${editEndAmPm === 'AM' ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>AM</button>
+                    <button type="button" onClick={() => setEditEndAmPm('PM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${editEndAmPm === 'PM' ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>PM</button>
                   </div>
                 </div>
               </div>
