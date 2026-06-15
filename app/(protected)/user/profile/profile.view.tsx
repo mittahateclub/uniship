@@ -132,6 +132,14 @@ function serializeExtracurriculars(entries: ExtracurricularEntry[]): string {
   ).join('\n');
 }
 
+function hasText(value: unknown): boolean {
+  return typeof value === 'string' ? value.trim().length > 0 : Boolean(value);
+}
+
+function hasFilledEntry<T extends object>(entries: T[]): boolean {
+  return entries.some((entry) => Object.values(entry).some(hasText));
+}
+
 // ✅ LinkedIn SVG logo (official brand color)
 const LinkedInIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-5 h-5 fill-current">
@@ -354,8 +362,9 @@ export default function StudentProfile() {
   const completeness = (() => {
     const signals = [
       profile?.name, profile?.title, profile?.bio, profile?.phone, profile?.rollNumber,
-      profile?.technicalSkills, educationEntries.length > 0, experienceEntries.length > 0,
-      projectEntries.length > 0, (profile?.linkedinUrl || profile?.githubUrl),
+      profile?.technicalSkills, hasFilledEntry(educationEntries), hasFilledEntry(experienceEntries),
+      hasFilledEntry(projectEntries), hasFilledEntry(achievementEntries), hasFilledEntry(positionEntries),
+      profile?.relevantCoursework, hasFilledEntry(extracurricularEntries), (profile?.linkedinUrl || profile?.githubUrl),
     ];
     return Math.round((signals.filter(Boolean).length / signals.length) * 100);
   })();

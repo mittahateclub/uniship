@@ -62,10 +62,19 @@ type UserProfile = {
   experienceEntries?: ProfileEntry[];
   projectEntries?: ProfileEntry[];
   achievementEntries?: ProfileEntry[];
+  positionEntries?: ProfileEntry[];
   extracurricularEntries?: ProfileEntry[];
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function hasText(value: unknown): boolean {
+  return typeof value === 'string' ? value.trim().length > 0 : Boolean(value);
+}
+
+function hasFilledEntry(entries?: ProfileEntry[]): boolean {
+  return entries?.some((entry) => Object.values(entry).some(hasText)) ?? false;
+}
 
 function mapProfileToResumeData(profile: UserProfile): Partial<ResumeData> {
   const fmtEdu = (entries: ProfileEntry[]) => entries?.map(e =>
@@ -433,12 +442,15 @@ export default function ResumeBuilder() {
   const profileStats = useMemo(() => {
     if (!baseProfileData) return null;
     const fields = [
-      { label: 'Name & Contact', filled: !!(baseProfileData.name && baseProfileData.email) },
-      { label: 'Education', filled: !!(baseProfileData.educationEntries?.length || baseProfileData.education) },
-      { label: 'Experience', filled: !!(baseProfileData.experienceEntries?.length || baseProfileData.experience) },
-      { label: 'Projects', filled: !!(baseProfileData.projectEntries?.length || baseProfileData.projects) },
-      { label: 'Skills', filled: !!baseProfileData.technicalSkills },
-      { label: 'Achievements', filled: !!(baseProfileData.achievementEntries?.length || baseProfileData.achievements) },
+      { label: 'Name & Contact', filled: !!(hasText(baseProfileData.name) && hasText(baseProfileData.email)) },
+      { label: 'Education', filled: hasFilledEntry(baseProfileData.educationEntries) || hasText(baseProfileData.education) },
+      { label: 'Experience', filled: hasFilledEntry(baseProfileData.experienceEntries) || hasText(baseProfileData.experience) },
+      { label: 'Projects', filled: hasFilledEntry(baseProfileData.projectEntries) || hasText(baseProfileData.projects) },
+      { label: 'Skills', filled: hasText(baseProfileData.technicalSkills) },
+      { label: 'Achievements', filled: hasFilledEntry(baseProfileData.achievementEntries) || hasText(baseProfileData.achievements) },
+      { label: 'Positions', filled: hasFilledEntry(baseProfileData.positionEntries) },
+      { label: 'Coursework', filled: hasText(baseProfileData.relevantCoursework) },
+      { label: 'Extracurriculars', filled: hasFilledEntry(baseProfileData.extracurricularEntries) || hasText(baseProfileData.extracurriculars) },
     ];
     return fields;
   }, [baseProfileData]);
@@ -621,7 +633,7 @@ export default function ResumeBuilder() {
             )}
 
             {/* ATS score */}
-            <ATSScorePanel data={formData} keywords={keywords} />
+            <ATSScorePanel data={formData} keywords={keywords} jobDescription={jobDescription} />
 
             {/* Keywords */}
             {keywords.length > 0 && (
