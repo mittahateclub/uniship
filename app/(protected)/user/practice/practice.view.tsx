@@ -1,6 +1,7 @@
 'use client';
 
 import { Code2, Search, CheckCircle2, ArrowRight, Pin, Clock, RotateCcw, Trophy, Target } from '@/components/icons';
+import { ListSkeleton } from '@/components/Skeleton';
 
 export interface PracticeProblem {
   id: string;
@@ -46,11 +47,7 @@ export function PracticeView({
   onOpenProblem,
 }: PracticeViewProps) {
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="loading-dots"><span /><span /><span /></div>
-      </div>
-    );
+    return <ListSkeleton withStats rows={6} />;
   }
 
   const stats = [

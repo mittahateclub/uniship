@@ -9,6 +9,7 @@ import {
   MessageCircle, Bookmark, BookmarkCheck, MapPin, Clock, Calendar, Briefcase,
   Code, FlaskConical, Presentation, Check, ExternalLink, Send, Sparkles, ArrowRight, FileText,
 } from '@/components/icons';
+import { FeedSkeleton } from '@/components/Skeleton';
 
 export interface FeedPost {
   id: string;
@@ -64,12 +65,12 @@ function proxiedImage(url: string): string {
   return url;
 }
 
-const TYPE_CONFIG: Record<string, { chip: string; icon: React.ComponentType<any>; label: string }> = {
-  event:      { chip: 'bg-[#4B8BBE]/12 text-[#4B8BBE]', icon: Calendar, label: 'Event' },
-  internship: { chip: 'bg-[#00C16E]/12 text-[#00C16E]', icon: Briefcase, label: 'Internship' },
-  hackathon:  { chip: 'bg-[#00A8E1]/12 text-[#00A8E1]', icon: Code, label: 'Hackathon' },
-  research:   { chip: 'bg-[#F1A82C]/12 text-[#F1A82C]', icon: FlaskConical, label: 'Research' },
-  workshop:   { chip: 'bg-[#E04DB0]/12 text-[#E04DB0]', icon: Presentation, label: 'Workshop' },
+const TYPE_CONFIG: Record<string, { chip: string; dot: string; icon: React.ComponentType<any>; label: string }> = {
+  event:      { chip: 'bg-[var(--type-event)]/12 text-[var(--type-event)]',           dot: 'bg-[var(--type-event)]',      icon: Calendar, label: 'Event' },
+  internship: { chip: 'bg-[var(--type-internship)]/12 text-[var(--type-internship)]', dot: 'bg-[var(--type-internship)]', icon: Briefcase, label: 'Internship' },
+  hackathon:  { chip: 'bg-[var(--type-hackathon)]/12 text-[var(--type-hackathon)]',   dot: 'bg-[var(--type-hackathon)]',  icon: Code, label: 'Hackathon' },
+  research:   { chip: 'bg-[var(--type-research)]/12 text-[var(--type-research)]',     dot: 'bg-[var(--type-research)]',   icon: FlaskConical, label: 'Research' },
+  workshop:   { chip: 'bg-[var(--type-workshop)]/12 text-[var(--type-workshop)]',     dot: 'bg-[var(--type-workshop)]',   icon: Presentation, label: 'Workshop' },
 };
 
 function PostCard({
@@ -176,12 +177,16 @@ export function DashboardView(props: DashboardViewProps) {
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64"><div className="loading-dots"><span /><span /><span /></div></div>;
+    return <FeedSkeleton />;
   }
 
   return (
-    <div className="max-w-[935px] mx-auto animate-fade-in pt-6">
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,600px)_300px] gap-7 justify-center">
+    <div className="max-w-[1200px] mx-auto animate-fade-in">
+      <div className="pt-8 mb-7">
+        <h1 className="text-[26px] font-semibold tracking-[-0.025em] text-[var(--text-primary)]">Dashboard</h1>
+        <p className="text-[var(--text-tertiary)] text-[13.5px] mt-1.5">Your feed of events, opportunities, and placement updates.</p>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
         {/* ── Feed ── */}
         <div className="min-w-0 flex flex-col gap-5">
           {posts.length === 0 ? (
@@ -218,7 +223,7 @@ export function DashboardView(props: DashboardViewProps) {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={userPhotoURL} alt="" className="w-12 h-12 rounded-full object-cover" />
             ) : (
-              <span className="w-12 h-12 rounded-full bg-[#00A8E1] text-white flex items-center justify-center text-[18px] font-semibold">
+              <span className="w-12 h-12 rounded-full bg-[var(--accent-orange)] text-[var(--accent-ink)] flex items-center justify-center text-[18px] font-semibold">
                 {(userName || 'U')[0]?.toUpperCase()}
               </span>
             )}
@@ -256,7 +261,7 @@ export function DashboardView(props: DashboardViewProps) {
                   const cfg = TYPE_CONFIG[ev.type] || TYPE_CONFIG.event;
                   return (
                     <div key={ev.id} className="flex items-center gap-2.5 py-2 border-b border-[var(--border-subtle)] last:border-b-0">
-                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'currentColor' }} />
+                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot}`} />
                       <span className="text-[12px] text-[var(--text-secondary)] truncate flex-1">{ev.title}</span>
                       {ev.date && <span className="text-[10.5px] text-[var(--text-faint)] shrink-0">{ev.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>}
                     </div>
@@ -278,7 +283,7 @@ export function DashboardView(props: DashboardViewProps) {
               ) : (
                 suggestions.map((s) => (
                   <Link key={s.id} href={`/user/internships/${s.id}`} className="flex items-center gap-2.5 py-2 border-b border-[var(--border-subtle)] last:border-b-0 group">
-                    <span className="w-7 h-7 rounded-full bg-[#00C16E]/12 text-[#00C16E] flex items-center justify-center shrink-0"><Briefcase size={13} /></span>
+                    <span className="w-7 h-7 rounded-full bg-[var(--type-internship)]/12 text-[var(--type-internship)] flex items-center justify-center shrink-0"><Briefcase size={13} /></span>
                     <span className="min-w-0 flex-1">
                       <span className="block text-[12px] font-medium text-[var(--text-primary)] truncate group-hover:text-[var(--accent-orange)] transition-colors">{s.title}</span>
                       <span className="block text-[10.5px] text-[var(--text-faint)] truncate">{[s.companyName, s.stipend].filter(Boolean).join(' · ') || 'View details'}</span>

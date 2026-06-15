@@ -2,6 +2,7 @@
 
 import { createPortal } from 'react-dom';
 import { Trophy, CalendarDays, BarChart3, X, Eye, TrendingUp, CheckCircle2, Award } from '@/components/icons';
+import { ListSkeleton } from '@/components/Skeleton';
 
 export interface TestResult {
   id: string;
@@ -79,11 +80,7 @@ export function ResultsView({
   onCloseAnalysis,
 }: ResultsViewProps) {
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="loading-dots"><span /><span /><span /></div>
-      </div>
-    );
+    return <ListSkeleton withStats rows={5} />;
   }
 
   return (

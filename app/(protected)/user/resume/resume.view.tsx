@@ -9,6 +9,7 @@ import { generateTailoredResume } from './actions';
 import ATSScorePanel from './ats-score';
 import Link from 'next/link';
 import { takeResumePrefill } from '@/lib/resume-prefill';
+import { ResumeSkeleton } from '@/components/Skeleton';
 
 interface ResumeData {
   fullName: string;
@@ -515,12 +516,7 @@ export default function ResumeBuilder() {
     }
   };
 
-  if (loading)
-    return (
-      <div className="flex items-center justify-center py-24">
-        <div className="loading-dots"><span /><span /><span /></div>
-      </div>
-    );
+  if (loading) return <ResumeSkeleton />;
 
   return (
     <div className="animate-fade-in">

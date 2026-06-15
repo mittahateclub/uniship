@@ -8,6 +8,7 @@ import { db } from '@/lib/firebase';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { app } from '@/lib/firebase';
 import { Camera, User, X } from '@/components/icons';
+import { ProfileSkeleton } from '@/components/Skeleton';
 
 // Field names match exactly what is stored in Firebase
 interface UserProfile {
@@ -347,11 +348,7 @@ export default function StudentProfile() {
   const removeBtnClass = 'text-[11px] font-medium text-[var(--text-faint)] hover:text-[var(--status-danger)] transition-colors';
 
   if (loading || authLoading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <div className="loading-dots"><span /><span /><span /></div>
-      </div>
-    );
+    return <ProfileSkeleton />;
   }
 
   const completeness = (() => {

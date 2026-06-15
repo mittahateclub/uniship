@@ -246,7 +246,7 @@ function ScoreRing({ score, size = 80 }: { score: number; size?: number }) {
   const radius = (size - 8) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
-  const color = score >= 75 ? '#4CAF50' : score >= 50 ? '#F1A82C' : '#00A8E1';
+  const color = score >= 75 ? 'var(--status-success)' : score >= 50 ? 'var(--status-warning)' : 'var(--accent-orange)';
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
@@ -272,7 +272,7 @@ function ScoreRing({ score, size = 80 }: { score: number; size?: number }) {
 
 function CategoryBar({ label, score, max }: { label: string; score: number; max: number }) {
   const pct = Math.round((score / max) * 100);
-  const color = pct >= 75 ? '#4CAF50' : pct >= 50 ? '#F1A82C' : '#00A8E1';
+  const color = pct >= 75 ? 'var(--status-success)' : pct >= 50 ? 'var(--status-warning)' : 'var(--accent-orange)';
 
   return (
     <div>
@@ -307,8 +307,8 @@ export default function ATSScorePanel({ data, keywords = [], compact = false }: 
     breakdown.total >= 50 ? 'Needs Work' : 'Poor';
 
   const gradeColor =
-    breakdown.total >= 75 ? '#4CAF50' :
-    breakdown.total >= 50 ? '#F1A82C' : '#00A8E1';
+    breakdown.total >= 75 ? 'var(--status-success)' :
+    breakdown.total >= 50 ? 'var(--status-warning)' : 'var(--accent-orange)';
 
   return (
     <div className="window overflow-hidden">
@@ -319,7 +319,7 @@ export default function ATSScorePanel({ data, keywords = [], compact = false }: 
           <div className="flex items-center gap-2 mb-1">
             <h3 className="text-sm font-semibold text-[var(--text-primary)]">ATS Score</h3>
             <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded"
-              style={{ background: `${gradeColor}15`, color: gradeColor }}>
+              style={{ background: `color-mix(in srgb, ${gradeColor} 13%, transparent)`, color: gradeColor }}>
               {gradeLabel}
             </span>
           </div>
@@ -363,7 +363,7 @@ export default function ATSScorePanel({ data, keywords = [], compact = false }: 
                     <span className="text-[10px] text-[var(--text-muted)]">Matched ({breakdown.keywords.matched.length}):</span>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {breakdown.keywords.matched.map((kw, i) => (
-                        <span key={i} className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[#4CAF50]/15 text-[#4CAF50] border border-[#4CAF50]/20">
+                        <span key={i} className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[var(--status-success)]/15 text-[var(--status-success)] border border-[var(--status-success)]/20">
                           {kw}
                         </span>
                       ))}
@@ -375,7 +375,7 @@ export default function ATSScorePanel({ data, keywords = [], compact = false }: 
                     <span className="text-[10px] text-[var(--text-muted)]">Missing ({breakdown.keywords.missing.length}):</span>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {breakdown.keywords.missing.map((kw, i) => (
-                        <span key={i} className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[#00A8E1]/10 text-[#00A8E1] border border-[#00A8E1]/20">
+                        <span key={i} className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[var(--accent-orange)]/10 text-[var(--accent-orange)] border border-[var(--accent-orange)]/20">
                           {kw}
                         </span>
                       ))}
@@ -404,9 +404,9 @@ function DetailSection({ title, items }: { title: string; items: string[] }) {
       <div className="space-y-0.5">
         {items.map((item, i) => (
           <p key={i} className={`text-[11px] ${
-            item.startsWith('✓') ? 'text-[#4CAF50]' :
-            item.startsWith('△') ? 'text-[#F1A82C]' :
-            'text-[#00A8E1]'
+            item.startsWith('✓') ? 'text-[var(--status-success)]' :
+            item.startsWith('△') ? 'text-[var(--status-warning)]' :
+            'text-[var(--accent-orange)]'
           }`}>
             {item}
           </p>

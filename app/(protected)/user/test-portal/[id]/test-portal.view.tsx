@@ -120,7 +120,7 @@ const LANG_MONACO: Record<number, string> = {
 };
 
 const SEVERITY_CONFIG = {
-  low:    { label: 'Low',    color: '#F1A82C', points: 1 },
+  low:    { label: 'Low',    color: 'var(--status-warning)', points: 1 },
   medium: { label: 'Medium', color: 'var(--accent-orange)', points: 2 },
   high:   { label: 'High',   color: 'var(--status-danger)', points: 3 },
 };
@@ -1099,7 +1099,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               <p className="text-[11px] text-[var(--text-faint)] mb-2">
                 Chat with proctor available for {formatTime(timeLeft)}
               </p>
-              <button onClick={toggleChat} className="inline-flex items-center gap-2 text-[12px] font-semibold text-[#4B8BBE] hover:text-[#4C5ABF] transition-colors">
+              <button onClick={toggleChat} className="inline-flex items-center gap-2 text-[12px] font-semibold text-[var(--type-event)] hover:text-[#4C5ABF] transition-colors">
                 <MessageCircle size={14} />
                 {chatOpen ? 'Close Chat' : 'Open Chat'}
                 {newMsgCount > 0 && (
@@ -1116,7 +1116,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
             <div className="mt-4 mx-auto w-full max-w-sm rounded-lg border border-[var(--border-subtle)] shadow-xl bg-[var(--bg-primary)] flex flex-col overflow-hidden" style={{ height: '320px' }}>
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
                 <div className="flex items-center gap-2">
-                  <MessageCircle size={14} className="text-[#4B8BBE]" />
+                  <MessageCircle size={14} className="text-[var(--type-event)]" />
                   <span className="text-[12px] font-semibold text-[var(--text-primary)]">Live Support</span>
                 </div>
                 <button onClick={toggleChat} className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors">
@@ -1134,7 +1134,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                   <div key={msg.id} className={`flex ${msg.sender === 'student' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[80%] px-3 py-1.5 rounded-lg text-[12px] ${
                       msg.sender === 'student'
-                        ? 'bg-[#4B8BBE] text-white rounded-br-none'
+                        ? 'bg-[var(--type-event)] text-white rounded-br-none'
                         : 'bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-bl-none'
                     }`}>
                       {msg.message}
@@ -1150,9 +1150,9 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                   onChange={e => setChatInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
                   placeholder="Type a message..."
-                  className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-1.5 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#4B8BBE]"
+                  className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-1.5 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--type-event)]"
                 />
-                <button onClick={sendChatMessage} disabled={!chatInput.trim()} className="p-1.5 rounded bg-[#4B8BBE] text-white disabled:opacity-40 transition-opacity">
+                <button onClick={sendChatMessage} disabled={!chatInput.trim()} className="p-1.5 rounded bg-[var(--type-event)] text-white disabled:opacity-40 transition-opacity">
                   <Send size={14} />
                 </button>
               </div>
@@ -1195,7 +1195,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           {status === 'pending' && <span className="text-[11px] text-[var(--text-faint)]">Waiting...</span>}
           {status === 'checking' && <div className="loading-dots" style={{ transform: 'scale(0.5)' }}><span /><span /><span /></div>}
           {status === 'pass' && <><CheckCircle2 size={14} className="text-[var(--status-success)]" /><span className="text-[11px] font-semibold text-[var(--status-success)]">Ready</span></>}
-          {status === 'slow' && <><AlertTriangle size={14} className="text-[#F1A82C]" /><span className="text-[11px] font-semibold text-[#F1A82C]">Slow</span></>}
+          {status === 'slow' && <><AlertTriangle size={14} className="text-[var(--status-warning)]" /><span className="text-[11px] font-semibold text-[var(--status-warning)]">Slow</span></>}
           {status === 'fail' && <><XCircle size={14} className="text-[var(--status-danger)]" /><span className="text-[11px] font-semibold text-[var(--status-danger)]">Failed</span></>}
           {status === 'fail_surface' && <><XCircle size={14} className="text-[var(--status-danger)]" /><span className="text-[11px] font-semibold text-[var(--status-danger)]">Entire Screen Required</span></>}
         </div>
@@ -1206,8 +1206,8 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       <div className="max-w-lg mx-auto animate-fade-in py-12">
         <div className="window p-8">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-lg bg-[#4B8BBE]/10 flex items-center justify-center">
-              <Monitor size={20} className="text-[#4B8BBE]" />
+            <div className="w-10 h-10 rounded-lg bg-[var(--type-event)]/10 flex items-center justify-center">
+              <Monitor size={20} className="text-[var(--type-event)]" />
             </div>
             <div>
               <h1 className="text-lg font-semibold text-[var(--text-primary)]">System Readiness Check</h1>
@@ -1305,7 +1305,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
             <p className="text-[10px] font-semibold text-[var(--text-faint)] uppercase tracking-[0.07em] mb-3">Violation Severity</p>
             <div className="space-y-2">
               {[
-                { level: 'Low', color: '#F1A82C', desc: 'Ambient noise, minor disruption', action: '1 point' },
+                { level: 'Low', color: 'var(--status-warning)', desc: 'Ambient noise, minor disruption', action: '1 point' },
                 { level: 'Medium', color: 'var(--accent-orange)', desc: 'Fullscreen exit, copy/paste attempt, window blur', action: '2 points' },
                 { level: 'High', color: 'var(--status-danger)', desc: 'Tab switching, unauthorized key, screen share stopped', action: '3 points — session freeze after 3' },
               ].map(v => (
@@ -1336,7 +1336,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   ), 0);
   const isCoding = currentQ._sectionType === 'coding';
   const isMcq = currentQ._sectionType === 'mcq';
-  const sectionColorMap = { aptitude: '#14B8A6', mcq: '#F59E0B', coding: '#4B8BBE' };
+  const sectionColorMap = { aptitude: 'var(--type-aptitude)', mcq: 'var(--type-mcq)', coding: 'var(--type-event)' };
 
   return (
     <div className="fixed inset-0 z-[9999] bg-[var(--bg-primary)] overflow-y-auto animate-fade-in select-none" style={{ userSelect: 'none' }}>
@@ -1344,8 +1344,8 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       {warningVisible && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[9999] max-w-md w-full px-4">
           <div className="rounded-lg shadow-lg border px-4 py-3 flex items-start gap-3 text-[13px]" style={{
-            background: `${SEVERITY_CONFIG[warningData.severity as keyof typeof SEVERITY_CONFIG]?.color || 'var(--accent-orange)'}15`,
-            borderColor: `${SEVERITY_CONFIG[warningData.severity as keyof typeof SEVERITY_CONFIG]?.color || 'var(--accent-orange)'}30`,
+            background: `color-mix(in srgb, ${SEVERITY_CONFIG[warningData.severity as keyof typeof SEVERITY_CONFIG]?.color || 'var(--accent-orange)'} 13%, transparent)`,
+            borderColor: `color-mix(in srgb, ${SEVERITY_CONFIG[warningData.severity as keyof typeof SEVERITY_CONFIG]?.color || 'var(--accent-orange)'} 30%, transparent)`,
           }}>
             <AlertTriangle size={16} className="shrink-0 mt-0.5" style={{ color: SEVERITY_CONFIG[warningData.severity as keyof typeof SEVERITY_CONFIG]?.color }} />
             <div>
@@ -1397,7 +1397,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
             )}
                 <span className="w-px h-4 bg-[var(--border-subtle)]" />
                 {/* Live Support */}
-                <button onClick={toggleChat} className="relative flex items-center gap-1 text-[11px] font-semibold text-[#4B8BBE] hover:text-[#4C5ABF] transition-colors">
+                <button onClick={toggleChat} className="relative flex items-center gap-1 text-[11px] font-semibold text-[var(--type-event)] hover:text-[#4C5ABF] transition-colors">
                   <MessageCircle size={12} />
                   <span className="hidden sm:inline">Support</span>
                   {newMsgCount > 0 && (
@@ -1415,7 +1415,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         <div className="fixed top-11 right-4 z-[10000] w-80 h-96 rounded-lg border border-[var(--border-subtle)] shadow-xl bg-[var(--bg-primary)] flex flex-col overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
             <div className="flex items-center gap-2">
-              <MessageCircle size={14} className="text-[#4B8BBE]" />
+              <MessageCircle size={14} className="text-[var(--type-event)]" />
               <span className="text-[12px] font-semibold text-[var(--text-primary)]">Live Support</span>
             </div>
             <button onClick={toggleChat} className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors">
@@ -1433,7 +1433,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               <div key={msg.id} className={`flex ${msg.sender === 'student' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[80%] px-3 py-1.5 rounded-lg text-[12px] ${
                   msg.sender === 'student'
-                    ? 'bg-[#4B8BBE] text-white rounded-br-none'
+                    ? 'bg-[var(--type-event)] text-white rounded-br-none'
                     : 'bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-bl-none'
                 }`}>
                   {msg.message}
@@ -1449,9 +1449,9 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               onChange={e => setChatInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
               placeholder="Type a message..."
-              className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-1.5 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[#4B8BBE]"
+              className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-1.5 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--type-event)]"
             />
-            <button onClick={sendChatMessage} disabled={!chatInput.trim()} className="p-1.5 rounded bg-[#4B8BBE] text-white disabled:opacity-40 transition-opacity">
+            <button onClick={sendChatMessage} disabled={!chatInput.trim()} className="p-1.5 rounded bg-[var(--type-event)] text-white disabled:opacity-40 transition-opacity">
               <Send size={14} />
             </button>
           </div>
@@ -1462,7 +1462,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       <div className={`${isCoding ? 'max-w-7xl' : 'max-w-4xl'} mx-auto pt-14 pb-8 px-4`}>
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded" style={{ background: `${sectionColorMap[currentQ._sectionType]}20`, color: sectionColorMap[currentQ._sectionType] }}>
+            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded" style={{ background: `color-mix(in srgb, ${sectionColorMap[currentQ._sectionType]} 18%, transparent)`, color: sectionColorMap[currentQ._sectionType] }}>
               {currentQ._sectionTitle}
             </span>
             <p className="text-[var(--text-tertiary)] text-[13px]">
@@ -1537,7 +1537,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                         setCodeOutput(null);
                         setCodeError(null);
                       }}
-                      className="appearance-none bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-1.5 pr-7 text-[12px] text-[var(--text-primary)] font-medium focus:outline-none focus:border-[#4B8BBE] cursor-pointer"
+                      className="appearance-none bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-1.5 pr-7 text-[12px] text-[var(--text-primary)] font-medium focus:outline-none focus:border-[var(--type-event)] cursor-pointer"
                     >
                       <option value={71}>Python 3</option>
                       <option value={62}>Java</option>
@@ -1557,7 +1557,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                   <button
                     onClick={submitCode}
                     disabled={!answers[currentQuestion]?.trim() || judgeSubmitting || compiling}
-                    className="flex items-center gap-1.5 bg-[#4B8BBE] hover:bg-[#4C5ABF] text-white px-3 py-1.5 rounded text-[12px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="flex items-center gap-1.5 bg-[var(--type-event)] hover:bg-[#4C5ABF] text-white px-3 py-1.5 rounded text-[12px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
                     {judgeSubmitting ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
                     {judgeSubmitting ? 'Submitting...' : 'Submit Code'}
@@ -1597,7 +1597,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                   value={codeStdin}
                   onChange={e => setCodeStdin(e.target.value)}
                   placeholder="Optional: provide input for your program..."
-                  className="w-full h-16 p-3 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded font-mono text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[#4B8BBE] focus:outline-none transition-colors resize-none"
+                  className="w-full h-16 p-3 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded font-mono text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[var(--type-event)] focus:outline-none transition-colors resize-none"
                 />
               </div>
 
@@ -1693,12 +1693,12 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                         onClick={() => setAnswers({ ...answers, [currentQuestion]: letter })}
                         className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-lg border transition-all text-[13px] ${
                           selected
-                            ? 'border-[#4B8BBE] bg-[#4B8BBE]/10 text-[var(--text-primary)]'
+                            ? 'border-[var(--type-event)] bg-[var(--type-event)]/10 text-[var(--text-primary)]'
                             : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:border-[var(--border-active)] hover:bg-[var(--bg-surface)]'
                         }`}
                       >
                         <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-semibold shrink-0 ${
-                          selected ? 'bg-[#4B8BBE] text-white' : 'bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-tertiary)]'
+                          selected ? 'bg-[var(--type-event)] text-white' : 'bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-tertiary)]'
                         }`}>
                           {letter}
                         </span>
@@ -1739,7 +1739,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               <div className="window p-5 mb-5">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-semibold text-[var(--text-primary)]">Selected Answer:</label>
-                  <span className={`text-[13px] font-semibold ${answers[currentQuestion] ? 'text-[#4B8BBE]' : 'text-[var(--text-faint)]'}`}>
+                  <span className={`text-[13px] font-semibold ${answers[currentQuestion] ? 'text-[var(--type-event)]' : 'text-[var(--text-faint)]'}`}>
                     {answers[currentQuestion] ? `Option ${answers[currentQuestion]}` : 'None selected'}
                   </span>
                 </div>
@@ -1790,9 +1790,9 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               Answered: {answeredCount} / {flatQuestions.length}
             </p>
             <div className="flex items-center gap-3 text-[10px] text-[var(--text-faint)]">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#14B8A6]" /> Aptitude</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#F59E0B]" /> MCQ</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#4B8BBE]" /> Coding</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[var(--type-aptitude)]" /> Aptitude</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[var(--type-mcq)]" /> MCQ</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[var(--type-event)]" /> Coding</span>
             </div>
           </div>
         </div>
@@ -1832,7 +1832,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                     >
                       <div className="flex items-center justify-between gap-3 mb-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ background: `${sectionColorMap[q._sectionType]}20`, color: sectionColorMap[q._sectionType] }}>
+                          <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ background: `color-mix(in srgb, ${sectionColorMap[q._sectionType]} 18%, transparent)`, color: sectionColorMap[q._sectionType] }}>
                             {q._sectionType}
                           </span>
                           <p className="text-[12px] font-semibold text-[var(--text-primary)]">

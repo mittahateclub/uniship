@@ -60,6 +60,17 @@
   --status-warning: #F2C94C;
   --status-danger: #EC5A5A;
 
+  /* Event-type categorical palette (event / internship / hackathon / research / workshop) */
+  --type-event: #4B8BBE;
+  --type-internship: #00C16E;
+  --type-hackathon: #00A8E1;
+  --type-research: #F1A82C;
+  --type-workshop: #E04DB0;
+
+  /* Exam section palette (aptitude / mcq; coding reuses --type-event) */
+  --type-aptitude: #14B8A6;
+  --type-mcq: #F59E0B;
+
   /* Shape — one radius family */
   --radius: 10px;
 
@@ -100,6 +111,17 @@
   --status-success: #15794A;
   --status-warning: #9A6E00;
   --status-danger: #C8323B;
+
+  /* Event-type palette — deeper variants for contrast on light surfaces */
+  --type-event: #2D6A96;
+  --type-internship: #0A8F52;
+  --type-hackathon: #0082BE;
+  --type-research: #9A6E00;
+  --type-workshop: #B02C86;
+
+  /* Exam section palette — deeper for light (exam always runs in light mode) */
+  --type-aptitude: #0F766E;
+  --type-mcq: #B45309;
 }
 
 @theme inline {

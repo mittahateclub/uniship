@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { ArrowLeft, MapPin, CalendarDays, Wallet, Clock, CheckCircle2, Building2 } from '@/components/icons';
+import { DetailSkeleton } from '@/components/Skeleton';
 
 export interface Internship {
   id: string;
@@ -25,7 +26,7 @@ export interface InternshipDetailViewProps {
 }
 
 export function InternshipDetailView({ loading, internship, hasApplied, isApplying, onApply }: InternshipDetailViewProps) {
-  if (loading) return <div className="flex items-center justify-center py-24"><div className="loading-dots"><span /><span /><span /></div></div>;
+  if (loading) return <DetailSkeleton />;
   if (!internship) return <div className="flex items-center justify-center py-24 text-[var(--text-tertiary)]">Internship not found.</div>;
 
   const facts = [

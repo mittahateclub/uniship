@@ -9,6 +9,7 @@ import { db, storage } from '@/lib/firebase';
 import Link from 'next/link';
 import { FileText, ArrowLeft, Download, Pencil, X, Save, Upload, ExternalLink, Trash2 } from '@/components/icons';
 import ATSScorePanel from '../ats-score';
+import { ListSkeleton } from '@/components/Skeleton';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -537,11 +538,7 @@ export default function DownloadResume() {
 
   // ── Loading ──
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <div className="loading-dots"><span /><span /><span /></div>
-      </div>
-    );
+    return <ListSkeleton rows={4} />;
   }
 
   // ── Resume List ──

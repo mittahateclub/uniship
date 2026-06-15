@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { collection, query, getDocs, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Calendar, MapPin, Clock, ChevronLeft, ChevronRight, Briefcase, X } from '@/components/icons';
+import { CalendarSkeleton } from '@/components/Skeleton';
 
 interface CalendarEvent {
   id: string;
@@ -31,11 +32,11 @@ function sameDay(a: Date, b: Date) {
 }
 
 const TYPE_CONFIG: Record<string, { dot: string; chip: string; label: string; text: string }> = {
-  event:      { dot: 'bg-[#4B8BBE]', chip: 'bg-[#4B8BBE]/12 text-[#4B8BBE]', label: 'Event',      text: '#4B8BBE' },
-  internship: { dot: 'bg-[#00C16E]', chip: 'bg-[#00C16E]/12 text-[#00C16E]', label: 'Internship', text: '#00C16E' },
-  hackathon:  { dot: 'bg-[#00A8E1]', chip: 'bg-[#00A8E1]/12 text-[#00A8E1]', label: 'Hackathon',  text: '#00A8E1' },
-  research:   { dot: 'bg-[#F1A82C]', chip: 'bg-[#F1A82C]/12 text-[#F1A82C]', label: 'Research',   text: '#F1A82C' },
-  workshop:   { dot: 'bg-[#E04DB0]', chip: 'bg-[#E04DB0]/12 text-[#E04DB0]', label: 'Workshop',   text: '#E04DB0' },
+  event:      { dot: 'bg-[var(--type-event)]',      chip: 'bg-[var(--type-event)]/12 text-[var(--type-event)]',           label: 'Event',      text: 'var(--type-event)' },
+  internship: { dot: 'bg-[var(--type-internship)]', chip: 'bg-[var(--type-internship)]/12 text-[var(--type-internship)]', label: 'Internship', text: 'var(--type-internship)' },
+  hackathon:  { dot: 'bg-[var(--type-hackathon)]',  chip: 'bg-[var(--type-hackathon)]/12 text-[var(--type-hackathon)]',   label: 'Hackathon',  text: 'var(--type-hackathon)' },
+  research:   { dot: 'bg-[var(--type-research)]',   chip: 'bg-[var(--type-research)]/12 text-[var(--type-research)]',     label: 'Research',   text: 'var(--type-research)' },
+  workshop:   { dot: 'bg-[var(--type-workshop)]',   chip: 'bg-[var(--type-workshop)]/12 text-[var(--type-workshop)]',     label: 'Workshop',   text: 'var(--type-workshop)' },
 };
 
 export default function CalendarPage() {
@@ -134,11 +135,7 @@ export default function CalendarPage() {
   }, [events, today]);
 
   if (loading || authLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="loading-dots"><span /><span /><span /></div>
-      </div>
-    );
+    return <CalendarSkeleton />;
   }
 
   return (
@@ -214,7 +211,7 @@ export default function CalendarPage() {
                         {dayEvents.length > 0 && (
                           <div className="flex flex-wrap gap-0.5 mt-1 px-0.5">
                             {dayEvents.slice(0, 3).map((ev, i) => (
-                              <span key={i} className={`w-1.5 h-1.5 rounded-full ${TYPE_CONFIG[ev.type]?.dot || 'bg-[#4B8BBE]'}`} />
+                              <span key={i} className={`w-1.5 h-1.5 rounded-full ${TYPE_CONFIG[ev.type]?.dot || 'bg-[var(--type-event)]'}`} />
                             ))}
                             {dayEvents.length > 3 && (
                               <span className="text-[8px] font-semibold text-[var(--text-faint)] ml-0.5">+{dayEvents.length - 3}</span>

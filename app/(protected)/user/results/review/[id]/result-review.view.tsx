@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowLeft, CheckCircle2, XCircle, MinusCircle, Clock, AlertTriangle } from '@/components/icons';
+import { ReviewSkeleton } from '@/components/Skeleton';
 
 export type Verdict = 'AC' | 'WA' | 'TLE' | 'CE' | 'RE' | 'UNGRADED' | 'UNANSWERED';
 
@@ -42,17 +43,17 @@ export interface ResultReviewViewProps {
 }
 
 const verdictConfig: Record<Verdict, { label: string; color: string; bg: string; icon: typeof CheckCircle2 }> = {
-  AC:        { label: 'Correct',     color: 'text-[#2F9E5A]', bg: 'bg-[#2F9E5A]/10', icon: CheckCircle2 },
-  WA:        { label: 'Wrong',       color: 'text-[#D23B3B]', bg: 'bg-[#D23B3B]/10', icon: XCircle },
-  TLE:       { label: 'Time Limit',  color: 'text-[#F1A82C]', bg: 'bg-[#F1A82C]/10', icon: Clock },
-  CE:        { label: 'Compile Error', color: 'text-[#D23B3B]', bg: 'bg-[#D23B3B]/10', icon: AlertTriangle },
-  RE:        { label: 'Runtime Error', color: 'text-[#D23B3B]', bg: 'bg-[#D23B3B]/10', icon: AlertTriangle },
+  AC:        { label: 'Correct',     color: 'text-[var(--status-success)]', bg: 'bg-[var(--status-success)]/10', icon: CheckCircle2 },
+  WA:        { label: 'Wrong',       color: 'text-[var(--status-danger)]', bg: 'bg-[var(--status-danger)]/10', icon: XCircle },
+  TLE:       { label: 'Time Limit',  color: 'text-[var(--status-warning)]', bg: 'bg-[var(--status-warning)]/10', icon: Clock },
+  CE:        { label: 'Compile Error', color: 'text-[var(--status-danger)]', bg: 'bg-[var(--status-danger)]/10', icon: AlertTriangle },
+  RE:        { label: 'Runtime Error', color: 'text-[var(--status-danger)]', bg: 'bg-[var(--status-danger)]/10', icon: AlertTriangle },
   UNGRADED:  { label: 'Ungraded',    color: 'text-[var(--text-faint)]', bg: 'bg-[var(--bg-elevated)]', icon: MinusCircle },
   UNANSWERED:{ label: 'Unanswered',  color: 'text-[var(--text-faint)]', bg: 'bg-[var(--bg-elevated)]', icon: MinusCircle },
 };
 
 export function ResultReviewView({ loading, result, onBack }: ResultReviewViewProps) {
-  if (loading) return <div className="flex items-center justify-center py-24"><div className="loading-dots"><span /><span /><span /></div></div>;
+  if (loading) return <ReviewSkeleton />;
   if (!result || !result.questionSnapshots) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-[var(--text-tertiary)]">
@@ -91,8 +92,8 @@ export function ResultReviewView({ loading, result, onBack }: ResultReviewViewPr
           {result.testTitle || 'Test Review'}
         </h1>
         <div className="flex items-center gap-2 mt-3 flex-wrap">
-          <span className="inline-flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1 rounded-full bg-[#2F9E5A]/10 text-[#2F9E5A]"><CheckCircle2 size={13} />{totalCorrect} correct</span>
-          <span className="inline-flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1 rounded-full bg-[#D23B3B]/10 text-[#D23B3B]"><XCircle size={13} />{totalWrong} wrong</span>
+          <span className="inline-flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1 rounded-full bg-[var(--status-success)]/10 text-[var(--status-success)]"><CheckCircle2 size={13} />{totalCorrect} correct</span>
+          <span className="inline-flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1 rounded-full bg-[var(--status-danger)]/10 text-[var(--status-danger)]"><XCircle size={13} />{totalWrong} wrong</span>
           <span className="inline-flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1 rounded-full bg-[var(--bg-elevated)] text-[var(--text-muted)]"><MinusCircle size={13} />{totalUnanswered} unanswered</span>
         </div>
       </div>
@@ -112,15 +113,15 @@ export function ResultReviewView({ loading, result, onBack }: ResultReviewViewPr
               const isWrong = verdict === 'WA' || verdict === 'TLE' || verdict === 'CE' || verdict === 'RE';
 
               return (
-                <div key={idx} className={`window p-4 border-l-2 ${verdict === 'AC' ? 'border-l-[#2F9E5A]' : isWrong ? 'border-l-[#D23B3B]' : 'border-l-[var(--border-subtle)]'}`}>
+                <div key={idx} className={`window p-4 border-l-2 ${verdict === 'AC' ? 'border-l-[var(--status-success)]' : isWrong ? 'border-l-[var(--status-danger)]' : 'border-l-[var(--border-subtle)]'}`}>
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-[11px] font-semibold text-[var(--text-faint)] tabular-nums">Q{idx + 1}</span>
                       {q.difficulty && (
                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                          q.difficulty.toLowerCase() === 'hard' ? 'bg-[#D23B3B]/10 text-[#D23B3B]' :
-                          q.difficulty.toLowerCase() === 'medium' ? 'bg-[#F1A82C]/10 text-[#F1A82C]' :
-                          'bg-[#2F9E5A]/10 text-[#2F9E5A]'
+                          q.difficulty.toLowerCase() === 'hard' ? 'bg-[var(--status-danger)]/10 text-[var(--status-danger)]' :
+                          q.difficulty.toLowerCase() === 'medium' ? 'bg-[var(--status-warning)]/10 text-[var(--status-warning)]' :
+                          'bg-[var(--status-success)]/10 text-[var(--status-success)]'
                         }`}>{q.difficulty}</span>
                       )}
                     </div>
@@ -140,18 +141,18 @@ export function ResultReviewView({ loading, result, onBack }: ResultReviewViewPr
                         const isCorrect = q.correctAnswer?.toUpperCase() === letter;
                         return (
                           <div key={oi} className={`flex items-center gap-2 px-3 py-2 rounded-[8px] text-[13px] border ${
-                            isCorrect ? 'border-[#2F9E5A]/50 bg-[#2F9E5A]/5' :
-                            isStudentPick && isWrong ? 'border-[#D23B3B]/50 bg-[#D23B3B]/5' :
+                            isCorrect ? 'border-[var(--status-success)]/50 bg-[var(--status-success)]/5' :
+                            isStudentPick && isWrong ? 'border-[var(--status-danger)]/50 bg-[var(--status-danger)]/5' :
                             'border-[var(--border-subtle)]'
                           }`}>
-                            <span className={`font-semibold text-[12px] ${isCorrect ? 'text-[#2F9E5A]' : isStudentPick && isWrong ? 'text-[#D23B3B]' : 'text-[var(--text-faint)]'}`}>
+                            <span className={`font-semibold text-[12px] ${isCorrect ? 'text-[var(--status-success)]' : isStudentPick && isWrong ? 'text-[var(--status-danger)]' : 'text-[var(--text-faint)]'}`}>
                               {letter}.
                             </span>
-                            <span className={isCorrect ? 'text-[#2F9E5A]' : isStudentPick && isWrong ? 'text-[#D23B3B]' : 'text-[var(--text-secondary)]'}>
+                            <span className={isCorrect ? 'text-[var(--status-success)]' : isStudentPick && isWrong ? 'text-[var(--status-danger)]' : 'text-[var(--text-secondary)]'}>
                               {opt}
                             </span>
-                            {isCorrect && <CheckCircle2 size={13} className="ml-auto text-[#2F9E5A]" />}
-                            {isStudentPick && isWrong && <XCircle size={13} className="ml-auto text-[#D23B3B]" />}
+                            {isCorrect && <CheckCircle2 size={13} className="ml-auto text-[var(--status-success)]" />}
+                            {isStudentPick && isWrong && <XCircle size={13} className="ml-auto text-[var(--status-danger)]" />}
                           </div>
                         );
                       })}
@@ -162,14 +163,14 @@ export function ResultReviewView({ loading, result, onBack }: ResultReviewViewPr
                     <div className="space-y-1.5 mb-3">
                       <div className="flex items-center gap-2 text-[13px]">
                         <span className="text-[var(--text-faint)] text-[11px] font-semibold w-24">Your answer:</span>
-                        <span className={`${verdict === 'AC' ? 'text-[#2F9E5A]' : isWrong ? 'text-[#D23B3B]' : 'text-[var(--text-tertiary)]'}`}>
+                        <span className={`${verdict === 'AC' ? 'text-[var(--status-success)]' : isWrong ? 'text-[var(--status-danger)]' : 'text-[var(--text-tertiary)]'}`}>
                           {q.studentAnswer || '—'}
                         </span>
                       </div>
                       {isWrong && q.correctAnswer && (
                         <div className="flex items-center gap-2 text-[13px]">
                           <span className="text-[var(--text-faint)] text-[11px] font-semibold w-24">Correct:</span>
-                          <span className="text-[#2F9E5A]">{q.correctAnswer}</span>
+                          <span className="text-[var(--status-success)]">{q.correctAnswer}</span>
                         </div>
                       )}
                     </div>
@@ -191,7 +192,7 @@ export function ResultReviewView({ loading, result, onBack }: ResultReviewViewPr
                       )}
                       {ev && ev.passed !== undefined && ev.total !== undefined && (
                         <p className="text-[12px] text-[var(--text-tertiary)]">
-                          Test cases passed: <span className={ev.passed === ev.total ? 'text-[#2F9E5A] font-semibold' : 'text-[#D23B3B] font-semibold'}>{ev.passed}/{ev.total}</span>
+                          Test cases passed: <span className={ev.passed === ev.total ? 'text-[var(--status-success)] font-semibold' : 'text-[var(--status-danger)] font-semibold'}>{ev.passed}/{ev.total}</span>
                         </p>
                       )}
                     </div>

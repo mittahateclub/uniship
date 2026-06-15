@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { buildResumePrefill, setResumePrefill } from '@/lib/resume-prefill';
 import { Bookmark, BookmarkCheck, MapPin, Clock, Calendar, Briefcase, Code, FlaskConical, Presentation, GraduationCap, Search, Check, ExternalLink, Send, FileText } from '@/components/icons';
+import { ListSkeleton } from '@/components/Skeleton';
 
 export interface CollegeEvent {
   id: string;
@@ -40,11 +41,11 @@ export interface InternshipsViewProps {
 }
 
 const TYPE_CONFIG: Record<string, { chip: string; icon: React.ComponentType<any>; label: string }> = {
-  event:      { chip: 'bg-[#4B8BBE]/12 text-[#4B8BBE]', icon: Calendar, label: 'Event' },
-  internship: { chip: 'bg-[#00C16E]/12 text-[#00C16E]', icon: Briefcase, label: 'Internship' },
-  hackathon:  { chip: 'bg-[#00A8E1]/12 text-[#00A8E1]', icon: Code, label: 'Hackathon' },
-  research:   { chip: 'bg-[#F1A82C]/12 text-[#F1A82C]', icon: FlaskConical, label: 'Research' },
-  workshop:   { chip: 'bg-[#E04DB0]/12 text-[#E04DB0]', icon: Presentation, label: 'Workshop' },
+  event:      { chip: 'bg-[var(--type-event)]/12 text-[var(--type-event)]',           icon: Calendar, label: 'Event' },
+  internship: { chip: 'bg-[var(--type-internship)]/12 text-[var(--type-internship)]', icon: Briefcase, label: 'Internship' },
+  hackathon:  { chip: 'bg-[var(--type-hackathon)]/12 text-[var(--type-hackathon)]',   icon: Code, label: 'Hackathon' },
+  research:   { chip: 'bg-[var(--type-research)]/12 text-[var(--type-research)]',     icon: FlaskConical, label: 'Research' },
+  workshop:   { chip: 'bg-[var(--type-workshop)]/12 text-[var(--type-workshop)]',     icon: Presentation, label: 'Workshop' },
 };
 
 function toDate(d: any): Date | null {
@@ -77,11 +78,7 @@ export function InternshipsView({
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="loading-dots"><span /><span /><span /></div>
-      </div>
-    );
+    return <ListSkeleton rows={5} />;
   }
 
   return (
@@ -139,7 +136,7 @@ export function InternshipsView({
             const TypeIcon = cfg.icon;
 
             return (
-              <div key={key} className="group flex items-start gap-4 px-4 sm:px-5 py-4 border-b border-[var(--border-subtle)] last:border-b-0 transition-colors duration-150 hover:bg-[var(--bg-elevated)]">
+              <div key={key} className="group flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 px-4 sm:px-5 py-4 border-b border-[var(--border-subtle)] last:border-b-0 transition-colors duration-150 hover:bg-[var(--bg-elevated)]">
                 {/* Date block */}
                 {d && (
                   <div className="hidden sm:flex flex-col items-center justify-center w-11 shrink-0 pt-0.5">
@@ -195,7 +192,7 @@ export function InternshipsView({
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+                <div className="flex items-center gap-1.5 flex-wrap sm:shrink-0 sm:pt-0.5">
                   <button
                     onClick={() => onToggleSave(item)}
                     disabled={isSaving}

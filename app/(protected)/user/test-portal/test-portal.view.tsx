@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { FileText, Clock, HelpCircle, Tag, ArrowRight, Calendar } from '@/components/icons';
+import { ListSkeleton } from '@/components/Skeleton';
 
 export interface Test {
   id: string;
@@ -24,11 +25,7 @@ export interface TestPortalViewProps {
 
 export function TestPortalView({ loading, tests }: TestPortalViewProps) {
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="loading-dots"><span /><span /><span /></div>
-      </div>
-    );
+    return <ListSkeleton rows={4} />;
   }
 
   return (
@@ -81,7 +78,7 @@ export function TestPortalView({ loading, tests }: TestPortalViewProps) {
                       </span>
                     )}
                     {isUpcoming && (
-                      <span className="inline-flex items-center bg-[#4B8BBE]/12 text-[#4B8BBE] px-2 py-[2px] rounded-full text-[10.5px] font-medium">
+                      <span className="inline-flex items-center bg-[var(--type-event)]/12 text-[var(--type-event)] px-2 py-[2px] rounded-full text-[10.5px] font-medium">
                         Upcoming
                       </span>
                     )}
