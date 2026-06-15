@@ -5,6 +5,8 @@ import { Sun, Moon } from '@/components/icons';
 
 type Theme = 'dark' | 'light';
 
+let themeTransitionTimer: ReturnType<typeof setTimeout> | undefined;
+
 const getThemeSnapshot = (): Theme => {
   if (typeof window === 'undefined') return 'dark';
   const saved = localStorage.getItem('theme') as Theme | null;
@@ -28,9 +30,27 @@ export default function ThemeToggle({ className }: { className?: string }) {
 
   const toggle = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('theme', next);
-    window.dispatchEvent(new Event('theme-change'));
+    const root = document.documentElement;
+    const apply = () => {
+      root.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      window.dispatchEvent(new Event('theme-change'));
+    };
+
+    // Reduced-motion users get an instant switch.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      apply();
+      return;
+    }
+
+    // Enable the crossfade, then force a reflow so the transition property is
+    // committed with the *current* colors before we flip the palette — without
+    // this the class-add and value-change coalesce into one paint and snap.
+    root.classList.add('theme-transition');
+    void root.offsetWidth;
+    apply();
+    if (themeTransitionTimer) clearTimeout(themeTransitionTimer);
+    themeTransitionTimer = setTimeout(() => root.classList.remove('theme-transition'), 380);
   };
 
   return (

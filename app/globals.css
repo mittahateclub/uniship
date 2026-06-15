@@ -135,6 +135,19 @@
   border-color: var(--border-subtle);
 }
 
+/* Smooth light/dark crossfade — applied only while actively switching themes
+   (ThemeToggle adds .theme-transition to <html> for ~360ms), so it never
+   interferes with hover transitions, page load, or route changes. */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition: background-color 0.32s ease, border-color 0.32s ease,
+              color 0.32s ease, fill 0.32s ease, stroke 0.32s ease,
+              box-shadow 0.32s ease !important;
+  transition-delay: 0s !important;
+}
+
 ::selection {
   background: rgba(0, 168, 225, 0.35);
 }
