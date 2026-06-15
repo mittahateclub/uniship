@@ -90,7 +90,7 @@ export function InternshipsView({
       </div>
 
       {/* ── Search & Saved ── */}
-      <div className="flex gap-2.5 mb-5">
+      <div id="saved" className="flex gap-2.5 mb-5 scroll-mt-20">
         <div className="relative flex-1">
           <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-faint)]" />
           <input

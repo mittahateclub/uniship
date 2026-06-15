@@ -180,7 +180,7 @@ export default function StudentDatabasePage() {
       </div>
 
       {/* ── Stat strip ── */}
-      <div className="grid grid-cols-3 rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden mb-6">
+      <div id="stats" className="grid grid-cols-3 rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden mb-6 scroll-mt-20">
         {statCells.map((s) => (
           <div key={s.label} className="p-4 border-r border-[var(--border-subtle)] last:border-r-0">
             <div className="flex items-center gap-1.5 mb-2.5 text-[var(--text-faint)]">
@@ -239,7 +239,7 @@ export default function StudentDatabasePage() {
           <p className="text-[var(--text-faint)] text-[12px] mt-1">Try a different search or reset the filters.</p>
         </div>
       ) : (
-        <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
+        <div id="directory" className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden scroll-mt-20">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[920px]">
               <thead>

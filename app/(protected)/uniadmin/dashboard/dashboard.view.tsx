@@ -163,7 +163,7 @@ export function UniAdminDashboardView({ loading, userEmail }: UniAdminDashboardV
         <p className="text-[var(--text-tertiary)] text-[13.5px] mt-1.5">Welcome back, <span className="text-[var(--text-primary)]">{userEmail?.split('@')[0]}</span></p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 stagger-children">
+      <div id="tools" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 stagger-children scroll-mt-20">
         {tools.map((item) => (
           <Link
             key={item.href}

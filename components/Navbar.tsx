@@ -28,7 +28,6 @@ import {
   FolderKanban,
   Trophy,
   Star,
-  Phone,
   Globe,
   Camera,
   Code,
@@ -54,6 +53,7 @@ interface NavLink {
 interface SearchableItem extends NavLink {
   desc: string;
   category: string;
+  keywords?: string; // extra synonyms to widen fuzzy matching
 }
 
 const userNavLinks: NavLink[] = [
@@ -90,96 +90,89 @@ const superadminNavLinks: NavLink[] = [
 
 const userSearchItems: SearchableItem[] = [
   // Pages
-  { href: '/user/dashboard', label: 'Dashboard', desc: 'Overview & quick stats', icon: LayoutDashboard, category: 'Pages' },
-  { href: '/user/test-portal', label: 'Test Portal', desc: 'Browse & take assessments', icon: FileText, category: 'Pages' },
-  { href: '/user/internships', label: 'College Space', desc: 'Events, internships & opportunities', icon: Briefcase, category: 'Pages' },
-  { href: '/user/applications', label: 'Applications', desc: 'Track your submissions', icon: ClipboardCheck, category: 'Pages' },
-  { href: '/user/results', label: 'Results', desc: 'View scores & performance', icon: BarChart3, category: 'Pages' },
-  { href: '/user/calendar', label: 'Calendar', desc: 'Upcoming events & deadlines', icon: Calendar, category: 'Pages' },
-  { href: '/user/profile', label: 'Profile', desc: 'Account settings & details', icon: User, category: 'Pages' },
-  { href: '/user/resume', label: 'AI Resume Builder', desc: 'AI-powered resume editor', icon: Sparkles, category: 'Pages' },
-  { href: '/user/practice', label: 'Practice', desc: 'LeetCode-style coding practice', icon: Code, category: 'Pages' },
+  { href: '/user/dashboard', label: 'Dashboard', desc: 'Your feed of events & opportunities', icon: LayoutDashboard, category: 'Pages', keywords: 'home feed campus' },
+  { href: '/user/internships', label: 'College Space', desc: 'Events, internships & opportunities', icon: Briefcase, category: 'Pages', keywords: 'jobs drives hackathon workshop' },
+  { href: '/user/applications', label: 'Applications', desc: 'Track your submissions', icon: ClipboardCheck, category: 'Pages', keywords: 'applied status' },
+  { href: '/user/test-portal', label: 'Tests', desc: 'Browse & take assessments', icon: FileText, category: 'Pages', keywords: 'exam quiz portal assessment' },
+  { href: '/user/practice', label: 'Practice', desc: 'LeetCode-style coding practice', icon: Code, category: 'Pages', keywords: 'coding problems leetcode dsa arena' },
+  { href: '/user/resume', label: 'AI Resume Builder', desc: 'AI-powered resume editor', icon: Sparkles, category: 'Pages', keywords: 'cv builder ats' },
+  { href: '/user/results', label: 'Results', desc: 'View scores & performance', icon: BarChart3, category: 'Pages', keywords: 'score marks performance grades' },
+  { href: '/user/resume/download', label: 'Export Resume', desc: 'View & export saved resumes as PDF', icon: Download, category: 'Pages', keywords: 'download pdf saved cv' },
+  { href: '/user/calendar', label: 'Calendar', desc: 'Upcoming events & deadlines', icon: Calendar, category: 'Pages', keywords: 'schedule dates month' },
+  { href: '/user/profile', label: 'Profile', desc: 'Account settings & details', icon: User, category: 'Pages', keywords: 'account settings me' },
+  // Dashboard — In-page sections
+  { href: '/user/dashboard#feed', label: 'Campus Feed', desc: 'Latest events & opportunities feed', icon: LayoutDashboard, category: 'Dashboard', keywords: 'posts trending' },
+  { href: '/user/dashboard#upcoming', label: 'Upcoming Deadlines', desc: 'Your next events & deadlines', icon: Calendar, category: 'Dashboard' },
+  { href: '/user/dashboard#suggested', label: 'Suggested for You', desc: 'Recommended internships', icon: Briefcase, category: 'Dashboard' },
+  // College Space — In-page sections
+  { href: '/user/internships#listings', label: 'Browse Listings', desc: 'All posted opportunities', icon: Building2, category: 'College Space' },
+  { href: '/user/internships#saved', label: 'Saved Items', desc: 'Your saved events & opportunities', icon: Star, category: 'College Space', keywords: 'bookmark bookmarked' },
+  { href: '/user/internships#saved', label: 'Search Opportunities', desc: 'Search events, companies & locations', icon: Search, category: 'College Space' },
+  // Calendar — In-page sections
+  { href: '/user/calendar#calendar', label: 'Calendar Grid', desc: 'Month view of events', icon: Calendar, category: 'Calendar' },
+  { href: '/user/calendar#upcoming', label: 'Upcoming Events', desc: 'Next scheduled events', icon: Clock, category: 'Calendar' },
   // Profile — In-page sections
   { href: '/user/profile#personal-details', label: 'Personal Details', desc: 'Name, roll number, phone, email, title', icon: User, category: 'Profile' },
   { href: '/user/profile#photo', label: 'Profile Photo', desc: 'Upload or change profile picture', icon: Camera, category: 'Profile' },
-  { href: '/user/profile#web-presence', label: 'LinkedIn & GitHub', desc: 'Add or update social links', icon: Globe, category: 'Profile' },
-  { href: '/user/profile#education', label: 'Education', desc: 'Add or edit education entries', icon: GraduationCap, category: 'Profile' },
+  { href: '/user/profile#web-presence', label: 'LinkedIn & GitHub', desc: 'Add or update social links', icon: Globe, category: 'Profile', keywords: 'portfolio website social' },
+  { href: '/user/profile#education', label: 'Education', desc: 'Add or edit education entries', icon: GraduationCap, category: 'Profile', keywords: 'cgpa degree college' },
   { href: '/user/profile#experience', label: 'Experience', desc: 'Add work experience & internships', icon: Briefcase, category: 'Profile' },
   { href: '/user/profile#projects', label: 'Projects', desc: 'Add or edit portfolio projects', icon: FolderKanban, category: 'Profile' },
   { href: '/user/profile#achievements', label: 'Achievements', desc: 'Awards, certifications & honors', icon: Trophy, category: 'Profile' },
-  { href: '/user/profile#positions', label: 'Positions', desc: 'Leadership & club positions', icon: Star, category: 'Profile' },
+  { href: '/user/profile#positions', label: 'Positions of Responsibility', desc: 'Leadership & club positions', icon: Star, category: 'Profile' },
   { href: '/user/profile#extracurriculars', label: 'Extracurriculars', desc: 'Activities & hobbies', icon: Award, category: 'Profile' },
   // Resume — In-page sections
-  { href: '/user/resume#ai-tailor', label: 'AI Resume Tailor', desc: 'Auto-generate tailored resume', icon: Sparkles, category: 'Resume' },
-  { href: '/user/resume/download', label: 'Saved Resumes', desc: 'View & export saved resumes', icon: Download, category: 'Resume' },
-  // Dashboard — In-page sections
-  { href: '/user/dashboard#stats', label: 'Application Stats', desc: 'Total applications count', icon: ClipboardCheck, category: 'Dashboard' },
-  { href: '/user/dashboard#stats', label: 'Pending Tests', desc: 'Tests waiting to be taken', icon: FileText, category: 'Dashboard' },
-  { href: '/user/dashboard#stats', label: 'Upcoming Events', desc: 'Scheduled events count', icon: Calendar, category: 'Dashboard' },
-  { href: '/user/dashboard#stats', label: 'Average Score', desc: 'Overall test performance', icon: BarChart3, category: 'Dashboard' },
-  // College Space — In-page sections
-  { href: '/user/internships#listings', label: 'Browse Listings', desc: 'All posted opportunities', icon: Building2, category: 'College Space' },
-  { href: '/user/internships#listings', label: 'Saved Items', desc: 'Your saved events & opportunities', icon: Star, category: 'College Space' },
-  // Actions
-  { href: '/user/resume/download', label: 'Download Resume', desc: 'Export as PDF', icon: Download, category: 'Actions' },
-  { href: '/user/test-portal', label: 'Take a Test', desc: 'Start an available assessment', icon: FileText, category: 'Actions' },
-  { href: '/user/internships', label: 'Browse College Space', desc: 'Events & opportunities', icon: Search, category: 'Actions' },
-  { href: '/user/applications', label: 'Check Application Status', desc: 'View pending & accepted', icon: ClipboardCheck, category: 'Actions' },
-  { href: '/user/calendar', label: 'View Upcoming Events', desc: 'See scheduled dates', icon: Calendar, category: 'Actions' },
+  { href: '/user/resume#ai-tailor', label: 'AI Resume Tailor', desc: 'Auto-generate a tailored resume', icon: Sparkles, category: 'Resume', keywords: 'generate ai cv' },
+  { href: '/user/resume/download#previous-resume-upload', label: 'Upload Previous Resume', desc: 'Import an existing resume PDF', icon: Upload, category: 'Resume' },
+  { href: '/user/resume/download#resume-pdf-container', label: 'Resume Preview', desc: 'Preview & export your resume PDF', icon: Download, category: 'Resume' },
 ];
 
 const uniadminSearchItems: SearchableItem[] = [
   // Pages
-  { href: '/uniadmin/dashboard', label: 'Dashboard', desc: 'Admin overview & stats', icon: LayoutDashboard, category: 'Pages' },
-  { href: '/uniadmin/create-test', label: 'Tests', desc: 'Upload & manage assessments', icon: FileText, category: 'Pages' },
-  { href: '/uniadmin/create-event', label: 'Create Event', desc: 'Schedule an event', icon: CalendarPlus, category: 'Pages' },
-  { href: '/uniadmin/create-account', label: 'Create Account', desc: 'Add student account', icon: UserPlus, category: 'Pages' },
-  { href: '/uniadmin/student-database', label: 'Student Database', desc: 'Browse all students', icon: Database, category: 'Pages' },
-  { href: '/uniadmin/profile', label: 'Profile', desc: 'Admin profile settings', icon: User, category: 'Pages' },
-  { href: '/uniadmin/proctoring', label: 'Proctoring', desc: 'Monitor live exams & chat', icon: ShieldCheck, category: 'Pages' },
-  { href: '/uniadmin/inbox', label: 'Support Inbox', desc: 'Reply to student support chats', icon: MessageCircle, category: 'Pages' },
-  { href: '/uniadmin/practice', label: 'Practice', desc: 'Manage coding practice problems', icon: Code, category: 'Pages' },
+  { href: '/uniadmin/dashboard', label: 'Dashboard', desc: 'Admin overview & quick tools', icon: LayoutDashboard, category: 'Pages', keywords: 'home overview' },
+  { href: '/uniadmin/create-test', label: 'Create Test', desc: 'Upload & generate assessments', icon: FileText, category: 'Pages', keywords: 'new exam quiz upload pdf' },
+  { href: '/uniadmin/tests', label: 'Manage Tests', desc: 'Review, approve & publish tests', icon: FileText, category: 'Pages', keywords: 'review approve publish list' },
+  { href: '/uniadmin/practice', label: 'Practice', desc: 'Manage coding practice problems', icon: Code, category: 'Pages', keywords: 'problems leetcode dsa' },
+  { href: '/uniadmin/proctoring', label: 'Proctoring', desc: 'Monitor live exams & flagged students', icon: ShieldCheck, category: 'Pages', keywords: 'monitor cheating live sessions' },
+  { href: '/uniadmin/analysis', label: 'Analysis', desc: 'Test & student performance analytics', icon: BarChart3, category: 'Pages', keywords: 'analytics reports stats insights' },
+  { href: '/uniadmin/create-event', label: 'Create Event', desc: 'Post an event, drive or deadline', icon: CalendarPlus, category: 'Pages', keywords: 'new schedule drive internship' },
+  { href: '/uniadmin/inbox', label: 'Support Inbox', desc: 'Reply to student support chats', icon: MessageCircle, category: 'Pages', keywords: 'chat messages help' },
+  { href: '/uniadmin/create-account', label: 'Create Account', desc: 'Register a student account', icon: UserPlus, category: 'Pages', keywords: 'new student add' },
+  { href: '/uniadmin/student-database', label: 'Student Database', desc: 'Browse the student repository', icon: Database, category: 'Pages', keywords: 'students directory repository' },
+  { href: '/uniadmin/manage', label: 'Manage Students', desc: 'Edit or remove student accounts', icon: Users, category: 'Pages', keywords: 'edit delete accounts' },
+  { href: '/uniadmin/profile', label: 'Profile', desc: 'Admin profile settings', icon: User, category: 'Pages', keywords: 'account settings me' },
   // Dashboard — In-page sections
-  { href: '/uniadmin/dashboard#stats', label: 'Active Tests', desc: 'Count of currently active tests', icon: FileText, category: 'Dashboard' },
-  { href: '/uniadmin/dashboard#stats', label: 'Total Students', desc: 'Number of registered students', icon: User, category: 'Dashboard' },
-  { href: '/uniadmin/dashboard#stats', label: 'Upcoming Events', desc: 'Scheduled university events', icon: Calendar, category: 'Dashboard' },
-  // Create Test — In-page sections
-  { href: '/uniadmin/create-test', label: 'Upload PDF', desc: 'Upload test document for parsing', icon: Upload, category: 'Tests' },
+  { href: '/uniadmin/dashboard#tools', label: 'Quick Tools', desc: 'Jump to admin tools', icon: LayoutDashboard, category: 'Dashboard' },
+  // Student Database — In-page sections
+  { href: '/uniadmin/student-database#stats', label: 'Student Stats', desc: 'Totals, average CGPA & more', icon: BarChart3, category: 'Students' },
+  { href: '/uniadmin/student-database#directory', label: 'Student Directory', desc: 'Searchable table of all students', icon: Database, category: 'Students' },
+  { href: '/uniadmin/manage', label: 'Edit a Student', desc: 'Update a student account by ID', icon: User, category: 'Students', keywords: 'change edit modify' },
   // Create Event — In-page sections
   { href: '/uniadmin/create-event#form', label: 'Event Title', desc: 'Set event name', icon: CalendarPlus, category: 'Create Event' },
-  { href: '/uniadmin/create-event#form', label: 'Event Type', desc: 'Workshop, seminar, or other', icon: Star, category: 'Create Event' },
+  { href: '/uniadmin/create-event#form', label: 'Event Type', desc: 'Event, internship, hackathon, workshop', icon: Star, category: 'Create Event' },
   { href: '/uniadmin/create-event#form', label: 'Event Date & Time', desc: 'Schedule date and time', icon: Clock, category: 'Create Event' },
   { href: '/uniadmin/create-event#form', label: 'Event Location', desc: 'Set venue or online link', icon: MapPin, category: 'Create Event' },
+  { href: '/uniadmin/create-event#form', label: 'Branch & GPA Targeting', desc: 'Limit who sees the event', icon: GraduationCap, category: 'Create Event', keywords: 'target branches cgpa minimum' },
   // Create Account — In-page sections
   { href: '/uniadmin/create-account#form', label: 'Student Name', desc: 'Register student full name', icon: User, category: 'Create Account' },
   { href: '/uniadmin/create-account#form', label: 'Student ID', desc: 'Set student roll/ID number', icon: Hash, category: 'Create Account' },
   { href: '/uniadmin/create-account#form', label: 'Student Email', desc: 'Set student email address', icon: Mail, category: 'Create Account' },
   { href: '/uniadmin/create-account#form', label: 'Temporary Password', desc: 'Set initial login password', icon: Lock, category: 'Create Account' },
   // Admin Profile — In-page sections
-  { href: '/uniadmin/profile#account-details', label: 'Admin Email', desc: 'Admin account email', icon: Mail, category: 'Admin Profile' },
-  { href: '/uniadmin/profile#account-details', label: 'University ID', desc: 'University identifier', icon: Hash, category: 'Admin Profile' },
-  { href: '/uniadmin/profile#account-details', label: 'Admin Name', desc: 'Full name setting', icon: User, category: 'Admin Profile' },
-  { href: '/uniadmin/profile#account-details', label: 'Admin Phone', desc: 'Contact phone number', icon: Phone, category: 'Admin Profile' },
-  // Actions
-  { href: '/uniadmin/create-test', label: 'New Assessment', desc: 'Upload a new test PDF', icon: Upload, category: 'Actions' },
-  { href: '/uniadmin/create-event', label: 'Schedule Event', desc: 'Add a new event or deadline', icon: CalendarPlus, category: 'Actions' },
-  { href: '/uniadmin/create-account', label: 'Add Student', desc: 'Register a new student', icon: UserPlus, category: 'Actions' },
-  { href: '/uniadmin/create-test', label: 'Review Submissions', desc: 'Grade & review test results', icon: FileText, category: 'Actions' },
-  { href: '/uniadmin/student-database', label: 'Search Students', desc: 'Find student by name or ID', icon: Search, category: 'Actions' },
-  { href: '/uniadmin/proctoring', label: 'Monitor Exams', desc: 'Live proctoring dashboard', icon: ShieldCheck, category: 'Actions' },
+  { href: '/uniadmin/profile#account-details', label: 'Account Details', desc: 'Admin name, email, phone & university ID', icon: User, category: 'Admin Profile', keywords: 'email phone university id name' },
 ];
 
 const superadminSearchItems: SearchableItem[] = [
   // Pages
-  { href: '/superadmin/dashboard', label: 'Dashboard', desc: 'System-wide overview', icon: LayoutDashboard, category: 'Pages' },
-  { href: '/superadmin/universities', label: 'Universities', desc: 'Register & verify universities', icon: Building2, category: 'Pages' },
-  { href: '/superadmin/manage-students', label: 'Manage Students', desc: 'View & edit all students', icon: Users, category: 'Pages' },
-  { href: '/superadmin/create-uniadmin', label: 'Create Uni Admin', desc: 'Add university admin', icon: UserPlus, category: 'Pages' },
-  { href: '/superadmin/manage-uniadmins', label: 'Manage Uni Admins', desc: 'View & manage all admins', icon: ShieldCheck, category: 'Pages' },
+  { href: '/superadmin/dashboard', label: 'Dashboard', desc: 'System-wide overview & stats', icon: LayoutDashboard, category: 'Pages', keywords: 'home overview' },
+  { href: '/superadmin/universities', label: 'Universities', desc: 'Register & verify universities', icon: Building2, category: 'Pages', keywords: 'colleges add register' },
+  { href: '/superadmin/manage-students', label: 'Manage Students', desc: 'View & edit all students', icon: Users, category: 'Pages', keywords: 'students assign edit' },
+  { href: '/superadmin/create-uniadmin', label: 'Create Uni Admin', desc: 'Add a university admin', icon: UserPlus, category: 'Pages', keywords: 'new admin register' },
+  { href: '/superadmin/manage-uniadmins', label: 'Manage Uni Admins', desc: 'View & manage all admins', icon: ShieldCheck, category: 'Pages', keywords: 'admins edit remove' },
   // Dashboard — In-page sections
-  { href: '/superadmin/dashboard#stats', label: 'Total Universities', desc: 'Count of registered universities', icon: Building2, category: 'Dashboard' },
-  { href: '/superadmin/dashboard#stats', label: 'Uni Admins Count', desc: 'Total university administrators', icon: ShieldCheck, category: 'Dashboard' },
-  { href: '/superadmin/dashboard#stats', label: 'Total Students', desc: 'System-wide student count', icon: User, category: 'Dashboard' },
+  { href: '/superadmin/dashboard#stats', label: 'System Stats', desc: 'Universities, admins & students counts', icon: BarChart3, category: 'Dashboard', keywords: 'totals counts universities admins students' },
+  // Universities — In-page sections
+  { href: '/superadmin/universities', label: 'Register University', desc: 'Add a new university', icon: Building2, category: 'Universities', keywords: 'new add create' },
   // Create Admin — In-page sections
   { href: '/superadmin/create-uniadmin#form', label: 'Admin Name', desc: 'Set admin full name', icon: User, category: 'Create Admin' },
   { href: '/superadmin/create-uniadmin#form', label: 'Admin Email', desc: 'Set admin email address', icon: Mail, category: 'Create Admin' },
@@ -187,10 +180,6 @@ const superadminSearchItems: SearchableItem[] = [
   { href: '/superadmin/create-uniadmin#form', label: 'University ID', desc: 'Set university identifier', icon: Hash, category: 'Create Admin' },
   // Manage Admins — In-page sections
   { href: '/superadmin/manage-uniadmins#admin-list', label: 'Admin Cards', desc: 'View admin details & actions', icon: ShieldCheck, category: 'Manage Admins' },
-  // Actions
-  { href: '/superadmin/manage-students', label: 'Review Students', desc: 'Assign students to universities', icon: Users, category: 'Actions' },
-  { href: '/superadmin/create-uniadmin', label: 'Add New Admin', desc: 'Register a university admin', icon: UserPlus, category: 'Actions' },
-  { href: '/superadmin/manage-uniadmins', label: 'Review Admins', desc: 'Edit or remove university admins', icon: ShieldCheck, category: 'Actions' },
 ];
 
 
@@ -222,12 +211,14 @@ export default function Navbar() {
     if (!searchQuery.trim()) {
       return searchablePages.filter(p => p.category === 'Pages');
     }
-    const q = searchQuery.toLowerCase();
-    return searchablePages.filter(p =>
-      p.label.toLowerCase().includes(q) ||
-      p.desc.toLowerCase().includes(q) ||
-      p.category.toLowerCase().includes(q)
-    );
+    // Token-based AND match: every word in the query must appear somewhere in
+    // the item's label/description/category/keywords/path. Lets multi-word
+    // queries ("edit student", "event date") and synonyms resolve.
+    const tokens = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
+    return searchablePages.filter(p => {
+      const haystack = `${p.label} ${p.desc} ${p.category} ${p.keywords ?? ''} ${p.href}`.toLowerCase();
+      return tokens.every(t => haystack.includes(t));
+    });
   }, [searchQuery, searchablePages]);
 
   const groupedResults = useMemo(() => {

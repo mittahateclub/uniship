@@ -162,7 +162,7 @@ export default function CalendarPage() {
 
       <div className="flex flex-col lg:flex-row gap-4">
         {/* ── Calendar grid ── */}
-        <div className="flex-1">
+        <div id="calendar" className="flex-1 scroll-mt-20">
           <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
             {/* Month navigation */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-subtle)]">
@@ -293,7 +293,7 @@ export default function CalendarPage() {
           )}
 
           {/* Upcoming */}
-          <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
+          <div id="upcoming" className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden scroll-mt-20">
             <div className="px-4 h-10 flex items-center border-b border-[var(--border-subtle)]">
               <h3 className="text-[10.5px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]">Upcoming</h3>
             </div>
