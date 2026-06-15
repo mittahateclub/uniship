@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import ThemeToggle from "@/components/ThemeToggle";
 import SupportChat from "@/components/SupportChat";
 import AdminSupportChat from "@/components/AdminSupportChat";
+import NotificationCenter from "@/components/NotificationCenter";
 import Link from "next/link";
 import Image from "next/image";
 import { Search, Command, Menu } from "lucide-react";
@@ -43,6 +44,7 @@ export default function ProtectedLayout({
               </kbd>
             </button>
           </div>
+          <NotificationCenter />
           <ThemeToggle />
           {/* Profile — hidden on mobile to save space */}
           {user && (

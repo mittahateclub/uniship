@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { EventComments } from '@/components/EventComments';
 import { buildResumePrefill, setResumePrefill } from '@/lib/resume-prefill';
 import {
   MessageCircle, Bookmark, BookmarkCheck, MapPin, Clock, Calendar, Briefcase,
-  Code, FlaskConical, Presentation, Check, ExternalLink, Send, Sparkles, ArrowRight, FileText,
+  Code, FlaskConical, Presentation, Check, ExternalLink, Send, Sparkles, ArrowRight, FileText, TrendingUp,
 } from '@/components/icons';
 import { FeedSkeleton } from '@/components/Skeleton';
 
@@ -19,9 +19,12 @@ export interface FeedPost {
   location?: string;
   company?: string;
   date: Date | null;
+  createdAt?: Date | null;
   imageUrl?: string;
   link?: string;
   universityId?: string;
+  source?: 'event' | 'internship';
+  stipend?: string;
 }
 
 export interface SidebarEvent {
@@ -47,6 +50,7 @@ export interface DashboardViewProps {
   appliedIds: Set<string>;
   applyingIds: Set<string>;
   onApply: (post: FeedPost) => void;
+  trendingIds: Set<string>;
   upcoming: SidebarEvent[];
   suggestions: Suggestion[];
   userName: string | null;
@@ -74,16 +78,31 @@ const TYPE_CONFIG: Record<string, { chip: string; dot: string; icon: React.Compo
 };
 
 function PostCard({
-  post, saved, saving, onToggleSave, applied, applying, onApply, onOpenComments,
+  post, saved, saving, onToggleSave, applied, applying, onApply, onOpenComments, trending,
 }: {
   post: FeedPost; saved: boolean; saving: boolean; onToggleSave: () => void;
-  applied: boolean; applying: boolean; onApply: () => void; onOpenComments: () => void;
+  applied: boolean; applying: boolean; onApply: () => void; onOpenComments: () => void; trending: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [overflowing, setOverflowing] = useState(false);
+  const descRef = useRef<HTMLParagraphElement>(null);
   const router = useRouter();
+  const source = post.source ?? 'event';
+  const isInternship = source === 'internship';
   const cfg = TYPE_CONFIG[post.type] || TYPE_CONFIG.event;
   const TypeIcon = cfg.icon;
   const initial = (post.company || post.title)[0]?.toUpperCase() ?? '•';
+
+  // Only offer "more" when the caption actually spills past two lines.
+  useEffect(() => {
+    const el = descRef.current;
+    if (!el || expanded) return; // overflow is only measurable while clamped
+    const measure = () => setOverflowing(el.scrollHeight > el.clientHeight + 1);
+    const raf = requestAnimationFrame(measure);
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => { cancelAnimationFrame(raf); ro.disconnect(); };
+  }, [post.description, expanded]);
 
   const generateResume = () => {
     setResumePrefill(buildResumePrefill({
@@ -94,6 +113,14 @@ function PostCard({
 
   return (
     <article className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
+      {/* Trending strip — surfaces high-priority posts, mirroring the app */}
+      {trending && (
+        <div className="flex items-center gap-1.5 px-4 pt-3 -mb-1">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10.5px] font-bold rounded-full bg-[var(--type-workshop)] text-white">
+            <TrendingUp size={11} /> Trending
+          </span>
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
         <span className="w-9 h-9 rounded-full bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] flex items-center justify-center text-[14px] font-bold shrink-0">
@@ -103,7 +130,8 @@ function PostCard({
           <p className="text-[13px] font-semibold text-[var(--text-primary)] truncate">{post.company || post.title}</p>
           <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)]">
             {post.location && <span className="flex items-center gap-0.5 truncate"><MapPin size={10} />{post.location}</span>}
-            {post.date && <span className="flex items-center gap-0.5"><Clock size={10} />{post.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>}
+            {post.date && <span className="flex items-center gap-0.5"><Clock size={10} />{isInternship ? 'Apply by ' : ''}{post.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>}
+            {isInternship && post.stipend && <span className="truncate">· {post.stipend}</span>}
           </div>
         </div>
         <span className={`inline-flex items-center gap-1 px-2 py-[3px] text-[10.5px] font-medium rounded-full shrink-0 ${cfg.chip}`}>
@@ -128,11 +156,11 @@ function PostCard({
       <div className="px-4 pt-3">
         <h2 className="text-[14.5px] font-semibold text-[var(--text-primary)] tracking-[-0.01em]">{post.title}</h2>
         {post.description && (
-          <p className={`text-[12.5px] text-[var(--text-muted)] mt-1 leading-relaxed ${expanded ? '' : 'line-clamp-3'}`}>
+          <p ref={descRef} className={`text-[12.5px] text-[var(--text-muted)] mt-1 leading-relaxed ${expanded ? '' : 'line-clamp-2'}`}>
             {post.description}
           </p>
         )}
-        {post.description && post.description.length > 140 && (
+        {post.description && (overflowing || expanded) && (
           <button onClick={() => setExpanded((v) => !v)} className="text-[11.5px] font-semibold text-[var(--text-faint)] mt-1 hover:text-[var(--text-secondary)]">
             {expanded ? 'less' : 'more'}
           </button>
@@ -141,9 +169,11 @@ function PostCard({
 
       {/* Actions */}
       <div className="flex items-center gap-1 px-2.5 py-2.5 mt-1">
-        <button onClick={onOpenComments} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-[12px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors">
-          <MessageCircle size={16} /> Comment
-        </button>
+        {!isInternship && (
+          <button onClick={onOpenComments} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-[12px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors">
+            <MessageCircle size={16} /> Comment
+          </button>
+        )}
         <button onClick={onToggleSave} disabled={saving} className={`flex items-center px-2 py-1.5 rounded-[8px] transition-colors ${saved ? 'text-[var(--accent-orange)]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'}`}>
           {saved ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
         </button>
@@ -159,6 +189,10 @@ function PostCard({
           <span className="inline-flex items-center gap-1 text-[11.5px] font-semibold rounded-[10px] px-3 py-1.5 bg-[var(--status-success)]/12 text-[var(--status-success)]">
             <Check size={13} /> Applied
           </span>
+        ) : isInternship ? (
+          <button onClick={onApply} disabled={applying} className="btn-primary !rounded-[10px] text-[11.5px] !px-4 !py-1.5 inline-flex items-center gap-1 disabled:opacity-50">
+            View <ArrowRight size={12} />
+          </button>
         ) : (
           <button onClick={onApply} disabled={applying} className="btn-primary !rounded-[10px] text-[11.5px] !px-4 !py-1.5 inline-flex items-center gap-1 disabled:opacity-50">
             {post.link ? <ExternalLink size={12} /> : <Send size={12} />} Apply
@@ -171,8 +205,8 @@ function PostCard({
 
 export function DashboardView(props: DashboardViewProps) {
   const {
-    loading, posts, savedIds, savingIds, onToggleSave, appliedIds, applyingIds, onApply,
-    upcoming, suggestions, userName, userPhotoURL, universityName, branch, savedCount,
+    loading, posts, savedIds, savingIds, onToggleSave, appliedIds, applyingIds, onApply, trendingIds,
+    upcoming, suggestions, savedCount,
   } = props;
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
 
@@ -188,7 +222,7 @@ export function DashboardView(props: DashboardViewProps) {
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
         {/* ── Feed ── */}
-        <div className="min-w-0 flex flex-col gap-5">
+        <div id="feed" className="min-w-0 flex flex-col gap-5 scroll-mt-20">
           {posts.length === 0 ? (
             <div className="text-center py-20 border border-[var(--border-subtle)] rounded-[var(--radius)] bg-[var(--bg-surface)]">
               <Calendar size={26} className="mx-auto text-[var(--text-faint)] mb-3" />
@@ -197,7 +231,7 @@ export function DashboardView(props: DashboardViewProps) {
             </div>
           ) : (
             posts.map((post) => {
-              const key = `event-${post.id}`;
+              const key = `${post.source ?? 'event'}-${post.id}`;
               return (
                 <PostCard
                   key={post.id}
@@ -209,6 +243,7 @@ export function DashboardView(props: DashboardViewProps) {
                   applying={applyingIds.has(post.id)}
                   onApply={() => onApply(post)}
                   onOpenComments={() => setCommentsFor(post.id)}
+                  trending={trendingIds.has(post.id)}
                 />
               );
             })
@@ -217,22 +252,6 @@ export function DashboardView(props: DashboardViewProps) {
 
         {/* ── Right rail ── */}
         <aside className="hidden lg:flex flex-col gap-5">
-          {/* Profile mini-card */}
-          <div className="flex items-center gap-3">
-            {userPhotoURL ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={userPhotoURL} alt="" className="w-12 h-12 rounded-full object-cover" />
-            ) : (
-              <span className="w-12 h-12 rounded-full bg-[var(--accent-orange)] text-[var(--accent-ink)] flex items-center justify-center text-[18px] font-semibold">
-                {(userName || 'U')[0]?.toUpperCase()}
-              </span>
-            )}
-            <div className="min-w-0">
-              <p className="text-[13.5px] font-semibold text-[var(--text-primary)] truncate">{userName || 'Student'}</p>
-              <p className="text-[11.5px] text-[var(--text-muted)] truncate">{[branch, universityName].filter(Boolean).join(' · ') || 'Welcome back'}</p>
-            </div>
-          </div>
-
           {/* Messages */}
           <button
             onClick={() => document.dispatchEvent(new CustomEvent('open-support-chat'))}
@@ -248,7 +267,7 @@ export function DashboardView(props: DashboardViewProps) {
           </button>
 
           {/* Upcoming deadlines */}
-          <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
+          <div id="upcoming" className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden scroll-mt-20">
             <div className="flex items-center justify-between px-4 h-10 border-b border-[var(--border-subtle)]">
               <span className="text-[12px] font-semibold text-[var(--text-primary)]">Upcoming</span>
               <Link href="/user/calendar" className="text-[11px] font-medium text-[var(--accent-orange)] flex items-center gap-0.5">Calendar <ArrowRight size={11} /></Link>
@@ -272,7 +291,7 @@ export function DashboardView(props: DashboardViewProps) {
           </div>
 
           {/* Suggested internships */}
-          <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
+          <div id="suggested" className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden scroll-mt-20">
             <div className="flex items-center justify-between px-4 h-10 border-b border-[var(--border-subtle)]">
               <span className="text-[12px] font-semibold text-[var(--text-primary)]">Suggested for you</span>
               <Link href="/user/internships" className="text-[11px] font-medium text-[var(--accent-orange)] flex items-center gap-0.5">All <ArrowRight size={11} /></Link>

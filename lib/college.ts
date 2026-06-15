@@ -70,6 +70,31 @@ export function eventTargetsStudent(
   return true;
 }
 
+/// Home-feed priority scoring — ported field-for-field from the Flutter app's
+/// student_dashboard.dart so the web feed surfaces the same "trending" items.
+/// Trending score = engagement (comments·2 + RSVPs) + recency + deadline urgency.
+
+/// Newer posts rank higher.
+export function recencyPoints(createdAt: Date | null, now: Date): number {
+  if (!createdAt) return 0;
+  const h = (now.getTime() - createdAt.getTime()) / 3_600_000;
+  if (h < 24) return 4;
+  if (h < 72) return 2;
+  if (h < 168) return 1;
+  return 0;
+}
+
+/// Items closing soon surface as trending.
+export function urgencyPoints(expiry: Date | null, now: Date): number {
+  if (!expiry) return 0;
+  const h = (expiry.getTime() - now.getTime()) / 3_600_000;
+  if (h < 0) return 0;
+  if (h < 24) return 5;
+  if (h < 48) return 3;
+  if (h < 168) return 1;
+  return 0;
+}
+
 export interface ApplicantProfile {
   uid: string;
   userName: string | null;
