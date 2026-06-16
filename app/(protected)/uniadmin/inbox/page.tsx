@@ -71,13 +71,13 @@ export default function SupportInboxPage() {
   }
 
   return (
-    <div className="max-w-[1100px] mx-auto animate-fade-in">
-      <div className="pt-8 mb-5">
+    <div className="max-w-[1200px] mx-auto animate-fade-in">
+      <div className="pt-8 mb-7">
         <h1 className="text-[26px] font-semibold text-[var(--text-primary)] tracking-[-0.025em]">Support Inbox</h1>
         <p className="text-[var(--text-tertiary)] text-[13.5px] mt-1.5">Student messages land here — open a chat to reply</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] gap-4 h-[calc(100vh-220px)] min-h-[420px]">
+      <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] gap-4 h-[calc(100vh-228px)] min-h-[420px]">
         {/* Chat list */}
         <div className={`rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-y-auto ${selected ? 'hidden md:block' : ''}`}>
           {streamError ? (

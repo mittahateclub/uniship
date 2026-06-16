@@ -38,9 +38,9 @@ interface PracticeProblem {
 }
 
 const DIFFICULTY_COLORS: Record<string, string> = {
-  Easy: 'bg-teal-500/10 text-teal-400 border-teal-500/20',
-  Medium: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  Hard: 'bg-red-500/10 text-red-400 border-red-500/20',
+  Easy: 'bg-[var(--status-success)]/10 text-[var(--status-success)] border-[var(--status-success)]/20',
+  Medium: 'bg-[var(--status-warning)]/10 text-[var(--status-warning)] border-[var(--status-warning)]/20',
+  Hard: 'bg-[var(--status-danger)]/10 text-[var(--status-danger)] border-[var(--status-danger)]/20',
 };
 
 // 30-minute time slots in 12-hour format
@@ -355,69 +355,50 @@ export default function AdminPracticePage() {
 
       {mode === 'list' ? (
         /* ── Problem List ── */
-        <div className="space-y-3">
-          {problems.length === 0 ? (
-            <div className="window p-12 text-center">
-              <Code2 size={32} className="mx-auto mb-3 text-[var(--text-faint)]" />
-              <p className="text-[var(--text-tertiary)] text-[13px]">No practice problems yet. Create your first one!</p>
-            </div>
-          ) : (
-            problems.map((p, idx) => (
-              <div key={p.id} className="window p-4 flex items-center justify-between group">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="text-[12px] font-mono text-[var(--text-faint)] w-6 text-right shrink-0">{idx + 1}</span>
-                  <div className="min-w-0">
-                    <p className="text-[13px] font-semibold text-[var(--text-primary)] truncate">{p.title}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${DIFFICULTY_COLORS[p.difficulty] || DIFFICULTY_COLORS['Medium']}`}>
-                        {p.difficulty}
-                      </span>
-                      <span className="text-[11px] text-[var(--text-faint)]">
-                        {p.testCases.length} test case{p.testCases.length !== 1 ? 's' : ''}
-                      </span>
-                      <span className="text-[11px] text-[var(--text-faint)]">
-                        fn: <code className="text-[var(--text-secondary)]">{p.functionName}</code>
-                      </span>
+        problems.length === 0 ? (
+          <div className="text-center py-16 border border-[var(--border-subtle)] rounded-[var(--radius)] bg-[var(--bg-surface)]">
+            <Code2 size={26} className="mx-auto mb-3 text-[var(--text-faint)]" />
+            <p className="text-[var(--text-primary)] text-[13px] font-medium">No practice problems yet</p>
+            <p className="text-[var(--text-faint)] text-[12px] mt-1">Click “New Problem” to create your first one.</p>
+          </div>
+        ) : (
+          <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
+            {problems.map((p, idx) => {
+              const expired = !!(p.visibleUntil && p.visibleUntil.seconds * 1000 < Date.now());
+              return (
+                <div key={p.id} className="group flex items-center gap-3 px-4 sm:px-5 py-4 border-b border-[var(--border-subtle)] last:border-b-0 hover:bg-[var(--bg-elevated)] transition-colors duration-150">
+                  <span className="text-[12px] font-mono text-[var(--text-faint)] w-5 text-right shrink-0 tabular-nums">{idx + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13.5px] font-semibold text-[var(--text-primary)] tracking-[-0.01em] truncate">{p.title}</p>
+                    <div className="flex items-center gap-x-3 gap-y-0.5 flex-wrap mt-1 text-[11.5px] text-[var(--text-faint)]">
+                      <span className={`text-[10.5px] font-semibold px-2 py-[2px] rounded-full ${DIFFICULTY_COLORS[p.difficulty] || DIFFICULTY_COLORS['Medium']}`}>{p.difficulty}</span>
+                      <span>{p.testCases.length} test case{p.testCases.length !== 1 ? 's' : ''}</span>
+                      <span>fn: <code className="text-[var(--text-secondary)] font-mono">{p.functionName}</code></span>
                       {p.visibleUntil ? (
-                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded flex items-center gap-1 ${
-                          p.visibleUntil.seconds * 1000 < Date.now()
-                            ? 'bg-red-500/10 text-red-400'
-                            : 'bg-teal-500/10 text-teal-400'
+                        <span className={`inline-flex items-center gap-1 text-[10.5px] font-medium px-2 py-[2px] rounded-full ${
+                          expired ? 'bg-[var(--status-danger)]/10 text-[var(--status-danger)]' : 'bg-[var(--status-success)]/10 text-[var(--status-success)]'
                         }`}>
                           <CalendarClock size={9} />
-                          {p.visibleUntil.seconds * 1000 < Date.now()
-                            ? 'Expired'
-                            : `Until ${new Date(p.visibleUntil.seconds * 1000).toLocaleDateString()}`
-                          }
+                          {expired ? 'Expired' : `Until ${new Date(p.visibleUntil.seconds * 1000).toLocaleDateString()}`}
                         </span>
                       ) : (
-                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--bg-surface)] text-[var(--text-faint)]">
-                          Always visible
-                        </span>
+                        <span className="text-[10.5px] font-medium px-2 py-[2px] rounded-full bg-[var(--bg-elevated)] text-[var(--text-faint)]">Always visible</span>
                       )}
                     </div>
                   </div>
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    <button onClick={() => handleEdit(p)} className="p-2 rounded-full text-[var(--text-faint)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors" title="Edit problem">
+                      <Pencil size={14} />
+                    </button>
+                    <button onClick={() => handleDelete(p.id)} className="p-2 rounded-full text-[var(--text-faint)] hover:text-[var(--status-danger)] hover:bg-[var(--status-danger)]/10 transition-colors" title="Delete problem">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => handleEdit(p)}
-                    className="text-[var(--text-faint)] hover:text-[var(--type-event)] transition-colors"
-                    title="Edit problem"
-                  >
-                    <Pencil size={14} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(p.id)}
-                    className="text-[var(--text-faint)] hover:text-[var(--accent-orange)] transition-colors"
-                    title="Delete problem"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+              );
+            })}
+          </div>
+        )
       ) : (
         /* ── Create Mode ── */
         <div className="space-y-4">
@@ -723,7 +704,7 @@ export default function AdminPracticePage() {
                               setForm({ ...form, testCases: updated });
                             }}
                             className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded ${
-                              tc.isHidden ? 'bg-amber-500/10 text-amber-400' : 'bg-teal-500/10 text-teal-400'
+                              tc.isHidden ? 'bg-[var(--status-warning)]/10 text-[var(--status-warning)]' : 'bg-[var(--status-success)]/10 text-[var(--status-success)]'
                             }`}
                           >
                             {tc.isHidden ? <><EyeOff size={9} /> Hidden</> : <><Eye size={9} /> Visible</>}

@@ -654,16 +654,9 @@ export default function ProctorDashboard() {
         </div>
       )}
       {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-9 h-9 rounded-lg bg-[var(--type-event)]/10 flex items-center justify-center">
-            <Shield size={18} className="text-[var(--type-event)]" />
-          </div>
-          <div>
-            <h1 className="text-[26px] font-semibold text-[var(--text-primary)] tracking-[-0.025em]">Proctoring Dashboard</h1>
-            <p className="text-[var(--text-tertiary)] text-[12px]">Monitor live exams, respond to student queries, and manage submissions</p>
-          </div>
-        </div>
+      <div className="pt-8 mb-7">
+        <h1 className="text-[26px] font-semibold text-[var(--text-primary)] tracking-[-0.025em]">Proctoring</h1>
+        <p className="text-[var(--text-tertiary)] text-[13.5px] mt-1.5">Monitor live exams, respond to student queries, and manage submissions.</p>
       </div>
 
       {/* Upcoming tests within 24h */}
@@ -737,47 +730,33 @@ export default function ProctorDashboard() {
         </div>
       )}
 
-      {/* Stats bar — clickable cards */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      {/* Stats — clickable hairline strip */}
+      <div className="grid grid-cols-3 rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden mb-6">
         <button
           type="button"
           onClick={() => { if (isProctoringMode) setStatsPopup('live'); }}
           disabled={!isProctoringMode}
-          className={`window p-4 text-left transition-colors ${isProctoringMode ? 'hover:border-[var(--status-success)]/40 cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
+          className={`p-4 text-left border-r border-[var(--border-subtle)] transition-colors ${isProctoringMode ? 'hover:bg-[var(--bg-elevated)] cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
         >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[11px] font-semibold text-[var(--text-faint)] uppercase tracking-wider">Live Sessions</p>
-              <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">{filteredSessions.length}</p>
-            </div>
-            <div className="w-9 h-9 rounded-lg bg-[var(--status-success)]/10 flex items-center justify-center">
-              <Monitor size={16} className="text-[var(--status-success)]" />
-            </div>
+          <div className="flex items-center gap-1.5 mb-2.5 text-[var(--status-success)]">
+            <Monitor size={13} />
+            <span className="text-[10.5px] font-semibold uppercase tracking-[0.07em]">Live Sessions</span>
           </div>
+          <p className="text-[19px] font-semibold text-[var(--text-primary)] tabular-nums tracking-[-0.01em]">{filteredSessions.length}</p>
         </button>
-        <button type="button" onClick={() => setStatsPopup('submissions')} className="window p-4 text-left hover:border-[var(--type-event)]/40 transition-colors cursor-pointer">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[11px] font-semibold text-[var(--text-faint)] uppercase tracking-wider">Recent Submissions</p>
-              <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">{recentResults.length}</p>
-            </div>
-            <div className="w-9 h-9 rounded-lg bg-[var(--type-event)]/10 flex items-center justify-center">
-              <CheckCircle2 size={16} className="text-[var(--type-event)]" />
-            </div>
+        <button type="button" onClick={() => setStatsPopup('submissions')} className="p-4 text-left border-r border-[var(--border-subtle)] hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer">
+          <div className="flex items-center gap-1.5 mb-2.5 text-[var(--accent-orange)]">
+            <CheckCircle2 size={13} />
+            <span className="text-[10.5px] font-semibold uppercase tracking-[0.07em]">Recent Submissions</span>
           </div>
+          <p className="text-[19px] font-semibold text-[var(--text-primary)] tabular-nums tracking-[-0.01em]">{recentResults.length}</p>
         </button>
-        <button type="button" onClick={() => setStatsPopup('flagged')} className="window p-4 text-left hover:border-[var(--status-danger)]/40 transition-colors cursor-pointer">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[11px] font-semibold text-[var(--text-faint)] uppercase tracking-wider">Flagged</p>
-              <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">
-                {flaggedResults.length}
-              </p>
-            </div>
-            <div className="w-9 h-9 rounded-lg bg-[var(--status-danger)]/10 flex items-center justify-center">
-              <AlertTriangle size={16} className="text-[var(--status-danger)]" />
-            </div>
+        <button type="button" onClick={() => setStatsPopup('flagged')} className="p-4 text-left hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer">
+          <div className="flex items-center gap-1.5 mb-2.5 text-[var(--status-danger)]">
+            <AlertTriangle size={13} />
+            <span className="text-[10.5px] font-semibold uppercase tracking-[0.07em]">Flagged</span>
           </div>
+          <p className="text-[19px] font-semibold text-[var(--text-primary)] tabular-nums tracking-[-0.01em]">{flaggedResults.length}</p>
         </button>
       </div>
 
@@ -989,8 +968,8 @@ export default function ProctorDashboard() {
               <>
                 <div className="px-6 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                      <Monitor size={17} className="text-emerald-500" />
+                    <div className="w-9 h-9 rounded-xl bg-[var(--status-success)]/10 flex items-center justify-center">
+                      <Monitor size={17} className="text-[var(--status-success)]" />
                     </div>
                     <div>
                       <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">Live Sessions</h3>
@@ -1033,8 +1012,8 @@ export default function ProctorDashboard() {
                                   <MessageCircle size={9} /> New
                                 </span>
                               )}
-                              <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> LIVE
+                              <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[var(--status-success)] bg-[var(--status-success)]/10 px-1.5 py-0.5 rounded">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[var(--status-success)] animate-pulse" /> LIVE
                               </span>
                             </div>
                           </div>
@@ -1117,7 +1096,7 @@ export default function ProctorDashboard() {
                                 <button
                                   onClick={() => revokeReattempt(result)}
                                   disabled={reattemptLoading === result.id}
-                                  className="flex items-center gap-1.5 text-[10px] font-semibold text-emerald-500 hover:text-emerald-400 transition-colors disabled:opacity-40 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20"
+                                  className="flex items-center gap-1.5 text-[10px] font-semibold text-[var(--status-success)] hover:text-[var(--status-success)] transition-colors disabled:opacity-40 px-3 py-1.5 rounded-lg bg-[var(--status-success)]/10 hover:bg-[var(--status-success)]/20 border border-[var(--status-success)]/20"
                                 >
                                   <CheckCircle2 size={10} className={reattemptLoading === result.id ? 'animate-spin' : ''} />
                                   Reassigned
@@ -1153,7 +1132,7 @@ export default function ProctorDashboard() {
                 <div className="overflow-y-auto flex-1 px-5 py-5 bg-[var(--bg-surface)]">
                   {flaggedResults.length === 0 ? (
                     <div className="p-14 text-center">
-                      <CheckCircle2 size={32} className="mx-auto text-emerald-500 mb-3" />
+                      <CheckCircle2 size={32} className="mx-auto text-[var(--status-success)] mb-3" />
                       <p className="text-[13px] font-medium text-[var(--text-tertiary)]">No flagged students</p>
                       <p className="text-[11px] text-[var(--text-muted)] mt-1">Students auto-submitted due to violations will appear here</p>
                     </div>
@@ -1206,7 +1185,7 @@ export default function ProctorDashboard() {
                                     <button
                                       onClick={() => revokeReattempt(result)}
                                       disabled={reattemptLoading === result.id}
-                                      className="flex items-center gap-1.5 text-[10px] font-semibold text-emerald-500 hover:text-emerald-400 transition-colors disabled:opacity-40 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20"
+                                      className="flex items-center gap-1.5 text-[10px] font-semibold text-[var(--status-success)] hover:text-[var(--status-success)] transition-colors disabled:opacity-40 px-3 py-1.5 rounded-lg bg-[var(--status-success)]/10 hover:bg-[var(--status-success)]/20 border border-[var(--status-success)]/20"
                                     >
                                       <CheckCircle2 size={10} className={reattemptLoading === result.id ? 'animate-spin' : ''} />
                                       Reassigned

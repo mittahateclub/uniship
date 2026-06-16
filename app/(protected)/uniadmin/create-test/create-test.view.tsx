@@ -10,9 +10,94 @@ import Link from 'next/link';
 import {
   Upload, FileText, Clock, Type, AlignLeft, Calendar,
   ChevronLeft, ChevronRight, Trash2, CheckCircle, XCircle,
-  Tag, Pencil, X, Save, ChevronDown, ChevronUp, Copy, Check, RefreshCw,
+  Tag, Pencil, X, Save, ChevronDown, ChevronUp, Copy, Check, RefreshCw, HelpCircle, ExternalLink,
 } from '@/components/icons';
 import { ListSkeleton } from '@/components/Skeleton';
+
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+type AmPm = 'AM' | 'PM';
+
+// ── Reusable inline date picker (used by the upload form + edit modal) ──
+function MiniCalendar({ month, year, selected, onPrev, onNext, onPick }: {
+  month: number; year: number; selected: Date | null;
+  onPrev: () => void; onNext: () => void; onPick: (d: Date) => void;
+}) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDay = new Date(year, month, 1).getDay();
+  return (
+    <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+      <div className="flex items-center justify-between mb-2">
+        <button type="button" onClick={onPrev} className="p-1 rounded-full hover:bg-[var(--bg-surface)] transition-colors">
+          <ChevronLeft size={14} className="text-[var(--text-secondary)]" />
+        </button>
+        <span className="text-[13px] font-semibold text-[var(--text-primary)]">{MONTH_NAMES[month]} {year}</span>
+        <button type="button" onClick={onNext} className="p-1 rounded-full hover:bg-[var(--bg-surface)] transition-colors">
+          <ChevronRight size={14} className="text-[var(--text-secondary)]" />
+        </button>
+      </div>
+      <div className="grid grid-cols-7 mb-1">
+        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
+          <div key={d} className="text-center text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--text-faint)] py-1">{d}</div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-0.5">
+        {Array.from({ length: firstDay }).map((_, i) => <div key={`e-${i}`} />)}
+        {Array.from({ length: daysInMonth }).map((_, i) => {
+          const day = i + 1;
+          const date = new Date(year, month, day); date.setHours(0, 0, 0, 0);
+          const isPast = date < today;
+          const isSelected = selected && selected.getTime() === date.getTime();
+          const isToday = date.getTime() === today.getTime();
+          return (
+            <button
+              key={day}
+              type="button"
+              disabled={isPast}
+              onClick={() => onPick(date)}
+              className={`h-8 text-[12px] rounded-[6px] transition-colors tabular-nums ${
+                isSelected ? 'bg-[var(--type-event)] text-white font-semibold'
+                : isPast ? 'text-[var(--text-faint)]/40 cursor-not-allowed'
+                : isToday ? 'text-[var(--type-event)] font-semibold hover:bg-[var(--type-event)]/10'
+                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]'
+              }`}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Reusable hour:minute AM/PM picker ──
+function TimeField({ label, hour, minute, ampm, onHour, onMinute, onAmPm }: {
+  label: string; hour: number; minute: number; ampm: AmPm;
+  onHour: (n: number) => void; onMinute: (n: number) => void; onAmPm: (v: AmPm) => void;
+}) {
+  return (
+    <div>
+      <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--text-muted)] mb-1.5">
+        <Clock size={11} className="text-[var(--text-faint)]" /> {label}
+      </label>
+      <div className="flex items-center gap-1.5 rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2.5 py-2">
+        <select value={hour} onChange={e => onHour(Number(e.target.value))} className="!bg-transparent !border-0 !p-0 text-[13px] text-[var(--text-primary)] focus:outline-none appearance-none text-center w-7 cursor-pointer tabular-nums">
+          {Array.from({ length: 12 }, (_, i) => i + 1).map(h => <option key={h} value={h}>{String(h).padStart(2, '0')}</option>)}
+        </select>
+        <span className="text-[13px] text-[var(--text-faint)] font-semibold">:</span>
+        <select value={minute} onChange={e => onMinute(Number(e.target.value))} className="!bg-transparent !border-0 !p-0 text-[13px] text-[var(--text-primary)] focus:outline-none appearance-none text-center w-7 cursor-pointer tabular-nums">
+          {Array.from({ length: 12 }, (_, i) => i * 5).map(m => <option key={m} value={m}>{String(m).padStart(2, '0')}</option>)}
+        </select>
+        <div className="flex rounded-[7px] overflow-hidden border border-[var(--border-subtle)] ml-auto">
+          {(['AM', 'PM'] as AmPm[]).map(v => (
+            <button key={v} type="button" onClick={() => onAmPm(v)} className={`px-2 py-0.5 text-[11px] font-semibold transition-colors ${ampm === v ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>{v}</button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function TestsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -29,10 +114,10 @@ export default function TestsPage() {
   const [examDate, setExamDate] = useState<Date | null>(null);
   const [startHour, setStartHour] = useState(9);
   const [startMinute, setStartMinute] = useState(0);
-  const [startAmPm, setStartAmPm] = useState<'AM' | 'PM'>('AM');
+  const [startAmPm, setStartAmPm] = useState<AmPm>('AM');
   const [endHour, setEndHour] = useState(10);
   const [endMinute, setEndMinute] = useState(0);
-  const [endAmPm, setEndAmPm] = useState<'AM' | 'PM'>('AM');
+  const [endAmPm, setEndAmPm] = useState<AmPm>('AM');
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
   const [createdTestId, setCreatedTestId] = useState<string | null>(null);
@@ -48,10 +133,10 @@ export default function TestsPage() {
   const [editExamDate, setEditExamDate] = useState<Date | null>(null);
   const [editStartHour, setEditStartHour] = useState(9);
   const [editStartMinute, setEditStartMinute] = useState(0);
-  const [editStartAmPm, setEditStartAmPm] = useState<'AM' | 'PM'>('AM');
+  const [editStartAmPm, setEditStartAmPm] = useState<AmPm>('AM');
   const [editEndHour, setEditEndHour] = useState(10);
   const [editEndMinute, setEditEndMinute] = useState(0);
-  const [editEndAmPm, setEditEndAmPm] = useState<'AM' | 'PM'>('PM');
+  const [editEndAmPm, setEditEndAmPm] = useState<AmPm>('PM');
   const [editCalendarMonth, setEditCalendarMonth] = useState(new Date().getMonth());
   const [editCalendarYear, setEditCalendarYear] = useState(new Date().getFullYear());
   const [saving, setSaving] = useState(false);
@@ -135,29 +220,23 @@ export default function TestsPage() {
     }
   };
 
-  const to24Hour = (h: number, ampm: 'AM' | 'PM') => {
+  const to24Hour = (h: number, ampm: AmPm) => {
     if (ampm === 'AM') return h === 12 ? 0 : h;
     return h === 12 ? 12 : h + 12;
   };
 
-  const from24Hour = (h24: number): { hour: number; ampm: 'AM' | 'PM' } => {
+  const from24Hour = (h24: number): { hour: number; ampm: AmPm } => {
     if (h24 === 0) return { hour: 12, ampm: 'AM' };
     if (h24 < 12) return { hour: h24, ampm: 'AM' };
     if (h24 === 12) return { hour: 12, ampm: 'PM' };
     return { hour: h24 - 12, ampm: 'PM' };
   };
 
-  const buildISOString = (date: Date, hour: number, minute: number, ampm: 'AM' | 'PM') => {
+  const buildISOString = (date: Date, hour: number, minute: number, ampm: AmPm) => {
     const d = new Date(date);
     d.setHours(to24Hour(hour, ampm), minute, 0, 0);
     return d.toISOString();
   };
-
-  // Calendar helpers
-  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
-  const firstDayOfMonth = new Date(calendarYear, calendarMonth, 1).getDay();
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
   const prevMonth = () => {
     if (calendarMonth === 0) { setCalendarMonth(11); setCalendarYear(y => y - 1); }
@@ -167,10 +246,14 @@ export default function TestsPage() {
     if (calendarMonth === 11) { setCalendarMonth(0); setCalendarYear(y => y + 1); }
     else setCalendarMonth(m => m + 1);
   };
-
-  // Edit modal calendar helpers
-  const editDaysInMonth = new Date(editCalendarYear, editCalendarMonth + 1, 0).getDate();
-  const editFirstDayOfMonth = new Date(editCalendarYear, editCalendarMonth, 1).getDay();
+  const editPrevMonth = () => {
+    if (editCalendarMonth === 0) { setEditCalendarMonth(11); setEditCalendarYear(y => y - 1); }
+    else setEditCalendarMonth(m => m - 1);
+  };
+  const editNextMonth = () => {
+    if (editCalendarMonth === 11) { setEditCalendarMonth(0); setEditCalendarYear(y => y + 1); }
+    else setEditCalendarMonth(m => m + 1);
+  };
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -317,485 +400,248 @@ export default function TestsPage() {
 
   if (authLoading || fetching) return <ListSkeleton rows={5} />;
 
+  const studentLink = (id: string) => `${typeof window !== 'undefined' ? window.location.origin : ''}/user/test-portal/${id}`;
+  const fmtSchedule = (iso?: string) => {
+    if (!iso) return null;
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' · ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+  const missing = [
+    !universityId && 'University ID (profile issue)',
+    !title.trim() && 'Test Name',
+    !examDate && 'Exam Date',
+    !file && 'Test PDF',
+  ].filter(Boolean);
+
   return (
     <div className="max-w-[1200px] mx-auto animate-fade-in">
       {/* Reassign success toast */}
       {reassignedTitle && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
-          <div className="flex items-center gap-3 bg-[var(--bg-primary)] border border-[var(--status-success)]/40 rounded-lg shadow-lg px-5 py-3">
+          <div className="flex items-center gap-3 bg-[var(--bg-elevated)] border border-[var(--status-success)]/40 rounded-[var(--radius)] shadow-lg px-5 py-3">
             <div className="w-7 h-7 rounded-full bg-[var(--status-success)]/10 flex items-center justify-center shrink-0">
               <CheckCircle size={15} className="text-[var(--status-success)]" />
             </div>
             <div>
-              <p className="text-[13px] font-semibold text-[var(--text-primary)]">
-                &quot;{reassignedTitle}&quot; reassigned
-              </p>
+              <p className="text-[13px] font-semibold text-[var(--text-primary)]">&quot;{reassignedTitle}&quot; reassigned</p>
               <p className="text-[11px] text-[var(--text-tertiary)]">All students can now reattempt this test</p>
             </div>
           </div>
         </div>
       )}
+
+      {/* ── Header ── */}
       <div className="pt-8 mb-7 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[26px] font-semibold text-[var(--text-primary)] tracking-[-0.025em]">Tests</h1>
-          <p className="text-[var(--text-tertiary)] text-[13.5px] mt-1.5">{testUploads.length} test{testUploads.length !== 1 ? 's' : ''} available · upload a PDF to generate a new one</p>
+          <p className="text-[var(--text-tertiary)] text-[13.5px] mt-1.5">{testUploads.length} test{testUploads.length !== 1 ? 's' : ''} · generate a new one from a PDF</p>
         </div>
         <button
-          onClick={() => setShowUploadForm(!showUploadForm)}
+          onClick={() => setShowUploadForm(v => !v)}
           className="btn-primary !rounded-[10px] flex items-center gap-1.5 text-[12.5px] !px-3.5 !py-2"
         >
           <Upload size={14} />
-          {showUploadForm ? 'Hide' : 'Upload PDF'}
+          {showUploadForm ? 'Hide' : 'New Test'}
           {showUploadForm ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
         </button>
       </div>
 
-      {/* Upload Form (collapsible) */}
+      {/* ── Upload form ── */}
       {showUploadForm && (
-        <div className="window p-6 mb-6">
-          {status.message && (
-            <div className={`mb-4 p-3 rounded-[var(--radius)] text-[13px] font-medium border ${
-              status.type === 'error' ? 'bg-[var(--status-danger)]/10 text-[var(--status-danger)] border-[var(--status-danger)]/20'
-              : status.type === 'success' ? 'bg-[var(--status-success)]/10 text-[var(--status-success)] border-[var(--status-success)]/20'
-              : 'bg-[var(--type-event)]/10 text-[var(--type-event)] border-[var(--type-event)]/20'
-            }`}>
-              {status.message}
-            </div>
-          )}
-          {status.type === 'success' && createdTestId && (
-            <div className="mb-4 space-y-2">
-              <button
-                type="button"
-                onClick={() => router.push(`/uniadmin/tests/review/${createdTestId}`)}
-                className="btn-primary text-[12px] px-3 py-1.5"
-              >
-                Open Review &amp; Approve
-              </button>
-              <div className="flex items-center gap-2 mt-2">
-                <span className="flex-1 px-3 py-2 rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[12px] text-[var(--text-secondary)] font-mono truncate select-all">
-                  {`${typeof window !== 'undefined' ? window.location.origin : ''}/user/test-portal/${createdTestId}`}
+        <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden mb-6">
+          <div className="flex items-center gap-2 px-5 sm:px-6 h-13 py-3.5 border-b border-[var(--border-subtle)]">
+            <FileText size={15} className="text-[var(--accent-orange)]" />
+            <h2 className="text-[14px] font-semibold text-[var(--text-primary)]">Generate test from PDF</h2>
+          </div>
+
+          <div className="p-5 sm:p-6">
+            {status.message && (
+              <div className={`mb-4 p-3 rounded-[var(--radius)] text-[13px] font-medium border ${
+                status.type === 'error' ? 'bg-[var(--status-danger)]/10 text-[var(--status-danger)] border-[var(--status-danger)]/20'
+                : status.type === 'success' ? 'bg-[var(--status-success)]/10 text-[var(--status-success)] border-[var(--status-success)]/20'
+                : 'bg-[var(--type-event)]/10 text-[var(--type-event)] border-[var(--type-event)]/20'
+              }`}>
+                {status.message}
+              </div>
+            )}
+            {status.type === 'success' && createdTestId && (
+              <div className="mb-5 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => router.push(`/uniadmin/tests/review/${createdTestId}`)}
+                  className="btn-primary !rounded-[10px] text-[12.5px] !px-3.5 !py-2 inline-flex items-center justify-center gap-1.5 shrink-0"
+                >
+                  Review &amp; Approve <ExternalLink size={12} />
+                </button>
+                <span className="flex-1 flex items-center gap-2 px-3 h-9 rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[12px] text-[var(--text-secondary)] font-mono truncate select-all">
+                  {studentLink(createdTestId)}
                 </span>
                 <button
                   type="button"
                   onClick={() => copyLink(createdTestId)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[12px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-active)] transition-colors shrink-0"
+                  className="inline-flex items-center justify-center gap-1.5 px-3 h-9 rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[12px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-active)] transition-colors shrink-0"
                 >
                   {copiedId === createdTestId ? <Check size={13} className="text-[var(--status-success)]" /> : <Copy size={13} />}
-                  {copiedId === createdTestId ? 'Copied!' : 'Copy Link'}
+                  {copiedId === createdTestId ? 'Copied' : 'Copy link'}
                 </button>
               </div>
-            </div>
-          )}
-
-          <form onSubmit={handleUpload} className="space-y-4">
-            {/* Test Name + Duration */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
-                  <Type size={12} className="text-[var(--text-faint)]" />
-                  Test Name
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  required
-                  placeholder="e.g. Midterm Mock Test"
-                  className="w-full px-3 py-2 text-[13px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--border-active)] transition-colors"
-                />
-              </div>
-              <div>
-                <label className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
-                  <Clock size={12} className="text-[var(--text-faint)]" />
-                  Duration (min)
-                </label>
-                <input
-                  type="number"
-                  min={5}
-                  max={300}
-                  value={duration}
-                  onChange={e => setDuration(Number(e.target.value))}
-                  className="w-full px-3 py-2 text-[13px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-active)] transition-colors"
-                />
-              </div>
-            </div>
-
-            {/* Description */}
-            <div>
-              <label className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
-                <AlignLeft size={12} className="text-[var(--text-faint)]" />
-                Description
-              </label>
-              <textarea
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-                rows={2}
-                placeholder="Short description of this test..."
-                className="w-full px-3 py-2 text-[13px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--border-active)] transition-colors resize-none"
-              />
-            </div>
-
-            {/* Calendar */}
-            <div>
-              <label className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
-                <Calendar size={12} className="text-[var(--text-faint)]" />
-                Exam Date
-              </label>
-              <div className="border border-[var(--border-subtle)] rounded bg-[var(--bg-elevated)] p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <button type="button" onClick={prevMonth} className="p-1 rounded hover:bg-[var(--bg-surface)] transition-colors">
-                    <ChevronLeft size={14} className="text-[var(--text-secondary)]" />
-                  </button>
-                  <span className="text-[13px] font-semibold text-[var(--text-primary)]">
-                    {monthNames[calendarMonth]} {calendarYear}
-                  </span>
-                  <button type="button" onClick={nextMonth} className="p-1 rounded hover:bg-[var(--bg-surface)] transition-colors">
-                    <ChevronRight size={14} className="text-[var(--text-secondary)]" />
-                  </button>
-                </div>
-                <div className="grid grid-cols-7 mb-1">
-                  {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
-                    <div key={d} className="text-center text-[10px] font-medium text-[var(--text-faint)] py-1">
-                      {d}
-                    </div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-7">
-                  {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-                    <div key={`empty-${i}`} />
-                  ))}
-                  {Array.from({ length: daysInMonth }).map((_, i) => {
-                    const day = i + 1;
-                    const date = new Date(calendarYear, calendarMonth, day);
-                    date.setHours(0, 0, 0, 0);
-                    const isPast = date < today;
-                    const isSelected = examDate && examDate.getTime() === date.getTime();
-                    const isToday = date.getTime() === today.getTime();
-                    return (
-                      <button
-                        key={day}
-                        type="button"
-                        disabled={isPast}
-                        onClick={() => setExamDate(date)}
-                        className={`text-[12px] py-1.5 rounded transition-colors ${
-                          isSelected
-                            ? 'bg-[var(--type-event)] text-white font-semibold'
-                            : isPast
-                            ? 'text-[var(--text-faint)]/40 cursor-not-allowed'
-                            : isToday
-                            ? 'text-[var(--type-event)] font-semibold hover:bg-[var(--type-event)]/10'
-                            : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]'
-                        }`}
-                      >
-                        {day}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* Time Pickers */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
-                  <Clock size={12} className="text-[var(--text-faint)]" />
-                  From
-                </label>
-                <div className="flex items-center gap-1.5 border border-[var(--border-subtle)] rounded bg-[var(--bg-elevated)] p-2">
-                  <select value={startHour} onChange={e => setStartHour(Number(e.target.value))} className="bg-transparent text-[13px] text-[var(--text-primary)] focus:outline-none appearance-none text-center w-10 cursor-pointer">
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
-                      <option key={h} value={h}>{String(h).padStart(2, '0')}</option>
-                    ))}
-                  </select>
-                  <span className="text-[13px] text-[var(--text-faint)] font-semibold">:</span>
-                  <select value={startMinute} onChange={e => setStartMinute(Number(e.target.value))} className="bg-transparent text-[13px] text-[var(--text-primary)] focus:outline-none appearance-none text-center w-10 cursor-pointer">
-                    {Array.from({ length: 12 }, (_, i) => i * 5).map(m => (
-                      <option key={m} value={m}>{String(m).padStart(2, '0')}</option>
-                    ))}
-                  </select>
-                  <div className="flex rounded overflow-hidden border border-[var(--border-subtle)] ml-auto">
-                    <button type="button" onClick={() => setStartAmPm('AM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${startAmPm === 'AM' ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>AM</button>
-                    <button type="button" onClick={() => setStartAmPm('PM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${startAmPm === 'PM' ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>PM</button>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
-                  <Clock size={12} className="text-[var(--text-faint)]" />
-                  To
-                </label>
-                <div className="flex items-center gap-1.5 border border-[var(--border-subtle)] rounded bg-[var(--bg-elevated)] p-2">
-                  <select value={endHour} onChange={e => setEndHour(Number(e.target.value))} className="bg-transparent text-[13px] text-[var(--text-primary)] focus:outline-none appearance-none text-center w-10 cursor-pointer">
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
-                      <option key={h} value={h}>{String(h).padStart(2, '0')}</option>
-                    ))}
-                  </select>
-                  <span className="text-[13px] text-[var(--text-faint)] font-semibold">:</span>
-                  <select value={endMinute} onChange={e => setEndMinute(Number(e.target.value))} className="bg-transparent text-[13px] text-[var(--text-primary)] focus:outline-none appearance-none text-center w-10 cursor-pointer">
-                    {Array.from({ length: 12 }, (_, i) => i * 5).map(m => (
-                      <option key={m} value={m}>{String(m).padStart(2, '0')}</option>
-                    ))}
-                  </select>
-                  <div className="flex rounded overflow-hidden border border-[var(--border-subtle)] ml-auto">
-                    <button type="button" onClick={() => setEndAmPm('AM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${endAmPm === 'AM' ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>AM</button>
-                    <button type="button" onClick={() => setEndAmPm('PM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${endAmPm === 'PM' ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>PM</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="divider-dashed" />
-
-            {/* PDF Upload — single combined document */}
-            <div>
-              <label className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
-                <FileText size={12} className="text-[var(--text-faint)]" />
-                Test PDF <span className="text-[10px] text-[var(--text-faint)]">(questions, answers & explanations in one file)</span>
-              </label>
-              <div className="relative overflow-hidden border border-dashed border-[var(--border-active)] rounded p-4 text-center bg-[var(--bg-elevated)] hover:border-[var(--accent-orange)]/40 transition-colors duration-150 cursor-pointer">
-                <input
-                  type="file"
-                  accept=".pdf,.docx"
-                  onChange={handleQuestionsFileChange}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                />
-                <Upload size={16} className="mx-auto mb-1 text-[var(--text-faint)]" />
-                <p className="text-[12px] text-[var(--text-tertiary)] pointer-events-none truncate">
-                  {file ? file.name : 'Drop or click to upload a single PDF containing Q&A and explanations'}
-                </p>
-              </div>
-            </div>
-
-            {/* Validation hints */}
-            {!isParsing && (!universityId || !title.trim() || !examDate || !file) && (
-              <p className="text-[12px] text-[var(--text-faint)]">
-                Missing: {[
-                  !universityId && 'University ID (profile issue)',
-                  !title.trim() && 'Test Name',
-                  !examDate && 'Exam Date',
-                  !file && 'Questions PDF',
-                ].filter(Boolean).join(', ')}
-              </p>
             )}
 
-            <button
-              type="submit"
-              disabled={isParsing || !universityId || !title.trim() || !examDate || !file}
-              className="btn-primary w-full"
-            >
-              {isParsing ? 'Processing...' : 'Upload & Parse PDF'}
-            </button>
-          </form>
-        </div>
-      )}
+            <form onSubmit={handleUpload} className="space-y-5">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-5">
+                {/* Left — details */}
+                <div className="space-y-4">
+                  <p className="text-[10.5px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]">Details</p>
+                  <div>
+                    <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--text-muted)] mb-1.5"><Type size={11} className="text-[var(--text-faint)]" /> Test Name</label>
+                    <input type="text" value={title} onChange={e => setTitle(e.target.value)} required placeholder="e.g. Midterm Mock Test" className="w-full px-3.5 py-2.5 text-[13px] placeholder:text-[var(--text-faint)]" />
+                  </div>
+                  <div>
+                    <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--text-muted)] mb-1.5"><Clock size={11} className="text-[var(--text-faint)]" /> Duration (minutes)</label>
+                    <input type="number" min={5} max={300} value={duration} onChange={e => setDuration(Number(e.target.value))} className="w-full px-3.5 py-2.5 text-[13px]" />
+                  </div>
+                  <div>
+                    <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--text-muted)] mb-1.5"><AlignLeft size={11} className="text-[var(--text-faint)]" /> Description</label>
+                    <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} placeholder="Short description of this test…" className="w-full px-3.5 py-2.5 text-[13px] placeholder:text-[var(--text-faint)] resize-none" />
+                  </div>
+                  <div>
+                    <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--text-muted)] mb-1.5"><FileText size={11} className="text-[var(--text-faint)]" /> Test PDF</label>
+                    <div className="relative overflow-hidden rounded-[var(--radius)] border border-dashed border-[var(--border-active)] p-5 text-center bg-[var(--bg-elevated)] hover:border-[var(--accent-orange)]/50 transition-colors duration-150 cursor-pointer">
+                      <input type="file" accept=".pdf,.docx" onChange={handleQuestionsFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                      <Upload size={18} className="mx-auto mb-1.5 text-[var(--text-faint)]" />
+                      <p className="text-[12px] text-[var(--text-tertiary)] pointer-events-none truncate font-medium">
+                        {file ? file.name : 'Drop or click to upload a PDF'}
+                      </p>
+                      <p className="text-[10.5px] text-[var(--text-faint)] pointer-events-none mt-0.5">Questions, answers &amp; explanations in one file</p>
+                    </div>
+                  </div>
+                </div>
 
-      {/* Test List */}
-      {testUploads.length === 0 ? (
-        <div className="window p-12 text-center">
-          <div className="divider-dashed mb-4" />
-          <p className="text-[var(--text-muted)] text-[13px]">No tests yet. Click &quot;Upload PDF&quot; to create one.</p>
-          <div className="divider-dashed mt-4" />
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {testUploads.map((test) => (
-            <div key={test.id} className="window px-5 py-4 flex items-center justify-between group hover:border-[var(--border-active)] transition-colors duration-150">
-              <div className="flex items-center gap-3 min-w-0">
-                <FileText size={16} className="text-[var(--accent-orange)] shrink-0" />
-                <div className="min-w-0">
-                  <h3 className="text-[14px] font-semibold text-[var(--text-primary)] truncate">{test.title}</h3>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[11px] text-[var(--text-faint)]">{test.questionCount} Questions</span>
-                    {test.category && (
-                      <>
-                        <span className="w-px h-3 bg-[var(--border-subtle)]" />
-                        <span className="flex items-center gap-1 text-[11px] text-[var(--text-faint)]"><Tag size={9} />{test.category}</span>
-                      </>
-                    )}
-                    {test.duration && (
-                      <>
-                        <span className="w-px h-3 bg-[var(--border-subtle)]" />
-                        <span className="flex items-center gap-1 text-[11px] text-[var(--text-faint)]"><Clock size={9} />{test.duration}min</span>
-                      </>
-                    )}
+                {/* Right — schedule */}
+                <div className="space-y-4">
+                  <p className="text-[10.5px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]">Schedule</p>
+                  <div>
+                    <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--text-muted)] mb-1.5"><Calendar size={11} className="text-[var(--text-faint)]" /> Exam Date</label>
+                    <MiniCalendar month={calendarMonth} year={calendarYear} selected={examDate} onPrev={prevMonth} onNext={nextMonth} onPick={setExamDate} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <TimeField label="From" hour={startHour} minute={startMinute} ampm={startAmPm} onHour={setStartHour} onMinute={setStartMinute} onAmPm={setStartAmPm} />
+                    <TimeField label="To" hour={endHour} minute={endMinute} ampm={endAmPm} onHour={setEndHour} onMinute={setEndMinute} onAmPm={setEndAmPm} />
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={() => handleToggleApproval(test.id, test.approved)}
-                  disabled={togglingId === test.id}
-                  className={`flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
-                    test.approved
-                      ? 'bg-[var(--status-success)]/10 text-[var(--status-success)] hover:bg-[var(--status-success)]/20'
-                      : 'bg-[var(--bg-elevated)] text-[var(--text-faint)] hover:text-[var(--text-secondary)] border border-[var(--border-subtle)]'
-                  }`}
-                  title={test.approved ? 'Click to unapprove' : 'Click to approve'}
-                >
-                  {test.approved ? <CheckCircle size={13} /> : <XCircle size={13} />}
-                  {test.approved ? 'Approved' : 'Not Approved'}
-                </button>
-                <button
-                  onClick={() => handleReassignTest(test.id, test.title)}
-                  disabled={reassigningId === test.id}
-                  className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 bg-[var(--type-event)]/10 text-[var(--type-event)] hover:bg-[var(--type-event)]/20"
-                  title="Allow all students to reattempt this test"
-                >
-                  <RefreshCw size={13} className={reassigningId === test.id ? 'animate-spin' : ''} />
-                  {reassigningId === test.id ? 'Reassigning...' : 'Reassign'}
-                </button>
-                <Link href={`/uniadmin/tests/review/${test.id}`} className="btn-primary text-[12px] px-4 py-1.5">Review</Link>
-                <button
-                  onClick={() => openEdit(test)}
-                  className="p-2 rounded text-[var(--text-faint)] hover:text-[var(--type-event)] hover:bg-[var(--type-event)]/10 transition-colors duration-150"
-                  title="Edit schedule"
-                >
-                  <Pencil size={14} />
-                </button>
-                <button
-                  onClick={() => copyLink(test.id)}
-                  className="p-2 rounded text-[var(--text-faint)] hover:text-[var(--type-event)] hover:bg-[var(--type-event)]/10 transition-colors duration-150"
-                  title="Copy student link"
-                >
-                  {copiedId === test.id ? <Check size={14} className="text-[var(--status-success)]" /> : <Copy size={14} />}
-                </button>
-                <button
-                  onClick={() => handleDelete(test.id)}
-                  disabled={deletingId === test.id}
-                  className="p-2 rounded text-[var(--text-faint)] hover:text-[var(--accent-orange)] hover:bg-[var(--accent-orange)]/10 transition-colors duration-150 disabled:opacity-50"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            </div>
-          ))}
+
+              {!isParsing && missing.length > 0 && (
+                <p className="text-[12px] text-[var(--text-faint)]">Still needed: {missing.join(', ')}</p>
+              )}
+
+              <button type="submit" disabled={isParsing || !universityId || !title.trim() || !examDate || !file} className="btn-primary !rounded-[10px] w-full inline-flex items-center justify-center gap-2 disabled:opacity-50">
+                <Upload size={14} /> {isParsing ? 'Processing…' : 'Upload & Parse PDF'}
+              </button>
+            </form>
+          </div>
         </div>
       )}
 
-      {/* Edit Schedule Modal */}
+      {/* ── Tests list ── */}
+      {testUploads.length === 0 ? (
+        <div className="text-center py-16 border border-[var(--border-subtle)] rounded-[var(--radius)] bg-[var(--bg-surface)]">
+          <FileText size={26} className="mx-auto text-[var(--text-faint)] mb-3" />
+          <p className="text-[var(--text-primary)] text-[13px] font-medium">No tests yet</p>
+          <p className="text-[var(--text-faint)] text-[12px] mt-1">Click “New Test” to generate one from a PDF.</p>
+        </div>
+      ) : (
+        <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
+          {testUploads.map((test) => {
+            const schedule = fmtSchedule(test.examStart);
+            return (
+              <div key={test.id} className="group flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-4 px-4 sm:px-5 py-4 border-b border-[var(--border-subtle)] last:border-b-0 hover:bg-[var(--bg-elevated)] transition-colors duration-150">
+                {/* Identity */}
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <span className="w-9 h-9 rounded-[8px] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center shrink-0">
+                    <FileText size={15} className="text-[var(--text-tertiary)]" />
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="text-[14px] font-semibold text-[var(--text-primary)] tracking-[-0.01em] truncate">{test.title}</h3>
+                    <div className="flex items-center gap-x-3 gap-y-0.5 flex-wrap mt-0.5 text-[11.5px] text-[var(--text-faint)]">
+                      <span className="flex items-center gap-1"><HelpCircle size={10} />{test.questionCount} questions</span>
+                      {test.category && <span className="flex items-center gap-1"><Tag size={10} />{test.category}</span>}
+                      {test.duration && <span className="flex items-center gap-1"><Clock size={10} />{test.duration} min</span>}
+                      {schedule && <span className="flex items-center gap-1"><Calendar size={10} />{schedule}</span>}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+                  <button
+                    onClick={() => handleToggleApproval(test.id, test.approved)}
+                    disabled={togglingId === test.id}
+                    className={`inline-flex items-center gap-1.5 text-[11.5px] font-semibold px-2.5 py-1.5 rounded-full transition-colors disabled:opacity-50 ${
+                      test.approved
+                        ? 'bg-[var(--status-success)]/10 text-[var(--status-success)] hover:bg-[var(--status-success)]/20'
+                        : 'bg-[var(--bg-elevated)] text-[var(--text-faint)] hover:text-[var(--text-secondary)] border border-[var(--border-subtle)]'
+                    }`}
+                    title={test.approved ? 'Click to unapprove' : 'Click to approve'}
+                  >
+                    {test.approved ? <CheckCircle size={13} /> : <XCircle size={13} />}
+                    {test.approved ? 'Approved' : 'Not approved'}
+                  </button>
+                  <Link href={`/uniadmin/tests/review/${test.id}`} className="btn-primary !rounded-[10px] text-[12px] !px-3.5 !py-1.5">Review</Link>
+                  <div className="flex items-center gap-0.5">
+                    <button onClick={() => handleReassignTest(test.id, test.title)} disabled={reassigningId === test.id} className="p-2 rounded-full text-[var(--text-faint)] hover:text-[var(--type-event)] hover:bg-[var(--type-event)]/10 transition-colors disabled:opacity-50" title="Allow all students to reattempt">
+                      <RefreshCw size={14} className={reassigningId === test.id ? 'animate-spin' : ''} />
+                    </button>
+                    <button onClick={() => openEdit(test)} className="p-2 rounded-full text-[var(--text-faint)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors" title="Edit schedule">
+                      <Pencil size={14} />
+                    </button>
+                    <button onClick={() => copyLink(test.id)} className="p-2 rounded-full text-[var(--text-faint)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors" title="Copy student link">
+                      {copiedId === test.id ? <Check size={14} className="text-[var(--status-success)]" /> : <Copy size={14} />}
+                    </button>
+                    <button onClick={() => handleDelete(test.id)} disabled={deletingId === test.id} className="p-2 rounded-full text-[var(--text-faint)] hover:text-[var(--status-danger)] hover:bg-[var(--status-danger)]/10 transition-colors disabled:opacity-50" title="Delete test">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Edit schedule modal ── */}
       {editingTest && (
-        <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4" onClick={() => setEditingTest(null)}>
-          <div className="window w-full max-w-md p-6 animate-fade-in overflow-y-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
+        <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center p-4" onClick={() => setEditingTest(null)}>
+          <div className="w-full max-w-md rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 animate-fade-in overflow-y-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
                 <Calendar size={16} className="text-[var(--type-event)]" />
                 <h2 className="text-[15px] font-semibold text-[var(--text-primary)]">Edit Exam Schedule</h2>
               </div>
-              <button onClick={() => setEditingTest(null)} className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors">
+              <button onClick={() => setEditingTest(null)} className="p-1.5 rounded-full text-[var(--text-faint)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors">
                 <X size={16} />
               </button>
             </div>
 
-            {/* Duration */}
-            <div className="mb-4">
-              <label className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
-                <Clock size={12} className="text-[var(--text-faint)]" />
-                Duration (min)
-              </label>
-              <input
-                type="number"
-                min={5}
-                max={300}
-                value={editDuration}
-                onChange={e => setEditDuration(Number(e.target.value))}
-                className="w-full px-3 py-2 text-[13px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-active)] transition-colors"
-              />
-            </div>
-
-            {/* Calendar */}
-            <div className="mb-4">
-              <label className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
-                <Calendar size={12} className="text-[var(--text-faint)]" />
-                Exam Date
-              </label>
-              <div className="border border-[var(--border-subtle)] rounded bg-[var(--bg-elevated)] p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <button type="button" onClick={() => { if (editCalendarMonth === 0) { setEditCalendarMonth(11); setEditCalendarYear(y => y - 1); } else setEditCalendarMonth(m => m - 1); }} className="p-1 rounded hover:bg-[var(--bg-surface)] transition-colors">
-                    <ChevronLeft size={14} className="text-[var(--text-secondary)]" />
-                  </button>
-                  <span className="text-[13px] font-semibold text-[var(--text-primary)]">
-                    {monthNames[editCalendarMonth]} {editCalendarYear}
-                  </span>
-                  <button type="button" onClick={() => { if (editCalendarMonth === 11) { setEditCalendarMonth(0); setEditCalendarYear(y => y + 1); } else setEditCalendarMonth(m => m + 1); }} className="p-1 rounded hover:bg-[var(--bg-surface)] transition-colors">
-                    <ChevronRight size={14} className="text-[var(--text-secondary)]" />
-                  </button>
-                </div>
-                <div className="grid grid-cols-7 mb-1">
-                  {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
-                    <div key={d} className="text-center text-[10px] font-medium text-[var(--text-faint)] py-1">{d}</div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-7">
-                  {Array.from({ length: editFirstDayOfMonth }).map((_, i) => <div key={`e-empty-${i}`} />)}
-                  {Array.from({ length: editDaysInMonth }).map((_, i) => {
-                    const day = i + 1;
-                    const date = new Date(editCalendarYear, editCalendarMonth, day);
-                    date.setHours(0, 0, 0, 0);
-                    const isPast = date < today;
-                    const isSelected = editExamDate && editExamDate.getTime() === date.getTime();
-                    const isToday = date.getTime() === today.getTime();
-                    return (
-                      <button
-                        key={day}
-                        type="button"
-                        disabled={isPast}
-                        onClick={() => setEditExamDate(date)}
-                        className={`text-[12px] py-1.5 rounded transition-colors ${
-                          isSelected ? 'bg-[var(--type-event)] text-white font-semibold'
-                          : isPast ? 'text-[var(--text-faint)]/40 cursor-not-allowed'
-                          : isToday ? 'text-[var(--type-event)] font-semibold hover:bg-[var(--type-event)]/10'
-                          : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]'
-                        }`}
-                      >
-                        {day}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* Time Pickers */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="space-y-4">
               <div>
-                <label className="text-[12px] font-medium text-[var(--text-secondary)] mb-1.5 block">From</label>
-                <div className="flex items-center gap-1.5 border border-[var(--border-subtle)] rounded bg-[var(--bg-elevated)] p-2">
-                  <select value={editStartHour} onChange={e => setEditStartHour(Number(e.target.value))} className="bg-transparent text-[13px] text-[var(--text-primary)] focus:outline-none appearance-none text-center w-10 cursor-pointer">
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map(h => <option key={h} value={h}>{String(h).padStart(2, '0')}</option>)}
-                  </select>
-                  <span className="text-[13px] text-[var(--text-faint)] font-semibold">:</span>
-                  <select value={editStartMinute} onChange={e => setEditStartMinute(Number(e.target.value))} className="bg-transparent text-[13px] text-[var(--text-primary)] focus:outline-none appearance-none text-center w-10 cursor-pointer">
-                    {Array.from({ length: 12 }, (_, i) => i * 5).map(m => <option key={m} value={m}>{String(m).padStart(2, '0')}</option>)}
-                  </select>
-                  <div className="flex rounded overflow-hidden border border-[var(--border-subtle)] ml-auto">
-                    <button type="button" onClick={() => setEditStartAmPm('AM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${editStartAmPm === 'AM' ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>AM</button>
-                    <button type="button" onClick={() => setEditStartAmPm('PM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${editStartAmPm === 'PM' ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>PM</button>
-                  </div>
-                </div>
+                <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--text-muted)] mb-1.5"><Clock size={11} className="text-[var(--text-faint)]" /> Duration (minutes)</label>
+                <input type="number" min={5} max={300} value={editDuration} onChange={e => setEditDuration(Number(e.target.value))} className="w-full px-3.5 py-2.5 text-[13px]" />
               </div>
               <div>
-                <label className="text-[12px] font-medium text-[var(--text-secondary)] mb-1.5 block">To</label>
-                <div className="flex items-center gap-1.5 border border-[var(--border-subtle)] rounded bg-[var(--bg-elevated)] p-2">
-                  <select value={editEndHour} onChange={e => setEditEndHour(Number(e.target.value))} className="bg-transparent text-[13px] text-[var(--text-primary)] focus:outline-none appearance-none text-center w-10 cursor-pointer">
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map(h => <option key={h} value={h}>{String(h).padStart(2, '0')}</option>)}
-                  </select>
-                  <span className="text-[13px] text-[var(--text-faint)] font-semibold">:</span>
-                  <select value={editEndMinute} onChange={e => setEditEndMinute(Number(e.target.value))} className="bg-transparent text-[13px] text-[var(--text-primary)] focus:outline-none appearance-none text-center w-10 cursor-pointer">
-                    {Array.from({ length: 12 }, (_, i) => i * 5).map(m => <option key={m} value={m}>{String(m).padStart(2, '0')}</option>)}
-                  </select>
-                  <div className="flex rounded overflow-hidden border border-[var(--border-subtle)] ml-auto">
-                    <button type="button" onClick={() => setEditEndAmPm('AM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${editEndAmPm === 'AM' ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>AM</button>
-                    <button type="button" onClick={() => setEditEndAmPm('PM')} className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${editEndAmPm === 'PM' ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-tertiary)] hover:bg-[var(--bg-surface)]'}`}>PM</button>
-                  </div>
-                </div>
+                <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--text-muted)] mb-1.5"><Calendar size={11} className="text-[var(--text-faint)]" /> Exam Date</label>
+                <MiniCalendar month={editCalendarMonth} year={editCalendarYear} selected={editExamDate} onPrev={editPrevMonth} onNext={editNextMonth} onPick={setEditExamDate} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <TimeField label="From" hour={editStartHour} minute={editStartMinute} ampm={editStartAmPm} onHour={setEditStartHour} onMinute={setEditStartMinute} onAmPm={setEditStartAmPm} />
+                <TimeField label="To" hour={editEndHour} minute={editEndMinute} ampm={editEndAmPm} onHour={setEditEndHour} onMinute={setEditEndMinute} onAmPm={setEditEndAmPm} />
               </div>
             </div>
 
-            <div className="flex gap-2">
-              <button onClick={() => setEditingTest(null)} className="btn-secondary flex-1 text-[12px]">Cancel</button>
-              <button onClick={handleSaveEdit} disabled={saving || !editExamDate} className="btn-primary flex-1 flex items-center justify-center gap-1.5 text-[12px] disabled:opacity-50">
-                <Save size={13} /> {saving ? 'Saving...' : 'Save Changes'}
+            <div className="flex gap-2 mt-6">
+              <button onClick={() => setEditingTest(null)} className="btn-secondary !rounded-[10px] flex-1 text-[12.5px]">Cancel</button>
+              <button onClick={handleSaveEdit} disabled={saving || !editExamDate} className="btn-primary !rounded-[10px] flex-1 inline-flex items-center justify-center gap-1.5 text-[12.5px] disabled:opacity-50">
+                <Save size={13} /> {saving ? 'Saving…' : 'Save Changes'}
               </button>
             </div>
           </div>

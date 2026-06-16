@@ -2,199 +2,218 @@
 
 import Link from 'next/link';
 import {
-  ClipboardCheck, UserPlus, CalendarPlus,
-  Database, Settings, PlusCircle, ArrowRight,
+  ClipboardCheck, UserPlus, CalendarPlus, Database, Settings, PlusCircle,
+  ArrowUpRight, Users, FileText, Monitor, AlertTriangle, Clock, Calendar, CheckCircle2,
 } from '@/components/icons';
 import { CardGridSkeleton } from '@/components/Skeleton';
 
-export interface UniAdminDashboardViewProps {
-  loading: boolean;
-  userEmail: string | null | undefined;
+export interface DashStats {
+  students: number;
+  tests: number;
+  events: number;
+  pendingApproval: number;
+  flagged: number;
 }
 
-const cardArt: Record<string, React.ReactNode> = {
-  createTest: (
-    <svg className="absolute right-0 top-0 h-full w-1/2" viewBox="0 0 200 200" fill="none">
-      <rect x="35" y="25" width="60" height="80" rx="4" stroke="currentColor" strokeWidth="2"/>
-      <line x1="50" y1="50" x2="80" y2="50" stroke="currentColor" strokeWidth="2"/>
-      <line x1="50" y1="63" x2="75" y2="63" stroke="currentColor" strokeWidth="2"/>
-      <line x1="50" y1="76" x2="70" y2="76" stroke="currentColor" strokeWidth="2"/>
-      <circle cx="145" cy="65" r="28" stroke="currentColor" strokeWidth="2"/>
-      <line x1="145" y1="52" x2="145" y2="78" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
-      <line x1="132" y1="65" x2="158" y2="65" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
-      <rect x="110" y="120" width="50" height="45" rx="5" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3"/>
-      <circle cx="50" cy="155" r="18" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3"/>
-    </svg>
-  ),
-  manageTests: (
-    <svg className="absolute right-0 top-0 h-full w-1/2" viewBox="0 0 200 200" fill="none">
-      <rect x="30" y="20" width="60" height="80" rx="4" stroke="currentColor" strokeWidth="2"/>
-      <line x1="45" y1="45" x2="75" y2="45" stroke="currentColor" strokeWidth="2"/>
-      <line x1="45" y1="58" x2="70" y2="58" stroke="currentColor" strokeWidth="2"/>
-      <line x1="45" y1="71" x2="65" y2="71" stroke="currentColor" strokeWidth="2"/>
-      <circle cx="140" cy="60" r="35" stroke="currentColor" strokeWidth="2"/>
-      <path d="M125 60l10 10 20-20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <rect x="110" y="120" width="50" height="50" rx="6" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3"/>
-      <circle cx="50" cy="150" r="20" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3"/>
-    </svg>
-  ),
-  createAccount: (
-    <svg className="absolute right-0 top-0 h-full w-1/2" viewBox="0 0 200 200" fill="none">
-      <circle cx="85" cy="60" r="28" stroke="currentColor" strokeWidth="2"/>
-      <path d="M40 140c0-25 20-45 45-45s45 20 45 45" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <circle cx="150" cy="55" r="18" stroke="currentColor" strokeWidth="1.5"/>
-      <line x1="150" y1="45" x2="150" y2="65" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <line x1="140" y1="55" x2="160" y2="55" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <rect x="115" y="130" width="45" height="40" rx="4" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3"/>
-    </svg>
-  ),
-  createEvent: (
-    <svg className="absolute right-0 top-0 h-full w-1/2" viewBox="0 0 200 200" fill="none">
-      <rect x="30" y="30" width="100" height="90" rx="6" stroke="currentColor" strokeWidth="2"/>
-      <line x1="30" y1="55" x2="130" y2="55" stroke="currentColor" strokeWidth="2"/>
-      <circle cx="55" cy="43" r="4" fill="currentColor" opacity="0.5"/>
-      <circle cx="105" cy="43" r="4" fill="currentColor" opacity="0.5"/>
-      <line x1="55" y1="30" x2="55" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <line x1="105" y1="30" x2="105" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <rect x="42" y="66" width="16" height="12" rx="2" fill="currentColor" opacity="0.15"/>
-      <rect x="66" y="66" width="16" height="12" rx="2" fill="currentColor" opacity="0.3"/>
-      <rect x="90" y="66" width="16" height="12" rx="2" fill="currentColor" opacity="0.15"/>
-      <rect x="42" y="86" width="16" height="12" rx="2" fill="currentColor" opacity="0.15"/>
-      <rect x="66" y="86" width="16" height="12" rx="2" fill="currentColor" opacity="0.15"/>
-      <circle cx="155" cy="120" r="28" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3"/>
-    </svg>
-  ),
-  studentDb: (
-    <svg className="absolute right-0 top-0 h-full w-1/2" viewBox="0 0 200 200" fill="none">
-      <ellipse cx="90" cy="45" rx="45" ry="14" stroke="currentColor" strokeWidth="2"/>
-      <path d="M45 45v40c0 8 20 14 45 14s45-6 45-14V45" stroke="currentColor" strokeWidth="2"/>
-      <path d="M45 65c0 8 20 14 45 14s45-6 45-14" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3"/>
-      <path d="M45 85v35c0 8 20 14 45 14s45-6 45-14V85" stroke="currentColor" strokeWidth="2"/>
-      <rect x="120" y="130" width="40" height="40" rx="5" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3"/>
-    </svg>
-  ),
-  profile: (
-    <svg className="absolute right-0 top-0 h-full w-1/2" viewBox="0 0 200 200" fill="none">
-      <circle cx="100" cy="58" r="25" stroke="currentColor" strokeWidth="2"/>
-      <path d="M55 138c0-25 20-45 45-45s45 20 45 45" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <circle cx="155" cy="40" r="18" stroke="currentColor" strokeWidth="1.5"/>
-      <path d="M148 40h14M155 33v14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <circle cx="40" cy="130" r="14" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3"/>
-    </svg>
-  ),
-};
+export interface UpcomingTest {
+  id: string;
+  title: string;
+  examStart: string;
+  examEnd: string | null;
+  approved: boolean;
+}
 
-export function UniAdminDashboardView({ loading, userEmail }: UniAdminDashboardViewProps) {
+export interface UniAdminDashboardViewProps {
+  loading: boolean;
+  dataLoading: boolean;
+  userName: string | null | undefined;
+  stats: DashStats | null;
+  liveSessions: number;
+  upcoming: UpcomingTest[];
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function fmtSchedule(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  let h = d.getHours();
+  const m = d.getMinutes();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${h}:${m.toString().padStart(2, '0')} ${ampm}`;
+}
+
+function relativeWindow(start: Date, end: Date, now: Date): { isLive: boolean; label: string } {
+  if (start <= now && end >= now) return { isLive: true, label: 'Live now' };
+  const diffMs = start.getTime() - now.getTime();
+  const diffH = Math.floor(diffMs / 3_600_000);
+  const diffM = Math.floor((diffMs % 3_600_000) / 60_000);
+  const diffD = Math.floor(diffH / 24);
+  if (diffD >= 1) return { isLive: false, label: `in ${diffD}d` };
+  if (diffH >= 1) return { isLive: false, label: `in ${diffH}h ${diffM}m` };
+  return { isLive: false, label: `in ${diffM}m` };
+}
+
+export function UniAdminDashboardView({
+  loading, dataLoading, userName, stats, liveSessions, upcoming,
+}: UniAdminDashboardViewProps) {
   if (loading) return <CardGridSkeleton />;
 
   const tools = [
-    { title: 'Create AI Test', desc: 'Upload PDFs to automatically generate structured exam questions', href: '/uniadmin/create-test', icon: PlusCircle, art: cardArt.createTest },
-    { title: 'Manage Tests', desc: 'Review, approve and share AI-generated tests with students', href: '/uniadmin/tests', icon: ClipboardCheck, art: cardArt.manageTests },
-    { title: 'Create Account', desc: 'Register new student profiles and assign university access', href: '/uniadmin/create-account', icon: UserPlus, art: cardArt.createAccount },
-    { title: 'Create Event', desc: 'Post workshops, seminars and campus opportunity listings', href: '/uniadmin/create-event', icon: CalendarPlus, art: cardArt.createEvent },
-    { title: 'Student Database', desc: 'Browse and manage all registered students for your university', href: '/uniadmin/student-database', icon: Database, art: cardArt.studentDb },
-    { title: 'Admin Profile', desc: 'Update your credentials, settings and university details', href: '/uniadmin/profile', icon: Settings, art: cardArt.profile },
+    { title: 'Create AI Test', desc: 'Generate structured exam questions from a PDF', href: '/uniadmin/create-test', icon: PlusCircle },
+    { title: 'Manage Tests', desc: 'Review, approve and share tests with students', href: '/uniadmin/tests', icon: ClipboardCheck },
+    { title: 'Create Account', desc: 'Register a new student profile', href: '/uniadmin/create-account', icon: UserPlus },
+    { title: 'Create Event', desc: 'Post workshops, seminars and listings', href: '/uniadmin/create-event', icon: CalendarPlus },
+    { title: 'Student Database', desc: 'Browse all registered students', href: '/uniadmin/student-database', icon: Database },
+    { title: 'Admin Profile', desc: 'Update your details and settings', href: '/uniadmin/profile', icon: Settings },
   ];
+
+  const statsReady = !(dataLoading && stats === null);
+  const metrics: Array<{
+    label: string;
+    value: number;
+    icon: React.ComponentType<{ size?: number; className?: string }>;
+    href: string;
+    note: string;
+    valueClass?: string;
+    pulse?: boolean;
+    live?: boolean;
+  }> = [
+    { label: 'Students', value: stats?.students ?? 0, icon: Users, href: '/uniadmin/student-database', note: 'Registered' },
+    { label: 'Tests', value: stats?.tests ?? 0, icon: FileText, href: '/uniadmin/tests', note: stats && stats.pendingApproval > 0 ? `${stats.pendingApproval} pending approval` : 'All approved' },
+    { label: 'Live Now', value: liveSessions, icon: Monitor, href: '/uniadmin/proctoring', note: liveSessions > 0 ? 'Active sessions' : 'No live exams', valueClass: liveSessions > 0 ? 'text-[var(--status-success)]' : undefined, pulse: liveSessions > 0, live: true },
+    { label: 'Flagged', value: stats?.flagged ?? 0, icon: AlertTriangle, href: '/uniadmin/proctoring', note: 'Submissions to review', valueClass: (stats?.flagged ?? 0) > 0 ? 'text-[var(--status-danger)]' : undefined },
+  ];
+
+  const now = new Date();
 
   return (
     <div className="max-w-[1200px] mx-auto animate-fade-in">
-      <style>{`
-        .dash-card {
-          position: relative;
-          overflow: hidden;
-          border-radius: 10px;
-          border: 1px solid var(--border-subtle);
-          background: var(--bg-surface);
-          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-          cursor: pointer;
-        }
-        .dash-card:hover {
-          border-color: var(--border-active);
-          transform: translateY(-1px);
-          box-shadow: 0 4px 20px -4px rgba(0,0,0,0.15);
-        }
-        .dash-card::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          opacity: 0;
-          transition: opacity 0.2s ease;
-          background: radial-gradient(500px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.03), transparent 40%);
-          pointer-events: none;
-        }
-        .dash-card:hover::before { opacity: 1; }
-        [data-theme='light'] .dash-card::before {
-          background: radial-gradient(500px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0,0,0,0.02), transparent 40%);
-        }
-        .dash-card-icon {
-          width: 36px;
-          height: 36px;
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: var(--bg-elevated);
-          border: 1px solid var(--border-subtle);
-          transition: border-color 0.2s ease;
-        }
-        .dash-card:hover .dash-card-icon { border-color: var(--border-active); }
-        .dash-card .card-arrow {
-          transition: all 0.2s ease;
-          opacity: 0;
-          transform: translateX(-4px);
-        }
-        .dash-card:hover .card-arrow {
-          opacity: 0.5;
-          transform: translateX(0);
-        }
-        .dash-card .card-art {
-          transition: opacity 0.3s ease;
-          color: var(--text-faint);
-          opacity: 0.4;
-        }
-        .dash-card:hover .card-art { opacity: 0.6; }
-        [data-theme='light'] .dash-card:hover {
-          box-shadow: 0 4px 20px -4px rgba(0,0,0,0.08);
-        }
-      `}</style>
-
-      <div className="pt-8 mb-7">
+      <div className="pt-8 mb-8">
         <h1 className="text-[26px] font-semibold text-[var(--text-primary)] tracking-[-0.025em]">University Admin Dashboard</h1>
-        <p className="text-[var(--text-tertiary)] text-[13.5px] mt-1.5">Welcome back, <span className="text-[var(--text-primary)]">{userEmail?.split('@')[0]}</span></p>
+        <p className="text-[var(--text-tertiary)] text-[13.5px] mt-1.5">Welcome back, <span className="text-[var(--text-primary)]">{userName}</span></p>
       </div>
 
-      <div id="tools" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 stagger-children scroll-mt-20">
-        {tools.map((item) => (
+      {/* Overview — quiet hairline metrics */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden mb-10">
+        {metrics.map((m, i) => (
           <Link
-            key={item.href}
-            href={item.href}
-            className="dash-card group"
-            onMouseMove={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
-              e.currentTarget.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
-              e.currentTarget.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
-            }}
+            key={m.label}
+            href={m.href}
+            className={`group p-5 transition-colors hover:bg-[var(--bg-elevated)] border-[var(--border-subtle)] ${i % 2 === 0 ? 'border-r' : 'lg:border-r'} ${i < 2 ? 'border-b lg:border-b-0' : ''} last:border-r-0`}
           >
-            <div className="card-art pointer-events-none">
-              {item.art}
+            <div className="flex items-center justify-between mb-3.5">
+              <span className="text-[10.5px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]">{m.label}</span>
+              <m.icon size={14} className="text-[var(--text-faint)] group-hover:text-[var(--text-tertiary)] transition-colors" />
             </div>
-
-            <div className="relative z-10 p-5 flex flex-col h-full min-h-[150px]">
-              <div className="flex items-start justify-between mb-auto">
-                <div className="dash-card-icon">
-                  <item.icon size={16} className="text-[var(--accent-orange)]" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-[13px] font-semibold text-[var(--text-primary)] tracking-[-0.01em]">{item.title}</h3>
-                  <ArrowRight size={12} className="card-arrow text-[var(--text-faint)]" />
-                </div>
-                <p className="text-[var(--text-muted)] text-[11px] mt-1 leading-relaxed">{item.desc}</p>
-              </div>
+            <div className="flex items-center gap-2">
+              {statsReady || m.live ? (
+                <span className={`text-[27px] font-semibold tabular-nums tracking-[-0.03em] leading-none ${m.valueClass ?? 'text-[var(--text-primary)]'}`}>{m.value}</span>
+              ) : (
+                <span className="skeleton h-[26px] w-10 rounded" />
+              )}
+              {m.pulse && <span className="w-1.5 h-1.5 rounded-full bg-[var(--status-success)] animate-pulse" />}
             </div>
+            <p className="text-[11.5px] text-[var(--text-faint)] mt-2 truncate">{m.note}</p>
           </Link>
         ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-10 gap-y-10">
+        {/* Quick actions */}
+        <div className="lg:col-span-2">
+          <h2 className="text-[10.5px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)] mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 stagger-children">
+            {tools.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="group rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 hover:border-[var(--border-active)] hover:bg-[var(--bg-elevated)] transition-colors"
+              >
+                <div className="flex items-center justify-between mb-7">
+                  <span className="w-9 h-9 rounded-[8px] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center group-hover:border-[var(--border-active)] transition-colors">
+                    <item.icon size={16} className="text-[var(--text-tertiary)] group-hover:text-[var(--accent-orange)] transition-colors" />
+                  </span>
+                  <ArrowUpRight size={15} className="text-[var(--text-faint)] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                </div>
+                <h3 className="text-[13.5px] font-semibold text-[var(--text-primary)] tracking-[-0.01em]">{item.title}</h3>
+                <p className="text-[12px] text-[var(--text-muted)] mt-1 leading-relaxed">{item.desc}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Upcoming tests rail */}
+        <div className="lg:col-span-1">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[10.5px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]">Upcoming Tests</h2>
+            <Link href="/uniadmin/tests" className="text-[11.5px] font-medium text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors">View all</Link>
+          </div>
+          <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
+            {!statsReady ? (
+              <div className="divide-y divide-[var(--border-subtle)]">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="px-4 py-4 flex items-center gap-3">
+                    <span className="skeleton w-8 h-8 rounded-lg shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <span className="skeleton h-3 w-3/4 rounded block" />
+                      <span className="skeleton h-2.5 w-1/2 rounded block" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : upcoming.length === 0 ? (
+              <div className="px-5 py-14 text-center">
+                <Calendar size={22} className="mx-auto text-[var(--text-faint)] mb-3" />
+                <p className="text-[12.5px] font-medium text-[var(--text-primary)]">No scheduled tests</p>
+                <p className="text-[11.5px] text-[var(--text-faint)] mt-1">Tests you schedule will appear here</p>
+                <Link href="/uniadmin/create-test" className="inline-flex items-center gap-1 mt-3.5 text-[12px] font-medium text-[var(--accent-orange)] hover:underline">
+                  <PlusCircle size={13} /> Create a test
+                </Link>
+              </div>
+            ) : (
+              upcoming.map((t) => {
+                const start = new Date(t.examStart);
+                const end = t.examEnd ? new Date(t.examEnd) : start;
+                const { isLive, label } = relativeWindow(start, end, now);
+                return (
+                  <Link
+                    key={t.id}
+                    href={`/uniadmin/tests/review/${t.id}`}
+                    className="flex items-center gap-3 px-4 py-3.5 border-b border-[var(--border-subtle)] last:border-b-0 hover:bg-[var(--bg-elevated)] transition-colors"
+                  >
+                    <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isLive ? 'bg-[var(--status-success)]/10' : 'bg-[var(--bg-elevated)] border border-[var(--border-subtle)]'}`}>
+                      {isLive
+                        ? <Monitor size={14} className="text-[var(--status-success)]" />
+                        : <Clock size={14} className="text-[var(--text-tertiary)]" />}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[12.5px] font-semibold text-[var(--text-primary)] truncate">{t.title}</span>
+                        {isLive ? (
+                          <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[var(--status-success)] bg-[var(--status-success)]/10 px-1.5 py-0.5 rounded shrink-0">
+                            <span className="w-1 h-1 rounded-full bg-[var(--status-success)] animate-pulse" /> LIVE
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-semibold text-[var(--text-tertiary)] bg-[var(--bg-elevated)] px-1.5 py-0.5 rounded shrink-0">{label}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1 text-[10.5px] text-[var(--text-faint)]">
+                        <span>{fmtSchedule(t.examStart)}</span>
+                        <span className="w-px h-2.5 bg-[var(--border-subtle)]" />
+                        <span className={`inline-flex items-center gap-0.5 ${t.approved ? 'text-[var(--status-success)]' : 'text-[var(--status-warning)]'}`}>
+                          {t.approved ? <CheckCircle2 size={9} /> : <AlertTriangle size={9} />}
+                          {t.approved ? 'Approved' : 'Pending'}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
