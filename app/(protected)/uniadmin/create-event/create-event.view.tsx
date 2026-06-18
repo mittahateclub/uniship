@@ -6,7 +6,11 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { collection, addDoc, serverTimestamp, doc, getDoc, getDocs, query, where, updateDoc, deleteDoc, Timestamp } from 'firebase/firestore';
 import Link from 'next/link';
 import { db } from '@/lib/firebase';
-import { ChevronLeft, ChevronRight, Calendar, Clock, Trash2, Pencil, Users, X, Sparkles, CheckCircle2, AlertCircle, Loader2 } from '@/components/icons';
+import {
+  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Calendar, CalendarDays, CalendarClock, Clock,
+  Trash2, Pencil, Users, X, Plus, Sparkles, CheckCircle2, AlertCircle, Loader2, MapPin,
+} from '@/components/icons';
+import { StatBar } from '@/components/StatBar';
 import { kBranches, kGpaCutoffs } from '@/lib/college';
 import { scrapeEvent } from '@/app/actions/scrape-event';
 
@@ -37,6 +41,9 @@ const TYPE_COLORS: Record<string, string> = {
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAY_LABELS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+const microLabel = 'text-[10.5px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]';
+const fieldLabel = 'block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5';
+const inputClass = 'w-full px-3.5 py-2.5 text-[13px] placeholder:text-[var(--text-faint)]';
 
 function DateTimePicker({ value, onChange }: { value: string; onChange: (val: string) => void }) {
   const [showCal, setShowCal] = useState(false);
@@ -44,17 +51,14 @@ function DateTimePicker({ value, onChange }: { value: string; onChange: (val: st
   const calRef = useRef<HTMLDivElement>(null);
   const timeRef = useRef<HTMLDivElement>(null);
 
-  // Parse current value
   const parsed = value ? new Date(value) : null;
   const selectedYear = parsed?.getFullYear() ?? new Date().getFullYear();
   const selectedMonth = parsed?.getMonth() ?? new Date().getMonth();
-  const selectedDay = parsed?.getDate() ?? 0;
   const selectedHour = parsed?.getHours() ?? 10;
   const selectedMinute = parsed?.getMinutes() ?? 0;
 
   const [viewMonth, setViewMonth] = useState(new Date(selectedYear, selectedMonth, 1));
 
-  // Build calendar grid
   const weeks = useMemo(() => {
     const y = viewMonth.getFullYear(), m = viewMonth.getMonth();
     const firstDay = new Date(y, m, 1).getDay();
@@ -88,7 +92,6 @@ function DateTimePicker({ value, onChange }: { value: string; onChange: (val: st
     onChange(iso);
   };
 
-  // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (calRef.current && !calRef.current.contains(e.target as Node)) setShowCal(false);
@@ -98,48 +101,33 @@ function DateTimePicker({ value, onChange }: { value: string; onChange: (val: st
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const displayDate = parsed
-    ? `${MONTH_NAMES[parsed.getMonth()]} ${parsed.getDate()}, ${parsed.getFullYear()}`
-    : 'Select date';
-
-  const displayTime = parsed
-    ? parsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    : 'Select time';
+  const displayDate = parsed ? `${MONTH_NAMES[parsed.getMonth()]} ${parsed.getDate()}, ${parsed.getFullYear()}` : 'Select date';
+  const displayTime = parsed ? parsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Select time';
+  const triggerClass = 'w-full flex items-center gap-2 px-3.5 py-2.5 bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-[var(--radius)] text-[13px] text-left hover:border-[var(--border-active)] focus:border-[var(--border-active)] focus:outline-none transition-colors duration-150';
 
   return (
     <div className="flex gap-2">
-      {/* Date picker */}
       <div className="relative flex-1" ref={calRef}>
-        <button
-          type="button"
-          onClick={() => { setShowCal(!showCal); setShowTime(false); }}
-          className="w-full flex items-center gap-2 px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-left hover:border-[var(--type-event)] focus:border-[var(--type-event)] focus:outline-none transition-all duration-150"
-        >
+        <button type="button" onClick={() => { setShowCal(!showCal); setShowTime(false); }} className={triggerClass}>
           <Calendar size={14} className="text-[var(--text-faint)] shrink-0" />
           <span className={parsed ? 'text-[var(--text-primary)]' : 'text-[var(--text-faint)]'}>{displayDate}</span>
         </button>
-
         {showCal && (
           <div className="absolute top-full left-0 mt-1.5 z-50 w-[280px] window p-3 shadow-lg animate-fade-in">
-            {/* Month nav */}
             <div className="flex items-center justify-between mb-2">
-              <button type="button" onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1))} className="p-1 rounded hover:bg-[var(--bg-elevated)] transition-colors">
+              <button type="button" onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1))} className="p-1 rounded-full hover:bg-[var(--bg-elevated)] transition-colors">
                 <ChevronLeft size={14} className="text-[var(--text-muted)]" />
               </button>
-              <span className="text-[12px] font-semibold text-[var(--text-primary)]">
-                {MONTH_NAMES[viewMonth.getMonth()]} {viewMonth.getFullYear()}
-              </span>
-              <button type="button" onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1))} className="p-1 rounded hover:bg-[var(--bg-elevated)] transition-colors">
+              <span className="text-[12px] font-semibold text-[var(--text-primary)]">{MONTH_NAMES[viewMonth.getMonth()]} {viewMonth.getFullYear()}</span>
+              <button type="button" onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1))} className="p-1 rounded-full hover:bg-[var(--bg-elevated)] transition-colors">
                 <ChevronRight size={14} className="text-[var(--text-muted)]" />
               </button>
             </div>
-            {/* Day headers */}
             <div className="grid grid-cols-7 mb-1">
               {DAY_LABELS.map(d => (
                 <div key={d} className="text-center text-[9px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)] py-1">{d}</div>
               ))}
             </div>
-            {/* Days grid */}
             {weeks.map((week, wi) => (
               <div key={wi} className="grid grid-cols-7">
                 {week.map((cell, ci) => {
@@ -150,12 +138,10 @@ function DateTimePicker({ value, onChange }: { value: string; onChange: (val: st
                       key={ci}
                       type="button"
                       onClick={() => cell.inMonth && setDate(cell.date)}
-                      className={`
-                        w-full aspect-square flex items-center justify-center text-[11px] font-medium rounded-full transition-colors
+                      className={`w-full aspect-square flex items-center justify-center text-[11px] font-medium rounded-full transition-colors
                         ${!cell.inMonth ? 'text-[var(--text-faint)]/40 cursor-default' : 'hover:bg-[var(--bg-elevated)] cursor-pointer'}
                         ${isSelected ? 'bg-[var(--type-event)] text-white hover:bg-[var(--type-event)]' : ''}
-                        ${isToday && !isSelected ? 'text-[var(--accent-orange)] font-semibold' : cell.inMonth ? 'text-[var(--text-primary)]' : ''}
-                      `}
+                        ${isToday && !isSelected ? 'text-[var(--accent-orange)] font-semibold' : cell.inMonth ? 'text-[var(--text-primary)]' : ''}`}
                     >
                       {cell.day}
                     </button>
@@ -167,51 +153,29 @@ function DateTimePicker({ value, onChange }: { value: string; onChange: (val: st
         )}
       </div>
 
-      {/* Time picker */}
       <div className="relative w-[130px]" ref={timeRef}>
-        <button
-          type="button"
-          onClick={() => { setShowTime(!showTime); setShowCal(false); }}
-          className="w-full flex items-center gap-2 px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[13px] text-left hover:border-[var(--type-event)] focus:border-[var(--type-event)] focus:outline-none transition-all duration-150"
-        >
+        <button type="button" onClick={() => { setShowTime(!showTime); setShowCal(false); }} className={triggerClass}>
           <Clock size={14} className="text-[var(--text-faint)] shrink-0" />
           <span className={parsed ? 'text-[var(--text-primary)]' : 'text-[var(--text-faint)]'}>{displayTime}</span>
         </button>
-
         {showTime && (
           <div className="absolute top-full right-0 mt-1.5 z-50 w-[200px] window p-3 shadow-lg animate-fade-in">
             <div className="flex gap-2">
-              {/* Hours */}
               <div className="flex-1">
                 <p className="text-[9px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)] mb-1.5 text-center">Hour</p>
                 <div className="max-h-[180px] overflow-y-auto space-y-0.5 scrollbar-thin">
                   {Array.from({ length: 24 }, (_, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setTime(i, selectedMinute)}
-                      className={`w-full py-1 text-[12px] font-medium rounded transition-colors ${
-                        selectedHour === i ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'
-                      }`}
-                    >
+                    <button key={i} type="button" onClick={() => setTime(i, selectedMinute)} className={`w-full py-1 text-[12px] font-medium rounded transition-colors ${selectedHour === i ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'}`}>
                       {String(i).padStart(2, '0')}
                     </button>
                   ))}
                 </div>
               </div>
-              {/* Minutes */}
               <div className="flex-1">
                 <p className="text-[9px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)] mb-1.5 text-center">Min</p>
                 <div className="max-h-[180px] overflow-y-auto space-y-0.5 scrollbar-thin">
                   {[0,5,10,15,20,25,30,35,40,45,50,55].map(m => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setTime(selectedHour, m)}
-                      className={`w-full py-1 text-[12px] font-medium rounded transition-colors ${
-                        selectedMinute === m ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'
-                      }`}
-                    >
+                    <button key={m} type="button" onClick={() => setTime(selectedHour, m)} className={`w-full py-1 text-[12px] font-medium rounded transition-colors ${selectedMinute === m ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'}`}>
                       {String(m).padStart(2, '0')}
                     </button>
                   ))}
@@ -233,18 +197,21 @@ export default function CreateEventPage() {
   const [formData, setFormData] = useState({
     title: '', description: '', date: '', location: '', type: 'event', company: '', link: '', expiry: '',
   });
-  // Audience targeting — empty set = all branches; null minGpa = any GPA.
   const [targetBranches, setTargetBranches] = useState<Set<string>>(new Set());
   const [minGpa, setMinGpa] = useState<number | null>(null);
-  // Link auto-fill (mirrors the app's EventScraper): the scraped og:image URL
-  // is stored as the post picture in both the website feed and the app.
   const [scrapedImageUrl, setScrapedImageUrl] = useState<string | null>(null);
   const [scraping, setScraping] = useState(false);
   const [scrapeNote, setScrapeNote] = useState<string | null>(null);
   const [scrapeError, setScrapeError] = useState(false);
-
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [showForm, setShowForm] = useState(true);
+
+  // Existing events
+  const [events, setEvents] = useState<ExistingEvent[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editType, setEditType] = useState('');
 
   useEffect(() => {
     async function getAdminProfile() {
@@ -260,12 +227,30 @@ export default function CreateEventPage() {
     if (!loading && !user) router.push('/');
   }, [user, loading, router]);
 
+  const fetchEvents = async () => {
+    if (!adminUnivId) return;
+    try {
+      const snap = await getDocs(query(collection(db, 'events'), where('universityId', '==', adminUnivId)));
+      const list: ExistingEvent[] = snap.docs.map(d => ({ id: d.id, ...d.data() } as ExistingEvent));
+      list.sort((a, b) => {
+        const da = a.date?.toDate?.() || new Date(a.date);
+        const db_ = b.date?.toDate?.() || new Date(b.date);
+        return db_.getTime() - da.getTime();
+      });
+      setEvents(list);
+    } catch (e) {
+      console.error('Error fetching events:', e);
+    } finally {
+      setLoadingEvents(false);
+    }
+  };
+
+  useEffect(() => { if (adminUnivId) fetchEvents(); }, [adminUnivId]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Scrapes the pasted link and auto-fills the form. The image is only attached
-  // when the page actually exposes an og:image.
   const handleScrape = async () => {
     if (!formData.link.trim()) { setScrapeNote('Enter a link first.'); setScrapeError(true); return; }
     setScraping(true);
@@ -317,7 +302,6 @@ export default function CreateEventPage() {
         link: formData.link.trim() || null,
         imageUrl: scrapedImageUrl,
         expiresAt: formData.expiry ? Timestamp.fromDate(new Date(formData.expiry)) : null,
-        // Audience: ['all'] or specific branches; minGpa null = everyone.
         targetBranches: targetBranches.size === 0 ? ['all'] : Array.from(targetBranches),
         minGpa,
       });
@@ -334,38 +318,6 @@ export default function CreateEventPage() {
       setSubmitting(false);
     }
   };
-
-  if (loading) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="loading-dots"><span /><span /><span /></div>
-    </div>
-  );
-
-  // ── Existing events management ──
-  const [events, setEvents] = useState<ExistingEvent[]>([]);
-  const [loadingEvents, setLoadingEvents] = useState(true);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editType, setEditType] = useState('');
-
-  const fetchEvents = async () => {
-    if (!adminUnivId) return;
-    try {
-      const snap = await getDocs(query(collection(db, 'events'), where('universityId', '==', adminUnivId)));
-      const list: ExistingEvent[] = snap.docs.map(d => ({ id: d.id, ...d.data() } as ExistingEvent));
-      list.sort((a, b) => {
-        const da = a.date?.toDate?.() || new Date(a.date);
-        const db_ = b.date?.toDate?.() || new Date(b.date);
-        return db_.getTime() - da.getTime();
-      });
-      setEvents(list);
-    } catch (e) {
-      console.error('Error fetching events:', e);
-    } finally {
-      setLoadingEvents(false);
-    }
-  };
-
-  useEffect(() => { if (adminUnivId) fetchEvents(); }, [adminUnivId]);
 
   const handleUpdateType = async (eventId: string, newType: string) => {
     try {
@@ -387,251 +339,215 @@ export default function CreateEventPage() {
     }
   };
 
-  const inputClass = "w-full px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-faint)] text-[13px] focus:outline-none focus:border-[var(--type-event)] transition-all duration-150";
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="loading-dots"><span /><span /><span /></div>
+    </div>
+  );
+
+  const now = Date.now();
+  const tsOf = (ev: ExistingEvent) => (ev.date?.toDate?.() || new Date(ev.date)).getTime();
+  const upcomingCount = events.filter(e => tsOf(e) >= now).length;
 
   return (
     <div className="max-w-[1200px] mx-auto animate-fade-in">
-      <div className="pt-8 mb-7">
-        <h1 className="text-[26px] font-semibold text-[var(--text-primary)] tracking-[-0.025em]">Manage Events</h1>
-        <p className="text-[var(--text-tertiary)] text-[13.5px] mt-1.5">Create new events and manage existing ones — changes reflect in College Space immediately.</p>
+      {/* Header */}
+      <div className="pt-8 mb-7 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-[26px] font-semibold text-[var(--text-primary)] tracking-[-0.025em]">Events</h1>
+          <p className="text-[var(--text-tertiary)] text-[13.5px] mt-1.5">Post opportunities to College Space and manage what students see.</p>
+        </div>
+        <button onClick={() => setShowForm(v => !v)} className="btn-primary flex items-center gap-1.5 text-[12.5px] !px-3.5 !py-2">
+          <Plus size={14} /> {showForm ? 'Hide form' : 'New Event'} {showForm ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
-      <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6">
-        {message.text && (
-          <div className={`mb-4 p-3 rounded-[var(--radius)] text-[13px] font-medium border ${message.type === 'success' ? 'bg-[var(--status-success)]/10 text-[var(--status-success)] border-[var(--status-success)]/20' : 'bg-[var(--status-danger)]/10 text-[var(--status-danger)] border-[var(--status-danger)]/20'}`}>
-            {message.text}
-          </div>
-        )}
+      {/* Overview — slim inline summary */}
+      <StatBar
+        className="mb-6"
+        items={[
+          { label: 'events', value: events.length, icon: CalendarDays },
+          { label: 'upcoming', value: upcomingCount, icon: CalendarClock },
+          { label: 'past', value: events.length - upcomingCount, icon: Clock },
+        ]}
+      />
 
-        <form id="form" onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Event Title *</label>
-            <input name="title" type="text" required placeholder="Event Title" value={formData.title} onChange={handleChange} className={inputClass} />
-          </div>
-          <div>
-            <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Company / Organizer</label>
-            <input name="company" type="text" placeholder="e.g. Google, IEEE chapter…" value={formData.company} onChange={handleChange} className={inputClass} />
-          </div>
-          <div>
-            <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Apply / Event Link</label>
-            <input name="link" type="url" placeholder="https://company.com/careers/role (leave blank for in-app apply)" value={formData.link} onChange={handleChange} className={inputClass} />
-            <button
-              type="button"
-              onClick={handleScrape}
-              disabled={scraping}
-              className="btn-secondary mt-2 inline-flex items-center gap-1.5 text-[11.5px] !py-1.5 disabled:opacity-60"
-            >
-              {scraping ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
-              {scraping ? 'Reading page…' : 'Auto-fill from link'}
-            </button>
-            {scrapeNote && (
-              <div className={`mt-2 flex items-start gap-2 px-3 py-2 rounded-[10px] text-[11.5px] font-medium border ${
-                scrapeError
-                  ? 'bg-[var(--status-danger)]/10 text-[var(--status-danger)] border-[var(--status-danger)]/30'
-                  : 'bg-[var(--status-success)]/10 text-[var(--status-success)] border-[var(--status-success)]/30'
-              }`}>
-                {scrapeError ? <AlertCircle size={13} className="mt-px shrink-0" /> : <CheckCircle2 size={13} className="mt-px shrink-0" />}
-                <span>{scrapeNote}</span>
-              </div>
-            )}
-          </div>
-          <div>
-            <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Type</label>
-            <select name="type" value={formData.type} onChange={handleChange} className={inputClass}>
-              <option value="event">Event</option>
-              <option value="internship">Internship</option>
-              <option value="hackathon">Hackathon</option>
-              <option value="research">Research Opportunity</option>
-              <option value="workshop">Workshop</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Date & Time *</label>
-            <DateTimePicker value={formData.date} onChange={(val) => setFormData({ ...formData, date: val })} />
-          </div>
-          <div>
-            <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Apply By / Expiry</label>
-            <DateTimePicker value={formData.expiry} onChange={(val) => setFormData({ ...formData, expiry: val })} />
-            <p className="text-[10.5px] text-[var(--text-faint)] mt-1">Students stop seeing the listing after this date. Defaults to the event date.</p>
-          </div>
-          <div>
-            <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Location *</label>
-            <input name="location" type="text" required placeholder="Location" value={formData.location} onChange={handleChange} className={inputClass} />
-          </div>
-          <div>
-            <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Description *</label>
-            <textarea name="description" required rows={4} placeholder="Description" value={formData.description} onChange={handleChange} className={inputClass + ' resize-none'} />
-          </div>
-
-          {/* ── Scraped post image (only when the linked page exposed one) ── */}
-          {scrapedImageUrl && (
-            <div>
-              <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Post Image</label>
-              <div className="relative rounded-[10px] overflow-hidden border border-[var(--border-subtle)]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={scrapedImageUrl}
-                  alt="Event preview"
-                  className="w-full max-h-[220px] object-cover"
-                  onError={() => setScrapedImageUrl(null)}
-                />
-                <button
-                  type="button"
-                  onClick={clearImage}
-                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/55 text-white flex items-center justify-center hover:bg-black/75 transition-colors"
-                  title="Remove image"
-                >
-                  <X size={15} />
-                </button>
-              </div>
+      {/* New event form */}
+      {showForm && (
+        <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 sm:p-6 mb-7">
+          {message.text && (
+            <div className={`mb-5 p-3 rounded-[var(--radius)] text-[13px] font-medium border ${message.type === 'success' ? 'bg-[var(--status-success)]/10 text-[var(--status-success)] border-[var(--status-success)]/20' : 'bg-[var(--status-danger)]/10 text-[var(--status-danger)] border-[var(--status-danger)]/20'}`}>
+              {message.text}
             </div>
           )}
 
-          {/* ── Audience targeting ── */}
-          <div className="pt-2 border-t border-[var(--border-subtle)]">
-            <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-2">Send to branches</label>
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                type="button"
-                onClick={() => setTargetBranches(new Set())}
-                className={`px-2.5 py-1 text-[11.5px] font-semibold rounded-full border transition-colors ${
-                  targetBranches.size === 0
-                    ? 'bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border-[var(--accent-orange)]/40'
-                    : 'text-[var(--text-muted)] border-[var(--border-subtle)] hover:border-[var(--border-active)]'
-                }`}
-              >
-                All students
-              </button>
-              {kBranches.map((b) => {
-                const on = targetBranches.has(b);
-                return (
-                  <button
-                    key={b}
-                    type="button"
-                    onClick={() => setTargetBranches((prev) => {
-                      const s = new Set(prev);
-                      if (s.has(b)) s.delete(b); else s.add(b);
-                      return s;
-                    })}
-                    className={`px-2.5 py-1 text-[11.5px] font-semibold rounded-full border transition-colors ${
-                      on
-                        ? 'bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border-[var(--accent-orange)]/40'
-                        : 'text-[var(--text-muted)] border-[var(--border-subtle)] hover:border-[var(--border-active)]'
-                    }`}
-                  >
-                    {b}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div>
-            <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">Minimum CGPA</label>
-            <select
-              value={minGpa ?? ''}
-              onChange={(e) => setMinGpa(e.target.value === '' ? null : parseFloat(e.target.value))}
-              className={inputClass}
-            >
-              <option value="">All students (no cutoff)</option>
-              {kGpaCutoffs.map((g) => (
-                <option key={g} value={g}>{g} and above</option>
-              ))}
-            </select>
-          </div>
-
-          <button type="submit" disabled={submitting || !adminUnivId} className="btn-primary !rounded-[10px] w-full mt-2">
-            {submitting ? 'Posting...' : 'Post Event'}
-          </button>
-        </form>
-      </div>
-
-      {/* ── Existing Events ── */}
-      <div>
-        <div className="flex items-baseline justify-between mb-3">
-          <h2 className="text-[14px] font-semibold text-[var(--text-primary)] tracking-[-0.01em]">Existing Events</h2>
-          <span className="text-[11.5px] text-[var(--text-faint)]">{events.length} live</span>
-        </div>
-
-        {loadingEvents ? (
-          <div className="flex justify-center py-8"><div className="loading-dots"><span /><span /><span /></div></div>
-        ) : events.length === 0 ? (
-          <div className="text-center py-16 border border-[var(--border-subtle)] rounded-[var(--radius)] bg-[var(--bg-surface)]">
-            <Calendar size={24} className="mx-auto text-[var(--text-faint)] mb-3" />
-            <p className="text-[var(--text-primary)] text-[13px] font-medium">No events yet</p>
-            <p className="text-[var(--text-faint)] text-[12px] mt-1">Post your first event with the form.</p>
-          </div>
-        ) : (
-          <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
-            {events.map(ev => {
-              const d = ev.date?.toDate?.() || new Date(ev.date);
-              const typeColor = TYPE_COLORS[ev.type] || TYPE_COLORS.event;
-              const typeLabel = TYPE_OPTIONS.find(t => t.value === ev.type)?.label || ev.type || 'Event';
-
-              return (
-                <div key={ev.id} className="flex items-center gap-3 px-4 py-3.5 border-b border-[var(--border-subtle)] last:border-b-0 hover:bg-[var(--bg-elevated)] transition-colors duration-150">
-                  {/* Date */}
-                  <div className="hidden sm:flex flex-col items-center min-w-[40px]">
-                    <span className="text-[15px] font-semibold tabular-nums text-[var(--text-primary)] leading-none">{d.getDate()}</span>
-                    <span className="text-[9px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)] mt-0.5">
-                      {d.toLocaleString('default', { month: 'short' })}
-                    </span>
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-[13px] font-semibold text-[var(--text-primary)] truncate">{ev.title}</h3>
-                    <p className="text-[11px] text-[var(--text-faint)] truncate">{ev.location}</p>
-                  </div>
-
-                  {/* Type badge / editor */}
-                  {editingId === ev.id ? (
-                    <select
-                      value={editType}
-                      onChange={e => handleUpdateType(ev.id, e.target.value)}
-                      onBlur={() => setEditingId(null)}
-                      autoFocus
-                      className="px-2 py-1 text-[11px] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] focus:outline-none focus:border-[var(--type-event)]"
-                    >
-                      {TYPE_OPTIONS.map(t => (
-                        <option key={t.value} value={t.value}>{t.label}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <button
-                      onClick={() => { setEditingId(ev.id); setEditType(ev.type || 'event'); }}
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded border uppercase tracking-wider cursor-pointer hover:opacity-80 ${typeColor}`}
-                      title="Click to change type"
-                    >
-                      {typeLabel}
-                      <Pencil size={9} />
-                    </button>
-                  )}
-
-                  {/* Applicants */}
-                  <Link
-                    href={`/uniadmin/events/${ev.id}/applicants`}
-                    className="p-1.5 rounded text-[var(--text-faint)] hover:text-[var(--accent-orange)] hover:bg-[var(--accent-orange)]/10 transition-colors"
-                    title="View applicants"
-                  >
-                    <Users size={14} />
-                  </Link>
-
-                  {/* Delete */}
-                  <button
-                    onClick={() => handleDeleteEvent(ev.id)}
-                    className="p-1.5 rounded-full text-[var(--text-faint)] hover:text-[var(--status-danger)] hover:bg-[var(--status-danger)]/10 transition-colors"
-                    title="Delete event"
-                  >
-                    <Trash2 size={14} />
+          <form onSubmit={handleSubmit}>
+            {/* Details */}
+            <p className={`${microLabel} mb-3`}>Details</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+              <div className="sm:col-span-2">
+                <label className={fieldLabel}>Event Title *</label>
+                <input name="title" type="text" required placeholder="Event title" value={formData.title} onChange={handleChange} className={inputClass} />
+              </div>
+              <div>
+                <label className={fieldLabel}>Company / Organizer</label>
+                <input name="company" type="text" placeholder="e.g. Google, IEEE chapter…" value={formData.company} onChange={handleChange} className={inputClass} />
+              </div>
+              <div>
+                <label className={fieldLabel}>Type</label>
+                <select name="type" value={formData.type} onChange={handleChange} className={inputClass}>
+                  {TYPE_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+              </div>
+              <div className="sm:col-span-2">
+                <label className={fieldLabel}>Apply / Event Link</label>
+                <div className="flex gap-2">
+                  <input name="link" type="url" placeholder="https://company.com/careers/role (leave blank for in-app apply)" value={formData.link} onChange={handleChange} className={inputClass} />
+                  <button type="button" onClick={handleScrape} disabled={scraping} className="btn-secondary shrink-0 inline-flex items-center gap-1.5 text-[12px] !px-3 disabled:opacity-60">
+                    {scraping ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+                    <span className="hidden sm:inline">{scraping ? 'Reading…' : 'Auto-fill'}</span>
                   </button>
                 </div>
-              );
-            })}
-          </div>
-        )}
+                {scrapeNote && (
+                  <div className={`mt-2 flex items-start gap-2 px-3 py-2 rounded-[var(--radius)] text-[11.5px] font-medium border ${scrapeError ? 'bg-[var(--status-danger)]/10 text-[var(--status-danger)] border-[var(--status-danger)]/30' : 'bg-[var(--status-success)]/10 text-[var(--status-success)] border-[var(--status-success)]/30'}`}>
+                    {scrapeError ? <AlertCircle size={13} className="mt-px shrink-0" /> : <CheckCircle2 size={13} className="mt-px shrink-0" />}
+                    <span>{scrapeNote}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Schedule & location */}
+            <div className="mt-6 pt-6 border-t border-[var(--border-subtle)]">
+              <p className={`${microLabel} mb-3`}>Schedule &amp; location</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                <div>
+                  <label className={fieldLabel}>Date &amp; Time *</label>
+                  <DateTimePicker value={formData.date} onChange={(val) => setFormData({ ...formData, date: val })} />
+                </div>
+                <div>
+                  <label className={fieldLabel}>Apply By / Expiry</label>
+                  <DateTimePicker value={formData.expiry} onChange={(val) => setFormData({ ...formData, expiry: val })} />
+                  <p className="text-[10.5px] text-[var(--text-faint)] mt-1">Listing hides after this date. Defaults to the event date.</p>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className={fieldLabel}>Location *</label>
+                  <input name="location" type="text" required placeholder="Location" value={formData.location} onChange={handleChange} className={inputClass} />
+                </div>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="mt-6 pt-6 border-t border-[var(--border-subtle)]">
+              <p className={`${microLabel} mb-3`}>Description</p>
+              <textarea name="description" required rows={4} placeholder="What is this opportunity about?" value={formData.description} onChange={handleChange} className={`${inputClass} resize-none`} />
+              {scrapedImageUrl && (
+                <div className="mt-4">
+                  <label className={fieldLabel}>Post Image</label>
+                  <div className="relative rounded-[var(--radius)] overflow-hidden border border-[var(--border-subtle)]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={scrapedImageUrl} alt="Event preview" className="w-full max-h-[220px] object-cover" onError={() => setScrapedImageUrl(null)} />
+                    <button type="button" onClick={clearImage} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/55 text-white flex items-center justify-center hover:bg-black/75 transition-colors" title="Remove image">
+                      <X size={15} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Audience */}
+            <div className="mt-6 pt-6 border-t border-[var(--border-subtle)]">
+              <p className={`${microLabel} mb-3`}>Audience</p>
+              <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-2">Send to branches</label>
+              <div className="flex flex-wrap gap-1.5 mb-4">
+                <button type="button" onClick={() => setTargetBranches(new Set())} className={`px-2.5 py-1 text-[11.5px] font-semibold rounded-full border transition-colors ${targetBranches.size === 0 ? 'bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border-[var(--accent-orange)]/40' : 'text-[var(--text-muted)] border-[var(--border-subtle)] hover:border-[var(--border-active)]'}`}>
+                  All students
+                </button>
+                {kBranches.map((b) => {
+                  const on = targetBranches.has(b);
+                  return (
+                    <button key={b} type="button" onClick={() => setTargetBranches((prev) => { const s = new Set(prev); if (s.has(b)) s.delete(b); else s.add(b); return s; })} className={`px-2.5 py-1 text-[11.5px] font-semibold rounded-full border transition-colors ${on ? 'bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] border-[var(--accent-orange)]/40' : 'text-[var(--text-muted)] border-[var(--border-subtle)] hover:border-[var(--border-active)]'}`}>
+                      {b}
+                    </button>
+                  );
+                })}
+              </div>
+              <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1.5">Minimum CGPA</label>
+              <select value={minGpa ?? ''} onChange={(e) => setMinGpa(e.target.value === '' ? null : parseFloat(e.target.value))} className={`${inputClass} sm:max-w-xs`}>
+                <option value="">All students (no cutoff)</option>
+                {kGpaCutoffs.map((g) => <option key={g} value={g}>{g} and above</option>)}
+              </select>
+            </div>
+
+            <button type="submit" disabled={submitting || !adminUnivId} className="btn-primary w-full mt-6">
+              {submitting ? 'Posting…' : 'Post Event'}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Existing events */}
+      <div className="flex items-baseline justify-between mb-3">
+        <h2 className={microLabel}>All events</h2>
+        <span className="text-[11.5px] text-[var(--text-faint)]">{events.length} live</span>
       </div>
-      </div>
+
+      {loadingEvents ? (
+        <div className="flex justify-center py-10"><div className="loading-dots"><span /><span /><span /></div></div>
+      ) : events.length === 0 ? (
+        <div className="text-center py-16 border border-[var(--border-subtle)] rounded-[var(--radius)] bg-[var(--bg-surface)]">
+          <Calendar size={24} className="mx-auto text-[var(--text-faint)] mb-3" />
+          <p className="text-[var(--text-primary)] text-[13px] font-medium">No events yet</p>
+          <p className="text-[var(--text-faint)] text-[12px] mt-1">Post your first event with the form above.</p>
+        </div>
+      ) : (
+        <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
+          {events.map(ev => {
+            const d = ev.date?.toDate?.() || new Date(ev.date);
+            const typeColor = TYPE_COLORS[ev.type] || TYPE_COLORS.event;
+            const typeLabel = TYPE_OPTIONS.find(t => t.value === ev.type)?.label || ev.type || 'Event';
+            const isPast = d.getTime() < now;
+            return (
+              <div key={ev.id} className="flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3.5 border-b border-[var(--border-subtle)] last:border-b-0 hover:bg-[var(--bg-elevated)] transition-colors duration-150">
+                {/* Date block */}
+                <div className={`flex flex-col items-center justify-center w-11 h-11 rounded-[8px] border border-[var(--border-subtle)] shrink-0 ${isPast ? 'opacity-55' : ''}`}>
+                  <span className="text-[15px] font-semibold tabular-nums text-[var(--text-primary)] leading-none">{d.getDate()}</span>
+                  <span className="text-[8.5px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)] mt-0.5">{d.toLocaleString('default', { month: 'short' })}</span>
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-[13.5px] font-semibold text-[var(--text-primary)] truncate">{ev.title}</h3>
+                  <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-[var(--text-faint)] truncate">
+                    <MapPin size={10} className="shrink-0" />
+                    <span className="truncate">{ev.location || '—'}</span>
+                  </div>
+                </div>
+
+                {/* Type pill / editor */}
+                {editingId === ev.id ? (
+                  <select value={editType} onChange={e => handleUpdateType(ev.id, e.target.value)} onBlur={() => setEditingId(null)} autoFocus className="!w-auto px-2 py-1 text-[11px]">
+                    {TYPE_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  </select>
+                ) : (
+                  <button onClick={() => { setEditingId(ev.id); setEditType(ev.type || 'event'); }} className={`hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-semibold rounded-full border uppercase tracking-[0.07em] cursor-pointer hover:opacity-80 transition-opacity ${typeColor}`} title="Click to change type">
+                    {typeLabel}
+                    <Pencil size={9} />
+                  </button>
+                )}
+
+                {/* Actions */}
+                <Link href={`/uniadmin/events/${ev.id}/applicants`} className="p-2 rounded-full text-[var(--text-faint)] hover:text-[var(--accent-orange)] hover:bg-[var(--accent-orange)]/10 transition-colors" title="View applicants">
+                  <Users size={14} />
+                </Link>
+                <button onClick={() => handleDeleteEvent(ev.id)} className="p-2 rounded-full text-[var(--text-faint)] hover:text-[var(--status-danger)] hover:bg-[var(--status-danger)]/10 transition-colors" title="Delete event">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

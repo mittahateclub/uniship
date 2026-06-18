@@ -9,7 +9,7 @@ import {
   BookmarkSimple, Brain as PBrain, Briefcase as PBriefcase, Buildings, Calendar as PCalendar,
   CalendarDots, CalendarBlank, CalendarPlus as PCalendarPlus, Camera as PCamera, Check as PCheck,
   CheckCircle as PCheckCircle, CaretDown, CaretLeft, CaretRight, CaretUp, ClipboardText,
-  Clock as PClock, CloudArrowUp, Code as PCode, CodeSimple, Copy as PCopy, Database as PDatabase,
+  Clock as PClock, CloudArrowUp, Code as PCode, CodeSimple, Copy as PCopy, Database as PDatabase, DotsThree,
   DownloadSimple, ArrowSquareOut, Eye as PEye, EyeSlash, FileText as PFileText, FunnelSimple,
   Flag as PFlag, Flask, Kanban, Globe as PGlobe, GraduationCap as PGraduationCap, Hash as PHash,
   Question, Keyboard as PKeyboard, SquaresFour, CircleNotch, Lock as PLock, SignIn, SignOut,
@@ -103,6 +103,7 @@ export const Mic = smooth(Microphone);
 export const MinusCircle = smooth(PMinusCircle);
 export const Monitor = smooth(PMonitor);
 export const MonitorPlay = smooth(PMonitorPlay);
+export const MoreHorizontal = smooth(DotsThree, 'bold');
 export const Moon = smooth(PMoon);
 export const PanelLeftClose = smooth(SidebarSimple);
 export const PanelLeftOpen = smooth(SidebarSimple);

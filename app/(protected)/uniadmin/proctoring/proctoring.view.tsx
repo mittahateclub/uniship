@@ -9,11 +9,13 @@ import {
 import { db } from '@/lib/firebase';
 import {
   Shield, Eye, Clock, AlertTriangle, MessageCircle, Send,
-  Monitor, Users, XCircle, CheckCircle2, RefreshCw, ChevronRight,
-  Mic, Camera, MonitorPlay, ShieldCheck, RotateCcw, Calendar, LogIn, X,
+  Monitor, CheckCircle2, RefreshCw,
+  MonitorPlay, ShieldCheck, RotateCcw, Calendar, LogIn, X,
   Flag, Bell,
 } from '@/components/icons';
 import { ListSkeleton } from '@/components/Skeleton';
+import { StatBar } from '@/components/StatBar';
+import { Modal, ModalHeader, ModalBody } from '@/components/Modal';
 
 interface ExamSession {
   id: string;
@@ -119,6 +121,11 @@ const parseViolationLogKeyword = (log: string): string => {
   const match = log.match(/\]\s*(.*?)\s*—/);
   return normalizeFlagKeyword(match?.[1] || log);
 };
+
+// Shared popup action buttons (consistent across the submissions + flagged lists).
+const reassignBtn = 'inline-flex items-center gap-1.5 text-[10.5px] font-semibold px-3 py-1.5 rounded-[8px] bg-[var(--accent-orange)]/10 text-[var(--accent-orange)] hover:bg-[var(--accent-orange)]/20 transition-colors disabled:opacity-40';
+const reassignedBtn = 'inline-flex items-center gap-1.5 text-[10.5px] font-semibold px-3 py-1.5 rounded-[8px] bg-[var(--status-success)]/10 text-[var(--status-success)] border border-[var(--status-success)]/20 transition-colors disabled:opacity-40';
+const dangerActionBtn = 'inline-flex items-center gap-1.5 text-[10.5px] font-semibold px-3 py-1.5 rounded-[8px] bg-[var(--status-danger)]/10 text-[var(--status-danger)] hover:bg-[var(--status-danger)]/20 transition-colors disabled:opacity-40';
 
 export default function ProctorDashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -614,7 +621,7 @@ export default function ProctorDashboard() {
               }
               setChatNotification(null);
             }}
-            className="w-full text-left bg-[var(--bg-primary)] border border-[var(--type-event)]/40 rounded-lg shadow-lg p-4 hover:border-[var(--type-event)] transition-colors"
+            className="w-full text-left bg-[var(--bg-primary)] border border-[var(--type-event)]/40 rounded-[var(--radius)] shadow-lg p-4 hover:border-[var(--type-event)] transition-colors"
           >
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-full bg-[var(--type-event)]/10 flex items-center justify-center shrink-0 mt-0.5">
@@ -640,7 +647,7 @@ export default function ProctorDashboard() {
       )}
       {actionPopup && (
         <div className="fixed top-4 right-4 z-[140] max-w-sm animate-fade-in">
-          <div className={`w-full text-left rounded-lg shadow-lg p-4 border ${
+          <div className={`w-full text-left rounded-[var(--radius)] shadow-lg p-4 border ${
             actionPopup.type === 'success'
               ? 'bg-green-50 border-green-300 dark:bg-[#0B2E1A] dark:border-[var(--status-success)]/40'
               : 'bg-red-50 border-red-300 dark:bg-[#2C1212] dark:border-[var(--status-danger)]/40'
@@ -680,7 +687,7 @@ export default function ProctorDashboard() {
               const diffM = Math.floor((diffMs % 3600000) / 60000);
               return (
                 <div key={test.id} className="px-4 py-3 flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                  <div className={`w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 ${
                     isLive ? 'bg-[var(--status-success)]/10' : 'bg-[var(--type-event)]/10'
                   }`}>
                     {isLive ? <Monitor size={14} className="text-[var(--status-success)]" /> : <Clock size={14} className="text-[var(--type-event)]" />}
@@ -689,12 +696,12 @@ export default function ProctorDashboard() {
                     <div className="flex items-center gap-2">
                       <span className="text-[12px] font-semibold text-[var(--text-primary)] truncate">{test.title}</span>
                       {isLive ? (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[var(--status-success)] bg-[var(--status-success)]/10 px-1.5 py-0.5 rounded shrink-0">
+                        <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[var(--status-success)] bg-[var(--status-success)]/10 px-1.5 py-0.5 rounded-full shrink-0">
                           <div className="w-1 h-1 rounded-full bg-[var(--status-success)] animate-pulse" />
                           LIVE NOW
                         </span>
                       ) : (
-                        <span className="text-[9px] font-semibold text-[var(--type-event)] bg-[var(--type-event)]/10 px-1.5 py-0.5 rounded shrink-0">
+                        <span className="text-[9px] font-semibold text-[var(--type-event)] bg-[var(--type-event)]/10 px-1.5 py-0.5 rounded-full shrink-0">
                           {diffH > 0 ? `in ${diffH}h ${diffM}m` : `in ${diffM}m`}
                         </span>
                       )}
@@ -713,7 +720,7 @@ export default function ProctorDashboard() {
                     <button
                       type="button"
                       onClick={() => { setActiveTestId(test.id); setSelectedSession(null); }}
-                      className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
+                      className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[11px] font-semibold transition-colors ${
                         activeTestId === test.id
                           ? 'bg-[var(--status-success)] text-white'
                           : 'bg-[var(--status-success)]/10 text-[var(--status-success)] hover:bg-[var(--status-success)]/20'
@@ -730,142 +737,143 @@ export default function ProctorDashboard() {
         </div>
       )}
 
-      {/* Stats — clickable hairline strip */}
-      <div className="grid grid-cols-3 rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden mb-6">
-        <button
-          type="button"
-          onClick={() => { if (isProctoringMode) setStatsPopup('live'); }}
-          disabled={!isProctoringMode}
-          className={`p-4 text-left border-r border-[var(--border-subtle)] transition-colors ${isProctoringMode ? 'hover:bg-[var(--bg-elevated)] cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
-        >
-          <div className="flex items-center gap-1.5 mb-2.5 text-[var(--status-success)]">
-            <Monitor size={13} />
-            <span className="text-[10.5px] font-semibold uppercase tracking-[0.07em]">Live Sessions</span>
-          </div>
-          <p className="text-[19px] font-semibold text-[var(--text-primary)] tabular-nums tracking-[-0.01em]">{filteredSessions.length}</p>
-        </button>
-        <button type="button" onClick={() => setStatsPopup('submissions')} className="p-4 text-left border-r border-[var(--border-subtle)] hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer">
-          <div className="flex items-center gap-1.5 mb-2.5 text-[var(--accent-orange)]">
-            <CheckCircle2 size={13} />
-            <span className="text-[10.5px] font-semibold uppercase tracking-[0.07em]">Recent Submissions</span>
-          </div>
-          <p className="text-[19px] font-semibold text-[var(--text-primary)] tabular-nums tracking-[-0.01em]">{recentResults.length}</p>
-        </button>
-        <button type="button" onClick={() => setStatsPopup('flagged')} className="p-4 text-left hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer">
-          <div className="flex items-center gap-1.5 mb-2.5 text-[var(--status-danger)]">
-            <AlertTriangle size={13} />
-            <span className="text-[10.5px] font-semibold uppercase tracking-[0.07em]">Flagged</span>
-          </div>
-          <p className="text-[19px] font-semibold text-[var(--text-primary)] tabular-nums tracking-[-0.01em]">{flaggedResults.length}</p>
-        </button>
-      </div>
+      {/* Stats — clickable hairline bar (matches every other uniadmin page) */}
+      <StatBar
+        className="mb-6"
+        items={[
+          {
+            label: 'live sessions',
+            value: filteredSessions.length,
+            icon: Monitor,
+            iconAccent: 'text-[var(--status-success)]',
+            accent: filteredSessions.length > 0 ? 'text-[var(--status-success)]' : undefined,
+            onClick: () => setStatsPopup('live'),
+            disabled: !isProctoringMode,
+          },
+          {
+            label: 'submissions',
+            value: recentResults.length,
+            icon: CheckCircle2,
+            iconAccent: 'text-[var(--accent-orange)]',
+            onClick: () => setStatsPopup('submissions'),
+          },
+          {
+            label: 'flagged',
+            value: flaggedResults.length,
+            icon: AlertTriangle,
+            iconAccent: 'text-[var(--status-danger)]',
+            accent: flaggedResults.length > 0 ? 'text-[var(--status-danger)]' : undefined,
+            onClick: () => setStatsPopup('flagged'),
+          },
+        ]}
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 h-[calc(100vh-330px)] min-h-[520px]">
         {/* Left: Live sessions list */}
-        <div className="lg:col-span-1">
-          <div className="window">
-            <div className="px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[var(--status-success)] animate-pulse" />
-                <span className="text-[12px] font-semibold text-[var(--text-primary)]">Live Sessions</span>
-              </div>
-              <span className="text-[10px] text-[var(--text-faint)]">{isProctoringMode ? `${filteredSessions.length} active` : 'Enter proctoring mode'}</span>
+        <div className={`rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] flex-col overflow-hidden ${activeSelectedSession ? 'hidden lg:flex' : 'flex'}`}>
+          <div className="px-4 h-14 border-b border-[var(--border-subtle)] flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-[var(--status-success)] animate-pulse" />
+              <span className="text-[13px] font-semibold text-[var(--text-primary)]">Live Sessions</span>
             </div>
+            <span className="text-[11px] text-[var(--text-faint)]">{isProctoringMode ? `${filteredSessions.length} active` : 'Idle'}</span>
+          </div>
 
-            {/* Active test filter banner */}
-            {activeTestId && (
-              <div className="px-4 py-2 bg-[var(--status-success)]/5 border-b border-[var(--status-success)]/20 flex items-center justify-between">
-                <span className="text-[10px] font-medium text-[var(--status-success)]">
-                  Filtering: {upcomingTests.find(t => t.id === activeTestId)?.title || 'Selected Test'}
-                </span>
-                <button onClick={() => setActiveTestId(null)} className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors">
-                  <X size={12} />
-                </button>
-              </div>
-            )}
+          {/* Active test filter banner */}
+          {activeTestId && (
+            <div className="px-4 py-2 bg-[var(--status-success)]/5 border-b border-[var(--status-success)]/20 flex items-center justify-between shrink-0">
+              <span className="text-[10.5px] font-medium text-[var(--status-success)] truncate">
+                Filtering: {upcomingTests.find(t => t.id === activeTestId)?.title || 'Selected Test'}
+              </span>
+              <button onClick={() => setActiveTestId(null)} className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors shrink-0 ml-2">
+                <X size={12} />
+              </button>
+            </div>
+          )}
 
+          <div className="flex-1 overflow-y-auto">
             {!isProctoringMode ? (
-              <div className="p-8 text-center">
-                <Shield size={24} className="mx-auto text-[var(--text-faint)] mb-2" />
-                <p className="text-[12px] text-[var(--text-faint)]">Live student list is available only in proctoring mode</p>
-                <p className="text-[11px] text-[var(--text-faint)] mt-1">Use an &quot;Enter Proctoring&quot; button from a live test above</p>
+              <div className="flex flex-col items-center justify-center h-full text-center px-6">
+                <Shield size={26} className="text-[var(--text-faint)] mb-3" />
+                <p className="text-[12.5px] font-medium text-[var(--text-primary)]">Not in proctoring mode</p>
+                <p className="text-[11.5px] text-[var(--text-faint)] mt-1">Use an “Enter Proctoring” button from a live test above to monitor students.</p>
               </div>
             ) : filteredSessions.length === 0 ? (
-              <div className="p-8 text-center">
-                <Monitor size={24} className="mx-auto text-[var(--text-faint)] mb-2" />
-                <p className="text-[12px] text-[var(--text-faint)]">{activeTestId ? 'No students have started this test yet' : 'No active exam sessions'}</p>
-                <p className="text-[11px] text-[var(--text-faint)] mt-1">{activeTestId ? 'Sessions will appear here in real-time when students begin' : 'Sessions appear here when students start tests'}</p>
+              <div className="flex flex-col items-center justify-center h-full text-center px-6">
+                <Monitor size={26} className="text-[var(--text-faint)] mb-3" />
+                <p className="text-[12.5px] font-medium text-[var(--text-primary)]">{activeTestId ? 'No students yet' : 'No active sessions'}</p>
+                <p className="text-[11.5px] text-[var(--text-faint)] mt-1">Sessions appear here in real time as students begin.</p>
               </div>
             ) : (
-              <div className="max-h-[400px] overflow-y-auto">
-                {filteredSessions.map(session => (
+              filteredSessions.map(session => {
+                const active = activeSelectedSession?.id === session.id;
+                const unread = unreadSessions.has(session.id);
+                return (
                   <button
                     key={session.id}
                     onClick={() => selectSession(session)}
-                    className={`w-full text-left px-4 py-3 border-b border-[var(--border-subtle)] last:border-0 transition-colors hover:bg-[var(--bg-elevated)] ${
-                      activeSelectedSession?.id === session.id ? 'bg-[var(--bg-elevated)] border-l-2 border-l-[var(--type-event)]' : ''
-                    } ${unreadSessions.has(session.id) ? 'bg-[var(--type-event)]/5' : ''}`}
+                    className={`w-full flex items-center gap-3 px-3.5 py-3 text-left border-b border-[var(--border-subtle)] last:border-b-0 border-l-2 transition-colors ${
+                      active ? 'bg-[var(--bg-elevated)] border-l-[var(--type-event)]' : 'border-l-transparent hover:bg-[var(--bg-elevated)]'
+                    }`}
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[12px] font-semibold text-[var(--text-primary)] truncate max-w-[180px]">
-                        {session.userEmail}
+                    <span className="w-9 h-9 rounded-full bg-[var(--type-event)]/15 text-[var(--type-event)] flex items-center justify-center text-[14px] font-bold shrink-0 uppercase">
+                      {session.userEmail?.[0] ?? 'S'}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="text-[13px] font-semibold text-[var(--text-primary)] truncate">{session.userEmail}</span>
+                        <span className="text-[10px] text-[var(--text-faint)] shrink-0">{formatTime(session.startedAt)}</span>
                       </span>
-                      <div className="flex items-center gap-1.5">
-                        {unreadSessions.has(session.id) && (
-                          <span className="flex items-center gap-1 text-[9px] font-semibold text-[var(--type-event)] bg-[var(--type-event)]/10 px-1.5 py-0.5 rounded">
-                            <MessageCircle size={9} />
-                            New
+                      <span className="flex items-center gap-2 mt-1">
+                        <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[var(--status-success)] bg-[var(--status-success)]/10 px-1.5 py-0.5 rounded-full shrink-0">
+                          <span className="w-1 h-1 rounded-full bg-[var(--status-success)] animate-pulse" />
+                          LIVE
+                        </span>
+                        <span className="text-[11px] text-[var(--text-tertiary)] truncate">{session.testTitle}</span>
+                        {unread && (
+                          <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[var(--type-event)] bg-[var(--type-event)]/10 px-1.5 py-0.5 rounded-full shrink-0 ml-auto">
+                            <MessageCircle size={9} /> New
                           </span>
                         )}
-                        <ChevronRight size={12} className="text-[var(--text-faint)]" />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-[var(--text-tertiary)] truncate">{session.testTitle}</span>
-                    </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[var(--status-success)] bg-[var(--status-success)]/10 px-1.5 py-0.5 rounded">
-                        <div className="w-1 h-1 rounded-full bg-[var(--status-success)] animate-pulse" />
-                        LIVE
                       </span>
-                      <span className="text-[10px] text-[var(--text-faint)]">
-                        Started {formatTime(session.startedAt)}
-                      </span>
-                    </div>
+                    </span>
                   </button>
-                ))}
-              </div>
+                );
+              })
             )}
           </div>
-
         </div>
 
         {/* Right: Chat / Session detail */}
-        <div className="lg:col-span-2">
+        <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] flex flex-col min-h-0 overflow-hidden">
           {activeSelectedSession ? (
-            <div className="window flex flex-col" style={{ height: '720px' }}>
+            <>
               {/* Session header */}
-              <div className="px-5 py-3 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-[13px] font-semibold text-[var(--text-primary)]">{activeSelectedSession.userEmail}</span>
-                      <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[var(--status-success)] bg-[var(--status-success)]/10 px-1.5 py-0.5 rounded">
-                        <div className="w-1 h-1 rounded-full bg-[var(--status-success)] animate-pulse" />
+              <div className="px-4 py-3 border-b border-[var(--border-subtle)] shrink-0">
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setSelectedSession(null)} className="lg:hidden text-[var(--type-event)] shrink-0" title="Back">←</button>
+                  <span className="w-9 h-9 rounded-full bg-[var(--type-event)]/15 text-[var(--type-event)] flex items-center justify-center text-[14px] font-bold shrink-0 uppercase">
+                    {activeSelectedSession.userEmail?.[0] ?? 'S'}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13.5px] font-semibold text-[var(--text-primary)] truncate">{activeSelectedSession.userEmail}</span>
+                      <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[var(--status-success)] bg-[var(--status-success)]/10 px-2 py-0.5 rounded-full shrink-0">
+                        <span className="w-1 h-1 rounded-full bg-[var(--status-success)] animate-pulse" />
                         LIVE
                       </span>
                     </div>
-                    <p className="text-[11px] text-[var(--text-tertiary)]">{activeSelectedSession.testTitle}</p>
+                    <p className="text-[11px] text-[var(--text-tertiary)] truncate mt-0.5">{activeSelectedSession.testTitle}</p>
                   </div>
-                  <button onClick={() => setSelectedSession(null)} className="text-[var(--text-faint)] hover:text-[var(--text-primary)] transition-colors">
-                    <XCircle size={18} />
+                  <button onClick={() => setSelectedSession(null)} className="hidden lg:flex w-8 h-8 rounded-[8px] items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors shrink-0">
+                    <X size={16} />
                   </button>
                 </div>
                 {/* Session details */}
-                <div className="flex items-center gap-3 mt-2 text-[10px] text-[var(--text-faint)]">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-[10px] text-[var(--text-faint)]">
                   <span className="flex items-center gap-1"><Clock size={9} /> Started {formatTime(activeSelectedSession.startedAt)}</span>
                   {activeSelectedSession.browser && (
-                    <span className="flex items-center gap-1"><Monitor size={9} /> {activeSelectedSession.browser.slice(0, 40)}...</span>
+                    <span className="flex items-center gap-1"><Monitor size={9} /> {activeSelectedSession.browser.slice(0, 40)}…</span>
                   )}
                   {activeSelectedSession.screenRes && (
                     <span className="flex items-center gap-1"><MonitorPlay size={9} /> {activeSelectedSession.screenRes}</span>
@@ -874,21 +882,21 @@ export default function ProctorDashboard() {
               </div>
 
               {/* Chat messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
-                <div className="text-center py-4">
+              <div className="flex-1 overflow-y-auto p-4 space-y-2.5 min-h-0">
+                <div className="text-center py-2">
                   <div className="inline-flex items-center gap-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-full px-3 py-1">
                     <ShieldCheck size={11} className="text-[var(--status-success)]" />
-                    <span className="text-[10px] text-[var(--text-faint)]">Secure session started — messages are end-to-end between proctor and student</span>
+                    <span className="text-[10px] text-[var(--text-faint)]">Secure session — messages are between proctor and student only</span>
                   </div>
                 </div>
 
                 {chatMessages.map(msg => (
                   <div key={msg.id} className={`flex ${msg.sender === 'proctor' ? 'justify-end' : 'justify-start'}`}>
-                    <div className="max-w-[70%]">
-                      <div className={`px-3 py-2 rounded-lg text-[13px] ${
+                    <div className="max-w-[75%]">
+                      <div className={`px-3 py-2 rounded-[12px] text-[13px] ${
                         msg.sender === 'proctor'
-                          ? 'bg-[var(--type-event)] text-white rounded-br-none'
-                          : 'bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-bl-none'
+                          ? 'bg-[var(--type-event)] text-white rounded-br-[3px]'
+                          : 'bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-bl-[3px]'
                       }`}>
                         {msg.message}
                       </div>
@@ -902,50 +910,48 @@ export default function ProctorDashboard() {
               </div>
 
               {/* Input */}
-              <div className="border-t border-[var(--border-subtle)] p-3 flex gap-2">
+              <div className="border-t border-[var(--border-subtle)] p-3 flex gap-2 shrink-0">
                 <input
                   type="text"
                   value={chatInput}
                   onChange={e => setChatInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-                  placeholder="Reply to student..."
-                  className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg px-4 py-2.5 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--type-event)] transition-colors"
+                  placeholder="Reply to student…"
+                  className="flex-1 px-3.5 py-2.5 text-[13px]"
                 />
                 <button
                   onClick={sendMessage}
                   disabled={!chatInput.trim()}
-                  className="px-4 py-2.5 rounded-lg bg-[var(--type-event)] text-white text-[13px] font-semibold disabled:opacity-40 transition-opacity flex items-center gap-2 hover:bg-[#4C5ABF]"
+                  className="px-4 py-2.5 rounded-[var(--radius)] bg-[var(--type-event)] text-white text-[13px] font-semibold disabled:opacity-40 hover:opacity-90 transition-opacity flex items-center gap-2 shrink-0"
                 >
                   <Send size={14} />
                   Send
                 </button>
               </div>
-            </div>
+            </>
           ) : (
-            <div className="window flex flex-col items-center justify-center" style={{ height: '720px' }}>
-              <div className="text-center max-w-sm">
-                <div className="w-14 h-14 rounded-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center mx-auto mb-4">
-                  <MessageCircle size={24} className="text-[var(--text-faint)]" />
+            <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
+              <div className="w-14 h-14 rounded-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center mb-4">
+                <MessageCircle size={24} className="text-[var(--text-faint)]" />
+              </div>
+              <h2 className="text-[15px] font-semibold text-[var(--text-primary)] mb-1">Select a session</h2>
+              <p className="text-[12px] text-[var(--text-tertiary)] leading-relaxed max-w-xs">
+                {isProctoringMode
+                  ? 'Pick an active session on the left to view details and chat with the student in real time.'
+                  : 'Enter proctoring mode from a live test to view active student sessions.'}
+              </p>
+              <div className="mt-6 grid grid-cols-3 gap-3 w-full max-w-sm">
+                <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-[8px] p-3 text-center">
+                  <MessageCircle size={16} className="mx-auto text-[var(--type-event)] mb-1" />
+                  <p className="text-[10px] text-[var(--text-faint)]">Reply to queries</p>
                 </div>
-                <h2 className="text-[15px] font-semibold text-[var(--text-primary)] mb-1">Select a Session</h2>
-                <p className="text-[12px] text-[var(--text-tertiary)] leading-relaxed">
-                  {isProctoringMode
-                    ? 'Click on an active session from the left panel to view details and chat with the student in real-time.'
-                    : 'Enter proctoring mode from a live test to view active student sessions.'}
-                </p>
-                <div className="mt-6 grid grid-cols-3 gap-3">
-                  <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg p-3 text-center">
-                    <MessageCircle size={16} className="mx-auto text-[var(--type-event)] mb-1" />
-                    <p className="text-[10px] text-[var(--text-faint)]">Reply to queries</p>
-                  </div>
-                  <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg p-3 text-center">
-                    <Eye size={16} className="mx-auto text-[var(--status-success)] mb-1" />
-                    <p className="text-[10px] text-[var(--text-faint)]">Monitor sessions</p>
-                  </div>
-                  <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg p-3 text-center">
-                    <RotateCcw size={16} className="mx-auto text-[var(--accent-orange)] mb-1" />
-                    <p className="text-[10px] text-[var(--text-faint)]">Allow re-attempts</p>
-                  </div>
+                <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-[8px] p-3 text-center">
+                  <Eye size={16} className="mx-auto text-[var(--status-success)] mb-1" />
+                  <p className="text-[10px] text-[var(--text-faint)]">Monitor sessions</p>
+                </div>
+                <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-[8px] p-3 text-center">
+                  <RotateCcw size={16} className="mx-auto text-[var(--accent-orange)] mb-1" />
+                  <p className="text-[10px] text-[var(--text-faint)]">Allow re-attempts</p>
                 </div>
               </div>
             </div>
@@ -953,302 +959,240 @@ export default function ProctorDashboard() {
         </div>
       </div>
 
-      {/* ── Popup Modals ── */}
-      {statsPopup && (
-        <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-[6px] flex items-center justify-center p-4" onClick={() => setStatsPopup(null)}>
-          <div
-            className={`w-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] shadow-2xl overflow-hidden flex flex-col ${
-              statsPopup === 'flagged' ? 'max-w-6xl max-h-[88vh]' : 'max-w-xl max-h-[80vh]'
-            }`}
-            onClick={e => e.stopPropagation()}
-          >
-
-            {/* ── Live Sessions Popup ── */}
-            {statsPopup === 'live' && (
-              <>
-                <div className="px-6 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-[var(--status-success)]/10 flex items-center justify-center">
-                      <Monitor size={17} className="text-[var(--status-success)]" />
-                    </div>
-                    <div>
-                      <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">Live Sessions</h3>
-                      <p className="text-[11px] text-[var(--text-tertiary)]">{filteredSessions.length} active session{filteredSessions.length !== 1 ? 's' : ''}</p>
-                    </div>
-                  </div>
-                  <button onClick={() => setStatsPopup(null)} className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors">
-                    <X size={16} />
-                  </button>
+      {/* ── Stat popups (shared Modal shell — consistent margins everywhere) ── */}
+      <Modal open={!!statsPopup} onClose={() => setStatsPopup(null)} size={statsPopup === 'flagged' ? 'lg' : 'md'}>
+        {/* ── Live Sessions ── */}
+        {statsPopup === 'live' && (
+          <>
+            <ModalHeader
+              icon={Monitor}
+              iconClass="text-[var(--status-success)]"
+              iconWrapClass="bg-[var(--status-success)]/10"
+              title="Live Sessions"
+              subtitle={`${filteredSessions.length} active session${filteredSessions.length !== 1 ? 's' : ''}`}
+              onClose={() => setStatsPopup(null)}
+            />
+            <ModalBody flush>
+              {!isProctoringMode ? (
+                <div className="flex flex-col items-center justify-center text-center px-6 py-16">
+                  <Shield size={30} className="text-[var(--text-faint)] mb-3" />
+                  <p className="text-[13px] font-medium text-[var(--text-primary)]">Not in proctoring mode</p>
+                  <p className="text-[11.5px] text-[var(--text-faint)] mt-1">Pick a live test and click “Enter Proctoring”.</p>
                 </div>
-                <div className="overflow-y-auto flex-1">
-                  {!isProctoringMode ? (
-                    <div className="p-14 text-center">
-                      <Shield size={32} className="mx-auto text-[var(--text-faint)] mb-3" />
-                      <p className="text-[13px] font-medium text-[var(--text-tertiary)]">Enter proctoring mode to view live students</p>
-                      <p className="text-[11px] text-[var(--text-muted)] mt-1">Pick a live test and click &quot;Enter Proctoring&quot;</p>
+              ) : filteredSessions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center text-center px-6 py-16">
+                  <Monitor size={30} className="text-[var(--text-faint)] mb-3" />
+                  <p className="text-[13px] font-medium text-[var(--text-primary)]">No active sessions</p>
+                  <p className="text-[11.5px] text-[var(--text-faint)] mt-1">Sessions appear here when students start tests.</p>
+                </div>
+              ) : (
+                filteredSessions.map(session => (
+                  <button
+                    key={session.id}
+                    type="button"
+                    onClick={() => { selectSession(session); setStatsPopup(null); }}
+                    className="w-full flex items-center gap-3 px-5 py-3.5 text-left border-b border-[var(--border-subtle)] last:border-b-0 hover:bg-[var(--bg-elevated)] transition-colors"
+                  >
+                    <span className="w-9 h-9 rounded-full bg-[var(--type-event)]/15 text-[var(--type-event)] flex items-center justify-center text-[14px] font-bold shrink-0 uppercase">
+                      {session.userEmail?.[0] ?? 'S'}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="text-[13px] font-semibold text-[var(--text-primary)] truncate">{session.userEmail}</span>
+                        <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[var(--status-success)] bg-[var(--status-success)]/10 px-1.5 py-0.5 rounded-full shrink-0">
+                          <span className="w-1 h-1 rounded-full bg-[var(--status-success)] animate-pulse" /> LIVE
+                        </span>
+                      </span>
+                      <span className="flex items-center gap-2 mt-1 text-[10.5px] text-[var(--text-tertiary)]">
+                        <span className="truncate">{session.testTitle}</span>
+                        <span className="text-[var(--text-faint)] shrink-0">· {formatTime(session.startedAt)}</span>
+                        {unreadSessions.has(session.id) && (
+                          <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[var(--type-event)] bg-[var(--type-event)]/10 px-1.5 py-0.5 rounded-full shrink-0 ml-auto">
+                            <MessageCircle size={9} /> New
+                          </span>
+                        )}
+                      </span>
+                    </span>
+                  </button>
+                ))
+              )}
+            </ModalBody>
+          </>
+        )}
+
+        {/* ── Recent Submissions ── */}
+        {statsPopup === 'submissions' && (
+          <>
+            <ModalHeader
+              icon={CheckCircle2}
+              iconClass="text-[var(--accent-orange)]"
+              iconWrapClass="bg-[var(--accent-orange)]/10"
+              title="Recent Submissions"
+              subtitle={`${recentResults.length} total submission${recentResults.length !== 1 ? 's' : ''}`}
+              onClose={() => setStatsPopup(null)}
+            />
+            <ModalBody flush>
+              {recentResults.length === 0 ? (
+                <div className="flex flex-col items-center justify-center text-center px-6 py-16">
+                  <CheckCircle2 size={30} className="text-[var(--text-faint)] mb-3" />
+                  <p className="text-[13px] font-medium text-[var(--text-primary)]">No submissions yet</p>
+                </div>
+              ) : (
+                recentResults.map(result => {
+                  const wasForced = result.proctoring?.submitReason !== 'manual';
+                  const allowed = isReattemptAllowed(result.userId, result.testId);
+                  return (
+                    <div key={result.id} className="px-5 py-3.5 border-b border-[var(--border-subtle)] last:border-b-0">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-[13px] font-semibold text-[var(--text-primary)] truncate">{result.userEmail}</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {wasForced && (
+                            <span className="text-[9.5px] font-semibold text-[var(--status-danger)] bg-[var(--status-danger)]/10 px-2 py-0.5 rounded-full uppercase tracking-[0.05em]">
+                              {getSubmitReasonLabel(result.proctoring?.submitReason)}
+                            </span>
+                          )}
+                          {result.flagged && <Flag size={11} className="text-[var(--status-danger)]" />}
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-[var(--text-tertiary)] truncate">{result.testTitle}</p>
+                      <div className="flex items-center justify-between gap-2 mt-2.5">
+                        <div className="flex items-center gap-2 text-[10.5px] text-[var(--text-muted)]">
+                          <span>{result.attemptedQuestions}/{result.totalQuestions} answered</span>
+                          {result.proctoring?.totalViolations > 0 && (
+                            <>
+                              <span className="w-px h-3 bg-[var(--border-subtle)]" />
+                              <span className="text-[var(--status-warning)]">{result.proctoring.violationPoints} pts</span>
+                            </>
+                          )}
+                        </div>
+                        {!allowed ? (
+                          <button onClick={() => allowReattempt(result)} disabled={reattemptLoading === result.id} className={reassignBtn}>
+                            <RefreshCw size={10} className={reattemptLoading === result.id ? 'animate-spin' : ''} />
+                            Reassign Test
+                          </button>
+                        ) : (
+                          <button onClick={() => revokeReattempt(result)} disabled={reattemptLoading === result.id} className={reassignedBtn}>
+                            <CheckCircle2 size={10} className={reattemptLoading === result.id ? 'animate-spin' : ''} />
+                            Reassigned
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  ) : filteredSessions.length === 0 ? (
-                    <div className="p-14 text-center">
-                      <Monitor size={32} className="mx-auto text-[var(--text-faint)] mb-3" />
-                      <p className="text-[13px] font-medium text-[var(--text-tertiary)]">No active exam sessions</p>
-                      <p className="text-[11px] text-[var(--text-muted)] mt-1">Sessions appear here when students start tests</p>
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-[var(--border-subtle)]">
-                      {filteredSessions.map(session => (
-                        <button
-                          key={session.id}
-                          type="button"
-                          onClick={() => { selectSession(session); setStatsPopup(null); }}
-                          className={`w-full text-left px-6 py-4 transition-colors hover:bg-[var(--bg-surface)] ${
-                            unreadSessions.has(session.id) ? 'bg-[var(--bg-elevated)]' : ''
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-[13px] font-semibold text-[var(--text-primary)] truncate">{session.userEmail}</span>
-                            <div className="flex items-center gap-2">
-                              {unreadSessions.has(session.id) && (
-                                <span className="flex items-center gap-1 text-[9px] font-semibold text-[var(--accent-orange)] bg-[var(--accent-orange)]/10 px-1.5 py-0.5 rounded">
-                                  <MessageCircle size={9} /> New
-                                </span>
-                              )}
-                              <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[var(--status-success)] bg-[var(--status-success)]/10 px-1.5 py-0.5 rounded">
-                                <div className="w-1.5 h-1.5 rounded-full bg-[var(--status-success)] animate-pulse" /> LIVE
-                              </span>
-                            </div>
+                  );
+                })
+              )}
+            </ModalBody>
+          </>
+        )}
+
+        {/* ── Flagged Students ── */}
+        {statsPopup === 'flagged' && (
+          <>
+            <ModalHeader
+              icon={Flag}
+              iconClass="text-[var(--status-danger)]"
+              iconWrapClass="bg-[var(--status-danger)]/10 border border-[var(--status-danger)]/20"
+              title="Flagged Students"
+              subtitle={`${flaggedResults.length} flagged account${flaggedResults.length !== 1 ? 's' : ''}`}
+              onClose={() => setStatsPopup(null)}
+            />
+            <ModalBody className="space-y-3">
+              {flaggedResults.length === 0 ? (
+                <div className="flex flex-col items-center justify-center text-center px-6 py-16">
+                  <CheckCircle2 size={30} className="text-[var(--status-success)] mb-3" />
+                  <p className="text-[13px] font-medium text-[var(--text-primary)]">No flagged students</p>
+                  <p className="text-[11.5px] text-[var(--text-faint)] mt-1">Students auto-submitted due to violations appear here.</p>
+                </div>
+              ) : (
+                flaggedResults.map(result => {
+                  const info = studentInfoMap[result.userId];
+                  const reasonKeywords = getFlagReasonKeywords(result);
+                  const allAttempts = recentResults.filter(
+                    r => r.userId === result.userId && r.testId === result.testId && r.flagged
+                  );
+                  const totalViolationPts = allAttempts.reduce((s, r) => s + (r.proctoring?.violationPoints || 0), 0);
+                  const totalViolationCount = allAttempts.reduce((s, r) => s + (r.proctoring?.totalViolations || 0), 0);
+                  const allLogs = allAttempts.flatMap(r => r.proctoring?.violationLog || []);
+                  const allowed = isReattemptAllowed(result.userId, result.testId);
+                  return (
+                    <div
+                      key={`${result.userId}-${result.testId}`}
+                      className="rounded-[12px] border border-[var(--status-danger)]/25 bg-[var(--status-danger)]/[0.04] p-4"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-[8px] bg-[var(--status-danger)]/10 border border-[var(--status-danger)]/20 flex items-center justify-center shrink-0">
+                            <Flag size={15} className="text-[var(--status-danger)]" />
                           </div>
-                          <p className="text-[11px] text-[var(--text-tertiary)] truncate">{session.testTitle}</p>
-                          <div className="flex items-center gap-3 mt-1.5 text-[10px] text-[var(--text-muted)]">
-                            <span className="flex items-center gap-1"><Clock size={9} /> {formatTime(session.startedAt)}</span>
-                            {session.screenRes && <span>{session.screenRes}</span>}
+                          <div className="min-w-0">
+                            <p className="text-[13.5px] font-semibold text-[var(--text-primary)] truncate">{info?.name || result.userEmail.split('@')[0]}</p>
+                            <p className="text-[11.5px] text-[var(--text-tertiary)] truncate">
+                              {result.userEmail}{info?.rollNumber ? ` · ${info.rollNumber}` : ''}
+                            </p>
                           </div>
+                        </div>
+                        <span className="text-[9.5px] font-semibold text-[var(--status-danger)] bg-[var(--status-danger)]/10 px-2 py-0.5 rounded-full uppercase tracking-[0.07em] shrink-0">
+                          {getSubmitReasonLabel(result.proctoring?.submitReason)}
+                        </span>
+                      </div>
+                      <p className="text-[11.5px] text-[var(--text-tertiary)] truncate mt-2.5">{result.testTitle}</p>
+                      {reasonKeywords.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2.5">
+                          {reasonKeywords.map((keyword) => (
+                            <span key={`${result.userId}-${result.testId}-${keyword}`} className="text-[10.5px] font-medium text-[var(--status-danger)] bg-[var(--status-danger)]/10 px-2 py-0.5 rounded-full">
+                              {keyword}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 mt-2.5 text-[11px] text-[var(--text-tertiary)]">
+                        <span>{result.attemptedQuestions}/{result.totalQuestions} answered</span>
+                        {totalViolationCount > 0 && (
+                          <>
+                            <span className="w-px h-3 bg-[var(--border-subtle)]" />
+                            <span className="text-[var(--status-danger)]">{totalViolationPts} violation pts</span>
+                            <span className="w-px h-3 bg-[var(--border-subtle)]" />
+                            <span>{totalViolationCount} violations</span>
+                          </>
+                        )}
+                      </div>
+                      {allLogs.length > 0 && (
+                        <details className="mt-3">
+                          <summary className="text-[10.5px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] cursor-pointer hover:text-[var(--text-primary)] select-none">
+                            Violation log ({allLogs.length})
+                          </summary>
+                          <div className="mt-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-[10px] p-3 max-h-36 overflow-y-auto">
+                            {allLogs.map((log, i) => (
+                              <p key={i} className="text-[11px] text-[var(--text-tertiary)] font-mono leading-relaxed">{log}</p>
+                            ))}
+                          </div>
+                        </details>
+                      )}
+                      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[var(--border-subtle)]">
+                        {!allowed ? (
+                          <button onClick={() => allowReattempt(result)} disabled={reattemptLoading === result.id} className={reassignBtn}>
+                            <RefreshCw size={10} className={reattemptLoading === result.id ? 'animate-spin' : ''} />
+                            Reassign Test
+                          </button>
+                        ) : (
+                          <button onClick={() => revokeReattempt(result)} disabled={reattemptLoading === result.id} className={reassignedBtn}>
+                            <CheckCircle2 size={10} className={reattemptLoading === result.id ? 'animate-spin' : ''} />
+                            Reassigned
+                          </button>
+                        )}
+                        <button onClick={() => autoSubmitStudent(result)} disabled={autoSubmitLoading === result.id} className={dangerActionBtn}>
+                          <AlertTriangle size={10} className={autoSubmitLoading === result.id ? 'animate-pulse' : ''} />
+                          Auto Submit
                         </button>
-                      ))}
+                      </div>
                     </div>
-                  )}
-                </div>
-              </>
-            )}
-
-            {/* ── Recent Submissions Popup ── */}
-            {statsPopup === 'submissions' && (
-              <>
-                <div className="px-6 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-[var(--accent-orange)]/10 flex items-center justify-center">
-                      <CheckCircle2 size={17} className="text-[var(--accent-orange)]" />
-                    </div>
-                    <div>
-                      <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">Recent Submissions</h3>
-                      <p className="text-[11px] text-[var(--text-tertiary)]">{recentResults.length} total submission{recentResults.length !== 1 ? 's' : ''}</p>
-                    </div>
-                  </div>
-                  <button onClick={() => setStatsPopup(null)} className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors">
-                    <X size={16} />
-                  </button>
-                </div>
-                <div className="overflow-y-auto flex-1">
-                  {recentResults.length === 0 ? (
-                    <div className="p-14 text-center">
-                      <CheckCircle2 size={32} className="mx-auto text-[var(--text-faint)] mb-3" />
-                      <p className="text-[13px] font-medium text-[var(--text-tertiary)]">No submissions yet</p>
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-[var(--border-subtle)]">
-                      {recentResults.map(result => {
-                        const wasForced = result.proctoring?.submitReason !== 'manual';
-                        return (
-                          <div key={result.id} className="px-6 py-4">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-[13px] font-medium text-[var(--text-primary)] truncate">{result.userEmail}</span>
-                              <div className="flex items-center gap-2">
-                                {wasForced && (
-                                  <span className="text-[9px] font-semibold text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded uppercase">
-                                    {getSubmitReasonLabel(result.proctoring?.submitReason)}
-                                  </span>
-                                )}
-                                {result.flagged && (
-                                  <Flag size={11} className="text-red-500" />
-                                )}
-                              </div>
-                            </div>
-                            <p className="text-[11px] text-[var(--text-tertiary)] truncate">{result.testTitle}</p>
-                            <div className="flex items-center justify-between mt-2.5">
-                              <div className="flex items-center gap-2 text-[10px] text-[var(--text-muted)]">
-                                <span>{result.attemptedQuestions}/{result.totalQuestions} answered</span>
-                                {result.proctoring?.totalViolations > 0 && (
-                                  <>
-                                    <span className="w-px h-3 bg-[var(--border-subtle)]" />
-                                    <span className="text-amber-500">{result.proctoring.violationPoints} pts</span>
-                                  </>
-                                )}
-                              </div>
-                              {!isReattemptAllowed(result.userId, result.testId) ? (
-                                <button
-                                  onClick={() => allowReattempt(result)}
-                                  disabled={reattemptLoading === result.id}
-                                  className="flex items-center gap-1.5 text-[10px] font-semibold text-[var(--accent-orange)] hover:text-[var(--accent-orange-hover)] transition-colors disabled:opacity-40 px-3 py-1.5 rounded-lg bg-[var(--accent-orange)]/10 hover:bg-[var(--accent-orange)]/20"
-                                >
-                                  <RefreshCw size={10} className={reattemptLoading === result.id ? 'animate-spin' : ''} />
-                                  Reassign Test
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => revokeReattempt(result)}
-                                  disabled={reattemptLoading === result.id}
-                                  className="flex items-center gap-1.5 text-[10px] font-semibold text-[var(--status-success)] hover:text-[var(--status-success)] transition-colors disabled:opacity-40 px-3 py-1.5 rounded-lg bg-[var(--status-success)]/10 hover:bg-[var(--status-success)]/20 border border-[var(--status-success)]/20"
-                                >
-                                  <CheckCircle2 size={10} className={reattemptLoading === result.id ? 'animate-spin' : ''} />
-                                  Reassigned
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-
-            {/* ── Flagged Students Popup ── */}
-            {statsPopup === 'flagged' && (
-              <>
-                <div className="px-7 py-5 border-b border-[var(--border-subtle)] bg-[var(--bg-primary)] flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center border border-red-500/20">
-                      <Flag size={17} className="text-red-500" />
-                    </div>
-                    <div>
-                      <h3 className="text-[20px] leading-none font-semibold text-[var(--text-primary)]">Flagged Students</h3>
-                      <p className="text-[12px] mt-1 text-[var(--text-tertiary)]">{flaggedResults.length} flagged account{flaggedResults.length !== 1 ? 's' : ''}</p>
-                    </div>
-                  </div>
-                  <button onClick={() => setStatsPopup(null)} className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors">
-                    <X size={16} />
-                  </button>
-                </div>
-                <div className="overflow-y-auto flex-1 px-5 py-5 bg-[var(--bg-surface)]">
-                  {flaggedResults.length === 0 ? (
-                    <div className="p-14 text-center">
-                      <CheckCircle2 size={32} className="mx-auto text-[var(--status-success)] mb-3" />
-                      <p className="text-[13px] font-medium text-[var(--text-tertiary)]">No flagged students</p>
-                      <p className="text-[11px] text-[var(--text-muted)] mt-1">Students auto-submitted due to violations will appear here</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {flaggedResults.map(result => {
-                        const info = studentInfoMap[result.userId];
-                        const reasonKeywords = getFlagReasonKeywords(result);
-                        // Aggregate violation data across all attempts for this user+test
-                        const allAttempts = recentResults.filter(
-                          r => r.userId === result.userId && r.testId === result.testId && r.flagged
-                        );
-                        const totalViolationPts = allAttempts.reduce((s, r) => s + (r.proctoring?.violationPoints || 0), 0);
-                        const totalViolationCount = allAttempts.reduce((s, r) => s + (r.proctoring?.totalViolations || 0), 0);
-                        const allLogs = allAttempts.flatMap(r => r.proctoring?.violationLog || []);
-                        return (
-                          <div
-                            key={`${result.userId}-${result.testId}`}
-                            className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] shadow-sm hover:shadow-md transition-shadow px-5 py-5"
-                          >
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex items-center gap-3 min-w-0">
-                                <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
-                                  <Flag size={14} className="text-red-500" />
-                                </div>
-                                <div className="min-w-0">
-                                  <span className="text-[18px] font-semibold text-[var(--text-primary)] block truncate leading-none">
-                                    {info?.name || result.userEmail.split('@')[0]}
-                                  </span>
-                                  {info?.rollNumber && (
-                                    <span className="text-[14px] text-[var(--text-tertiary)] mt-1 block">Roll: {info.rollNumber}</span>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex flex-col items-end gap-2 shrink-0">
-                                <span className="text-[12px] font-semibold text-red-500 bg-red-500/10 px-3 py-1 rounded-lg uppercase tracking-wide">
-                                  {getSubmitReasonLabel(result.proctoring?.submitReason)}
-                                </span>
-                                <div className="flex items-center gap-2">
-                                  {!isReattemptAllowed(result.userId, result.testId) ? (
-                                    <button
-                                      onClick={() => allowReattempt(result)}
-                                      disabled={reattemptLoading === result.id}
-                                      className="flex items-center gap-1.5 text-[10px] font-semibold text-[var(--accent-orange)] hover:text-[var(--accent-orange-hover)] transition-colors disabled:opacity-40 px-3 py-1.5 rounded-lg bg-[var(--accent-orange)]/10 hover:bg-[var(--accent-orange)]/20"
-                                    >
-                                      <RefreshCw size={10} className={reattemptLoading === result.id ? 'animate-spin' : ''} />
-                                      Reassign Test
-                                    </button>
-                                  ) : (
-                                    <button
-                                      onClick={() => revokeReattempt(result)}
-                                      disabled={reattemptLoading === result.id}
-                                      className="flex items-center gap-1.5 text-[10px] font-semibold text-[var(--status-success)] hover:text-[var(--status-success)] transition-colors disabled:opacity-40 px-3 py-1.5 rounded-lg bg-[var(--status-success)]/10 hover:bg-[var(--status-success)]/20 border border-[var(--status-success)]/20"
-                                    >
-                                      <CheckCircle2 size={10} className={reattemptLoading === result.id ? 'animate-spin' : ''} />
-                                      Reassigned
-                                    </button>
-                                  )}
-                                  <button
-                                    onClick={() => autoSubmitStudent(result)}
-                                    disabled={autoSubmitLoading === result.id}
-                                    className="flex items-center gap-1.5 text-[10px] font-semibold text-red-500 hover:text-red-400 transition-colors disabled:opacity-40 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20"
-                                  >
-                                    <AlertTriangle size={10} className={autoSubmitLoading === result.id ? 'animate-pulse' : ''} />
-                                    Auto Submit
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="mt-4 ml-12">
-                              <p className="text-[14px] text-[var(--text-secondary)] truncate">{result.userEmail}</p>
-                              <p className="text-[14px] text-[var(--text-tertiary)] truncate mt-1">{result.testTitle}</p>
-                              {reasonKeywords.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mt-3">
-                                  {reasonKeywords.map((keyword) => (
-                                    <span key={`${result.userId}-${result.testId}-${keyword}`} className="text-[11px] font-semibold text-red-500 bg-red-500/10 px-2.5 py-1 rounded-md border border-red-500/20">
-                                      {keyword}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-                              <div className="flex items-center gap-2 mt-3 text-[12px] text-[var(--text-tertiary)]">
-                                <span>{result.attemptedQuestions}/{result.totalQuestions} answered</span>
-                                {totalViolationCount > 0 && (
-                                  <>
-                                    <span className="w-px h-3 bg-[var(--border-subtle)]" />
-                                    <span className="text-red-500">{totalViolationPts} violation pts</span>
-                                    <span className="w-px h-3 bg-[var(--border-subtle)]" />
-                                    <span>{totalViolationCount} violations</span>
-                                  </>
-                                )}
-                              </div>
-                              {allLogs.length > 0 && (
-                                <details className="mt-3.5">
-                                  <summary className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider cursor-pointer hover:text-[var(--text-primary)] select-none">
-                                    Violation Log ({allLogs.length})
-                                  </summary>
-                                  <div className="mt-2 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl p-3 max-h-36 overflow-y-auto">
-                                    {allLogs.map((log, i) => (
-                                      <p key={i} className="text-[11px] text-[var(--text-tertiary)] font-mono leading-relaxed">{log}</p>
-                                    ))}
-                                  </div>
-                                </details>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+                  );
+                })
+              )}
+            </ModalBody>
+          </>
+        )}
+      </Modal>
     </div>
   );
 }

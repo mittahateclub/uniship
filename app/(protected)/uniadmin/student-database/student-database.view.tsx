@@ -6,8 +6,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, getDoc, deleteDoc } from 'firebase/firestore';
 import Link from 'next/link';
-import { Trash2, ExternalLink, UserPlus, Search, Briefcase, GraduationCap, Users } from '@/components/icons';
+import { Trash2, UserPlus, Search, Users, GraduationCap, Briefcase, ArrowLeft, ChevronRight } from '@/components/icons';
 import { ListSkeleton } from '@/components/Skeleton';
+import { StatBar } from '@/components/StatBar';
+import StudentProfileView from '@/app/(protected)/uniadmin/students/view/[id]/student-view.view';
 
 interface EducationEntry {
   cgpa?: string;
@@ -77,6 +79,7 @@ export default function StudentDatabasePage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [minCgpa, setMinCgpa] = useState('');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) router.push('/');
@@ -154,14 +157,27 @@ export default function StudentDatabasePage() {
     return { total, avgCgpa, withInternships };
   }, [students]);
 
-  if (loading || fetching) return <ListSkeleton withStats statCount={3} rows={5} />;
+  if (loading || fetching) return <ListSkeleton rows={6} />;
+
+  // ── In-page detail (the practice-style list↔detail pattern) ──
+  if (selectedId) {
+    return (
+      <div className="max-w-[1200px] mx-auto animate-fade-in">
+        <div className="pt-8 mb-5">
+          <button
+            type="button"
+            onClick={() => setSelectedId(null)}
+            className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+          >
+            <ArrowLeft size={14} /> Back to students
+          </button>
+        </div>
+        <StudentProfileView key={selectedId} studentId={selectedId} />
+      </div>
+    );
+  }
 
   const hasFilters = searchQuery || minCgpa;
-  const statCells = [
-    { icon: Users, label: 'Total Students', value: String(stats.total) },
-    { icon: GraduationCap, label: 'Avg CGPA', value: stats.avgCgpa > 0 ? stats.avgCgpa.toFixed(2) : 'N/A' },
-    { icon: Briefcase, label: 'With Internships', value: String(stats.withInternships) },
-  ];
 
   return (
     <div className="max-w-[1200px] mx-auto animate-fade-in">
@@ -179,18 +195,15 @@ export default function StudentDatabasePage() {
         </Link>
       </div>
 
-      {/* ── Stat strip ── */}
-      <div id="stats" className="grid grid-cols-3 rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden mb-6 scroll-mt-20">
-        {statCells.map((s) => (
-          <div key={s.label} className="p-4 border-r border-[var(--border-subtle)] last:border-r-0">
-            <div className="flex items-center gap-1.5 mb-2.5 text-[var(--text-faint)]">
-              <s.icon size={13} />
-              <span className="text-[10.5px] font-semibold uppercase tracking-[0.07em]">{s.label}</span>
-            </div>
-            <p className="text-[19px] font-semibold text-[var(--text-primary)] tabular-nums tracking-[-0.01em]">{s.value}</p>
-          </div>
-        ))}
-      </div>
+      {/* ── Overview — slim inline summary ── */}
+      <StatBar
+        className="mb-6"
+        items={[
+          { label: 'students', value: stats.total, icon: Users },
+          { label: 'avg CGPA', value: stats.avgCgpa > 0 ? stats.avgCgpa.toFixed(2) : 'N/A', icon: GraduationCap },
+          { label: 'with internships', value: stats.withInternships, icon: Briefcase },
+        ]}
+      />
 
       {/* ── Filters ── */}
       <div className="flex flex-col sm:flex-row gap-2.5 mb-5">
@@ -259,7 +272,7 @@ export default function StudentDatabasePage() {
                   const internships = internshipCount(student);
 
                   return (
-                    <tr key={student.id} className="border-b border-[var(--border-subtle)] last:border-b-0 hover:bg-[var(--bg-elevated)] transition-colors duration-150">
+                    <tr key={student.id} onClick={() => setSelectedId(student.id)} className="group border-b border-[var(--border-subtle)] last:border-b-0 hover:bg-[var(--bg-elevated)] transition-colors duration-150 cursor-pointer">
                       <td className="px-4 sm:px-5 py-3.5">
                         <div className="flex items-center gap-2.5 min-w-0">
                           {student.photoURL ? (
@@ -293,21 +306,15 @@ export default function StudentDatabasePage() {
                       </td>
                       <td className="px-4 sm:px-5 py-3.5 text-right">
                         <div className="inline-flex items-center gap-1">
-                          <Link
-                            href={`/uniadmin/students/view/${student.id}`}
-                            className="p-2 rounded-full text-[var(--text-faint)] hover:text-[var(--accent-orange)] hover:bg-[var(--bg-surface)] transition-colors duration-150"
-                            title="View full profile"
-                          >
-                            <ExternalLink size={14} />
-                          </Link>
                           <button
-                            onClick={() => handleDeleteStudent(student.id, student.name || 'this student')}
+                            onClick={(e) => { e.stopPropagation(); handleDeleteStudent(student.id, student.name || 'this student'); }}
                             disabled={deletingId === student.id}
-                            className="p-2 rounded-full text-[var(--text-faint)] hover:text-[var(--status-danger)] hover:bg-[var(--status-danger)]/10 transition-colors duration-150 disabled:opacity-50"
+                            className="p-2 rounded-full text-[var(--text-faint)] hover:text-[var(--status-danger)] hover:bg-[var(--status-danger)]/10 transition-colors duration-150 disabled:opacity-50 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100"
                             title="Delete student"
                           >
                             <Trash2 size={14} />
                           </button>
+                          <ChevronRight size={15} className="text-[var(--text-faint)] group-hover:text-[var(--text-tertiary)] transition-colors" />
                         </div>
                       </td>
                     </tr>

@@ -134,19 +134,16 @@ const uniadminSearchItems: SearchableItem[] = [
   { href: '/uniadmin/tests', label: 'Manage Tests', desc: 'Review, approve & publish tests', icon: FileText, category: 'Pages', keywords: 'review approve publish list' },
   { href: '/uniadmin/practice', label: 'Practice', desc: 'Manage coding practice problems', icon: Code, category: 'Pages', keywords: 'problems leetcode dsa' },
   { href: '/uniadmin/proctoring', label: 'Proctoring', desc: 'Monitor live exams & flagged students', icon: ShieldCheck, category: 'Pages', keywords: 'monitor cheating live sessions' },
-  { href: '/uniadmin/analysis', label: 'Analysis', desc: 'Test & student performance analytics', icon: BarChart3, category: 'Pages', keywords: 'analytics reports stats insights' },
   { href: '/uniadmin/create-event', label: 'Create Event', desc: 'Post an event, drive or deadline', icon: CalendarPlus, category: 'Pages', keywords: 'new schedule drive internship' },
   { href: '/uniadmin/inbox', label: 'Support Inbox', desc: 'Reply to student support chats', icon: MessageCircle, category: 'Pages', keywords: 'chat messages help' },
   { href: '/uniadmin/create-account', label: 'Create Account', desc: 'Register a student account', icon: UserPlus, category: 'Pages', keywords: 'new student add' },
   { href: '/uniadmin/student-database', label: 'Student Database', desc: 'Browse the student repository', icon: Database, category: 'Pages', keywords: 'students directory repository' },
-  { href: '/uniadmin/manage', label: 'Manage Students', desc: 'Edit or remove student accounts', icon: Users, category: 'Pages', keywords: 'edit delete accounts' },
   { href: '/uniadmin/profile', label: 'Profile', desc: 'Admin profile settings', icon: User, category: 'Pages', keywords: 'account settings me' },
   // Dashboard — In-page sections
   { href: '/uniadmin/dashboard#tools', label: 'Quick Tools', desc: 'Jump to admin tools', icon: LayoutDashboard, category: 'Dashboard' },
   // Student Database — In-page sections
   { href: '/uniadmin/student-database#stats', label: 'Student Stats', desc: 'Totals, average CGPA & more', icon: BarChart3, category: 'Students' },
   { href: '/uniadmin/student-database#directory', label: 'Student Directory', desc: 'Searchable table of all students', icon: Database, category: 'Students' },
-  { href: '/uniadmin/manage', label: 'Edit a Student', desc: 'Update a student account by ID', icon: User, category: 'Students', keywords: 'change edit modify' },
   // Create Event — In-page sections
   { href: '/uniadmin/create-event#form', label: 'Event Title', desc: 'Set event name', icon: CalendarPlus, category: 'Create Event' },
   { href: '/uniadmin/create-event#form', label: 'Event Type', desc: 'Event, internship, hackathon, workshop', icon: Star, category: 'Create Event' },

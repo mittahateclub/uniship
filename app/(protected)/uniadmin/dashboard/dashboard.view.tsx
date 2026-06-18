@@ -90,7 +90,7 @@ export function UniAdminDashboardView({
 
   return (
     <div className="max-w-[1200px] mx-auto animate-fade-in">
-      <div className="pt-8 mb-8">
+      <div className="pt-8 mb-7">
         <h1 className="text-[26px] font-semibold text-[var(--text-primary)] tracking-[-0.025em]">University Admin Dashboard</h1>
         <p className="text-[var(--text-tertiary)] text-[13.5px] mt-1.5">Welcome back, <span className="text-[var(--text-primary)]">{userName}</span></p>
       </div>
@@ -155,7 +155,7 @@ export function UniAdminDashboardView({
               <div className="divide-y divide-[var(--border-subtle)]">
                 {[0, 1, 2].map((i) => (
                   <div key={i} className="px-4 py-4 flex items-center gap-3">
-                    <span className="skeleton w-8 h-8 rounded-lg shrink-0" />
+                    <span className="skeleton w-8 h-8 rounded-[8px] shrink-0" />
                     <div className="flex-1 space-y-2">
                       <span className="skeleton h-3 w-3/4 rounded block" />
                       <span className="skeleton h-2.5 w-1/2 rounded block" />
@@ -183,7 +183,7 @@ export function UniAdminDashboardView({
                     href={`/uniadmin/tests/review/${t.id}`}
                     className="flex items-center gap-3 px-4 py-3.5 border-b border-[var(--border-subtle)] last:border-b-0 hover:bg-[var(--bg-elevated)] transition-colors"
                   >
-                    <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isLive ? 'bg-[var(--status-success)]/10' : 'bg-[var(--bg-elevated)] border border-[var(--border-subtle)]'}`}>
+                    <span className={`w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 ${isLive ? 'bg-[var(--status-success)]/10' : 'bg-[var(--bg-elevated)] border border-[var(--border-subtle)]'}`}>
                       {isLive
                         ? <Monitor size={14} className="text-[var(--status-success)]" />
                         : <Clock size={14} className="text-[var(--text-tertiary)]" />}
@@ -192,11 +192,11 @@ export function UniAdminDashboardView({
                       <div className="flex items-center gap-1.5">
                         <span className="text-[12.5px] font-semibold text-[var(--text-primary)] truncate">{t.title}</span>
                         {isLive ? (
-                          <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[var(--status-success)] bg-[var(--status-success)]/10 px-1.5 py-0.5 rounded shrink-0">
+                          <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[var(--status-success)] bg-[var(--status-success)]/10 px-1.5 py-0.5 rounded-full shrink-0">
                             <span className="w-1 h-1 rounded-full bg-[var(--status-success)] animate-pulse" /> LIVE
                           </span>
                         ) : (
-                          <span className="text-[9px] font-semibold text-[var(--text-tertiary)] bg-[var(--bg-elevated)] px-1.5 py-0.5 rounded shrink-0">{label}</span>
+                          <span className="text-[9px] font-semibold text-[var(--text-tertiary)] bg-[var(--bg-elevated)] px-1.5 py-0.5 rounded-full shrink-0">{label}</span>
                         )}
                       </div>
                       <div className="flex items-center gap-2 mt-1 text-[10.5px] text-[var(--text-faint)]">

@@ -3,7 +3,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { calculateATSScore } from '@/app/(protected)/user/resume/ats-score';
@@ -28,7 +27,12 @@ import {
   BookOpen,
   Star,
   Trophy,
+  CheckCircle2,
+  XCircle,
+  X,
 } from '@/components/icons';
+import { StatBar } from '@/components/StatBar';
+import { Modal, ModalHeader, ModalBody } from '@/components/Modal';
 
 interface StudentData {
   id?: string;
@@ -354,10 +358,13 @@ function AdminResumePreview({ data }: { data: ResumeItem }) {
   );
 }
 
-export default function StudentViewPage() {
+export default function StudentViewPage({ studentId }: { studentId?: string }) {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
+  const id = studentId ?? params?.id;
+  // Embedded (in-page, inside the Students tab) vs standalone route.
+  const embedded = !!studentId;
 
   const [student, setStudent] = useState<StudentData | null>(null);
   const [applications, setApplications] = useState<ApplicationItem[]>([]);
@@ -467,7 +474,7 @@ export default function StudentViewPage() {
 
   if (!student) {
     return (
-      <div className="max-w-[1200px] mx-auto animate-fade-in pt-8">
+      <div className={embedded ? 'animate-fade-in' : 'max-w-[1200px] mx-auto animate-fade-in pt-8'}>
         <div className="text-center py-16 border border-[var(--border-subtle)] rounded-[var(--radius)] bg-[var(--bg-surface)]">
           <p className="text-[var(--text-primary)] text-[13px] font-medium">Student not found.</p>
         </div>
@@ -542,10 +549,12 @@ export default function StudentViewPage() {
     .sort((a, b) => b.average - a.average);
 
   return (
-    <div className="max-w-[1200px] mx-auto animate-fade-in pt-8">
-      <Link href="/uniadmin/student-database" className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-[var(--text-tertiary)] hover:text-[var(--text-primary)] mb-5 transition-colors">
-        <ArrowLeft size={14} /> Back to Database
-      </Link>
+    <div className={embedded ? 'animate-fade-in' : 'max-w-[1200px] mx-auto animate-fade-in pt-8'}>
+      {!embedded && (
+        <Link href="/uniadmin/student-database" className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-[var(--text-tertiary)] hover:text-[var(--text-primary)] mb-5 transition-colors">
+          <ArrowLeft size={14} /> Back to Database
+        </Link>
+      )}
 
       {notice && (
         <div className={`mb-4 p-3 rounded-[var(--radius)] border text-[13px] ${notice.type === 'success' ? 'border-[var(--status-success)]/20 bg-[var(--status-success)]/10 text-[var(--status-success)]' : 'border-[var(--status-danger)]/20 bg-[var(--status-danger)]/10 text-[var(--status-danger)]'}`}>
@@ -567,26 +576,33 @@ export default function StudentViewPage() {
             <p className="text-[13px] text-[var(--text-tertiary)]">{student.title || 'Student'}</p>
             <p className="text-[12px] font-mono text-[var(--accent-orange)] mt-1">{student.rollNumber || student.studentId || 'N/A'}</p>
 
-            <div className="w-full mt-5 space-y-3">
-              <div className="rounded bg-[var(--bg-elevated)] p-3 border border-[var(--border-subtle)]">
-                <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-wider">CGPA</p>
-                <p className="text-3xl font-semibold text-[var(--text-primary)] tabular-nums">{cgpa}</p>
-              </div>
-              <div className="rounded bg-[var(--bg-elevated)] p-3 border border-[var(--border-subtle)]">
-                <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-wider">Applications</p>
-                <p className="text-3xl font-semibold text-[var(--text-primary)] tabular-nums">{applicationsCount}</p>
-              </div>
-              <div className="rounded bg-[var(--bg-elevated)] p-3 border border-[var(--border-subtle)]">
-                <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-wider">Offers</p>
-                <p className="text-3xl font-semibold text-[var(--text-primary)] tabular-nums">{offersCount}</p>
-              </div>
+            <div className="w-full mt-5 grid grid-cols-3 rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] overflow-hidden divide-x divide-[var(--border-subtle)]">
+              {[
+                { label: 'CGPA', value: String(cgpa).match(/[\d.]+/)?.[0] ?? 'N/A' },
+                { label: 'Applied', value: applicationsCount },
+                { label: 'Offers', value: offersCount },
+              ].map((s) => (
+                <div key={s.label} className="px-2 py-3 text-center">
+                  <p className="text-[18px] font-semibold text-[var(--text-primary)] tabular-nums leading-none">{s.value}</p>
+                  <p className="text-[9.5px] text-[var(--text-faint)] uppercase tracking-[0.06em] mt-1.5">{s.label}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="w-full mt-3 space-y-2">
+              <button type="button" disabled={reviewing} onClick={() => handleReview('verified')} className="w-full btn-secondary inline-flex items-center justify-center gap-1.5 text-[12px] disabled:opacity-50">
+                <BadgeCheck size={13} /> Mark Verified
+              </button>
+              <button type="button" disabled={reviewing} onClick={() => handleReview('resubmission_requested')} className="w-full btn-secondary inline-flex items-center justify-center gap-1.5 text-[12px] disabled:opacity-50">
+                <AlertCircle size={13} /> Ask Resubmission
+              </button>
             </div>
           </div>
         </aside>
 
         <section className="lg:col-span-3 window overflow-hidden">
-          <div className="border-b border-[var(--border-subtle)] p-4 flex flex-wrap items-center justify-between gap-2">
-            <div className="inline-flex rounded border border-[var(--border-subtle)] overflow-hidden bg-[var(--bg-elevated)]">
+          <div className="border-b border-[var(--border-subtle)] p-4">
+            <div className="inline-flex flex-wrap rounded-[8px] border border-[var(--border-subtle)] overflow-hidden bg-[var(--bg-elevated)]">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
@@ -598,20 +614,11 @@ export default function StudentViewPage() {
                 </button>
               ))}
             </div>
-
-            <div className="flex items-center gap-2">
-              <button type="button" disabled={reviewing} onClick={() => handleReview('verified')} className="btn-secondary inline-flex items-center gap-1 text-[12px]">
-                <BadgeCheck size={13} /> Mark Profile Verified
-              </button>
-              <button type="button" disabled={reviewing} onClick={() => handleReview('resubmission_requested')} className="btn-secondary inline-flex items-center gap-1 text-[12px]">
-                <AlertCircle size={13} /> Ask Resubmission
-              </button>
-            </div>
           </div>
 
           <div className="p-5">
             {activeTab === 'placements' && (
-              <div className="rounded border border-dashed border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-8 text-center">
+              <div className="rounded-[8px] border border-dashed border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-8 text-center">
                 <p className="text-[12px] text-[var(--text-faint)]">Placements section is intentionally left empty for now.</p>
                 <p className="text-[11px] text-[var(--text-faint)] mt-1">Use the Applications and Analysis tabs for current student activity.</p>
               </div>
@@ -619,24 +626,14 @@ export default function StudentViewPage() {
 
             {activeTab === 'applications' && (
               <div className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-                    <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Total Applications</p>
-                    <p className="text-2xl font-semibold text-[var(--text-primary)] tabular-nums">{applicationsCount}</p>
-                  </div>
-                  <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-                    <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Pending</p>
-                    <p className="text-2xl font-semibold text-[var(--text-primary)] tabular-nums">{applications.filter((a) => (a.status || 'pending') === 'pending').length}</p>
-                  </div>
-                  <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-                    <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Shortlisted</p>
-                    <p className="text-2xl font-semibold text-[var(--text-primary)] tabular-nums">{shortlistedCount}</p>
-                  </div>
-                  <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-                    <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Selected</p>
-                    <p className="text-2xl font-semibold text-[var(--text-primary)] tabular-nums">{offersCount}</p>
-                  </div>
-                </div>
+                <StatBar
+                  items={[
+                    { label: 'applications', value: applicationsCount, icon: ClipboardCheck },
+                    { label: 'pending', value: applications.filter((a) => (a.status || 'pending') === 'pending').length, icon: Clock3 },
+                    { label: 'shortlisted', value: shortlistedCount, icon: Star },
+                    { label: 'selected', value: offersCount, icon: BadgeCheck, accent: offersCount > 0 ? 'text-[var(--status-success)]' : undefined },
+                  ]}
+                />
 
                 <SectionHeader icon={ClipboardCheck} title="All Applications" />
                 {applications.length === 0 ? (
@@ -655,13 +652,13 @@ export default function StudentViewPage() {
                               : 'text-[var(--text-faint)] bg-[var(--bg-surface)] border-[var(--border-subtle)]';
 
                       return (
-                        <div key={app.id} className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3 flex items-center justify-between gap-3">
+                        <div key={app.id} className="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3 flex items-center justify-between gap-3">
                           <div>
                             <p className="text-[12px] font-semibold text-[var(--text-primary)]">{app.internshipRole || 'Internship Application'}</p>
                             <p className="text-[11px] text-[var(--text-tertiary)]">{app.companyName || 'Unknown company'}</p>
                             <p className="text-[10px] text-[var(--text-faint)] mt-0.5">Applied: {toDateLabel(app.appliedAt)}</p>
                           </div>
-                          <span className={`px-2 py-1 rounded border text-[10px] font-semibold uppercase tracking-wider ${statusClass}`}>
+                          <span className={`px-2.5 py-0.5 rounded-full border text-[10px] font-semibold uppercase tracking-[0.07em] ${statusClass}`}>
                             {status}
                           </span>
                         </div>
@@ -683,27 +680,27 @@ export default function StudentViewPage() {
                 <div className="window p-4">
                   <SectionHeader icon={FileText} title="Personal Details" />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[12px]">
-                    <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                    <div className="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
                       <p className="text-[var(--text-faint)] mb-1">Full Name</p>
                       <p className="text-[var(--text-primary)] font-medium">{student.name || 'N/A'}</p>
                     </div>
-                    <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                    <div className="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
                       <p className="text-[var(--text-faint)] mb-1">Roll Number</p>
                       <p className="text-[var(--text-primary)] font-medium">{student.rollNumber || student.studentId || 'N/A'}</p>
                     </div>
-                    <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                    <div className="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
                       <p className="text-[var(--text-faint)] mb-1">Phone Number</p>
                       <p className="text-[var(--text-primary)] font-medium">{student.phone || 'N/A'}</p>
                     </div>
-                    <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                    <div className="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
                       <p className="text-[var(--text-faint)] mb-1">Contact Email</p>
                       <p className="text-[var(--text-primary)] font-medium break-all">{student.email || 'N/A'}</p>
                     </div>
-                    <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                    <div className="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
                       <p className="text-[var(--text-faint)] mb-1">Professional Title</p>
                       <p className="text-[var(--text-primary)] font-medium">{student.title || 'N/A'}</p>
                     </div>
-                    <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3 md:col-span-2">
+                    <div className="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3 md:col-span-2">
                       <p className="text-[var(--text-faint)] mb-1">Bio</p>
                       <p className="text-[var(--text-primary)] whitespace-pre-line">{student.bio || 'N/A'}</p>
                     </div>
@@ -713,11 +710,11 @@ export default function StudentViewPage() {
                 <div className="window p-4">
                   <SectionHeader icon={Mail} title="Web Presence" />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[12px]">
-                    <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                    <div className="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
                       <p className="text-[var(--text-faint)] mb-1">LinkedIn URL</p>
                       <p className="text-[var(--text-primary)] break-all">{student.linkedinUrl || 'N/A'}</p>
                     </div>
-                    <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                    <div className="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
                       <p className="text-[var(--text-faint)] mb-1">GitHub URL</p>
                       <p className="text-[var(--text-primary)] break-all">{student.githubUrl || 'N/A'}</p>
                     </div>
@@ -731,7 +728,7 @@ export default function StudentViewPage() {
                         <SectionHeader icon={Code} title="Technical Skills" />
                         <div className="flex flex-wrap gap-1.5">
                           {student.technicalSkills.split(/[,\n]+/).map((s) => s.trim()).filter(Boolean).map((skill, i) => (
-                            <span key={i} className="px-2 py-0.5 text-[11px] font-medium rounded bg-[var(--type-event)]/8 text-[var(--type-event)] border border-[var(--type-event)]/15">{skill}</span>
+                            <span key={i} className="px-2.5 py-0.5 text-[11px] font-medium rounded-full bg-[var(--type-event)]/10 text-[var(--type-event)]">{skill}</span>
                           ))}
                         </div>
                       </>
@@ -867,9 +864,9 @@ export default function StudentViewPage() {
                         const atsScore = hasStructuredContent ? getResumeAts(resume) : null;
 
                         return (
-                          <div key={resume.id} className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4">
+                          <div key={resume.id} className="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4">
                             <div className="flex items-start gap-3">
-                              <div className="w-12 h-12 rounded bg-[var(--accent-orange)]/15 flex items-center justify-center">
+                              <div className="w-12 h-12 rounded-[10px] bg-[var(--accent-orange)]/15 flex items-center justify-center">
                                 <FileText size={22} className="text-[var(--accent-orange)]" />
                               </div>
                               <div className="min-w-0">
@@ -883,8 +880,8 @@ export default function StudentViewPage() {
                             </p>
 
                             {atsScore !== null && (
-                              <div className="mt-2 inline-flex items-center gap-2 rounded border border-[var(--type-event)]/30 bg-[var(--type-event)]/10 px-2 py-1">
-                                <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--type-event)]">ATS</span>
+                              <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-[var(--type-event)]/30 bg-[var(--type-event)]/10 px-2.5 py-1">
+                                <span className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--type-event)]">ATS</span>
                                 <span className="text-[12px] font-semibold text-[var(--type-event)] tabular-nums">{atsScore}/100</span>
                               </div>
                             )}
@@ -892,7 +889,7 @@ export default function StudentViewPage() {
                             {resume.keywords && resume.keywords.length > 0 && (
                               <div className="mt-2 flex flex-wrap gap-1">
                                 {resume.keywords.slice(0, 8).map((keyword, i) => (
-                                  <span key={`${resume.id}-${i}`} className="px-2 py-0.5 rounded text-[10px] border border-[var(--border-subtle)] text-[var(--text-tertiary)]">{keyword}</span>
+                                  <span key={`${resume.id}-${i}`} className="px-2 py-0.5 rounded-full text-[10px] border border-[var(--border-subtle)] text-[var(--text-tertiary)]">{keyword}</span>
                                 ))}
                               </div>
                             )}
@@ -903,7 +900,7 @@ export default function StudentViewPage() {
                                   href={resume.uploadedFileUrl}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="flex-1 rounded border border-[var(--border-subtle)] px-3 py-2 text-[12px] font-semibold text-center text-[var(--text-primary)] hover:border-[var(--type-event)] hover:text-[var(--type-event)] transition-colors"
+                                  className="flex-1 rounded-[8px] border border-[var(--border-subtle)] px-3 py-2 text-[12px] font-semibold text-center text-[var(--text-primary)] hover:border-[var(--type-event)] hover:text-[var(--type-event)] transition-colors"
                                 >
                                   Open Uploaded File
                                 </a>
@@ -912,7 +909,7 @@ export default function StudentViewPage() {
                                   type="button"
                                   onClick={() => setResumePreview(resume)}
                                   disabled={!hasStructuredContent}
-                                  className="flex-1 rounded border border-[var(--border-subtle)] px-3 py-2 text-[12px] font-semibold text-[var(--text-primary)] hover:border-[var(--type-event)] hover:text-[var(--type-event)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                  className="flex-1 rounded-[8px] border border-[var(--border-subtle)] px-3 py-2 text-[12px] font-semibold text-[var(--text-primary)] hover:border-[var(--type-event)] hover:text-[var(--type-event)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                 >
                                   View Resume
                                 </button>
@@ -933,34 +930,41 @@ export default function StudentViewPage() {
                   <p className="text-[12px] text-[var(--text-faint)]">No test result data available for analysis yet.</p>
                 ) : (
                   <>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                      <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-                        <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Tests Taken</p>
-                        <p className="text-2xl font-semibold text-[var(--text-primary)] tabular-nums">{results.length}</p>
-                      </div>
-                      <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-                        <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Avg Score</p>
-                        <p className="text-2xl font-semibold text-[var(--text-primary)] tabular-nums">{avgScore.toFixed(1)}%</p>
-                      </div>
-                      <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-                        <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Reliability</p>
-                        <p className="text-2xl font-semibold text-[var(--text-primary)] tabular-nums">{reliability}/100</p>
-                      </div>
-                      <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-                        <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Consistency</p>
-                        <p className="text-2xl font-semibold text-[var(--text-primary)] tabular-nums">{consistency}%</p>
-                      </div>
-                      <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-                        <p className="text-[10px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Violations</p>
-                        <p className="text-2xl font-semibold text-[var(--text-primary)] tabular-nums">{totalViolations}</p>
+                    <StatBar
+                      items={[
+                        { label: 'tests', value: results.length, icon: ClipboardCheck },
+                        { label: 'avg score', value: `${avgScore.toFixed(1)}%`, icon: TrendingUp },
+                        { label: 'reliability', value: `${reliability}/100`, icon: BadgeCheck },
+                        { label: 'consistency', value: `${consistency}%`, icon: Star },
+                        { label: 'violations', value: totalViolations, icon: AlertCircle, accent: totalViolations > 0 ? 'text-[var(--status-danger)]' : undefined },
+                      ]}
+                    />
+
+                    <div className="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4">
+                      <SectionHeader icon={TrendingUp} title="Performance Trend" />
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                          <p className="text-[11px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Baseline</p>
+                          <p className="text-xl font-semibold text-[var(--text-primary)] tabular-nums">{baselineScore.toFixed(1)}%</p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Latest</p>
+                          <p className="text-xl font-semibold text-[var(--text-primary)] tabular-nums">{latestScore.toFixed(1)}%</p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Progress</p>
+                          <p className={`text-xl font-semibold tabular-nums ${scoreDelta >= 0 ? 'text-[var(--status-success)]' : 'text-[var(--accent-orange)]'}`}>
+                            {scoreDelta >= 0 ? '+' : ''}{scoreDelta.toFixed(1)}%
+                          </p>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4">
+                    <div className="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4">
                       <SectionHeader icon={ClipboardCheck} title="Test Results" />
                       <div className="space-y-2">
                         {results.map((result) => (
-                          <div key={result.id} className="rounded border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 flex items-center justify-between gap-3">
+                          <div key={result.id} className="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 flex items-center justify-between gap-3">
                             <div>
                               <p className="text-[12px] font-semibold text-[var(--text-primary)]">{result.testTitle || 'Untitled Test'}</p>
                               <p className="text-[11px] text-[var(--text-tertiary)]">Submitted: {toDateLabel(result.submittedAt)}</p>
@@ -981,34 +985,14 @@ export default function StudentViewPage() {
                       </div>
                     </div>
 
-                    <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4">
-                      <SectionHeader icon={TrendingUp} title="Performance Trend" />
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div>
-                          <p className="text-[11px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Baseline</p>
-                          <p className="text-xl font-semibold text-[var(--text-primary)] tabular-nums">{baselineScore.toFixed(1)}%</p>
-                        </div>
-                        <div>
-                          <p className="text-[11px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Latest</p>
-                          <p className="text-xl font-semibold text-[var(--text-primary)] tabular-nums">{latestScore.toFixed(1)}%</p>
-                        </div>
-                        <div>
-                          <p className="text-[11px] text-[var(--text-faint)] uppercase tracking-[0.07em]">Progress</p>
-                          <p className={`text-xl font-semibold tabular-nums ${scoreDelta >= 0 ? 'text-[var(--status-success)]' : 'text-[var(--accent-orange)]'}`}>
-                            {scoreDelta >= 0 ? '+' : ''}{scoreDelta.toFixed(1)}%
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4">
+                    <div className="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4">
                       <SectionHeader icon={BookOpen} title="Section-Wise Strength" />
                       {sectionAverages.length === 0 ? (
                         <p className="text-[12px] text-[var(--text-faint)]">Section-wise scores are not available in submitted test data.</p>
                       ) : (
                         <div className="space-y-2">
                           {sectionAverages.map((section) => (
-                            <div key={section.name} className="rounded border border-[var(--border-subtle)] px-3 py-2 flex items-center justify-between">
+                            <div key={section.name} className="rounded-[8px] border border-[var(--border-subtle)] px-3 py-2 flex items-center justify-between">
                               <div>
                                 <p className="text-[12px] font-semibold text-[var(--text-primary)]">{section.name}</p>
                                 <p className="text-[10px] text-[var(--text-faint)]">Based on {section.attempts} test{section.attempts === 1 ? '' : 's'}</p>
@@ -1027,90 +1011,92 @@ export default function StudentViewPage() {
         </section>
       </div>
 
-      {answerReviewResult && typeof window !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[10001] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6">
-          <div className="w-full max-w-6xl rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] shadow-xl max-h-[92vh] overflow-hidden">
-            <div className="px-5 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
-              <div>
-                <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">Student Marked Answers</h3>
-                <p className="text-[12px] text-[var(--text-tertiary)] mt-0.5">
-                  {answerReviewResult.testTitle || 'Untitled Test'} • Submitted {toDateLabel(answerReviewResult.submittedAt)}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setAnswerReviewResult(null)}
-                className="text-[12px] font-semibold text-[var(--text-faint)] hover:text-[var(--text-primary)]"
-              >
-                Close
-              </button>
-            </div>
-
-            <div className="px-5 py-4 overflow-y-auto max-h-[78vh] space-y-3">
-              {answerReviewResult.questionSnapshots && answerReviewResult.questionSnapshots.length > 0 ? (
-                answerReviewResult.questionSnapshots.map((q, idx) => (
-                  <div key={idx} className="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)] mb-1">
-                      Q{idx + 1} • {(q.sectionType || 'question').toUpperCase()}
-                    </p>
-                    <p className="text-[12px] text-[var(--text-primary)] whitespace-pre-line">{q.questionDescription || 'Question text not available.'}</p>
-                    <div className="mt-2 text-[12px]">
-                      <p className="text-[var(--text-tertiary)]">
-                        Student answer: <span className="font-semibold text-[var(--text-primary)]">{(q.studentAnswer || '').trim() || 'Not Answered'}</span>
-                      </p>
-                      {q.correctAnswer && (
-                        <p className="text-[var(--text-tertiary)] mt-0.5">
-                          Correct answer: <span className="font-semibold text-[var(--text-primary)]">{q.correctAnswer}</span>
-                        </p>
-                      )}
+      <Modal open={!!answerReviewResult} onClose={() => setAnswerReviewResult(null)} size="lg">
+        {answerReviewResult && (() => {
+          const snaps = answerReviewResult.questionSnapshots || [];
+          const gradedSnaps = snaps.filter((q) => (q.correctAnswer || '').trim());
+          const correctCount = gradedSnaps.filter((q) => (q.studentAnswer || '').trim().toLowerCase() === (q.correctAnswer || '').trim().toLowerCase()).length;
+          return (
+            <>
+              <ModalHeader
+                icon={ClipboardCheck}
+                title="Answer review"
+                subtitle={`${answerReviewResult.testTitle || 'Untitled Test'} · ${toDateLabel(answerReviewResult.submittedAt)}`}
+                right={gradedSnaps.length > 0 ? (
+                  <span className="text-[12px] font-semibold tabular-nums text-[var(--text-secondary)]">{correctCount}/{gradedSnaps.length} correct</span>
+                ) : undefined}
+                onClose={() => setAnswerReviewResult(null)}
+              />
+              <ModalBody className="space-y-2.5">
+                {snaps.length > 0 ? snaps.map((q, idx) => {
+                  const studentAns = (q.studentAnswer || '').trim();
+                  const correctAns = (q.correctAnswer || '').trim();
+                  const isGraded = !!correctAns;
+                  const answered = studentAns.length > 0;
+                  const isCorrect = isGraded && answered && studentAns.toLowerCase() === correctAns.toLowerCase();
+                  return (
+                    <div key={idx} className="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3.5">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--text-tertiary)] bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-2 py-0.5 rounded-full">Q{idx + 1}</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--type-event)] bg-[var(--type-event)]/10 px-2 py-0.5 rounded-full">{q.sectionType || 'question'}</span>
+                        {isGraded && (
+                          <span className={`ml-auto inline-flex items-center gap-1 text-[10.5px] font-semibold ${isCorrect ? 'text-[var(--status-success)]' : 'text-[var(--status-danger)]'}`}>
+                            {isCorrect ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+                            {isCorrect ? 'Correct' : 'Incorrect'}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[12.5px] text-[var(--text-primary)] whitespace-pre-line mb-2.5">{q.questionDescription || 'Question text not available.'}</p>
+                      <div className="space-y-1.5">
+                        <div className={`flex items-baseline gap-2 px-3 py-2 rounded-[8px] text-[12px] border ${
+                          !answered ? 'border-[var(--border-subtle)]'
+                          : isGraded ? (isCorrect ? 'border-[var(--status-success)]/30 bg-[var(--status-success)]/10' : 'border-[var(--status-danger)]/30 bg-[var(--status-danger)]/10')
+                          : 'border-[var(--border-subtle)]'
+                        }`}>
+                          <span className="text-[9.5px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)] shrink-0 w-14">Answer</span>
+                          <span className={`font-medium ${!answered ? 'text-[var(--text-faint)] italic' : isGraded ? (isCorrect ? 'text-[var(--status-success)]' : 'text-[var(--status-danger)]') : 'text-[var(--text-primary)]'} whitespace-pre-line break-words`}>{answered ? studentAns : 'Not answered'}</span>
+                        </div>
+                        {isGraded && !isCorrect && (
+                          <div className="flex items-baseline gap-2 px-3 py-2 rounded-[8px] text-[12px] border border-[var(--status-success)]/30 bg-[var(--status-success)]/10">
+                            <span className="text-[9.5px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)] shrink-0 w-14">Correct</span>
+                            <span className="font-medium text-[var(--status-success)] whitespace-pre-line break-words">{correctAns}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-[12px] text-[var(--text-faint)]">Detailed question snapshots are not available for this result record.</p>
-              )}
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
-
-      {resumePreview && typeof window !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[10002] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6">
-          <div className="w-full max-w-5xl rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] shadow-xl max-h-[92vh] overflow-hidden">
-            <div className="px-5 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
-              <div>
-                <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">Resume Preview</h3>
-                <p className="text-[12px] text-[var(--text-tertiary)] mt-0.5">
-                  {resumePreview.targetCompany || 'General Resume'} • Updated {toDateLabel(resumePreview.updatedAt)}
-                </p>
-                {!!(
-                  resumePreview.education || resumePreview.experience || resumePreview.skills || resumePreview.projects ||
-                  resumePreview.coursework || resumePreview.extracurriculars || resumePreview.achievements
-                ) && (
-                  <p className="text-[11px] text-[var(--type-event)] mt-1 font-semibold">
-                    ATS Score: {getResumeAts(resumePreview)}/100
-                  </p>
+                  );
+                }) : (
+                  <p className="text-[12px] text-[var(--text-faint)] text-center py-10">Detailed question snapshots are not available for this result record.</p>
                 )}
-              </div>
-              <button
-                type="button"
-                onClick={() => setResumePreview(null)}
-                className="text-[12px] font-semibold text-[var(--text-faint)] hover:text-[var(--text-primary)]"
-              >
-                Close
-              </button>
-            </div>
+              </ModalBody>
+            </>
+          );
+        })()}
+      </Modal>
 
-            <div className="px-5 py-4 overflow-y-auto max-h-[78vh]">
-              <div className="rounded border border-[var(--border-subtle)] bg-[#111] p-3">
+      <Modal open={!!resumePreview} onClose={() => setResumePreview(null)} size="xl">
+        {resumePreview && (
+          <>
+            <ModalHeader
+              icon={FileText}
+              title="Resume Preview"
+              subtitle={`${resumePreview.targetCompany || 'General Resume'} · Updated ${toDateLabel(resumePreview.updatedAt)}`}
+              right={!!(
+                resumePreview.education || resumePreview.experience || resumePreview.skills || resumePreview.projects ||
+                resumePreview.coursework || resumePreview.extracurriculars || resumePreview.achievements
+              ) ? (
+                <span className="text-[11px] font-semibold text-[var(--type-event)] tabular-nums">ATS {getResumeAts(resumePreview)}/100</span>
+              ) : undefined}
+              onClose={() => setResumePreview(null)}
+            />
+            <ModalBody>
+              <div className="rounded-[8px] border border-[var(--border-subtle)] bg-[#111] p-3">
                 <AdminResumePreview data={resumePreview} />
               </div>
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
+            </ModalBody>
+          </>
+        )}
+      </Modal>
     </div>
   );
 }

@@ -8,11 +8,11 @@ import {
 } from 'firebase/firestore';
 import { generatePracticeProblem } from '@/app/actions/generate-practice-problem';
 import {
-  Sparkles, Plus, Trash2, ChevronDown, ChevronUp, Code2, Clock,
-  CheckCircle2, AlertTriangle, BookOpen, Keyboard, Eye, EyeOff, Pencil,
-  CalendarClock,
+  Sparkles, Plus, Trash2, ChevronDown, ChevronUp, ChevronRight, Code2, CheckCircle2, BookOpen, Keyboard,
+  Eye, EyeOff, CalendarClock,
 } from '@/components/icons';
 import { ListSkeleton } from '@/components/Skeleton';
+import { StatBar } from '@/components/StatBar';
 
 interface TestCase {
   input: string;
@@ -38,10 +38,13 @@ interface PracticeProblem {
 }
 
 const DIFFICULTY_COLORS: Record<string, string> = {
-  Easy: 'bg-[var(--status-success)]/10 text-[var(--status-success)] border-[var(--status-success)]/20',
-  Medium: 'bg-[var(--status-warning)]/10 text-[var(--status-warning)] border-[var(--status-warning)]/20',
-  Hard: 'bg-[var(--status-danger)]/10 text-[var(--status-danger)] border-[var(--status-danger)]/20',
+  Easy: 'bg-[var(--status-success)]/10 text-[var(--status-success)]',
+  Medium: 'bg-[var(--status-warning)]/10 text-[var(--status-warning)]',
+  Hard: 'bg-[var(--status-danger)]/10 text-[var(--status-danger)]',
 };
+
+const inputClass = 'w-full px-3.5 py-2.5 text-[13px] placeholder:text-[var(--text-faint)]';
+const fieldLabel = 'block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5';
 
 // 30-minute time slots in 12-hour format
 const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
@@ -112,7 +115,6 @@ export default function AdminPracticePage() {
       if (snap.exists()) {
         const uid = snap.data().universityId;
         setUniversityId(uid);
-        // Fetch existing problems
         const q2 = query(
           collection(db, 'practice_problems'),
           where('universityId', '==', uid),
@@ -188,7 +190,6 @@ export default function AdminPracticePage() {
     try {
       setStatus({ type: 'info', message: 'Publishing problem...' });
 
-      // Fill in starter code defaults for any empty languages
       const starterCode: Record<string, string> = { ...form.starterCode };
       for (const lang of Object.keys(STARTER_TEMPLATES) as Array<keyof typeof STARTER_TEMPLATES>) {
         if (!starterCode[lang]?.trim()) {
@@ -326,25 +327,52 @@ export default function AdminPracticePage() {
     return <ListSkeleton withStats rows={6} />;
   }
 
+  const now = Date.now();
+  const expiredCount = problems.filter(p => p.visibleUntil && p.visibleUntil.seconds * 1000 < now).length;
+  const activeCount = problems.length - expiredCount;
+
+  // Shared time-slot picker (date + 30-min select + clear) used by AI + manual forms.
+  const VisibleUntilPicker = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+    <div className="flex flex-wrap gap-2 items-center">
+      <input
+        type="date"
+        value={value.split('T')[0] || ''}
+        onChange={e => { const date = e.target.value; const time = value.split('T')[1] || '23:30'; onChange(date ? `${date}T${time}` : ''); }}
+        className="flex-1 min-w-[150px] px-3.5 py-2.5 text-[13px]"
+      />
+      <select
+        value={TIME_OPTIONS.some(o => o.value === value.split('T')[1]) ? value.split('T')[1] : '23:30'}
+        onChange={e => { const date = value.split('T')[0] || ''; onChange(date ? `${date}T${e.target.value}` : ''); }}
+        disabled={!value.split('T')[0]}
+        className="w-36 px-3.5 py-2.5 text-[13px] disabled:opacity-40"
+      >
+        {TIME_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+      </select>
+      {value && (
+        <button type="button" onClick={() => onChange('')} className="text-[11.5px] text-[var(--accent-orange)] font-medium hover:underline whitespace-nowrap">Clear</button>
+      )}
+    </div>
+  );
+
   return (
     <div className="max-w-[1200px] mx-auto animate-fade-in">
       <div className="pt-8 mb-7 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[26px] font-semibold text-[var(--text-primary)] tracking-[-0.025em]">Practice Problems</h1>
           <p className="text-[var(--text-tertiary)] text-[13.5px] mt-1.5">
-            {mode === 'list' ? `${problems.length} problem${problems.length !== 1 ? 's' : ''} published` : mode === 'edit' ? 'Edit practice problem' : 'Create a new practice problem'}
+            {mode === 'list' ? 'Generate or hand-author coding problems for students to practice.' : mode === 'edit' ? 'Edit practice problem' : 'Create a new practice problem'}
           </p>
         </div>
         <button
           onClick={() => { if (mode === 'list') { setMode('create'); setForm(emptyProblem()); setEditingId(null); } else { setMode('list'); } setStatus({ type: '', message: '' }); }}
-          className={mode === 'list' ? 'btn-primary !rounded-[10px] text-[12.5px] !px-3.5 !py-2 flex items-center gap-1.5' : 'btn-secondary !rounded-[10px] text-[12.5px] !px-3.5 !py-2'}
+          className={mode === 'list' ? 'btn-primary text-[12.5px] !px-3.5 !py-2 flex items-center gap-1.5' : 'btn-secondary text-[12.5px] !px-3.5 !py-2'}
         >
           {mode === 'list' ? <><Plus size={13} /> New Problem</> : 'Back to List'}
         </button>
       </div>
 
       {status.message && (
-        <div className={`mb-4 p-3 rounded-[var(--radius)] text-[13px] font-medium border ${
+        <div className={`mb-6 p-3 rounded-[var(--radius)] text-[13px] font-medium border ${
           status.type === 'error' ? 'bg-[var(--status-danger)]/10 text-[var(--status-danger)] border-[var(--status-danger)]/20'
           : status.type === 'success' ? 'bg-[var(--status-success)]/10 text-[var(--status-success)] border-[var(--status-success)]/20'
           : 'bg-[var(--type-event)]/10 text-[var(--type-event)] border-[var(--type-event)]/20'
@@ -362,305 +390,184 @@ export default function AdminPracticePage() {
             <p className="text-[var(--text-faint)] text-[12px] mt-1">Click “New Problem” to create your first one.</p>
           </div>
         ) : (
-          <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
-            {problems.map((p, idx) => {
-              const expired = !!(p.visibleUntil && p.visibleUntil.seconds * 1000 < Date.now());
-              return (
-                <div key={p.id} className="group flex items-center gap-3 px-4 sm:px-5 py-4 border-b border-[var(--border-subtle)] last:border-b-0 hover:bg-[var(--bg-elevated)] transition-colors duration-150">
-                  <span className="text-[12px] font-mono text-[var(--text-faint)] w-5 text-right shrink-0 tabular-nums">{idx + 1}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13.5px] font-semibold text-[var(--text-primary)] tracking-[-0.01em] truncate">{p.title}</p>
-                    <div className="flex items-center gap-x-3 gap-y-0.5 flex-wrap mt-1 text-[11.5px] text-[var(--text-faint)]">
-                      <span className={`text-[10.5px] font-semibold px-2 py-[2px] rounded-full ${DIFFICULTY_COLORS[p.difficulty] || DIFFICULTY_COLORS['Medium']}`}>{p.difficulty}</span>
-                      <span>{p.testCases.length} test case{p.testCases.length !== 1 ? 's' : ''}</span>
-                      <span>fn: <code className="text-[var(--text-secondary)] font-mono">{p.functionName}</code></span>
-                      {p.visibleUntil ? (
-                        <span className={`inline-flex items-center gap-1 text-[10.5px] font-medium px-2 py-[2px] rounded-full ${
-                          expired ? 'bg-[var(--status-danger)]/10 text-[var(--status-danger)]' : 'bg-[var(--status-success)]/10 text-[var(--status-success)]'
-                        }`}>
-                          <CalendarClock size={9} />
-                          {expired ? 'Expired' : `Until ${new Date(p.visibleUntil.seconds * 1000).toLocaleDateString()}`}
-                        </span>
-                      ) : (
-                        <span className="text-[10.5px] font-medium px-2 py-[2px] rounded-full bg-[var(--bg-elevated)] text-[var(--text-faint)]">Always visible</span>
-                      )}
+          <>
+            {/* Overview — slim inline summary */}
+            <StatBar
+              className="mb-6"
+              items={[
+                { label: 'problems', value: problems.length, icon: Code2 },
+                { label: 'active', value: activeCount, icon: CheckCircle2 },
+                { label: 'expired', value: expiredCount, icon: CalendarClock, accent: expiredCount > 0 ? 'text-[var(--status-danger)]' : undefined },
+              ]}
+            />
+
+            <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
+              {problems.map((p, idx) => {
+                const expired = !!(p.visibleUntil && p.visibleUntil.seconds * 1000 < now);
+                return (
+                  <div
+                    key={p.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleEdit(p)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleEdit(p); }}
+                    className="group flex items-center gap-3.5 px-4 sm:px-5 py-4 border-b border-[var(--border-subtle)] last:border-b-0 hover:bg-[var(--bg-elevated)] transition-colors duration-150 cursor-pointer"
+                  >
+                    <span className="w-9 h-9 rounded-[8px] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center shrink-0">
+                      <Code2 size={15} className="text-[var(--text-tertiary)]" />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13.5px] font-semibold text-[var(--text-primary)] tracking-[-0.01em] truncate">{p.title}</p>
+                      <div className="flex items-center gap-x-3 gap-y-0.5 flex-wrap mt-1 text-[11.5px] text-[var(--text-faint)]">
+                        <span className={`text-[10.5px] font-semibold px-2 py-[2px] rounded-full ${DIFFICULTY_COLORS[p.difficulty] || DIFFICULTY_COLORS['Medium']}`}>{p.difficulty}</span>
+                        <span>{p.testCases.length} test case{p.testCases.length !== 1 ? 's' : ''}</span>
+                        <span>fn: <code className="text-[var(--text-secondary)] font-mono">{p.functionName}</code></span>
+                        {p.visibleUntil ? (
+                          <span className={`inline-flex items-center gap-1 text-[10.5px] font-medium ${expired ? 'text-[var(--status-danger)]' : 'text-[var(--status-success)]'}`}>
+                            <CalendarClock size={10} />
+                            {expired ? 'Expired' : `Until ${new Date(p.visibleUntil.seconds * 1000).toLocaleDateString()}`}
+                          </span>
+                        ) : (
+                          <span className="text-[10.5px] text-[var(--text-faint)]">Always visible</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-0.5 shrink-0">
-                    <button onClick={() => handleEdit(p)} className="p-2 rounded-full text-[var(--text-faint)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors" title="Edit problem">
-                      <Pencil size={14} />
-                    </button>
-                    <button onClick={() => handleDelete(p.id)} className="p-2 rounded-full text-[var(--text-faint)] hover:text-[var(--status-danger)] hover:bg-[var(--status-danger)]/10 transition-colors" title="Delete problem">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }}
+                      className="p-2 rounded-full text-[var(--text-faint)] hover:text-[var(--status-danger)] hover:bg-[var(--status-danger)]/10 shrink-0 lg:opacity-0 lg:group-hover:opacity-100 lg:focus:opacity-100 transition"
+                      title="Delete problem"
+                    >
                       <Trash2 size={14} />
                     </button>
+                    <ChevronRight size={15} className="text-[var(--text-faint)] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all shrink-0" />
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </>
         )
       ) : (
-        /* ── Create Mode ── */
-        <div className="space-y-4">
-          {/* Mode Toggle — hide when editing */}
+        /* ── Create / Edit ── */
+        <div className="space-y-5">
+          {/* Mode toggle — hidden when editing */}
           {mode !== 'edit' && (
-          <div className="window p-4">
-            <div className="inline-flex rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-1">
+            <div className="inline-flex rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-1">
               <button
                 onClick={() => setCreateMode('ai')}
-                className={`px-4 py-2 text-[13px] font-semibold rounded-md transition-colors flex items-center gap-1.5 ${
-                  createMode === 'ai' ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]'
+                className={`px-4 py-2 text-[12.5px] font-semibold rounded-[7px] transition-colors flex items-center gap-1.5 ${
+                  createMode === 'ai' ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)]'
                 }`}
               >
                 <Sparkles size={13} /> AI Generate
               </button>
               <button
                 onClick={() => setCreateMode('manual')}
-                className={`px-4 py-2 text-[13px] font-semibold rounded-md transition-colors flex items-center gap-1.5 ${
-                  createMode === 'manual' ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]'
+                className={`px-4 py-2 text-[12.5px] font-semibold rounded-[7px] transition-colors flex items-center gap-1.5 ${
+                  createMode === 'manual' ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)]'
                 }`}
               >
                 <Keyboard size={13} /> Manual Entry
               </button>
             </div>
-          </div>
           )}
 
-          {/* AI Input */}
+          {/* AI input */}
           {createMode === 'ai' && mode !== 'edit' && (
-            <div className="window p-5 space-y-4">
-              {/* Pre-set fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 sm:p-6 space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                 <div>
-                  <label className="text-[11px] font-medium text-[var(--text-secondary)] mb-1 block">Question Name (optional)</label>
-                  <input
-                    value={aiTitle}
-                    onChange={e => setAiTitle(e.target.value)}
-                    placeholder="e.g. Two Sum Challenge"
-                    className="w-full px-3 py-2 text-[13px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--border-active)]"
-                  />
+                  <label className={fieldLabel}>Question Name (optional)</label>
+                  <input value={aiTitle} onChange={e => setAiTitle(e.target.value)} placeholder="e.g. Two Sum Challenge" className={inputClass} />
                 </div>
                 <div>
-                  <label className="text-[11px] font-medium text-[var(--text-secondary)] mb-1 block">Difficulty Level</label>
-                  <select
-                    value={aiDifficulty}
-                    onChange={e => setAiDifficulty(e.target.value)}
-                    className="w-full px-3 py-2 text-[13px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-active)]"
-                  >
-                    <option>Easy</option>
-                    <option>Medium</option>
-                    <option>Hard</option>
+                  <label className={fieldLabel}>Difficulty</label>
+                  <select value={aiDifficulty} onChange={e => setAiDifficulty(e.target.value)} className={inputClass}>
+                    <option>Easy</option><option>Medium</option><option>Hard</option>
                   </select>
                 </div>
               </div>
               <div>
-                <label className="text-[11px] font-medium text-[var(--text-secondary)] mb-1 flex items-center gap-1">
-                  <CalendarClock size={11} /> Visible Until (optional)
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="date"
-                    value={aiVisibleUntil.split('T')[0] || ''}
-                    onChange={e => {
-                      const date = e.target.value;
-                      const time = aiVisibleUntil.split('T')[1] || '23:30';
-                      setAiVisibleUntil(date ? `${date}T${time}` : '');
-                    }}
-                    className="flex-1 px-3 py-2 text-[13px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-active)]"
-                  />
-                  <select
-                    value={TIME_OPTIONS.some(o => o.value === aiVisibleUntil.split('T')[1]) ? aiVisibleUntil.split('T')[1] : '23:30'}
-                    onChange={e => {
-                      const date = aiVisibleUntil.split('T')[0] || '';
-                      setAiVisibleUntil(date ? `${date}T${e.target.value}` : '');
-                    }}
-                    disabled={!aiVisibleUntil.split('T')[0]}
-                    className="w-36 px-3 py-2 text-[13px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-active)] disabled:opacity-40"
-                  >
-                    {TIME_OPTIONS.map(t => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
-                    ))}
-                  </select>
-                  {aiVisibleUntil && (
-                    <button
-                      onClick={() => setAiVisibleUntil('')}
-                      className="text-[11px] text-[var(--accent-orange)] font-medium hover:underline whitespace-nowrap"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-                <p className="text-[10px] text-[var(--text-faint)] mt-0.5">Leave blank for no expiry</p>
+                <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--text-muted)] mb-1.5"><CalendarClock size={11} className="text-[var(--text-faint)]" /> Visible Until (optional)</label>
+                <VisibleUntilPicker value={aiVisibleUntil} onChange={setAiVisibleUntil} />
+                <p className="text-[10.5px] text-[var(--text-faint)] mt-1.5">Leave blank for no expiry.</p>
               </div>
-
               <div>
-                <label className="text-[12px] font-medium text-[var(--text-secondary)] mb-1 block">Topic or Problem Link</label>
+                <label className={fieldLabel}>Topic or Problem Link</label>
                 <div className="flex gap-2">
                   <input
                     value={aiTopic}
                     onChange={e => setAiTopic(e.target.value)}
-                    placeholder="e.g. Two Sum, Binary Search Tree Traversal, or paste a URL..."
-                    className="flex-1 px-3 py-2 text-[13px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--border-active)] transition-colors"
+                    placeholder="e.g. Two Sum, Binary Search Tree Traversal, or paste a URL…"
+                    className={inputClass}
                     onKeyDown={e => e.key === 'Enter' && handleAIGenerate()}
                   />
-                  <button
-                    onClick={handleAIGenerate}
-                    disabled={isGenerating || !aiTopic.trim()}
-                    className="btn-primary text-[12px] px-4 py-2 flex items-center gap-1.5 disabled:opacity-50"
-                  >
-                    <Sparkles size={13} />
-                    {isGenerating ? 'Generating...' : 'Generate'}
+                  <button onClick={handleAIGenerate} disabled={isGenerating || !aiTopic.trim()} className="btn-primary shrink-0 text-[12.5px] !px-4 flex items-center gap-1.5 disabled:opacity-50">
+                    <Sparkles size={13} /> {isGenerating ? 'Generating…' : 'Generate'}
                   </button>
                 </div>
-                <p className="text-[11px] text-[var(--text-faint)] mt-1">
-                  AI will create a full problem with description, starter code, and test cases. You can review and edit before publishing.
-                </p>
+                <p className="text-[10.5px] text-[var(--text-faint)] mt-1.5">AI drafts a full problem with description, starter code and test cases — review and edit before publishing.</p>
               </div>
             </div>
           )}
 
-          {/* Manual / Review Form */}
+          {/* Manual / review form */}
           {(createMode === 'manual' || mode === 'edit') && (
-            <div className="space-y-4">
-              {/* Title, Difficulty, Function Name */}
-              <div className="window p-5 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="space-y-5">
+              {/* Basics */}
+              <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 sm:p-6 space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4">
                   <div>
-                    <label className="text-[11px] font-medium text-[var(--text-secondary)] mb-1 block">Title</label>
-                    <input
-                      value={form.title}
-                      onChange={e => setForm({ ...form, title: e.target.value })}
-                      placeholder="e.g. Two Sum"
-                      className="w-full px-3 py-2 text-[13px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--border-active)]"
-                    />
+                    <label className={fieldLabel}>Title</label>
+                    <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="e.g. Two Sum" className={inputClass} />
                   </div>
                   <div>
-                    <label className="text-[11px] font-medium text-[var(--text-secondary)] mb-1 block">Difficulty</label>
-                    <select
-                      value={form.difficulty}
-                      onChange={e => setForm({ ...form, difficulty: e.target.value })}
-                      className="w-full px-3 py-2 text-[13px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-active)]"
-                    >
-                      <option>Easy</option>
-                      <option>Medium</option>
-                      <option>Hard</option>
+                    <label className={fieldLabel}>Difficulty</label>
+                    <select value={form.difficulty} onChange={e => setForm({ ...form, difficulty: e.target.value })} className={inputClass}>
+                      <option>Easy</option><option>Medium</option><option>Hard</option>
                     </select>
                   </div>
                   <div>
-                    <label className="text-[11px] font-medium text-[var(--text-secondary)] mb-1 block">Function Name</label>
-                    <input
-                      value={form.functionName}
-                      onChange={e => setForm({ ...form, functionName: e.target.value })}
-                      placeholder="e.g. twoSum"
-                      className="w-full px-3 py-2 text-[13px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--border-active)] font-mono"
-                    />
+                    <label className={fieldLabel}>Function Name</label>
+                    <input value={form.functionName} onChange={e => setForm({ ...form, functionName: e.target.value })} placeholder="e.g. twoSum" className={`${inputClass} font-mono`} />
                   </div>
                 </div>
 
-                {/* Visible Until */}
                 <div>
-                  <label className="text-[11px] font-medium text-[var(--text-secondary)] mb-1 flex items-center gap-1">
-                    <CalendarClock size={11} /> Visible Until
-                  </label>
-                  <div className="flex gap-2 items-center">
-                    <input
-                      type="date"
-                      value={form.visibleUntil.split('T')[0] || ''}
-                      onChange={e => {
-                        const date = e.target.value;
-                        const time = form.visibleUntil.split('T')[1] || '23:30';
-                        setForm({ ...form, visibleUntil: date ? `${date}T${time}` : '' });
-                      }}
-                      className="flex-1 px-3 py-2 text-[13px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-active)]"
-                    />
-                    <select
-                      value={TIME_OPTIONS.some(o => o.value === form.visibleUntil.split('T')[1]) ? form.visibleUntil.split('T')[1] : '23:30'}
-                      onChange={e => {
-                        const date = form.visibleUntil.split('T')[0] || '';
-                        setForm({ ...form, visibleUntil: date ? `${date}T${e.target.value}` : '' });
-                      }}
-                      disabled={!form.visibleUntil.split('T')[0]}
-                      className="w-36 px-3 py-2 text-[13px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-active)] disabled:opacity-40"
-                    >
-                      {TIME_OPTIONS.map(t => (
-                        <option key={t.value} value={t.value}>{t.label}</option>
-                      ))}
-                    </select>
-                    {form.visibleUntil && (
-                      <button
-                        onClick={() => setForm({ ...form, visibleUntil: '' })}
-                        className="text-[11px] text-[var(--accent-orange)] font-medium hover:underline whitespace-nowrap"
-                      >
-                        Clear expiry
-                      </button>
-                    )}
-                  </div>
-                  <p className="text-[10px] text-[var(--text-faint)] mt-0.5">
-                    Students will not see this problem after this date/time. Leave blank for no expiry.
-                  </p>
+                  <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--text-muted)] mb-1.5"><CalendarClock size={11} className="text-[var(--text-faint)]" /> Visible Until</label>
+                  <VisibleUntilPicker value={form.visibleUntil} onChange={(v) => setForm({ ...form, visibleUntil: v })} />
+                  <p className="text-[10.5px] text-[var(--text-faint)] mt-1.5">Students will not see this problem after this date/time. Leave blank for no expiry.</p>
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-medium text-[var(--text-secondary)] mb-1 block">Problem Description (HTML supported)</label>
-                  <textarea
-                    value={form.description}
-                    onChange={e => setForm({ ...form, description: e.target.value })}
-                    rows={6}
-                    placeholder="<p>Given an array of integers <code>nums</code> and an integer <code>target</code>...</p>"
-                    className="w-full px-3 py-2 text-[12px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--border-active)] resize-y font-mono"
-                  />
+                  <label className={fieldLabel}>Problem Description (HTML supported)</label>
+                  <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={6} placeholder="<p>Given an array of integers <code>nums</code> and an integer <code>target</code>…</p>" className={`${inputClass} resize-y font-mono`} />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                   <div>
-                    <label className="text-[11px] font-medium text-[var(--text-secondary)] mb-1 block">Input Format</label>
-                    <textarea
-                      value={form.inputFormat}
-                      onChange={e => setForm({ ...form, inputFormat: e.target.value })}
-                      rows={2}
-                      placeholder="First line: array as Python list. Second line: target integer."
-                      className="w-full px-3 py-2 text-[12px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--border-active)] resize-y"
-                    />
+                    <label className={fieldLabel}>Input Format</label>
+                    <textarea value={form.inputFormat} onChange={e => setForm({ ...form, inputFormat: e.target.value })} rows={2} placeholder="First line: array as Python list. Second line: target integer." className={`${inputClass} resize-y`} />
                   </div>
                   <div>
-                    <label className="text-[11px] font-medium text-[var(--text-secondary)] mb-1 block">Output Format</label>
-                    <textarea
-                      value={form.outputFormat}
-                      onChange={e => setForm({ ...form, outputFormat: e.target.value })}
-                      rows={2}
-                      placeholder="Array of two indices."
-                      className="w-full px-3 py-2 text-[12px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--border-active)] resize-y"
-                    />
+                    <label className={fieldLabel}>Output Format</label>
+                    <textarea value={form.outputFormat} onChange={e => setForm({ ...form, outputFormat: e.target.value })} rows={2} placeholder="Array of two indices." className={`${inputClass} resize-y`} />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-medium text-[var(--text-secondary)] mb-1 block">Constraints (one per line)</label>
-                  <textarea
-                    value={form.constraints.join('\n')}
-                    onChange={e => setForm({ ...form, constraints: e.target.value.split('\n') })}
-                    rows={2}
-                    placeholder="1 <= nums.length <= 10^4&#10;-10^9 <= nums[i] <= 10^9"
-                    className="w-full px-3 py-2 text-[12px] rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--border-active)] resize-y font-mono"
-                  />
+                  <label className={fieldLabel}>Constraints (one per line)</label>
+                  <textarea value={form.constraints.join('\n')} onChange={e => setForm({ ...form, constraints: e.target.value.split('\n') })} rows={2} placeholder={"1 <= nums.length <= 10^4\n-10^9 <= nums[i] <= 10^9"} className={`${inputClass} resize-y font-mono`} />
                 </div>
               </div>
 
-              {/* Starter Code */}
-              <div className="window p-5 space-y-3">
-                <h3 className="text-[12px] font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
-                  <Code2 size={13} /> Starter Code
-                </h3>
-                <p className="text-[11px] text-[var(--text-faint)]">
-                  Leave blank to auto-generate a default template from the function name.
-                </p>
+              {/* Starter code */}
+              <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 sm:p-6">
+                <h3 className="flex items-center gap-1.5 text-[13px] font-semibold text-[var(--text-primary)]"><Code2 size={14} className="text-[var(--text-tertiary)]" /> Starter Code</h3>
+                <p className="text-[11.5px] text-[var(--text-faint)] mt-1 mb-3">Leave blank to auto-generate a default template from the function name.</p>
                 <div className="space-y-2">
                   {Object.entries(form.starterCode).map(([lang, code]) => (
-                    <div key={lang} className="border border-[var(--border-subtle)] rounded overflow-hidden">
-                      <button
-                        onClick={() => setExpandedStarter(expandedStarter === lang ? null : lang)}
-                        className="w-full flex items-center justify-between px-3 py-2 bg-[var(--bg-elevated)] hover:bg-[var(--bg-surface)] transition-colors text-[12px] font-medium text-[var(--text-primary)]"
-                      >
+                    <div key={lang} className="border border-[var(--border-subtle)] rounded-[8px] overflow-hidden">
+                      <button onClick={() => setExpandedStarter(expandedStarter === lang ? null : lang)} className="w-full flex items-center justify-between px-3.5 py-2.5 bg-[var(--bg-elevated)] hover:bg-[var(--bg-surface)] transition-colors text-[12.5px] font-medium text-[var(--text-primary)]">
                         <span>{lang}</span>
                         {expandedStarter === lang ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                       </button>
@@ -669,8 +576,8 @@ export default function AdminPracticePage() {
                           value={code}
                           onChange={e => setForm({ ...form, starterCode: { ...form.starterCode, [lang]: e.target.value } })}
                           rows={6}
-                          className="w-full px-3 py-2 text-[11px] bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none resize-y font-mono border-t border-[var(--border-subtle)]"
-                          placeholder={STARTER_TEMPLATES[lang]?.(form.functionName || 'solve') || '// Write starter code...'}
+                          className="w-full px-3.5 py-2.5 text-[11.5px] !rounded-none !border-0 border-t !border-t-[var(--border-subtle)] bg-[var(--bg-primary)] focus:outline-none resize-y font-mono"
+                          placeholder={STARTER_TEMPLATES[lang]?.(form.functionName || 'solve') || '// Write starter code…'}
                         />
                       )}
                     </div>
@@ -678,75 +585,41 @@ export default function AdminPracticePage() {
                 </div>
               </div>
 
-              {/* Test Cases */}
-              <div className="window p-5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-[12px] font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
-                    <CheckCircle2 size={13} /> Test Cases
-                  </h3>
-                  <button
-                    onClick={() => setForm({ ...form, testCases: [...form.testCases, { input: '', expectedOutput: '', isHidden: true }] })}
-                    className="text-[11px] text-[var(--type-event)] font-medium hover:underline flex items-center gap-1"
-                  >
-                    <Plus size={11} /> Add Test Case
+              {/* Test cases */}
+              <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 sm:p-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="flex items-center gap-1.5 text-[13px] font-semibold text-[var(--text-primary)]"><CheckCircle2 size={14} className="text-[var(--text-tertiary)]" /> Test Cases</h3>
+                  <button onClick={() => setForm({ ...form, testCases: [...form.testCases, { input: '', expectedOutput: '', isHidden: true }] })} className="inline-flex items-center gap-1 text-[11.5px] font-medium text-[var(--accent-orange)] hover:underline">
+                    <Plus size={11} /> Add test case
                   </button>
                 </div>
                 <div className="space-y-2">
                   {form.testCases.map((tc, idx) => (
-                    <div key={idx} className="border border-[var(--border-subtle)] rounded p-3 bg-[var(--bg-elevated)]">
+                    <div key={idx} className="border border-[var(--border-subtle)] rounded-[8px] p-3 bg-[var(--bg-elevated)]">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] font-semibold text-[var(--text-faint)]">Case {idx + 1}</span>
                           <button
-                            onClick={() => {
-                              const updated = [...form.testCases];
-                              updated[idx] = { ...updated[idx], isHidden: !updated[idx].isHidden };
-                              setForm({ ...form, testCases: updated });
-                            }}
-                            className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded ${
-                              tc.isHidden ? 'bg-[var(--status-warning)]/10 text-[var(--status-warning)]' : 'bg-[var(--status-success)]/10 text-[var(--status-success)]'
-                            }`}
+                            onClick={() => { const updated = [...form.testCases]; updated[idx] = { ...updated[idx], isHidden: !updated[idx].isHidden }; setForm({ ...form, testCases: updated }); }}
+                            className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${tc.isHidden ? 'bg-[var(--status-warning)]/10 text-[var(--status-warning)]' : 'bg-[var(--status-success)]/10 text-[var(--status-success)]'}`}
                           >
                             {tc.isHidden ? <><EyeOff size={9} /> Hidden</> : <><Eye size={9} /> Visible</>}
                           </button>
                         </div>
                         {form.testCases.length > 1 && (
-                          <button
-                            onClick={() => setForm({ ...form, testCases: form.testCases.filter((_, i) => i !== idx) })}
-                            className="text-[var(--text-faint)] hover:text-[var(--accent-orange)]"
-                          >
+                          <button onClick={() => setForm({ ...form, testCases: form.testCases.filter((_, i) => i !== idx) })} className="p-1 rounded-full text-[var(--text-faint)] hover:text-[var(--status-danger)] hover:bg-[var(--status-danger)]/10 transition-colors">
                             <Trash2 size={12} />
                           </button>
                         )}
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="text-[9px] font-semibold text-[var(--text-faint)] uppercase mb-1 block">Input (stdin)</label>
-                          <textarea
-                            value={tc.input}
-                            onChange={e => {
-                              const updated = [...form.testCases];
-                              updated[idx] = { ...updated[idx], input: e.target.value };
-                              setForm({ ...form, testCases: updated });
-                            }}
-                            rows={2}
-                            placeholder="[2, 7, 11, 15]&#10;9"
-                            className="w-full px-2 py-1.5 text-[11px] rounded border border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-active)] font-mono resize-y"
-                          />
+                          <label className="text-[9px] font-semibold text-[var(--text-faint)] uppercase tracking-[0.07em] mb-1 block">Input (stdin)</label>
+                          <textarea value={tc.input} onChange={e => { const updated = [...form.testCases]; updated[idx] = { ...updated[idx], input: e.target.value }; setForm({ ...form, testCases: updated }); }} rows={2} placeholder={"[2, 7, 11, 15]\n9"} className="w-full px-3 py-2 text-[11.5px] font-mono resize-y" />
                         </div>
                         <div>
-                          <label className="text-[9px] font-semibold text-[var(--text-faint)] uppercase mb-1 block">Expected Output</label>
-                          <textarea
-                            value={tc.expectedOutput}
-                            onChange={e => {
-                              const updated = [...form.testCases];
-                              updated[idx] = { ...updated[idx], expectedOutput: e.target.value };
-                              setForm({ ...form, testCases: updated });
-                            }}
-                            rows={2}
-                            placeholder="[0, 1]"
-                            className="w-full px-2 py-1.5 text-[11px] rounded border border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-active)] font-mono resize-y"
-                          />
+                          <label className="text-[9px] font-semibold text-[var(--text-faint)] uppercase tracking-[0.07em] mb-1 block">Expected Output</label>
+                          <textarea value={tc.expectedOutput} onChange={e => { const updated = [...form.testCases]; updated[idx] = { ...updated[idx], expectedOutput: e.target.value }; setForm({ ...form, testCases: updated }); }} rows={2} placeholder="[0, 1]" className="w-full px-3 py-2 text-[11.5px] font-mono resize-y" />
                         </div>
                       </div>
                     </div>
@@ -754,7 +627,6 @@ export default function AdminPracticePage() {
                 </div>
               </div>
 
-              {/* Publish / Update */}
               <button onClick={mode === 'edit' ? handleUpdate : handlePublish} className="btn-primary w-full flex items-center justify-center gap-2">
                 <BookOpen size={14} /> {mode === 'edit' ? 'Update Problem' : 'Publish Problem'}
               </button>

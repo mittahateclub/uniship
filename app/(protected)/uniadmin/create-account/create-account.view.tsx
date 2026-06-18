@@ -1,7 +1,8 @@
 'use client';
 
 import type { FormEvent } from 'react';
-import { UserPlus, Shield, Mail, Lock } from '@/components/icons';
+import { useState } from 'react';
+import { UserPlus, Shield, Mail, Lock, User, Hash, Phone, Eye, EyeOff } from '@/components/icons';
 
 export interface CreateAccountFormData {
   name: string;
@@ -23,14 +24,16 @@ export interface CreateAccountViewProps {
 }
 
 const FIELDS = [
-  { name: 'name', label: 'Full Name', type: 'text', required: true },
-  { name: 'studentId', label: 'Student ID', type: 'text', required: true },
-  { name: 'email', label: 'Email Address', type: 'email', required: true },
-  { name: 'password', label: 'Temporary Password', type: 'password', required: true },
-  { name: 'phone', label: 'Phone Number', type: 'tel', required: false },
+  { name: 'name', label: 'Full Name', type: 'text', required: true, icon: User, full: false, placeholder: 'Aditya Rao' },
+  { name: 'studentId', label: 'Student ID', type: 'text', required: true, icon: Hash, full: false, placeholder: 'se23uecm001' },
+  { name: 'email', label: 'Email Address', type: 'email', required: true, icon: Mail, full: true, placeholder: 'student@university.edu' },
+  { name: 'password', label: 'Temporary Password', type: 'password', required: true, icon: Lock, full: false, placeholder: 'Set a temporary password' },
+  { name: 'phone', label: 'Phone Number', type: 'tel', required: false, icon: Phone, full: false, placeholder: 'Optional' },
 ] as const;
 
 export function CreateAccountView({ loading, adminUnivId, formData, submitting, error, success, onChange, onSubmit }: CreateAccountViewProps) {
+  const [showPw, setShowPw] = useState(false);
+
   if (loading) return (
     <div className="flex items-center justify-center h-64">
       <div className="loading-dots"><span /><span /><span /></div>
@@ -48,32 +51,65 @@ export function CreateAccountView({ loading, adminUnivId, formData, submitting, 
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-5 items-start">
         {/* ── Form ── */}
-        <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6">
-          {error && (
-            <div className="mb-4 p-3 rounded-[var(--radius)] bg-[var(--status-danger)]/10 text-[var(--status-danger)] border border-[var(--status-danger)]/20 text-[13px] font-medium">{error}</div>
-          )}
-          {success && (
-            <div className="mb-4 p-3 rounded-[var(--radius)] bg-[var(--status-success)]/10 text-[var(--status-success)] border border-[var(--status-success)]/20 text-[13px] font-medium">{success}</div>
-          )}
+        <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
+          <div className="flex items-center gap-2.5 px-6 h-14 border-b border-[var(--border-subtle)]">
+            <span className="w-7 h-7 rounded-[8px] bg-[var(--accent-orange)]/10 text-[var(--accent-orange)] flex items-center justify-center shrink-0">
+              <UserPlus size={14} />
+            </span>
+            <h2 className="text-[14px] font-semibold text-[var(--text-primary)]">Account details</h2>
+          </div>
 
-          <form id="form" onSubmit={onSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {FIELDS.map((f) => (
-                <div key={f.name} className={f.name === 'email' ? 'sm:col-span-2' : ''}>
-                  <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">{f.label} {f.required && <span className="text-[var(--accent-orange)]">*</span>}</label>
-                  <input
-                    type={f.type} name={f.name} required={f.required}
-                    value={formData[f.name as keyof CreateAccountFormData]}
-                    onChange={onChange} disabled={submitting}
-                    className="w-full px-3.5 py-2.5 text-[13px] placeholder:text-[var(--text-faint)] disabled:opacity-50"
-                  />
-                </div>
-              ))}
-            </div>
-            <button type="submit" disabled={submitting || !adminUnivId} className="btn-primary !rounded-[10px] w-full mt-2 inline-flex items-center justify-center gap-2">
-              <UserPlus size={14} /> {submitting ? 'Registering…' : 'Complete Registration'}
-            </button>
-          </form>
+          <div className="p-6">
+            {error && (
+              <div className="mb-4 p-3 rounded-[var(--radius)] bg-[var(--status-danger)]/10 text-[var(--status-danger)] border border-[var(--status-danger)]/20 text-[13px] font-medium">{error}</div>
+            )}
+            {success && (
+              <div className="mb-4 p-3 rounded-[var(--radius)] bg-[var(--status-success)]/10 text-[var(--status-success)] border border-[var(--status-success)]/20 text-[13px] font-medium">{success}</div>
+            )}
+
+            <form id="form" onSubmit={onSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {FIELDS.map((f) => {
+                  const isPw = f.name === 'password';
+                  const Icon = f.icon;
+                  return (
+                    <div key={f.name} className={f.full ? 'sm:col-span-2' : ''}>
+                      <label className="block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5">
+                        {f.label} {f.required && <span className="text-[var(--accent-orange)]">*</span>}
+                      </label>
+                      <div className="relative">
+                        <Icon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)] pointer-events-none" />
+                        <input
+                          type={isPw ? (showPw ? 'text' : 'password') : f.type}
+                          name={f.name}
+                          required={f.required}
+                          placeholder={f.placeholder}
+                          value={formData[f.name]}
+                          onChange={onChange}
+                          disabled={submitting}
+                          className={`w-full pl-9 ${isPw ? 'pr-10' : 'pr-3.5'} py-2.5 text-[13px] placeholder:text-[var(--text-faint)] disabled:opacity-50`}
+                        />
+                        {isPw && (
+                          <button
+                            type="button"
+                            tabIndex={-1}
+                            onClick={() => setShowPw((v) => !v)}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-faint)] hover:text-[var(--text-secondary)] transition-colors"
+                            title={showPw ? 'Hide password' : 'Show password'}
+                          >
+                            {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <button type="submit" disabled={submitting || !adminUnivId} className="btn-primary !rounded-[10px] w-full mt-2 inline-flex items-center justify-center gap-2">
+                <UserPlus size={14} /> {submitting ? 'Registering…' : 'Complete Registration'}
+              </button>
+            </form>
+          </div>
         </div>
 
         {/* ── Info rail ── */}
