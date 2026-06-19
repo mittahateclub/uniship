@@ -11,7 +11,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { claim, closeChat, reopen, type ChatActor } from '@/lib/chat';
 import { toDate } from '@/lib/college';
 import { ChatThread } from '@/components/chat/ChatThread';
-import { MessageCircle, Search, Bell, Clock } from '@/components/icons';
+import MessageCircle from '@/components/icons/MessageCircle';
+import Search from '@/components/icons/Search';
+import Bell from '@/components/icons/Bell';
+import Clock from '@/components/icons/Clock';
 import { StatBar } from '@/components/StatBar';
 
 function timeAgo(d: Date | null): string {

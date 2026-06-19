@@ -5,9 +5,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { app } from '@/lib/firebase';
-import { Camera, User, X, GraduationCap } from '@/components/icons';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { storage } from '@/lib/firebase-storage';
+import Camera from '@/components/icons/Camera';
+import User from '@/components/icons/User';
+import X from '@/components/icons/X';
+import GraduationCap from '@/components/icons/GraduationCap';
 import { ProfileSkeleton } from '@/components/Skeleton';
 
 // Field names match exactly what is stored in Firebase
@@ -178,13 +181,13 @@ function AccordionPanel({
             <span className="hidden sm:inline-flex text-[10px] font-medium bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-faint)] px-2 py-0.5 rounded-full">{hint}</span>
           )}
         </div>
-        <span className={`w-6 h-6 rounded-full grid place-items-center shrink-0 text-[var(--text-faint)] transition-all duration-200 ${isOpen ? 'rotate-180 bg-[var(--bg-surface)] text-[var(--text-secondary)]' : ''}`}>
+        <span className={`w-6 h-6 rounded-full grid place-items-center shrink-0 text-[var(--text-faint)] transition duration-200 ${isOpen ? 'rotate-180 bg-[var(--bg-surface)] text-[var(--text-secondary)]' : ''}`}>
           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
         </span>
       </button>
-      <div className={`grid transition-all duration-200 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+      <div className={`grid transition-[grid-template-rows,opacity] duration-200 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
         <div className="overflow-hidden">
           <div className="px-5 sm:px-6 pb-5 pt-1">{children}</div>
         </div>
@@ -475,7 +478,6 @@ export default function StudentProfile() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    const storage = getStorage(app);
     const storageRef = ref(storage, `profile_pictures/${user.uid}`);
     const uploadTask = uploadBytesResumable(storageRef, file);
 
@@ -612,6 +614,7 @@ export default function StudentProfile() {
               onClick={() => fileInputRef.current?.click()}
             >
               {profile?.photoURL ? (
+                // eslint-disable-next-line @next/next/no-img-element -- uploaded profile photos can use blob URLs or arbitrary storage hosts.
                 <img
                   src={profile.photoURL}
                   alt="Profile"
@@ -624,7 +627,7 @@ export default function StudentProfile() {
               )}
               <div className="absolute inset-0 rounded-full bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <Camera size={20} className="text-white" />
-                <span className="text-white text-[9px] font-semibold uppercase mt-1 tracking-wide">Change</span>
+                <span className="text-white text-[9px] font-semibold uppercase mt-1 tracking-[0.07em]">Change</span>
               </div>
               {uploadProgress !== null && (
                 <div className="absolute inset-0 rounded-full bg-black/70 flex items-center justify-center">
@@ -696,7 +699,7 @@ export default function StudentProfile() {
               <span className="text-[12px] font-semibold tabular-nums text-[var(--text-primary)]">{completeness}%</span>
             </div>
             <div className="h-1.5 rounded-full bg-[var(--bg-elevated)] overflow-hidden">
-              <div className="h-full rounded-full bg-[var(--accent-orange)] transition-all duration-500" style={{ width: `${completeness}%` }} />
+              <div className="h-full rounded-full bg-[var(--accent-orange)] transition-[width] duration-500" style={{ width: `${completeness}%` }} />
             </div>
           </div>
         </div>

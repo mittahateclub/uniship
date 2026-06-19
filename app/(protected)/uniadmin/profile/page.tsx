@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { UniadminProfileView } from './profile.view';
+import { UniadminProfileView, type UniadminProfile } from './profile.view';
 
 export default function UniadminProfilePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [profileData, setProfileData] = useState<any>(null);
+  const [profileData, setProfileData] = useState<UniadminProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({ name: '', phone: '' });
   const [message, setMessage] = useState('');

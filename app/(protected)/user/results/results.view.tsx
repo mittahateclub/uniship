@@ -1,7 +1,14 @@
 'use client';
 
 import { createPortal } from 'react-dom';
-import { Trophy, CalendarDays, BarChart3, X, Eye, TrendingUp, CheckCircle2, Award } from '@/components/icons';
+import Trophy from '@/components/icons/Trophy';
+import CalendarDays from '@/components/icons/CalendarDays';
+import BarChart3 from '@/components/icons/BarChart3';
+import X from '@/components/icons/X';
+import Eye from '@/components/icons/Eye';
+import TrendingUp from '@/components/icons/TrendingUp';
+import CheckCircle2 from '@/components/icons/CheckCircle2';
+import Award from '@/components/icons/Award';
 import { ListSkeleton } from '@/components/Skeleton';
 
 export interface TestResult {
@@ -25,7 +32,7 @@ export interface TestResult {
     failedCase?: number | null;
     usedHiddenCases?: boolean;
   }>;
-  submittedAt: any;
+  submittedAt: unknown;
 }
 
 export interface AnalysisDetails {
@@ -59,6 +66,9 @@ export interface ResultsViewProps {
   getPercentage: (result: TestResult) => number;
   onViewAnalysis: (result: TestResult) => void;
   onCloseAnalysis: () => void;
+  hasMore: boolean;
+  loadingMore: boolean;
+  onLoadMore: () => void;
 }
 
 function pctTone(pct: number) {
@@ -78,6 +88,9 @@ export function ResultsView({
   getPercentage,
   onViewAnalysis,
   onCloseAnalysis,
+  hasMore,
+  loadingMore,
+  onLoadMore,
 }: ResultsViewProps) {
   if (loading) {
     return <ListSkeleton withStats rows={5} />;
@@ -130,7 +143,7 @@ export function ResultsView({
             {results.map((result) => {
               const score = getScore(result);
               const percentage = getPercentage(result).toFixed(1);
-              const date = result.submittedAt?.toDate?.()?.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) || 'N/A';
+              const date = (result.submittedAt as { toDate?: () => Date } | undefined)?.toDate?.()?.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) || 'N/A';
               const pct = Number(percentage);
 
               return (
@@ -178,6 +191,13 @@ export function ResultsView({
                 </div>
               );
             })}
+            {hasMore && (
+              <div className="flex justify-center p-3 border-t border-[var(--border-subtle)]">
+                <button type="button" onClick={onLoadMore} disabled={loadingMore} className="btn-secondary !rounded-[10px] text-[12px] disabled:opacity-50">
+                  {loadingMore ? 'Loading…' : 'Load more results'}
+                </button>
+              </div>
+            )}
           </div>
         </>
       )}

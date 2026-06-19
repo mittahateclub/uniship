@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from '@/components/icons';
+import X from '@/components/icons/X';
 
 type Size = 'sm' | 'md' | 'lg' | 'xl';
 const MAXW: Record<Size, string> = {
@@ -31,6 +31,8 @@ export function Modal({
   children: React.ReactNode;
 }) {
   const [mounted, setMounted] = useState(false);
+  // A client-only portal mount flag is required to avoid server/client body hydration mismatch.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
   useEffect(() => {
     if (!open) return;

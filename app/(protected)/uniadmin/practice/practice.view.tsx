@@ -7,10 +7,19 @@ import {
   addDoc, collection, doc, getDoc, getDocs, query, where, deleteDoc, updateDoc, serverTimestamp,
 } from 'firebase/firestore';
 import { generatePracticeProblem } from '@/app/actions/generate-practice-problem';
-import {
-  Sparkles, Plus, Trash2, ChevronDown, ChevronUp, ChevronRight, Code2, CheckCircle2, BookOpen, Keyboard,
-  Eye, EyeOff, CalendarClock,
-} from '@/components/icons';
+import Sparkles from '@/components/icons/Sparkles';
+import Plus from '@/components/icons/Plus';
+import Trash2 from '@/components/icons/Trash2';
+import ChevronDown from '@/components/icons/ChevronDown';
+import ChevronUp from '@/components/icons/ChevronUp';
+import ChevronRight from '@/components/icons/ChevronRight';
+import Code2 from '@/components/icons/Code2';
+import CheckCircle2 from '@/components/icons/CheckCircle2';
+import BookOpen from '@/components/icons/BookOpen';
+import Keyboard from '@/components/icons/Keyboard';
+import Eye from '@/components/icons/Eye';
+import EyeOff from '@/components/icons/EyeOff';
+import CalendarClock from '@/components/icons/CalendarClock';
 import { ListSkeleton } from '@/components/Skeleton';
 import { StatBar } from '@/components/StatBar';
 
@@ -55,6 +64,37 @@ const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
   const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
   return { value: `${hh}:${m}`, label: `${h12}:${m} ${period}` };
 });
+
+function VisibleUntilPicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-2 items-center">
+      <input
+        type="date"
+        value={value.split('T')[0] || ''}
+        onChange={e => {
+          const date = e.target.value;
+          const time = value.split('T')[1] || '23:30';
+          onChange(date ? `${date}T${time}` : '');
+        }}
+        className="flex-1 min-w-[150px] px-3.5 py-2.5 text-[13px]"
+      />
+      <select
+        value={TIME_OPTIONS.some(option => option.value === value.split('T')[1]) ? value.split('T')[1] : '23:30'}
+        onChange={e => {
+          const date = value.split('T')[0] || '';
+          onChange(date ? `${date}T${e.target.value}` : '');
+        }}
+        disabled={!value.split('T')[0]}
+        className="w-36 px-3.5 py-2.5 text-[13px] disabled:opacity-40"
+      >
+        {TIME_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+      </select>
+      {value && (
+        <button type="button" onClick={() => onChange('')} className="text-[11.5px] text-[var(--accent-orange)] font-medium hover:underline whitespace-nowrap">Clear</button>
+      )}
+    </div>
+  );
+}
 
 const STARTER_TEMPLATES: Record<string, (fn: string) => string> = {
   'Python3': (fn) => `class Solution:\n    def ${fn}(self):\n        pass`,
@@ -107,6 +147,12 @@ export default function AdminPracticePage() {
   // Manual form
   const [form, setForm] = useState(emptyProblem());
   const [expandedStarter, setExpandedStarter] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const clock = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(clock);
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -327,32 +373,8 @@ export default function AdminPracticePage() {
     return <ListSkeleton withStats rows={6} />;
   }
 
-  const now = Date.now();
   const expiredCount = problems.filter(p => p.visibleUntil && p.visibleUntil.seconds * 1000 < now).length;
   const activeCount = problems.length - expiredCount;
-
-  // Shared time-slot picker (date + 30-min select + clear) used by AI + manual forms.
-  const VisibleUntilPicker = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
-    <div className="flex flex-wrap gap-2 items-center">
-      <input
-        type="date"
-        value={value.split('T')[0] || ''}
-        onChange={e => { const date = e.target.value; const time = value.split('T')[1] || '23:30'; onChange(date ? `${date}T${time}` : ''); }}
-        className="flex-1 min-w-[150px] px-3.5 py-2.5 text-[13px]"
-      />
-      <select
-        value={TIME_OPTIONS.some(o => o.value === value.split('T')[1]) ? value.split('T')[1] : '23:30'}
-        onChange={e => { const date = value.split('T')[0] || ''; onChange(date ? `${date}T${e.target.value}` : ''); }}
-        disabled={!value.split('T')[0]}
-        className="w-36 px-3.5 py-2.5 text-[13px] disabled:opacity-40"
-      >
-        {TIME_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-      </select>
-      {value && (
-        <button type="button" onClick={() => onChange('')} className="text-[11.5px] text-[var(--accent-orange)] font-medium hover:underline whitespace-nowrap">Clear</button>
-      )}
-    </div>
-  );
 
   return (
     <div className="max-w-[1200px] mx-auto animate-fade-in">
@@ -402,7 +424,7 @@ export default function AdminPracticePage() {
             />
 
             <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
-              {problems.map((p, idx) => {
+              {problems.map((p) => {
                 const expired = !!(p.visibleUntil && p.visibleUntil.seconds * 1000 < now);
                 return (
                   <div
@@ -439,7 +461,7 @@ export default function AdminPracticePage() {
                     >
                       <Trash2 size={14} />
                     </button>
-                    <ChevronRight size={15} className="text-[var(--text-faint)] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all shrink-0" />
+                    <ChevronRight size={15} className="text-[var(--text-faint)] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition shrink-0" />
                   </div>
                 );
               })}

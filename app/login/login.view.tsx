@@ -1,7 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Mail, Lock, ArrowRight, Eye, EyeOff } from '@/components/icons';
+import Mail from '@/components/icons/Mail';
+import Lock from '@/components/icons/Lock';
+import ArrowRight from '@/components/icons/ArrowRight';
+import Eye from '@/components/icons/Eye';
+import EyeOff from '@/components/icons/EyeOff';
 import Image from 'next/image';
 import Link from 'next/link';
 import ThemeToggle from '@/components/ThemeToggle';

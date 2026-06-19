@@ -1,94 +1,158 @@
-# UniShip: Unified University Placement & Testing Ecosystem
+# UniShip
 
-UniShip is a high-performance management platform designed to streamline the lifecycle of university internships and placement drives. By bridging the gap between students and university administrators, UniShip provides a centralized hub for assessments, proctoring, and career development.
+UniShip is a university placement and testing platform for students,
+university administrators, and super administrators. It combines assessments,
+proctoring, internships, event management, and career tools in one application.
 
----
+## Features
 
-## 🚀 Features
+- **Multi-tier roles:** Dedicated student, university administrator, and super
+  administrator experiences.
+- **Test portal:** Monaco-powered coding assessments with real-time
+  proctoring.
+- **AI analysis:** Test generation and evaluation powered by Groq and
+  LlamaParse.
+- **Resume builder:** Create, tailor, store, and export professional resumes.
+- **Placement management:** Publish events and internships, manage students,
+  and review applications.
 
-* **Multi-Tier Role Management**: Secure, dedicated dashboards for Students, University Admins, and Super Admins.
-* **Integrated Test Portal**: A robust assessment environment featuring a Monaco-powered code editor and real-time proctoring.
-* **AI-Driven Analysis**: Automated evaluation of test results and student performance using Google Gemini and Groq.
-* **Dynamic Resume Builder**: Tools for students to create and export professional resumes directly to PDF.
-* **Event Orchestration**: University admins can manage student databases, create events, and oversee the entire placement cycle.
+## Technology
 
----
+- **Framework:** Next.js 16 with the App Router
+- **Frontend:** React 19, Tailwind CSS 4, and Phosphor Icons
+- **Backend:** Next.js Route Handlers and Server Actions
+- **Database:** Firebase Authentication, Firestore, and Cloud Storage
+- **Artificial intelligence:** Groq SDK and LlamaParse
+- **Development:** TypeScript, ESLint, and Monaco Editor
 
-## 🛠 Tech Stack
+## Local setup
 
-* **Framework**: Next.js 16 (App Router)
-* **Frontend**: React 19, Tailwind CSS 4, Lucide Icons
-* **Database & Auth**: Firebase (Auth, Firestore, Cloud Storage)
-* **Artificial Intelligence**: Google Generative AI (@google/generative-ai), Groq SDK
-* **Development Tools**: TypeScript, ESLint, Monaco Editor
+1. Clone the repository.
 
----
+   ```bash
+   git clone https://github.com/your-username/uniship.git
+   cd uniship
+   ```
 
-## 📦 Installation
+1. Install dependencies.
 
-To get a local copy up and running, follow these steps:
+   Node.js 22 LTS is required. See `.nvmrc`.
 
-1. **Clone the repository**
+   ```bash
+   npm ci
+   ```
+
+1. Create `.env.local` in the project root.
+
+   ```env
+   NEXT_PUBLIC_FIREBASE_API_KEY=your_key
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_domain
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_bucket
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+   FIREBASE_PROJECT_ID=your_project_id
+   FIREBASE_CLIENT_EMAIL=your_service_account_email
+   FIREBASE_PRIVATE_KEY="your_service_account_private_key"
+
+   GROQ_API_KEY=your_groq_key
+   LLAMA_CLOUD_API_KEY=your_llamaparse_key
+   CRON_SECRET=your_random_secret
+   ```
+
+1. Start the development server.
+
+   ```bash
+   npm run dev
+   ```
+
+1. Run all verification checks.
+
+   ```bash
+   npm run ci
+   ```
+
+## Cron worker setup
+
+The test-document processor uses a durable Firestore queue. The browser starts
+new jobs immediately. Vercel Cron also calls `/api/jobs/process-tests` as a
+recovery mechanism for jobs that were queued while the browser disconnected.
+
+`CRON_SECRET` is a private random password used only to prove that the scheduled
+request came from Vercel. Vercel automatically sends it in the request's
+`Authorization` header.
+
+Generate a secret in PowerShell:
+
+```powershell
+$bytes = New-Object byte[] 32
+[Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+[Convert]::ToBase64String($bytes)
+```
+
+Then:
+
+1. Copy the generated value.
+1. Open the project in the Vercel dashboard.
+1. Go to **Settings**, then **Environment Variables**.
+1. Add `CRON_SECRET` with the generated value.
+1. Enable it for **Production**. You may also enable Preview and Development.
+1. Redeploy the project.
+
+For local testing, add the same variable to `.env.local`. Do not put the actual
+secret in this README or commit it to Git.
+
+The schedule is configured in `vercel.json`. The default is once per day at
+03:00 UTC so it works on Vercel Hobby:
+
+```json
+"schedule": "0 3 * * *"
+```
+
+Vercel Hobby only supports daily cron jobs. On Vercel Pro, change the schedule
+to the following if you want recovery checks every minute:
+
+```json
+"schedule": "* * * * *"
+```
+
+## Firebase deployment
+
+The queue, notification summaries, chat pagination, and aggregate queries need
+the repository's current Firestore and Storage rules and indexes.
+
 ```bash
-git clone https://github.com/your-username/uniship.git
-cd uniship
-
+firebase deploy --only firestore:rules,firestore:indexes,storage
 ```
 
-
-2. **Install dependencies**
-
-   Requires **Node 22 LTS** (see `.nvmrc`). With nvm: `nvm use`. With Homebrew: `brew install node@22`.
+## Verification and performance budgets
 
 ```bash
-npm ci
-
+npm run lint
+npm run typecheck
+npm audit
+npm run build
+npm run check:perf
 ```
 
+`npm run ci` runs all of these commands. GitHub Actions runs the same checks on
+pushes and pull requests.
 
-3. **Configure Environment Variables** Create a `.env.local` file in the root directory and add your credentials:
-```env
-NEXT_PUBLIC_FIREBASE_API_KEY=your_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_domain
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_bucket
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_id
+The application also reports Core Web Vitals to
+`/api/metrics/web-vitals`. Production logs contain structured `web_vital`
+events for LCP, INP, CLS, FCP, and TTFB.
 
-```
-
-
-4. **Run Development Server**
-```bash
-npm run dev
-
-```
-
-
-
----
-
-## 💻 Usage
-
-* **As a Student**: Log in to access the Test Portal, build your AI-powered resume, and apply for active internships.
-* **As a University Admin**: Monitor active test sessions via the Proctoring Dashboard and manage the student database.
-* **As a Super Admin**: Manage university registrations and administrative accounts globally.
-
----
-
-## 📂 Project Structure
+## Project structure
 
 ```text
 ├── app/
-│   ├── (protected)/     # Role-based protected routes (user, uniadmin, superadmin)
-│   ├── api/             # API routes for compilation and backend tasks
-│   └── actions/         # Server actions for processing test results
-├── components/          # Reusable UI components (Navbar, ThemeToggle)
-├── contexts/            # Global state management (AuthContext)
-├── lib/                 # Core service initializations (Firebase, Groq)
-└── public/              # Static assets and icons
-
+│   ├── (protected)/     # Role-based application routes
+│   ├── actions/         # Server actions and queue creation
+│   └── api/             # API routes, workers, and metrics
+├── components/          # Shared UI components
+├── contexts/            # Authentication context
+├── lib/                 # Firebase, AI, compiler, and domain utilities
+├── scripts/             # Build and performance checks
+└── public/              # Static assets
 ```
-
-
-

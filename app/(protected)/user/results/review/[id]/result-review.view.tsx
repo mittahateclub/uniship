@@ -1,6 +1,11 @@
 'use client';
 
-import { ArrowLeft, CheckCircle2, XCircle, MinusCircle, Clock, AlertTriangle } from '@/components/icons';
+import ArrowLeft from '@/components/icons/ArrowLeft';
+import CheckCircle2 from '@/components/icons/CheckCircle2';
+import XCircle from '@/components/icons/XCircle';
+import MinusCircle from '@/components/icons/MinusCircle';
+import Clock from '@/components/icons/Clock';
+import AlertTriangle from '@/components/icons/AlertTriangle';
 import { ReviewSkeleton } from '@/components/Skeleton';
 
 export type Verdict = 'AC' | 'WA' | 'TLE' | 'CE' | 'RE' | 'UNGRADED' | 'UNANSWERED';

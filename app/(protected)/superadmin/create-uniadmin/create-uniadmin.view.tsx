@@ -1,7 +1,14 @@
 'use client';
 
 import type { FormEvent } from 'react';
-import { Building2, ChevronDown, Search, CheckCircle, XCircle, ShieldCheck, Mail, Lock } from '@/components/icons';
+import Building2 from '@/components/icons/Building2';
+import ChevronDown from '@/components/icons/ChevronDown';
+import Search from '@/components/icons/Search';
+import CheckCircle from '@/components/icons/CheckCircle';
+import XCircle from '@/components/icons/XCircle';
+import ShieldCheck from '@/components/icons/ShieldCheck';
+import Mail from '@/components/icons/Mail';
+import Lock from '@/components/icons/Lock';
 
 export interface University {
   id: string;

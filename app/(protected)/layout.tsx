@@ -1,22 +1,35 @@
 'use client';
 
 import React from "react";
+import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import ThemeToggle from "@/components/ThemeToggle";
-import SupportChat from "@/components/SupportChat";
-import AdminSupportChat from "@/components/AdminSupportChat";
-import NotificationCenter from "@/components/NotificationCenter";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, Command, Menu } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import Search from '@/components/icons/Search';
+import Menu from '@/components/icons/Menu';
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+
+const SupportChat = dynamic(() => import("@/components/SupportChat"), { ssr: false });
+const AdminSupportChat = dynamic(() => import("@/components/AdminSupportChat"), { ssr: false });
+const NotificationCenter = dynamic(() => import("@/components/NotificationCenter"), { ssr: false });
 
 export default function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  return (
+    <AuthProvider>
+      <ProtectedShell>{children}</ProtectedShell>
+    </AuthProvider>
+  );
+}
+
+function ProtectedShell({ children }: { children: React.ReactNode }) {
   const { user, role, userName, userPhotoURL } = useAuth();
+  const isStudent = !!user && role !== "university_admin" && role !== "super_admin";
+  const isUniversityAdmin = !!user && role === "university_admin";
 
   return (
     <div className="flex h-screen bg-[var(--bg-canvas)] overflow-hidden transition-colors duration-300">
@@ -39,12 +52,12 @@ export default function ProtectedLayout({
               <Search size={14} className="shrink-0 text-[var(--text-faint)]" />
               <span className="flex-1 text-left text-[var(--text-faint)] hidden sm:inline">Search pages, actions...</span>
               <span className="flex-1 text-left text-[var(--text-faint)] sm:hidden text-[12px]">Search...</span>
-              <kbd className="hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-mono text-[var(--text-faint)] shrink-0">
-                <Command size={9} />K
+              <kbd className="hidden sm:flex items-center px-1.5 py-0.5 rounded-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-mono text-[var(--text-faint)] shrink-0">
+                ⌘K
               </kbd>
             </button>
           </div>
-          <NotificationCenter />
+          {isStudent && <NotificationCenter />}
           <ThemeToggle />
           {/* Profile — hidden on mobile to save space */}
           {user && (
@@ -52,12 +65,13 @@ export default function ProtectedLayout({
               <Link
                 href={role === 'super_admin' ? '/superadmin/dashboard' : role === 'university_admin' ? '/uniadmin/profile' : '/user/profile'}
                 className="flex items-center gap-2 hover:opacity-80 transition-opacity duration-150"
-              >
-                {userPhotoURL ? (
-                  <img src={userPhotoURL} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
+                >
+                  {userPhotoURL ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- authenticated profile photos can come from arbitrary user-configured hosts.
+                    <img src={userPhotoURL} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
                 ) : (
-                  <div className="w-7 h-7 bg-[#00A8E1] rounded-full flex items-center justify-center shrink-0">
-                    <span className="text-[11px] font-semibold text-white">{(userName || user.email)?.[0]?.toUpperCase()}</span>
+                  <div className="w-7 h-7 bg-[var(--accent-orange)] rounded-full flex items-center justify-center shrink-0">
+                    <span className="text-[11px] font-semibold text-[var(--accent-ink)]">{(userName || user.email)?.[0]?.toUpperCase()}</span>
                   </div>
                 )}
                 <div className="min-w-0 hidden lg:block">
@@ -82,8 +96,8 @@ export default function ProtectedLayout({
           </main>
         </div>
       </div>
-      <SupportChat />
-      <AdminSupportChat />
+      {isStudent && <SupportChat />}
+      {isUniversityAdmin && <AdminSupportChat />}
     </div>
   );
 }

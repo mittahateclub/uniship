@@ -3,6 +3,24 @@
 import { groq } from "@/lib/groq";
 import { generateHiddenTestCases } from "@/app/actions/generate-hidden-test-cases";
 
+const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024;
+const MAX_BACKGROUND_CONCURRENCY = 2;
+
+async function forEachWithConcurrency<T>(
+  items: T[],
+  concurrency: number,
+  task: (item: T) => Promise<void>,
+): Promise<void> {
+  let nextIndex = 0;
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (nextIndex < items.length) {
+      const item = items[nextIndex++];
+      await task(item);
+    }
+  });
+  await Promise.all(workers);
+}
+
 // ── System prompt for test CREATION (single PDF → structured questions + answers JSON) ──
 const SYSTEM_PROMPT = `You are a document-to-JSON extraction agent. Your ONLY job is to faithfully transcribe an exam paper into structured JSON — do NOT invent answers or use your own knowledge.
 
@@ -177,11 +195,18 @@ RULES
 
 // ── Shared helper: extract text from PDF or DOCX via LlamaParse ──
 async function extractTextFromFile(file: File): Promise<string> {
+  if (file.size > MAX_DOCUMENT_BYTES) {
+    throw new Error(`Document exceeds the ${MAX_DOCUMENT_BYTES / 1024 / 1024} MB upload limit.`);
+  }
+  const ext = file.name.split('.').pop()?.toLowerCase();
+  if (ext !== 'pdf' && ext !== 'docx') {
+    throw new Error('Only PDF and DOCX documents are supported.');
+  }
+
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
   // Detect MIME type from extension
-  const ext = file.name.split('.').pop()?.toLowerCase();
   const mimeType = ext === 'docx'
     ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     : 'application/pdf';
@@ -198,6 +223,7 @@ async function extractTextFromFile(file: File): Promise<string> {
       'Accept': 'application/json',
     },
     body: uploadFormData,
+    signal: AbortSignal.timeout(30_000),
   });
 
   if (!parseResponse.ok) {
@@ -219,6 +245,7 @@ async function extractTextFromFile(file: File): Promise<string> {
         'Authorization': `Bearer ${process.env.LLAMA_CLOUD_API_KEY}`,
         'Accept': 'application/json',
       },
+      signal: AbortSignal.timeout(10_000),
     });
 
     if (!statusRes.ok) continue;
@@ -233,6 +260,7 @@ async function extractTextFromFile(file: File): Promise<string> {
             'Authorization': `Bearer ${process.env.LLAMA_CLOUD_API_KEY}`,
             'Accept': 'application/json',
           },
+          signal: AbortSignal.timeout(20_000),
         }
       );
       if (resultRes.ok) {
@@ -247,11 +275,8 @@ async function extractTextFromFile(file: File): Promise<string> {
   throw new Error('LlamaParse timeout: document processing took too long.');
 }
 
-export async function processTestDocument(formData: FormData) {
+export async function processTestFile(file: File) {
   try {
-    const file = formData.get("file") as File;
-    if (!file) throw new Error("No file uploaded");
-
     console.log('Starting document processing for:', file.name);
 
     // Extract text from the single combined PDF (questions + answers + explanations)
@@ -292,7 +317,16 @@ export async function processTestDocument(formData: FormData) {
     console.log('Parsed data structure:', JSON.stringify(parsedData, null, 2).slice(0, 500));
 
     // 6. Validate the parsed data
-    const sections: any[] = parsedData.sections && Array.isArray(parsedData.sections) ? parsedData.sections : [];
+    interface ParsedTestCase { input?: string; output?: string }
+    interface ParsedQuestion {
+      title?: string; questionDescription?: string; constraints?: string[];
+      inputFormat?: string; outputFormat?: string; options?: string[];
+      correctAnswer?: string | null;
+      sampleTestCases?: ParsedTestCase[]; hiddenTestCases?: ParsedTestCase[];
+      [k: string]: unknown;
+    }
+    interface ParsedSection { type?: string; title?: string; questions?: ParsedQuestion[] }
+    const sections: ParsedSection[] = parsedData.sections && Array.isArray(parsedData.sections) ? parsedData.sections : [];
 
     if (sections.length === 0) {
       throw new Error('No sections were extracted from the document');
@@ -314,7 +348,7 @@ export async function processTestDocument(formData: FormData) {
       const section = sections[si];
       if (section.type !== 'mcq') continue;
       const broken = (section.questions || []).filter(
-        (q: any) => !q.options || q.options.length < 4
+        (q: ParsedQuestion) => !q.options || q.options.length < 4
       );
       if (broken.length > 0) {
         console.warn(`Section ${si} ("${section.title}") has ${broken.length} questions with missing options — retrying`);
@@ -323,44 +357,41 @@ export async function processTestDocument(formData: FormData) {
     }
 
     if (sectionsNeedingRetry.length > 0) {
-      // Re-run just the broken sections in parallel, each with its own focused prompt
-      const retryPromises = sectionsNeedingRetry.map(async (si) => {
-        const section = sections[si];
-        // Find the text for this section by searching in the extracted document
-        const sectionTitle = section.title || '';
-        const sectionStart = safeQuestionsText.indexOf(sectionTitle.replace(/section\s*/i, '').trim());
-        const sectionText = sectionStart >= 0
-          ? safeQuestionsText.slice(sectionStart, sectionStart + 8000)
-          : safeQuestionsText.slice(0, 8000);
-
-        const retryCompletion = await groq.chat.completions.create({
-          messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: `Extract ONLY this section. Include ALL options for every question:\n\n${sectionText}` },
-          ],
-          model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-          response_format: { type: 'json_object' },
-          temperature: 0,
-          max_tokens: 4000,
-        });
+      // Re-run broken sections with bounded concurrency to avoid provider bursts.
+      await forEachWithConcurrency(sectionsNeedingRetry, MAX_BACKGROUND_CONCURRENCY, async (si) => {
         try {
+          const section = sections[si];
+          const sectionTitle = section.title || '';
+          const sectionStart = safeQuestionsText.indexOf(sectionTitle.replace(/section\s*/i, '').trim());
+          const sectionText = sectionStart >= 0
+            ? safeQuestionsText.slice(sectionStart, sectionStart + 8000)
+            : safeQuestionsText.slice(0, 8000);
+          const retryCompletion = await groq.chat.completions.create({
+            messages: [
+              { role: 'system', content: SYSTEM_PROMPT },
+              { role: 'user', content: `Extract ONLY this section. Include ALL options for every question:\n\n${sectionText}` },
+            ],
+            model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+            response_format: { type: 'json_object' },
+            temperature: 0,
+            max_tokens: 4000,
+          });
           const retryData = JSON.parse(retryCompletion.choices[0]?.message?.content || '{}');
-          const retrySections: any[] = retryData.sections || [];
+          const retrySections: ParsedSection[] = retryData.sections || [];
           // Find the matching section in the retry result (by index or title)
-          const match = retrySections.find((s: any) =>
+          const match = retrySections.find((s: ParsedSection) =>
             s.title === section.title || s.type === section.type
           ) || retrySections[0];
           if (match && (match.questions || []).length > 0) {
             sections[si].questions = match.questions;
-            console.log(`Retry for section ${si} succeeded: ${match.questions.length} questions`);
+            console.log(`Retry for section ${si} succeeded: ${match.questions?.length ?? 0} questions`);
           }
         } catch (e) {
           console.warn(`Retry parse failed for section ${si}:`, e);
         }
       });
-      await Promise.all(retryPromises);
       // Recount after retries
-      totalQuestionCount = sections.reduce((sum: number, s: any) => sum + (s.questions || []).length, 0);
+      totalQuestionCount = sections.reduce((sum: number, s: ParsedSection) => sum + (s.questions || []).length, 0);
     }
 
     // Normalize correctAnswer values: strip prefixes like "(C)" → "C", uppercase, keep letter only.
@@ -374,12 +405,12 @@ export async function processTestDocument(formData: FormData) {
     }
 
     // ── Generate test cases for coding questions that have empty sampleTestCases ──
-    const codingQsNeedingTestCases: Array<{ section: any; q: any }> = [];
+    const codingQsNeedingTestCases: Array<{ section: ParsedSection; q: ParsedQuestion }> = [];
     for (const section of sections) {
       if (section.type !== 'coding') continue;
       for (const q of section.questions || []) {
-        const samples: any[] = q.sampleTestCases || [];
-        const hasRealSamples = samples.some((tc: any) => tc.input?.trim() || tc.output?.trim());
+        const samples: ParsedTestCase[] = q.sampleTestCases || [];
+        const hasRealSamples = samples.some((tc: ParsedTestCase) => tc.input?.trim() || tc.output?.trim());
         if (!hasRealSamples) {
           codingQsNeedingTestCases.push({ section, q });
         }
@@ -388,8 +419,10 @@ export async function processTestDocument(formData: FormData) {
 
     if (codingQsNeedingTestCases.length > 0) {
       console.log(`Generating test cases for ${codingQsNeedingTestCases.length} coding question(s)...`);
-      await Promise.allSettled(
-        codingQsNeedingTestCases.map(async ({ q }) => {
+      await forEachWithConcurrency(
+        codingQsNeedingTestCases,
+        MAX_BACKGROUND_CONCURRENCY,
+        async ({ q }) => {
           try {
             // Build a rich context string matching what practice questions pass
             const parts: string[] = [];
@@ -404,13 +437,13 @@ export async function processTestDocument(formData: FormData) {
 
             // Existing PDF sample cases (if any) to anchor the reference solution
             const existingSamples = (q.sampleTestCases || []).filter(
-              (tc: any) => tc.input?.trim() || tc.output?.trim()
+              (tc: ParsedTestCase) => tc.input?.trim() || tc.output?.trim()
             );
 
             const result = await generateHiddenTestCases(
               richQuestionText,
               5, // 1 sample + 4 hidden
-              existingSamples.length > 0 ? existingSamples : undefined,
+              existingSamples.length > 0 ? existingSamples.map((tc) => ({ input: tc.input ?? '', output: tc.output ?? '' })) : undefined,
             );
             if (result.success && result.cases && result.cases.length > 0) {
               q.sampleTestCases = [result.cases[0]];
@@ -420,12 +453,12 @@ export async function processTestDocument(formData: FormData) {
           } catch (e) {
             console.warn(`Failed to generate test cases for coding question:`, e);
           }
-        })
+        },
       );
     }
 
     // Build legacy problems array from coding sections for backward compatibility
-    const codingProblems: any[] = [];
+    const codingProblems: ParsedQuestion[] = [];
     for (const section of sections) {
       if (section.type === 'coding') {
         for (const q of section.questions || []) {
@@ -447,13 +480,19 @@ export async function processTestDocument(formData: FormData) {
       totalQuestionCount,
       sourceFileName: file.name,
     };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Test Pipeline Error:", error);
-    return { 
-      success: false, 
-      error: error.message || 'An unknown error occurred' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'An unknown error occurred'
     };
   }
+}
+
+export async function processTestDocument(formData: FormData) {
+  const file = formData.get('file');
+  if (!(file instanceof File)) return { success: false, error: 'No file uploaded' };
+  return processTestFile(file);
 }
 
 // ── Evaluate exam: questions doc + answers doc → graded result JSON ──
@@ -510,11 +549,11 @@ export async function evaluateExam(formData: FormData) {
       questionsFileName: questionsFile.name,
       answersFileName: answersFile.name,
     };
-  } catch (error: any) {
+  } catch (error) {
     console.error('Evaluation Pipeline Error:', error);
     return {
       success: false,
-      error: error.message || 'An unknown error occurred during evaluation.',
+      error: error instanceof Error ? error.message : 'An unknown error occurred during evaluation.',
     };
   }
 }

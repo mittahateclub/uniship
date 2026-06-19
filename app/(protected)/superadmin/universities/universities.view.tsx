@@ -1,6 +1,13 @@
 'use client';
 
-import { Building2, Plus, Search, CheckCircle, XCircle, Trash2, Shield, Users } from '@/components/icons';
+import Building2 from '@/components/icons/Building2';
+import Plus from '@/components/icons/Plus';
+import Search from '@/components/icons/Search';
+import CheckCircle from '@/components/icons/CheckCircle';
+import XCircle from '@/components/icons/XCircle';
+import Trash2 from '@/components/icons/Trash2';
+import Shield from '@/components/icons/Shield';
+import Users from '@/components/icons/Users';
 import { StatBar } from '@/components/StatBar';
 import { Modal, ModalHeader, ModalBody } from '@/components/Modal';
 
@@ -10,7 +17,7 @@ export interface University {
   code: string;
   domain: string;
   verified: boolean;
-  createdAt: any;
+  createdAt: unknown;
   adminCount?: number;
   studentCount?: number;
 }

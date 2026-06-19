@@ -4,7 +4,9 @@
 // fields used by the test upload form (create-test) and the per-test
 // management subpage (tests/review/[id]). Kept here so both stay in sync.
 
-import { Clock, Calendar, ChevronLeft, ChevronRight } from '@/components/icons';
+import Clock from '@/components/icons/Clock';
+import ChevronLeft from '@/components/icons/ChevronLeft';
+import ChevronRight from '@/components/icons/ChevronRight';
 
 export const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 export type AmPm = 'AM' | 'PM';

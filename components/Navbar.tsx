@@ -5,43 +5,41 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import {
-  LayoutDashboard,
-  FileText,
-  Briefcase,
-  ClipboardCheck,
-  BarChart3,
-  Calendar,
-  User,
-  Users,
-  LogOut,
-  Search,
-  Download,
-  GraduationCap,
-  Database,
-  CalendarPlus,
-  ShieldCheck,
-  UserPlus,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Award,
-  FolderKanban,
-  Trophy,
-  Star,
-  Globe,
-  Camera,
-  Code,
-  MapPin,
-  Clock,
-  Building2,
-  Hash,
-  Mail,
-  Lock,
-  Upload,
-  Sparkles,
-  X,
-  MessageCircle,
-} from '@/components/icons';
+import LayoutDashboard from '@/components/icons/LayoutDashboard';
+import FileText from '@/components/icons/FileText';
+import Briefcase from '@/components/icons/Briefcase';
+import ClipboardCheck from '@/components/icons/ClipboardCheck';
+import BarChart3 from '@/components/icons/BarChart3';
+import Calendar from '@/components/icons/Calendar';
+import User from '@/components/icons/User';
+import Users from '@/components/icons/Users';
+import LogOut from '@/components/icons/LogOut';
+import Search from '@/components/icons/Search';
+import Download from '@/components/icons/Download';
+import GraduationCap from '@/components/icons/GraduationCap';
+import Database from '@/components/icons/Database';
+import CalendarPlus from '@/components/icons/CalendarPlus';
+import ShieldCheck from '@/components/icons/ShieldCheck';
+import UserPlus from '@/components/icons/UserPlus';
+import PanelLeftClose from '@/components/icons/PanelLeftClose';
+import PanelLeftOpen from '@/components/icons/PanelLeftOpen';
+import Award from '@/components/icons/Award';
+import FolderKanban from '@/components/icons/FolderKanban';
+import Trophy from '@/components/icons/Trophy';
+import Star from '@/components/icons/Star';
+import Globe from '@/components/icons/Globe';
+import Camera from '@/components/icons/Camera';
+import Code from '@/components/icons/Code';
+import MapPin from '@/components/icons/MapPin';
+import Clock from '@/components/icons/Clock';
+import Building2 from '@/components/icons/Building2';
+import Hash from '@/components/icons/Hash';
+import Mail from '@/components/icons/Mail';
+import Lock from '@/components/icons/Lock';
+import Upload from '@/components/icons/Upload';
+import Sparkles from '@/components/icons/Sparkles';
+import X from '@/components/icons/X';
+import MessageCircle from '@/components/icons/MessageCircle';
 
 interface NavLink {
   href: string;
@@ -279,8 +277,8 @@ export default function Navbar() {
         const el = document.getElementById(hash);
         if (el) {
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          el.classList.add('ring-2', 'ring-[#00A8E1]/40', 'rounded');
-          setTimeout(() => el.classList.remove('ring-2', 'ring-[#00A8E1]/40', 'rounded'), 2000);
+          el.classList.add('ring-2', 'ring-[var(--accent-orange)]/40', 'rounded-[8px]');
+          setTimeout(() => el.classList.remove('ring-2', 'ring-[var(--accent-orange)]/40', 'rounded-[8px]'), 2000);
         }
       } else {
         router.push(path);
@@ -289,8 +287,8 @@ export default function Navbar() {
           const el = document.getElementById(hash);
           if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            el.classList.add('ring-2', 'ring-[#00A8E1]/40', 'rounded');
-            setTimeout(() => el.classList.remove('ring-2', 'ring-[#00A8E1]/40', 'rounded'), 2000);
+            el.classList.add('ring-2', 'ring-[var(--accent-orange)]/40', 'rounded-[8px]');
+            setTimeout(() => el.classList.remove('ring-2', 'ring-[var(--accent-orange)]/40', 'rounded-[8px]'), 2000);
           }
         };
         // Retry a few times since the page content may load async
@@ -367,13 +365,13 @@ export default function Navbar() {
   return (
     <>
       {/* ═══ Desktop Sidebar (hidden on mobile) ═══ */}
-      <aside className={`hidden md:flex h-screen bg-transparent flex-col transition-all duration-200 ease-out shrink-0 sticky top-0 ${collapsed ? 'w-[72px]' : 'w-[240px]'}`}>
+      <aside className={`hidden md:flex h-screen bg-transparent flex-col transition-[width] duration-200 ease-out shrink-0 sticky top-0 ${collapsed ? 'w-[72px]' : 'w-[240px]'}`}>
         {/* Logo + collapse control */}
         <div className={`h-14 flex items-center shrink-0 ${collapsed ? 'justify-center' : 'justify-between pr-2'}`}>
           {!collapsed && (
             <Link
               href="/"
-              className="flex items-center gap-1 overflow-hidden rounded-md transition-colors duration-150 ml-2 px-2 py-1.5 min-w-0"
+              className="flex items-center gap-1 overflow-hidden rounded-[8px] transition-colors duration-150 ml-2 px-2 py-1.5 min-w-0"
             >
               <Image src="/logo.png" alt="Uniship" width={64} height={64} priority className="shrink-0 object-contain" />
               <span className="text-[15px] font-bold tracking-[0.12em] text-[var(--text-primary)] whitespace-nowrap self-center leading-none pt-[0.3em]">UNISHIP</span>
@@ -418,7 +416,7 @@ export default function Navbar() {
                 <Image src="/logo.png" alt="Uniship" width={76} height={76} priority className="shrink-0 object-contain" />
                 <span className="text-[17px] font-bold tracking-[0.14em] text-[var(--text-primary)] whitespace-nowrap self-center leading-none pt-[0.35em]">UNISHIP</span>
               </Link>
-              <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors">
+              <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded-[8px] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors">
                 <X size={18} />
               </button>
             </div>
@@ -432,7 +430,7 @@ export default function Navbar() {
             <div className="border-t border-[var(--border-subtle)] px-2 py-2 shrink-0">
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2.5 rounded text-[13px] font-medium transition-all duration-150 w-full text-[var(--text-tertiary)] hover:text-[#DC2626] hover:bg-[#DC2626]/10 border border-transparent px-2.5 py-[7px]"
+                className="flex items-center gap-2.5 rounded-[8px] text-[13px] font-medium transition-colors duration-150 w-full text-[var(--text-tertiary)] hover:text-[var(--status-danger)] hover:bg-[var(--status-danger)]/10 border border-transparent px-2.5 py-[7px]"
               >
                 <LogOut size={16} className="shrink-0" />
                 <span>Logout</span>

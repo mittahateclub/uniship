@@ -2,7 +2,15 @@
 
 import type { FormEvent } from 'react';
 import { useState } from 'react';
-import { UserPlus, Shield, Mail, Lock, User, Hash, Phone, Eye, EyeOff } from '@/components/icons';
+import UserPlus from '@/components/icons/UserPlus';
+import Shield from '@/components/icons/Shield';
+import Mail from '@/components/icons/Mail';
+import Lock from '@/components/icons/Lock';
+import User from '@/components/icons/User';
+import Hash from '@/components/icons/Hash';
+import Phone from '@/components/icons/Phone';
+import Eye from '@/components/icons/Eye';
+import EyeOff from '@/components/icons/EyeOff';
 
 export interface CreateAccountFormData {
   name: string;

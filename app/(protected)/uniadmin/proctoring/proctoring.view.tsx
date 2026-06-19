@@ -4,15 +4,26 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import {
-  doc, getDoc, collection, query, where, onSnapshot, addDoc, serverTimestamp, orderBy, updateDoc, getDocs, limit,
+  doc, getDoc, collection, query, where, onSnapshot, addDoc, serverTimestamp, orderBy, updateDoc, getDocs, limit, documentId,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import {
-  Shield, Eye, Clock, AlertTriangle, MessageCircle, Send,
-  Monitor, CheckCircle2, RefreshCw,
-  MonitorPlay, ShieldCheck, RotateCcw, Calendar, LogIn, X,
-  Flag, Bell,
-} from '@/components/icons';
+import Shield from '@/components/icons/Shield';
+import Eye from '@/components/icons/Eye';
+import Clock from '@/components/icons/Clock';
+import AlertTriangle from '@/components/icons/AlertTriangle';
+import MessageCircle from '@/components/icons/MessageCircle';
+import Send from '@/components/icons/Send';
+import Monitor from '@/components/icons/Monitor';
+import CheckCircle2 from '@/components/icons/CheckCircle2';
+import RefreshCw from '@/components/icons/RefreshCw';
+import MonitorPlay from '@/components/icons/MonitorPlay';
+import ShieldCheck from '@/components/icons/ShieldCheck';
+import RotateCcw from '@/components/icons/RotateCcw';
+import Calendar from '@/components/icons/Calendar';
+import LogIn from '@/components/icons/LogIn';
+import X from '@/components/icons/X';
+import Flag from '@/components/icons/Flag';
+import Bell from '@/components/icons/Bell';
 import { ListSkeleton } from '@/components/Skeleton';
 import { StatBar } from '@/components/StatBar';
 import { Modal, ModalHeader, ModalBody } from '@/components/Modal';
@@ -30,6 +41,9 @@ interface ExamSession {
   isAttempting?: boolean;
   browser?: string;
   screenRes?: string;
+  lastMessageAt?: unknown;
+  lastMessageSender?: 'student' | 'proctor';
+  lastMessageText?: string;
 }
 
 interface ChatMessage {
@@ -78,8 +92,6 @@ interface UpcomingTest {
 }
 
 const ACTIVE_HEARTBEAT_WINDOW_MS = 45000;
-const VIOLATION_SUBMIT_REASONS = new Set(['max_violations', 'session_frozen', 'tab_away', 'esc_pressed']);
-
 const toMillis = (value: unknown): number => {
   if (!value) return 0;
   if (typeof value === 'object' && value !== null) {
@@ -90,8 +102,6 @@ const toMillis = (value: unknown): number => {
   const parsed = new Date(value as string | number | Date).getTime();
   return Number.isFinite(parsed) ? parsed : 0;
 };
-
-const isViolationSubmitReason = (reason?: string) => Boolean(reason && VIOLATION_SUBMIT_REASONS.has(reason));
 
 const getSubmitReasonLabel = (reason?: string): string => {
   switch (reason) {
@@ -145,11 +155,11 @@ export default function ProctorDashboard() {
   const [unreadSessions, setUnreadSessions] = useState<Set<string>>(new Set());
   const [chatNotification, setChatNotification] = useState<{ sessionId: string; email: string; message: string } | null>(null);
   const [actionPopup, setActionPopup] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [sessionLastMessage, setSessionLastMessage] = useState<Record<string, number>>({});
-  const [nowMs, setNowMs] = useState(0);
+  const [activityNow, setActivityNow] = useState(() => Date.now());
   const chatEndRef = useRef<HTMLDivElement>(null);
   const notificationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const actionPopupTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastObservedMessageRef = useRef<Record<string, number>>({});
+  const selectedSessionIdRef = useRef<string | null>(null);
   const isProctoringMode = Boolean(activeTestId);
   const activeSelectedSession = useMemo(() => {
     if (!selectedSession || !activeTestId) return null;
@@ -158,6 +168,10 @@ export default function ProctorDashboard() {
     if (activeTestId && session.testId !== activeTestId) return null;
     return session;
   }, [selectedSession, sessions, activeTestId]);
+
+  useEffect(() => {
+    selectedSessionIdRef.current = activeSelectedSession?.id ?? null;
+  }, [activeSelectedSession]);
 
   // Get admin's universityId
   useEffect(() => {
@@ -178,10 +192,29 @@ export default function ProctorDashboard() {
       collection(db, 'exam_sessions'),
       where('universityId', '==', universityId),
       where('status', '==', 'active'),
+      limit(200),
     );
     const unsub = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ExamSession));
+      for (const session of data) {
+        const messageAt = toMillis(session.lastMessageAt);
+        if (!messageAt) continue;
+        const previous = lastObservedMessageRef.current[session.id];
+        lastObservedMessageRef.current[session.id] = messageAt;
+        if (previous === undefined || messageAt <= previous || session.lastMessageSender !== 'student') continue;
+        if (selectedSessionIdRef.current !== session.id) {
+          setUnreadSessions(prev => new Set(prev).add(session.id));
+          if (notificationTimeoutRef.current) clearTimeout(notificationTimeoutRef.current);
+          setChatNotification({
+            sessionId: session.id,
+            email: session.userEmail,
+            message: session.lastMessageText || 'New message',
+          });
+          notificationTimeoutRef.current = setTimeout(() => setChatNotification(null), 5000);
+        }
+      }
       setSessions(data);
+      setActivityNow(Date.now());
     });
     return () => unsub();
   }, [universityId]);
@@ -213,13 +246,15 @@ export default function ProctorDashboard() {
 
       void (async () => {
         const infoMap: Record<string, StudentInfo> = {};
-        await Promise.all(flaggedUserIds.map(async (uid) => {
+        const chunks: string[][] = [];
+        for (let i = 0; i < flaggedUserIds.length; i += 30) chunks.push(flaggedUserIds.slice(i, i + 30));
+        await Promise.all(chunks.map(async (ids) => {
           try {
-            const userDoc = await getDoc(doc(db, 'users', uid));
-            if (userDoc.exists()) {
+            const usersSnap = await getDocs(query(collection(db, 'users'), where(documentId(), 'in', ids)));
+            usersSnap.forEach((userDoc) => {
               const data = userDoc.data();
-              infoMap[uid] = { name: data.name || data.displayName, rollNumber: data.rollNumber, email: data.email };
-            }
+              infoMap[userDoc.id] = { name: data.name || data.displayName, rollNumber: data.rollNumber, email: data.email };
+            });
           } catch { /* skip */ }
         }));
         setStudentInfoMap(infoMap);
@@ -236,6 +271,7 @@ export default function ProctorDashboard() {
         const q = query(
           collection(db, 'tests'),
           where('universityId', '==', universityId),
+          limit(100),
         );
         const snap = await getDocs(q);
         const now = new Date();
@@ -260,82 +296,26 @@ export default function ProctorDashboard() {
     if (!activeSelectedSession) return;
     const q = query(
       collection(db, 'exam_sessions', activeSelectedSession.id, 'messages'),
-      orderBy('timestamp', 'asc'),
+      orderBy('timestamp', 'desc'),
+      limit(200),
     );
     const unsub = onSnapshot(q, (snapshot) => {
-      setChatMessages(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ChatMessage)));
+      setChatMessages(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ChatMessage)).reverse());
     });
     return () => unsub();
   }, [activeSelectedSession]);
 
-  // Listen for new student messages across ALL active sessions (for notifications)
   useEffect(() => {
-    if (sessions.length === 0) return;
     const now = Date.now();
-    const activeSessions = sessions.filter((session) => {
-      if (session.status !== 'active') return false;
-      if (session.isAttempting === false) return false;
-      const lastActivity = Math.max(toMillis(session.lastHeartbeat), toMillis(session.startedAt));
-      if (!lastActivity) return false;
-      return (now - lastActivity) <= ACTIVE_HEARTBEAT_WINDOW_MS;
-    });
-    const byUser = new Map<string, ExamSession>();
-    activeSessions.forEach((session) => {
-      const key = session.userId || session.userEmail || session.id;
-      const current = byUser.get(key);
-      if (!current) {
-        byUser.set(key, session);
-        return;
-      }
-      const currentActivity = Math.max(toMillis(current.lastHeartbeat), toMillis(current.startedAt));
-      const nextActivity = Math.max(toMillis(session.lastHeartbeat), toMillis(session.startedAt));
-      if (nextActivity >= currentActivity) {
-        byUser.set(key, session);
-      }
-    });
-    const scopedSessions = Array.from(byUser.values());
-    if (scopedSessions.length === 0) return;
-
-    const unsubscribers: (() => void)[] = [];
-    scopedSessions.forEach(session => {
-      const q = query(
-        collection(db, 'exam_sessions', session.id, 'messages'),
-        orderBy('timestamp', 'desc'),
-      );
-      const unsub = onSnapshot(q, (snapshot) => {
-        const newStudentMsgs = snapshot.docChanges().filter(
-          c => c.type === 'added' && c.doc.data().sender === 'student'
-        );
-        if (newStudentMsgs.length > 0) {
-          const latestMsg = newStudentMsgs[0].doc.data();
-          // Update last message timestamp for sorting
-          setSessionLastMessage(prev => ({
-            ...prev,
-            [session.id]: Date.now(),
-          }));
-          // Only notify if not currently viewing this session
-          if (!activeSelectedSession || activeSelectedSession.id !== session.id) {
-            setUnreadSessions(prev => new Set(prev).add(session.id));
-            // Show popup notification
-            if (notificationTimeoutRef.current) clearTimeout(notificationTimeoutRef.current);
-            setChatNotification({
-              sessionId: session.id,
-              email: session.userEmail,
-              message: latestMsg.message,
-            });
-            notificationTimeoutRef.current = setTimeout(() => setChatNotification(null), 5000);
-          }
-        }
-      });
-      unsubscribers.push(unsub);
-    });
-    return () => unsubscribers.forEach(u => u());
-  }, [sessions, activeSelectedSession]);
-
-  useEffect(() => {
-    const t = setInterval(() => setNowMs(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, []);
+    const nextExpiry = sessions
+      .filter((session) => session.status === 'active' && session.isAttempting !== false)
+      .map((session) => Math.max(toMillis(session.lastHeartbeat), toMillis(session.startedAt)) + ACTIVE_HEARTBEAT_WINDOW_MS)
+      .filter((expiry) => expiry > now)
+      .sort((a, b) => a - b)[0];
+    if (!nextExpiry) return;
+    const timer = window.setTimeout(() => setActivityNow(Date.now()), Math.max(100, nextExpiry - now + 50));
+    return () => window.clearTimeout(timer);
+  }, [sessions, activityNow]);
 
   // Auto-scroll chat
   useEffect(() => {
@@ -353,13 +333,22 @@ export default function ProctorDashboard() {
       timestamp: serverTimestamp(),
       userEmail: user.email,
     });
+    await updateDoc(doc(db, 'exam_sessions', activeSelectedSession.id), {
+      lastMessageAt: serverTimestamp(),
+      lastMessageSender: 'proctor',
+      lastMessageText: msg.slice(0, 160),
+    });
   };
 
   const showActionPopup = useCallback((type: 'success' | 'error', message: string) => {
-    if (actionPopupTimeoutRef.current) clearTimeout(actionPopupTimeoutRef.current);
     setActionPopup({ type, message });
-    actionPopupTimeoutRef.current = setTimeout(() => setActionPopup(null), 4000);
   }, []);
+
+  useEffect(() => {
+    if (!actionPopup) return;
+    const timeout = window.setTimeout(() => setActionPopup(null), 4000);
+    return () => window.clearTimeout(timeout);
+  }, [actionPopup]);
 
   const getStudentDisplayName = useCallback((result: TestResult) => {
     const mapped = studentInfoMap[result.userId]?.name?.trim();
@@ -379,14 +368,18 @@ export default function ProctorDashboard() {
   }, []);
 
   // Allow re-attempt: mark the test_result so the student can take the test again
-  const allowReattempt = async (result: TestResult) => {
-    setReattemptLoading(result.id);
-    const studentName = getStudentDisplayName(result);
+  const allowReattempt = useCallback(async (
+    resultId: string,
+    resultUserId: string,
+    resultTestId: string,
+    studentName: string,
+  ) => {
+    setReattemptLoading(resultId);
     try {
       const attemptQuery = query(
         collection(db, 'test_results'),
-        where('userId', '==', result.userId),
-        where('testId', '==', result.testId),
+        where('userId', '==', resultUserId),
+        where('testId', '==', resultTestId),
       );
       const attemptsSnap = await getDocs(attemptQuery);
       if (attemptsSnap.empty) {
@@ -402,7 +395,7 @@ export default function ProctorDashboard() {
       })));
 
       setRecentResults(prev => prev.map(r => (
-        (r.userId === result.userId && r.testId === result.testId)
+        (r.userId === resultUserId && r.testId === resultTestId)
           ? { ...r, reattemptAllowed: true }
           : r
       )));
@@ -412,17 +405,21 @@ export default function ProctorDashboard() {
       showActionPopup('error', `Failed to reassign test for ${studentName}.`);
     }
     setReattemptLoading(null);
-  };
+  }, [showActionPopup, user?.uid]);
 
   // Revoke re-attempt: set reattemptAllowed back to false
-  const revokeReattempt = async (result: TestResult) => {
-    setReattemptLoading(result.id);
-    const studentName = getStudentDisplayName(result);
+  const revokeReattempt = useCallback(async (
+    resultId: string,
+    resultUserId: string,
+    resultTestId: string,
+    studentName: string,
+  ) => {
+    setReattemptLoading(resultId);
     try {
       const attemptQuery = query(
         collection(db, 'test_results'),
-        where('userId', '==', result.userId),
-        where('testId', '==', result.testId),
+        where('userId', '==', resultUserId),
+        where('testId', '==', resultTestId),
       );
       const attemptsSnap = await getDocs(attemptQuery);
       if (attemptsSnap.empty) {
@@ -438,7 +435,7 @@ export default function ProctorDashboard() {
       })));
 
       setRecentResults(prev => prev.map(r => (
-        (r.userId === result.userId && r.testId === result.testId)
+        (r.userId === resultUserId && r.testId === resultTestId)
           ? { ...r, reattemptAllowed: false }
           : r
       )));
@@ -448,7 +445,7 @@ export default function ProctorDashboard() {
       showActionPopup('error', `Failed to revoke reassignment for ${studentName}.`);
     }
     setReattemptLoading(null);
-  };
+  }, [showActionPopup, user?.uid]);
 
   const autoSubmitStudent = async (result: TestResult) => {
     setAutoSubmitLoading(result.id);
@@ -514,12 +511,11 @@ export default function ProctorDashboard() {
     return sessions.filter((session) => {
       if (session.status !== 'active') return false;
       if (session.isAttempting === false) return false;
-      if (nowMs === 0) return true;
       const lastActivity = Math.max(toMillis(session.lastHeartbeat), toMillis(session.startedAt));
       if (!lastActivity) return false;
-      return (nowMs - lastActivity) <= ACTIVE_HEARTBEAT_WINDOW_MS;
+      return (activityNow - lastActivity) <= ACTIVE_HEARTBEAT_WINDOW_MS;
     });
-  }, [sessions, nowMs]);
+  }, [sessions, activityNow]);
 
   const uniqueActiveSessions = useMemo(() => {
     const byUser = new Map<string, ExamSession>();
@@ -547,11 +543,11 @@ export default function ProctorDashboard() {
       const aUnread = unreadSessions.has(a.id) ? 1 : 0;
       const bUnread = unreadSessions.has(b.id) ? 1 : 0;
       if (aUnread !== bUnread) return bUnread - aUnread;
-      const aTime = sessionLastMessage[a.id] || Math.max(toMillis(a.lastHeartbeat), toMillis(a.startedAt));
-      const bTime = sessionLastMessage[b.id] || Math.max(toMillis(b.lastHeartbeat), toMillis(b.startedAt));
+      const aTime = toMillis(a.lastMessageAt) || Math.max(toMillis(a.lastHeartbeat), toMillis(a.startedAt));
+      const bTime = toMillis(b.lastMessageAt) || Math.max(toMillis(b.lastHeartbeat), toMillis(b.startedAt));
       return bTime - aTime;
     });
-  }, [isProctoringMode, activeTestId, uniqueActiveSessions, unreadSessions, sessionLastMessage]);
+  }, [isProctoringMode, activeTestId, uniqueActiveSessions, unreadSessions]);
 
   // Deduplicate flagged results: one entry per user+test, keeping the LATEST submission
   const flaggedResults = useMemo(() => {
@@ -649,11 +645,11 @@ export default function ProctorDashboard() {
         <div className="fixed top-4 right-4 z-[140] max-w-sm animate-fade-in">
           <div className={`w-full text-left rounded-[var(--radius)] shadow-lg p-4 border ${
             actionPopup.type === 'success'
-              ? 'bg-green-50 border-green-300 dark:bg-[#0B2E1A] dark:border-[var(--status-success)]/40'
-              : 'bg-red-50 border-red-300 dark:bg-[#2C1212] dark:border-[var(--status-danger)]/40'
+              ? 'bg-[var(--status-success)]/10 border-[var(--status-success)]/30'
+              : 'bg-[var(--status-danger)]/10 border-[var(--status-danger)]/30'
           }`}>
             <p className={`text-[12px] font-semibold ${
-              actionPopup.type === 'success' ? 'text-green-700 dark:text-[#8DE2AA]' : 'text-red-700 dark:text-[#FCA5A5]'
+              actionPopup.type === 'success' ? 'text-[var(--status-success)]' : 'text-[var(--status-danger)]'
             }`}>
               {actionPopup.message}
             </p>
@@ -1066,12 +1062,12 @@ export default function ProctorDashboard() {
                           )}
                         </div>
                         {!allowed ? (
-                          <button onClick={() => allowReattempt(result)} disabled={reattemptLoading === result.id} className={reassignBtn}>
+                          <button onClick={() => allowReattempt(result.id, result.userId, result.testId, getStudentDisplayName(result))} disabled={reattemptLoading === result.id} className={reassignBtn}>
                             <RefreshCw size={10} className={reattemptLoading === result.id ? 'animate-spin' : ''} />
                             Reassign Test
                           </button>
                         ) : (
-                          <button onClick={() => revokeReattempt(result)} disabled={reattemptLoading === result.id} className={reassignedBtn}>
+                          <button onClick={() => revokeReattempt(result.id, result.userId, result.testId, getStudentDisplayName(result))} disabled={reattemptLoading === result.id} className={reassignedBtn}>
                             <CheckCircle2 size={10} className={reattemptLoading === result.id ? 'animate-spin' : ''} />
                             Reassigned
                           </button>
@@ -1114,6 +1110,10 @@ export default function ProctorDashboard() {
                   const totalViolationCount = allAttempts.reduce((s, r) => s + (r.proctoring?.totalViolations || 0), 0);
                   const allLogs = allAttempts.flatMap(r => r.proctoring?.violationLog || []);
                   const allowed = isReattemptAllowed(result.userId, result.testId);
+                  const resultId = result.id;
+                  const resultUserId = result.userId;
+                  const resultTestId = result.testId;
+                  const studentName = getStudentDisplayName(result);
                   return (
                     <div
                       key={`${result.userId}-${result.testId}`}
@@ -1170,12 +1170,12 @@ export default function ProctorDashboard() {
                       )}
                       <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[var(--border-subtle)]">
                         {!allowed ? (
-                          <button onClick={() => allowReattempt(result)} disabled={reattemptLoading === result.id} className={reassignBtn}>
+                          <button onClick={() => allowReattempt(resultId, resultUserId, resultTestId, studentName)} disabled={reattemptLoading === resultId} className={reassignBtn}>
                             <RefreshCw size={10} className={reattemptLoading === result.id ? 'animate-spin' : ''} />
                             Reassign Test
                           </button>
                         ) : (
-                          <button onClick={() => revokeReattempt(result)} disabled={reattemptLoading === result.id} className={reassignedBtn}>
+                          <button onClick={() => revokeReattempt(resultId, resultUserId, resultTestId, studentName)} disabled={reattemptLoading === resultId} className={reassignedBtn}>
                             <CheckCircle2 size={10} className={reattemptLoading === result.id ? 'animate-spin' : ''} />
                             Reassigned
                           </button>

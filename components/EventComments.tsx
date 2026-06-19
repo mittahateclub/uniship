@@ -12,13 +12,17 @@ import {
   limit,
   onSnapshot,
   addDoc,
+  doc,
+  increment,
   serverTimestamp,
+  updateDoc,
   type DocumentData,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { toDate } from '@/lib/college';
-import { X, Send } from '@/components/icons';
+import X from '@/components/icons/X';
+import Send from '@/components/icons/Send';
 
 function timeAgo(d: Date | null): string {
   if (!d) return '';
@@ -62,6 +66,7 @@ export function EventComments({ eventId, onClose }: { eventId: string; onClose: 
         text: t,
         createdAt: serverTimestamp(),
       });
+      await updateDoc(doc(db, 'events', eventId), { commentsCount: increment(1) }).catch(() => {});
       setText('');
     } catch {
       setError(true);

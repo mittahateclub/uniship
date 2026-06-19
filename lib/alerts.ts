@@ -7,9 +7,10 @@
 // and — when the student grants permission — a browser toast for newly-posted
 // items on the next visit, mirroring the app's "newly posted" behaviour.
 
-import { collection, getDocs, query, where, type Query } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, limit, query, where, type Query } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { toDate, eventTargetsStudent } from '@/lib/college';
+import { authHeaders } from '@/lib/auth-client';
 
 export type AlertCategory = 'test' | 'event' | 'internship' | 'deadline' | 'practice';
 
@@ -32,6 +33,9 @@ export interface AlertContext {
   branch: string | null;
   gpa: number | null;
 }
+
+const ALERT_CACHE_MS = 60_000;
+const alertCache = new Map<string, { expiresAt: number; value: Promise<AppAlert[]> }>();
 
 const EVENT_TYPE_LABEL: Record<string, string> = {
   event: 'Event',
@@ -69,17 +73,57 @@ async function tryGet(q: Query) {
 /// Recompute the student's alerts from Firestore. Returns soonest-first.
 /// Never throws — a failing source is skipped, mirroring the app.
 export async function computeAlerts(ctx: AlertContext): Promise<AppAlert[]> {
+  const cacheKey = JSON.stringify([ctx.uid, ctx.universityId, ctx.branch, ctx.gpa]);
+  const cached = alertCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+
+  const value = computeAlertsFresh(ctx).catch((error) => {
+    alertCache.delete(cacheKey);
+    throw error;
+  });
+  alertCache.set(cacheKey, { expiresAt: Date.now() + ALERT_CACHE_MS, value });
+  if (alertCache.size > 20) {
+    const oldestKey = alertCache.keys().next().value as string | undefined;
+    if (oldestKey) alertCache.delete(oldestKey);
+  }
+  return value;
+}
+
+async function computeAlertsFresh(ctx: AlertContext): Promise<AppAlert[]> {
   const { uid, universityId: uni, branch, gpa } = ctx;
   const now = new Date();
 
+  if (uid) {
+    try {
+      const summarySnap = await getDoc(doc(db, 'notification_summaries', uid));
+      const summary = summarySnap.data();
+      const expiresAt = toDate(summary?.expiresAt);
+      if (expiresAt && expiresAt > now && Array.isArray(summary?.alerts)) {
+        return hydrateSummary(summary.alerts as Record<string, unknown>[]);
+      }
+    } catch { /* summary may not exist yet */ }
+
+    try {
+      const response = await fetch('/api/notifications/summary', {
+        method: 'POST',
+        headers: await authHeaders(),
+        body: '{}',
+      });
+      if (response.ok) {
+        const summary = await response.json() as { alerts?: Record<string, unknown>[] };
+        if (Array.isArray(summary.alerts)) return hydrateSummary(summary.alerts);
+      }
+    } catch { /* fall back to direct reads */ }
+  }
+
   const [eventsSnap, internSnap, testsSnap, savedSnap, practiceSnap] = await Promise.all([
-    tryGet(query(collection(db, 'events'))),
-    uni ? tryGet(query(collection(db, 'internships'), where('universityId', '==', uni))) : Promise.resolve(null),
+    tryGet(query(collection(db, 'events'), limit(300))),
+    uni ? tryGet(query(collection(db, 'internships'), where('universityId', '==', uni), limit(200))) : Promise.resolve(null),
     // Students may only list approved tests in their university (firestore.rules);
     // the app also discards non-approved tests, so this is equivalent + allowed.
-    uni ? tryGet(query(collection(db, 'tests'), where('universityId', '==', uni), where('approved', '==', true))) : Promise.resolve(null),
-    uid ? tryGet(query(collection(db, 'savedEvents'), where('userId', '==', uid))) : Promise.resolve(null),
-    uni ? tryGet(query(collection(db, 'practice_problems'), where('universityId', '==', uni))) : Promise.resolve(null),
+    uni ? tryGet(query(collection(db, 'tests'), where('universityId', '==', uni), where('approved', '==', true), limit(100))) : Promise.resolve(null),
+    uid ? tryGet(query(collection(db, 'savedEvents'), where('userId', '==', uid), limit(500))) : Promise.resolve(null),
+    uni ? tryGet(query(collection(db, 'practice_problems'), where('universityId', '==', uni), limit(200))) : Promise.resolve(null),
   ]);
 
   const out: AppAlert[] = [];
@@ -200,6 +244,25 @@ export async function computeAlerts(ctx: AlertContext): Promise<AppAlert[]> {
 
   out.sort((a, b) => a.when.getTime() - b.when.getTime());
   return out;
+}
+
+function hydrateSummary(alerts: Record<string, unknown>[]): AppAlert[] {
+  return alerts.flatMap((raw) => {
+    const when = toDate(raw.when);
+    const relevantUntil = toDate(raw.relevantUntil);
+    if (!when || !relevantUntil) return [];
+    return [{
+      key: String(raw.key ?? ''),
+      category: raw.category as AlertCategory,
+      title: String(raw.title ?? ''),
+      subtitle: String(raw.subtitle ?? ''),
+      when,
+      leadLabel: String(raw.leadLabel ?? ''),
+      navTarget: typeof raw.navTarget === 'string' ? raw.navTarget : null,
+      relevantUntil,
+      createdAt: toDate(raw.createdAt),
+    }];
+  });
 }
 
 // ── Relative-time formatting (ported from notifications_screen.dart) ──────

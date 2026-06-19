@@ -57,10 +57,11 @@ export default function CreateStudentPage() {
       });
       setSuccess(`Account created for ${formData.email}`);
       setFormData({ name: '', email: '', password: '', studentId: '', phone: '' });
-    } catch (err: any) {
-      setError(err.message === "Missing or insufficient permissions."
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message === "Missing or insufficient permissions."
         ? "Permission Denied: Ensure your role is university_admin in Firestore."
-        : err.message);
+        : message);
     } finally { setSubmitting(false); }
   };
 

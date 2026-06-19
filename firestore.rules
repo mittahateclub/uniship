@@ -304,6 +304,20 @@ service cloud.firestore {
       allow create: if false;
     }
 
+    // Durable server-side document parsing queue. Clients can only observe
+    // their own jobs; creation and processing use the Admin SDK.
+    match /test_processing_jobs/{jobId} {
+      allow read: if isAuthenticated() && (
+        resource.data.createdBy == request.auth.uid || isSuperAdmin()
+      );
+      allow create, update, delete: if false;
+    }
+
+    match /notification_summaries/{userId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow create, update, delete: if false;
+    }
+
     // --- Shared app config (AI key the web + app both use) ---
     match /config/{docId} {
       allow read: if isAuthenticated();

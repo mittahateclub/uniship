@@ -2,18 +2,20 @@ import { NextResponse } from 'next/server';
 import { wrapCode } from '@/lib/code-wrapper';
 import { verifyAuthFromRequest } from '@/lib/auth-server';
 import { rateLimit } from '@/lib/rate-limit';
+import { executeJudge0 } from '@/lib/judge0';
 
-const JUDGE0_CE_URL = 'https://ce.judge0.com';
 const PARSE_ERR_PREFIX = '__PLATFORM_PARSE_ERROR__';
 
 // SECURITY: Hard limits to prevent abuse
 const MAX_SOURCE_CODE_LENGTH = 50_000;  // 50 KB
 const MAX_STDIN_LENGTH = 10_000;        // 10 KB
 const MAX_TEST_CASES = 30;
+const MAX_BATCH_SUBMISSIONS = 20;
+const MAX_BATCH_TOTAL_CASES = 120;
 const MAX_TIME_LIMIT_SEC = 10;
 const MAX_MEMORY_LIMIT_KB = 512_000;    // 512 MB
 
-type CompileMode = 'run' | 'submit';
+type CompileMode = 'run' | 'submit' | 'batch';
 
 interface TestCaseInput {
   input: string;
@@ -22,11 +24,21 @@ interface TestCaseInput {
 }
 
 interface JudgeRequest {
-  source_code: string;
-  language_id: number;
+  source_code?: string;
+  language_id?: number;
   stdin?: string;
   mode?: CompileMode;
   testCases?: TestCaseInput[];
+  timeLimitSec?: number;
+  memoryLimitKb?: number;
+  submissions?: BatchSubmission[];
+}
+
+interface BatchSubmission {
+  id: string | number;
+  source_code: string;
+  language_id: number;
+  testCases: TestCaseInput[];
   timeLimitSec?: number;
   memoryLimitKb?: number;
 }
@@ -119,81 +131,6 @@ function getFriendlyInputTip(stderr: string | null | undefined, stdin: string | 
   return 'Your code tried to read input, but the input box was empty. Add sample input in stdin and run again.';
 }
 
-function decode(val: string | null | undefined) {
-  if (!val) return val;
-  try { return Buffer.from(val, 'base64').toString('utf-8'); } catch { return val; }
-}
-
-async function executeOnJudge0(
-  url: string,
-  authToken: string | null,
-  source_code: string,
-  language_id: number,
-  options: {
-    stdin?: string;
-    expectedOutput?: string;
-    timeLimitSec?: number;
-    memoryLimitKb?: number;
-  },
-) {
-  const encodedCode = Buffer.from(source_code).toString('base64');
-  const encodedStdin = options.stdin ? Buffer.from(options.stdin).toString('base64') : '';
-  const encodedExpected = options.expectedOutput ? Buffer.from(options.expectedOutput).toString('base64') : undefined;
-
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (authToken) headers['X-Auth-Token'] = authToken;
-
-  const cpuLimit = options.timeLimitSec ?? getDefaultTimeLimit(language_id);
-  const body: Record<string, unknown> = {
-    source_code: encodedCode,
-    language_id,
-    stdin: encodedStdin,
-    cpu_time_limit: cpuLimit,
-    wall_time_limit: cpuLimit + 3,
-    memory_limit: options.memoryLimitKb ?? 262144,
-  };
-  if (encodedExpected) body.expected_output = encodedExpected;
-
-  const response = await fetch(`${url}/submissions?base64_encoded=true&wait=true`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) throw new Error(`Judge0 returned ${response.status}`);
-
-  const data = await response.json();
-  if (data.status?.id === 13) throw new Error('sandbox_error');
-
-  return {
-    ...data,
-    statusCode: mapStatusToCode(data.status?.id, data.status?.description),
-    stdout: decode(data.stdout),
-    stderr: decode(data.stderr),
-    compile_output: decode(data.compile_output),
-    message: decode(data.message),
-  };
-}
-
-async function executeWithFallback(
-  source_code: string,
-  language_id: number,
-  options: { stdin?: string; expectedOutput?: string; timeLimitSec?: number; memoryLimitKb?: number },
-) {
-  const selfHostedUrl = process.env.JUDGE0_API_URL;
-  const selfHostedToken = process.env.JUDGE0_AUTH_TOKEN;
-
-  if (selfHostedUrl && selfHostedToken) {
-    try {
-      return await executeOnJudge0(selfHostedUrl, selfHostedToken, source_code, language_id, options);
-    } catch {
-      // Fall through to public CE
-    }
-  }
-
-  return executeOnJudge0(JUDGE0_CE_URL, null, source_code, language_id, options);
-}
-
 function finalVerdict(codes: string[]) {
   if (codes.length === 0) return 'RE';
   if (codes.every((c) => c === 'AC')) return 'AC';
@@ -202,6 +139,108 @@ function finalVerdict(codes: string[]) {
   if (codes.includes('TLE')) return 'TLE';
   if (codes.includes('WA')) return 'WA';
   return 'RE';
+}
+
+function validateSubmission(input: Omit<BatchSubmission, 'id'>): string | null {
+  if (!input.source_code || !input.language_id) return 'source_code and language_id are required';
+  if (typeof input.source_code !== 'string' || input.source_code.length > MAX_SOURCE_CODE_LENGTH) {
+    return `source_code exceeds maximum length of ${MAX_SOURCE_CODE_LENGTH} characters`;
+  }
+  if (!Array.isArray(input.testCases) || input.testCases.length === 0) return 'testCases are required';
+  if (input.testCases.length > MAX_TEST_CASES) return `Maximum ${MAX_TEST_CASES} test cases allowed`;
+  for (let i = 0; i < input.testCases.length; i += 1) {
+    const testCase = input.testCases[i];
+    if (!testCase || typeof testCase.input !== 'string' || typeof testCase.expectedOutput !== 'string') {
+      return `Invalid test case at index ${i}`;
+    }
+    if (testCase.input.length > MAX_STDIN_LENGTH || testCase.expectedOutput.length > MAX_STDIN_LENGTH) {
+      return `Test case ${i} input/output exceeds size limit`;
+    }
+  }
+  return null;
+}
+
+async function evaluateSubmission(input: Omit<BatchSubmission, 'id'>) {
+  const safeTL = Math.min(input.timeLimitSec ?? getDefaultTimeLimit(input.language_id), MAX_TIME_LIMIT_SEC);
+  const safeML = Math.min(input.memoryLimitKb ?? 262144, MAX_MEMORY_LIMIT_KB);
+  const wrappedCode = wrapCode(input.source_code, input.language_id, 'submit');
+  const results = await Promise.allSettled(
+    input.testCases.map((testCase) =>
+      executeJudge0(wrappedCode, input.language_id, {
+        stdin: testCase.input,
+        timeLimitSec: safeTL,
+        memoryLimitKb: safeML,
+      }),
+    ),
+  );
+
+  const cases = results.map((settled, index) => {
+    const testCase = input.testCases[index];
+    if (settled.status === 'rejected') {
+      return {
+        caseNumber: index + 1,
+        statusCode: 'RE',
+        status: 'Runtime Error',
+        time: null,
+        memory: null,
+        stdout: null,
+        stderr: settled.reason instanceof Error ? settled.reason.message : 'Unknown error',
+        expectedOutput: testCase.isHidden ? '' : testCase.expectedOutput,
+        inputPreview: testCase.isHidden ? '' : testCase.input.slice(0, 240),
+        isHidden: !!testCase.isHidden,
+      };
+    }
+
+    const result = settled.value;
+    const executionCode = mapStatusToCode(result.status?.id, result.status?.description);
+    const code = executionCode === 'AC'
+      ? (outputsMatch(result.stdout, testCase.expectedOutput) ? 'AC' : 'WA')
+      : executionCode;
+    const parseErr = isPlatformParseError(result.stderr);
+    return {
+      caseNumber: index + 1,
+      statusCode: parseErr ? 'RE' : code,
+      status: parseErr
+        ? 'Internal Parse Error'
+        : (code === 'WA' ? 'Wrong Answer' : (result.status?.description || 'Unknown')),
+      time: result.time || null,
+      memory: result.memory || null,
+      stdout: testCase.isHidden ? null : (result.stdout || null),
+      stderr: parseErr
+        ? 'The platform could not parse the test input for this case. Please contact your admin.'
+        : (result.compile_output || result.stderr || result.message || null),
+      expectedOutput: testCase.isHidden ? '' : testCase.expectedOutput,
+      inputPreview: testCase.isHidden ? '' : testCase.input.slice(0, 240),
+      isHidden: !!testCase.isHidden,
+    };
+  });
+  const codes = cases.map((testCase) => testCase.statusCode);
+  return {
+    summary: {
+      verdict: finalVerdict(codes),
+      passed: cases.filter((testCase) => testCase.statusCode === 'AC').length,
+      total: input.testCases.length,
+      failedCase: cases.find((testCase) => testCase.statusCode !== 'AC')?.caseNumber ?? null,
+    },
+    cases,
+  };
+}
+
+async function mapWithConcurrency<T, R>(
+  values: T[],
+  concurrency: number,
+  task: (value: T) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(values.length);
+  let nextIndex = 0;
+  const workers = Array.from({ length: Math.min(concurrency, values.length) }, async () => {
+    while (nextIndex < values.length) {
+      const index = nextIndex++;
+      results[index] = await task(values[index]);
+    }
+  });
+  await Promise.all(workers);
+  return results;
 }
 
 export async function POST(request: Request) {
@@ -224,7 +263,32 @@ export async function POST(request: Request) {
     testCases = [],
     timeLimitSec,
     memoryLimitKb,
+    submissions = [],
   } = await request.json() as JudgeRequest;
+
+  if (mode === 'batch') {
+    if (!Array.isArray(submissions) || submissions.length === 0) {
+      return NextResponse.json({ error: 'submissions are required for batch mode' }, { status: 400 });
+    }
+    if (submissions.length > MAX_BATCH_SUBMISSIONS) {
+      return NextResponse.json({ error: `Maximum ${MAX_BATCH_SUBMISSIONS} submissions allowed` }, { status: 400 });
+    }
+    const totalCases = submissions.reduce((sum, submission) => sum + (submission.testCases?.length ?? 0), 0);
+    if (totalCases > MAX_BATCH_TOTAL_CASES) {
+      return NextResponse.json({ error: `Maximum ${MAX_BATCH_TOTAL_CASES} total test cases allowed` }, { status: 400 });
+    }
+    for (const submission of submissions) {
+      const validationError = validateSubmission(submission);
+      if (validationError) {
+        return NextResponse.json({ error: `Submission ${submission.id}: ${validationError}` }, { status: 400 });
+      }
+    }
+    const graded = await mapWithConcurrency(submissions, 2, async (submission) => ({
+      id: submission.id,
+      ...(await evaluateSubmission(submission)),
+    }));
+    return NextResponse.json({ mode: 'batch', submissions: graded });
+  }
 
   if (!source_code || !language_id) {
     return NextResponse.json({ error: 'source_code and language_id are required' }, { status: 400 });
@@ -246,101 +310,25 @@ export async function POST(request: Request) {
   const wrappedCode = wrapCode(source_code, language_id, mode);
 
   if (mode === 'submit') {
-    if (!Array.isArray(testCases) || testCases.length === 0) {
-      return NextResponse.json({ error: 'testCases are required for submit mode' }, { status: 400 });
-    }
-
-    // SECURITY: Cap number of test cases
-    if (testCases.length > MAX_TEST_CASES) {
-      return NextResponse.json({ error: `Maximum ${MAX_TEST_CASES} test cases allowed` }, { status: 400 });
-    }
-
-    // Validate all test cases upfront
-    for (let i = 0; i < testCases.length; i += 1) {
-      const tc = testCases[i];
-      if (!tc || typeof tc.input !== 'string' || typeof tc.expectedOutput !== 'string') {
-        return NextResponse.json({ error: `Invalid test case at index ${i}` }, { status: 400 });
-      }
-      if (tc.input.length > MAX_STDIN_LENGTH || tc.expectedOutput.length > MAX_STDIN_LENGTH) {
-        return NextResponse.json({ error: `Test case ${i} input/output exceeds size limit` }, { status: 400 });
-      }
-    }
-
-    // Run all test cases in parallel for maximum speed
-    const results = await Promise.allSettled(
-      testCases.map((tc) =>
-        executeWithFallback(wrappedCode, language_id, {
-          stdin: tc.input,
-          timeLimitSec: safeTL,
-          memoryLimitKb: safeML,
-        })
-      )
-    );
-
-    const evaluatedCases = results.map((settled, i) => {
-      const tc = testCases[i];
-      if (settled.status === 'rejected') {
-        const message = settled.reason instanceof Error ? settled.reason.message : 'Unknown error';
-        return {
-          caseNumber: i + 1,
-          statusCode: 'RE' as string,
-          status: 'Runtime Error',
-          time: null as string | null,
-          memory: null as number | null,
-          stdout: null as string | null,
-          stderr: message,
-          expectedOutput: tc.isHidden ? '' : tc.expectedOutput,
-          inputPreview: tc.isHidden ? '' : tc.input.slice(0, 240),
-          isHidden: !!tc.isHidden,
-        };
-      }
-
-      const result = settled.value;
-      const executionCode = mapStatusToCode(result.status?.id, result.status?.description);
-      const code = executionCode === 'AC'
-        ? (outputsMatch(result.stdout, tc.expectedOutput) ? 'AC' : 'WA')
-        : executionCode;
-
-      const stderrText = result.compile_output || result.stderr || result.message || null;
-      const parseErr = isPlatformParseError(result.stderr);
-
-      return {
-        caseNumber: i + 1,
-        statusCode: parseErr ? 'RE' : code,
-        status: parseErr
-          ? 'Internal Parse Error'
-          : (code === 'WA' ? 'Wrong Answer' : (result.status?.description || 'Unknown')),
-        time: result.time || null,
-        memory: result.memory || null,
-        stdout: tc.isHidden ? null : (result.stdout || null),
-        stderr: parseErr
-          ? 'The platform could not parse the test input for this case. Please contact your admin.'
-          : stderrText,
-        expectedOutput: tc.isHidden ? '' : tc.expectedOutput,
-        inputPreview: tc.isHidden ? '' : tc.input.slice(0, 240),
-        isHidden: !!tc.isHidden,
-      };
+    const validationError = validateSubmission({
+      source_code,
+      language_id,
+      testCases,
+      timeLimitSec,
+      memoryLimitKb,
     });
-
-    const codes = evaluatedCases.map((c) => c.statusCode);
-    const verdict = finalVerdict(codes);
-    const passed = evaluatedCases.filter((c) => c.statusCode === 'AC').length;
-    const failedCase = evaluatedCases.find((c) => c.statusCode !== 'AC')?.caseNumber ?? null;
-
-    return NextResponse.json({
-      mode: 'submit',
-      summary: {
-        verdict,
-        passed,
-        total: testCases.length,
-        failedCase,
-      },
-      cases: evaluatedCases,
-    });
+    if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
+    return NextResponse.json({ mode: 'submit', ...(await evaluateSubmission({
+      source_code,
+      language_id,
+      testCases,
+      timeLimitSec,
+      memoryLimitKb,
+    })) });
   }
 
   try {
-    const result = await executeWithFallback(wrappedCode, language_id, {
+    const result = await executeJudge0(wrappedCode, language_id, {
       stdin: stdin || '',
       timeLimitSec: safeTL,
       memoryLimitKb: safeML,

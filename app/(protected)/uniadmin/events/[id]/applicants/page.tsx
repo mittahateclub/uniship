@@ -10,7 +10,11 @@ import Link from 'next/link';
 import { collection, query, where, limit, getDocs, type DocumentData } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { toDate } from '@/lib/college';
-import { ArrowLeft, Mail, Users, GraduationCap, TrendingUp } from '@/components/icons';
+import ArrowLeft from '@/components/icons/ArrowLeft';
+import Mail from '@/components/icons/Mail';
+import Users from '@/components/icons/Users';
+import GraduationCap from '@/components/icons/GraduationCap';
+import TrendingUp from '@/components/icons/TrendingUp';
 import { StatBar } from '@/components/StatBar';
 
 const microLabel = 'text-[10.5px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]';

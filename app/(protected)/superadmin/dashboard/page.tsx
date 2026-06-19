@@ -3,7 +3,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getCountFromServer } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { SuperadminDashboardView, type SuperadminDashboardStats } from './dashboard.view';
 
@@ -20,14 +20,14 @@ export default function SuperadminDashboard() {
     async function fetchStats() {
       try {
         const [uniadminsSnapshot, studentsSnapshot, universitiesSnapshot] = await Promise.all([
-          getDocs(query(collection(db, 'users'), where('role', '==', 'university_admin'))),
-          getDocs(query(collection(db, 'users'), where('role', '==', 'student'))),
-          getDocs(collection(db, 'universities')),
+          getCountFromServer(query(collection(db, 'users'), where('role', '==', 'university_admin'))),
+          getCountFromServer(query(collection(db, 'users'), where('role', '==', 'student'))),
+          getCountFromServer(collection(db, 'universities')),
         ]);
         setStats({
-          totalUniadmins: uniadminsSnapshot.size,
-          totalStudents: studentsSnapshot.size,
-          totalUniversities: universitiesSnapshot.size,
+          totalUniadmins: uniadminsSnapshot.data().count,
+          totalStudents: studentsSnapshot.data().count,
+          totalUniversities: universitiesSnapshot.data().count,
         });
       } catch (error) {
         console.error('Error fetching stats:', error);

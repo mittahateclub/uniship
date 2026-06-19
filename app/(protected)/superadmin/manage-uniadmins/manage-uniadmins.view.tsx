@@ -3,10 +3,24 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
+import {
+  collection, query, where, getDocs, doc, updateDoc, documentId,
+  limit as queryLimit, orderBy, startAfter, type DocumentData,
+  type QueryDocumentSnapshot,
+} from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
-import { UserPlus, Mail, Building2, Hash, Phone, CheckCircle, XCircle, Shield, ShieldCheck, Save, Pencil } from '@/components/icons';
+import UserPlus from '@/components/icons/UserPlus';
+import Mail from '@/components/icons/Mail';
+import Building2 from '@/components/icons/Building2';
+import Hash from '@/components/icons/Hash';
+import Phone from '@/components/icons/Phone';
+import CheckCircle from '@/components/icons/CheckCircle';
+import XCircle from '@/components/icons/XCircle';
+import Shield from '@/components/icons/Shield';
+import ShieldCheck from '@/components/icons/ShieldCheck';
+import Save from '@/components/icons/Save';
+import Pencil from '@/components/icons/Pencil';
 import { StatBar } from '@/components/StatBar';
 import { Modal, ModalHeader, ModalBody } from '@/components/Modal';
 
@@ -18,7 +32,7 @@ interface UniadminData {
   universityId: string;
   phone: string;
   verified: boolean;
-  createdAt: any;
+  createdAt: unknown;
 }
 
 interface University {
@@ -30,6 +44,7 @@ interface University {
 
 const ghostBtn = 'px-2.5 py-1.5 rounded-[8px] text-[11px] font-semibold border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-active)] hover:text-[var(--text-primary)] transition-colors';
 const fieldLabel = 'block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5';
+const PAGE_SIZE = 50;
 
 export default function ManageUniadminsPage() {
   const { user, loading } = useAuth();
@@ -47,6 +62,9 @@ export default function ManageUniadminsPage() {
     verified: false,
   });
   const [editError, setEditError] = useState('');
+  const [lastAdminDoc, setLastAdminDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.push('/');
@@ -56,7 +74,7 @@ export default function ManageUniadminsPage() {
     async function fetchUniadmins() {
       try {
         const [adminSnap, uniSnap] = await Promise.all([
-          getDocs(query(collection(db, 'users'), where('role', '==', 'university_admin'))),
+          getDocs(query(collection(db, 'users'), where('role', '==', 'university_admin'), orderBy(documentId()), queryLimit(PAGE_SIZE))),
           getDocs(collection(db, 'universities')),
         ]);
         const admins: UniadminData[] = [];
@@ -65,6 +83,8 @@ export default function ManageUniadminsPage() {
         });
         const unis: University[] = uniSnap.docs.map((d) => ({ id: d.id, ...d.data() } as University));
         setUniadmins(admins);
+        setLastAdminDoc(adminSnap.docs.at(-1) ?? null);
+        setHasMore(adminSnap.size === PAGE_SIZE);
         setUniversities(unis);
       } catch (error) {
         console.error('Error fetching uniadmins:', error);
@@ -75,6 +95,30 @@ export default function ManageUniadminsPage() {
     if (user) fetchUniadmins();
   }, [user]);
 
+  const loadMore = async () => {
+    if (!lastAdminDoc || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const snapshot = await getDocs(query(
+        collection(db, 'users'),
+        where('role', '==', 'university_admin'),
+        orderBy(documentId()),
+        startAfter(lastAdminDoc),
+        queryLimit(PAGE_SIZE),
+      ));
+      setUniadmins((prev) => [
+        ...prev,
+        ...snapshot.docs.map((adminDoc) => ({ id: adminDoc.id, ...adminDoc.data() } as UniadminData)),
+      ]);
+      setLastAdminDoc(snapshot.docs.at(-1) ?? lastAdminDoc);
+      setHasMore(snapshot.size === PAGE_SIZE);
+    } catch (error) {
+      console.error('Error loading more admins:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
   if (loading) return (
     <div className="flex items-center justify-center h-64">
       <div className="loading-dots"><span /><span /><span /></div>
@@ -82,11 +126,11 @@ export default function ManageUniadminsPage() {
   );
   if (!user) return null;
 
-  const formatDate = (value: any) => {
+  const formatDate = (value: unknown) => {
     try {
       if (!value) return 'N/A';
-      if (typeof value?.toDate === 'function') return value.toDate().toLocaleString();
-      return new Date(value).toLocaleString();
+      if (typeof (value as { toDate?: unknown }).toDate === 'function') return (value as { toDate: () => Date }).toDate().toLocaleString();
+      return new Date(value as string | number | Date).toLocaleString();
     } catch {
       return 'N/A';
     }
@@ -219,6 +263,13 @@ export default function ManageUniadminsPage() {
               </div>
             </div>
           ))}
+          {hasMore && (
+            <div className="flex justify-center p-3 border-t border-[var(--border-subtle)]">
+              <button type="button" onClick={loadMore} disabled={loadingMore} className="btn-secondary !rounded-[10px] text-[12px] disabled:opacity-50">
+                {loadingMore ? 'Loading…' : 'Load more admins'}
+              </button>
+            </div>
+          )}
         </div>
       )}
 

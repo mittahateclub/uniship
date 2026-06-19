@@ -1,18 +1,11 @@
 import "./globals.css";
-import { AuthProvider } from "@/contexts/AuthContext";
 import localFont from "next/font/local";
+import WebVitalsReporter from "@/components/WebVitalsReporter";
 
 const geist = localFont({
   src: "./fonts/Geist-Variable.ttf",
   weight: "100 900",
   variable: "--font-geist",
-  display: "swap",
-});
-
-const bricolage = localFont({
-  src: "./fonts/BricolageGrotesque-Variable.ttf",
-  weight: "200 800",
-  variable: "--font-bricolage",
   display: "swap",
 });
 
@@ -36,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${geist.variable} ${bricolage.variable} ${spaceMono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${geist.variable} ${spaceMono.variable}`} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -45,10 +38,9 @@ export default function RootLayout({
         />
       </head>
       <body suppressHydrationWarning className="bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans">
+        <WebVitalsReporter />
         <a href="#main-content" className="skip-link">Skip to content</a>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        {children}
       </body>
     </html>
   );

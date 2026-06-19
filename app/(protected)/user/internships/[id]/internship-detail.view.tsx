@@ -1,7 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, MapPin, CalendarDays, Wallet, Clock, CheckCircle2, Building2 } from '@/components/icons';
+import ArrowLeft from '@/components/icons/ArrowLeft';
+import MapPin from '@/components/icons/MapPin';
+import CalendarDays from '@/components/icons/CalendarDays';
+import Wallet from '@/components/icons/Wallet';
+import Clock from '@/components/icons/Clock';
+import CheckCircle2 from '@/components/icons/CheckCircle2';
+import Building2 from '@/components/icons/Building2';
 import { DetailSkeleton } from '@/components/Skeleton';
 
 export interface Internship {
@@ -11,7 +17,7 @@ export interface Internship {
   location: string;
   stipend: string;
   duration: string;
-  deadline: any;
+  deadline: unknown;
   description: string;
   requirements?: string[];
   responsibilities?: string[];
@@ -33,7 +39,7 @@ export function InternshipDetailView({ loading, internship, hasApplied, isApplyi
     { icon: MapPin, label: 'Location', value: internship.location },
     { icon: Wallet, label: 'Stipend', value: internship.stipend },
     { icon: Clock, label: 'Duration', value: internship.duration },
-    { icon: CalendarDays, label: 'Deadline', value: internship.deadline?.toDate().toLocaleDateString() },
+    { icon: CalendarDays, label: 'Deadline', value: (internship.deadline as { toDate?: () => Date } | undefined)?.toDate?.().toLocaleDateString() },
   ];
 
   return (

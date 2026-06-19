@@ -3,7 +3,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, getDocs, getCountFromServer, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { UniAdminDashboardView, type DashStats, type UpcomingTest } from './dashboard.view';
 
@@ -26,13 +26,15 @@ export default function UniAdminDashboard() {
     (async () => {
       setDataLoading(true);
       try {
-        const byUniv = (c: string) =>
-          getDocs(query(collection(db, c), where('universityId', '==', universityId))).catch(() => null);
-        const [studentsSnap, testsSnap, eventsSnap, resultsSnap] = await Promise.all([
-          getDocs(query(collection(db, 'users'), where('role', '==', 'student'), where('universityId', '==', universityId))).catch(() => null),
-          byUniv('tests'),
-          byUniv('events'),
-          byUniv('test_results'),
+        const countByUniv = (c: string) =>
+          getCountFromServer(query(collection(db, c), where('universityId', '==', universityId))).catch(() => null);
+        const [studentsCount, testsCount, approvedCount, eventsCount, flaggedCount, testsSnap] = await Promise.all([
+          getCountFromServer(query(collection(db, 'users'), where('role', '==', 'student'), where('universityId', '==', universityId))).catch(() => null),
+          countByUniv('tests'),
+          getCountFromServer(query(collection(db, 'tests'), where('universityId', '==', universityId), where('approved', '==', true))).catch(() => null),
+          countByUniv('events'),
+          getCountFromServer(query(collection(db, 'test_results'), where('universityId', '==', universityId), where('flagged', '==', true))).catch(() => null),
+          getDocs(query(collection(db, 'tests'), where('universityId', '==', universityId), limit(100))).catch(() => null),
         ]);
         if (cancelled) return;
 
@@ -46,8 +48,8 @@ export default function UniAdminDashboard() {
           approved?: boolean;
         };
         const tests = (testsSnap?.docs.map((d) => ({ id: d.id, ...d.data() })) ?? []) as RawTest[];
-        const pendingApproval = tests.filter((t) => !t.approved).length;
-        const flagged = resultsSnap?.docs.filter((d) => (d.data() as { flagged?: boolean }).flagged).length ?? 0;
+        const totalTests = testsCount?.data().count ?? 0;
+        const pendingApproval = Math.max(0, totalTests - (approvedCount?.data().count ?? 0));
 
         const up: UpcomingTest[] = tests
           .filter((t) => t.examStart && new Date(t.examEnd || t.examStart).getTime() >= now)
@@ -62,11 +64,11 @@ export default function UniAdminDashboard() {
           .slice(0, 5);
 
         setStats({
-          students: studentsSnap?.size ?? 0,
-          tests: testsSnap?.size ?? 0,
-          events: eventsSnap?.size ?? 0,
+          students: studentsCount?.data().count ?? 0,
+          tests: totalTests,
+          events: eventsCount?.data().count ?? 0,
           pendingApproval,
-          flagged,
+          flagged: flaggedCount?.data().count ?? 0,
         });
         setUpcoming(up);
       } finally {

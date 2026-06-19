@@ -6,13 +6,16 @@
 // with claim / close / reopen + internal notes. Same data as /uniadmin/inbox.
 
 import { useEffect, useMemo, useState } from 'react';
-import { collection, query, where, limit, onSnapshot, type DocumentData } from 'firebase/firestore';
+import { collection, query, where, limit, onSnapshot, orderBy, type DocumentData } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { claim, closeChat, reopen, type ChatActor } from '@/lib/chat';
 import { toDate } from '@/lib/college';
 import { ChatThread } from '@/components/chat/ChatThread';
-import { MessageCircle, X, ArrowLeft, Search } from '@/components/icons';
+import MessageCircle from '@/components/icons/MessageCircle';
+import X from '@/components/icons/X';
+import ArrowLeft from '@/components/icons/ArrowLeft';
+import Search from '@/components/icons/Search';
 
 function timeAgo(d: Date | null): string {
   if (!d) return '';
@@ -45,6 +48,7 @@ export default function AdminSupportChat() {
   const [chats, setChats] = useState<Chat[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const isUniAdmin = !loading && !!user && role === 'university_admin';
 
@@ -53,17 +57,33 @@ export default function AdminSupportChat() {
     return { uid: user.uid, name: userName, email: user.email, universityId, isAdmin: true };
   }, [user, userName, universityId]);
 
-  // Live chat list (equality-only query → no composite index; sorted below).
+  // Keep only a tiny unread subscription while the panel is closed.
   useEffect(() => {
     if (!isUniAdmin || !universityId) return;
-    const q = query(collection(db, 'chats'), where('universityId', '==', universityId), limit(200));
-    const unsub = onSnapshot(q, (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, data: d.data() }));
-      list.sort((a, b) => (toDate(b.data.lastMessageAt)?.getTime() ?? 0) - (toDate(a.data.lastMessageAt)?.getTime() ?? 0));
-      setChats(list);
-    }, () => {});
+    const unreadQuery = query(
+      collection(db, 'chats'),
+      where('universityId', '==', universityId),
+      where('adminUnread', '>', 0),
+      limit(10),
+    );
+    const unsub = onSnapshot(unreadQuery, (snap) => setUnreadCount(snap.size), () => {});
     return unsub;
   }, [isUniAdmin, universityId]);
+
+  // Load the full recent inbox only while it is visible.
+  useEffect(() => {
+    if (!open || !isUniAdmin || !universityId) return;
+    const inboxQuery = query(
+      collection(db, 'chats'),
+      where('universityId', '==', universityId),
+      orderBy('lastMessageAt', 'desc'),
+      limit(50),
+    );
+    const unsub = onSnapshot(inboxQuery, (snap) => {
+      setChats(snap.docs.map((chatDoc) => ({ id: chatDoc.id, data: chatDoc.data() })));
+    }, () => {});
+    return unsub;
+  }, [open, isUniAdmin, universityId]);
 
   // Allow other UI to open the panel.
   useEffect(() => {
@@ -74,7 +94,9 @@ export default function AdminSupportChat() {
 
   if (!isUniAdmin || !actor) return null;
 
-  const totalUnread = chats.filter((c) => ((c.data.adminUnread as number) ?? 0) > 0).length;
+  const totalUnread = open
+    ? chats.filter((c) => ((c.data.adminUnread as number) ?? 0) > 0).length
+    : unreadCount;
   const selected = chats.find((c) => c.id === selectedId) ?? null;
   const q = search.trim().toLowerCase();
   const filtered = q

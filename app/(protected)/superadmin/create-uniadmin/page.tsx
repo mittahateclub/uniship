@@ -64,9 +64,10 @@ export default function CreateUniadminPage() {
       setSuccess(`University Admin account created for ${formData.email} → ${selectedUni.name}`);
       setFormData({ name: '', email: '', password: '', phone: '' });
       setSelectedUni(null);
-    } catch (err: any) {
-      if (err.code === 'auth/email-already-in-use') setError('This email is already registered.');
-      else if (err.code === 'auth/weak-password') setError('Password should be at least 6 characters.');
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      if (code === 'auth/email-already-in-use') setError('This email is already registered.');
+      else if (code === 'auth/weak-password') setError('Password should be at least 6 characters.');
       else setError('Failed to create account. Please try again.');
     } finally { setSubmitting(false); }
   };

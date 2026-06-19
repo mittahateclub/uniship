@@ -53,18 +53,18 @@ async function submitToJudge0(
   authToken: string | null,
   sourceCode: string,
   languageId: number,
-  stdin: string,
-): Promise<{ stdout: string; stderr: string; statusId: number }> {
+  options: Judge0Options,
+): Promise<Judge0Result> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (authToken) headers['X-Auth-Token'] = authToken;
 
   const body = {
     source_code: Buffer.from(sourceCode).toString('base64'),
     language_id: languageId,
-    stdin: Buffer.from(stdin).toString('base64'),
-    cpu_time_limit: 5,
-    wall_time_limit: 10,
-    memory_limit: 262144,
+    stdin: Buffer.from(options.stdin ?? '').toString('base64'),
+    cpu_time_limit: options.timeLimitSec ?? 5,
+    wall_time_limit: (options.timeLimitSec ?? 5) + 3,
+    memory_limit: options.memoryLimitKb ?? 262144,
   };
 
   const response = await fetch(`${url}/submissions?base64_encoded=true&wait=true`, {
@@ -81,11 +81,16 @@ async function submitToJudge0(
     throw new Judge0HttpError(response.status, retryAfterMs);
   }
   const data = await response.json();
+  if (data.status?.id === 13) throw new Error('sandbox_error');
 
   return {
+    status: data.status,
     stdout: decode(data.stdout),
-    stderr: decode(data.stderr) + (decode(data.compile_output) || ''),
-    statusId: data.status?.id ?? 0,
+    stderr: decode(data.stderr),
+    compile_output: decode(data.compile_output),
+    message: decode(data.message),
+    time: data.time ?? null,
+    memory: data.memory ?? null,
   };
 }
 
@@ -97,13 +102,13 @@ async function submitWithRetry(
   authToken: string | null,
   sourceCode: string,
   languageId: number,
-  stdin: string,
+  options: Judge0Options,
   attempts = 4,
-): Promise<{ stdout: string; stderr: string; statusId: number }> {
+): Promise<Judge0Result> {
   let lastErr: unknown;
   for (let i = 0; i < attempts; i++) {
     try {
-      return await submitToJudge0(url, authToken, sourceCode, languageId, stdin);
+      return await submitToJudge0(url, authToken, sourceCode, languageId, options);
     } catch (e) {
       lastErr = e;
       const status = e instanceof Judge0HttpError ? e.status : 0; // 0 = network/timeout
@@ -117,11 +122,27 @@ async function submitWithRetry(
   throw lastErr;
 }
 
-export async function runCode(
+export interface Judge0Options {
+  stdin?: string;
+  timeLimitSec?: number;
+  memoryLimitKb?: number;
+}
+
+export interface Judge0Result {
+  status?: { id?: number; description?: string };
+  stdout: string;
+  stderr: string;
+  compile_output: string;
+  message: string;
+  time: string | null;
+  memory: number | null;
+}
+
+export async function executeJudge0(
   sourceCode: string,
   languageId: number,
-  stdin: string,
-): Promise<{ stdout: string; stderr: string; ok: boolean }> {
+  options: Judge0Options = {},
+): Promise<Judge0Result> {
   const selfHostedUrl = process.env.JUDGE0_API_URL;
   const selfHostedToken = process.env.JUDGE0_AUTH_TOKEN;
 
@@ -130,20 +151,28 @@ export async function runCode(
     let result;
     if (selfHostedUrl && selfHostedToken) {
       try {
-        result = await submitWithRetry(selfHostedUrl, selfHostedToken, sourceCode, languageId, stdin);
+        result = await submitWithRetry(selfHostedUrl, selfHostedToken, sourceCode, languageId, options);
       } catch {
-        result = await submitWithRetry(JUDGE0_CE_URL, null, sourceCode, languageId, stdin);
+        result = await submitWithRetry(JUDGE0_CE_URL, null, sourceCode, languageId, options);
       }
     } else {
-      result = await submitWithRetry(JUDGE0_CE_URL, null, sourceCode, languageId, stdin);
+      result = await submitWithRetry(JUDGE0_CE_URL, null, sourceCode, languageId, options);
     }
-
-    return {
-      stdout: result.stdout.trim(),
-      stderr: result.stderr.trim(),
-      ok: result.statusId === 3,
-    };
+    return result;
   } finally {
     release();
   }
+}
+
+export async function runCode(
+  sourceCode: string,
+  languageId: number,
+  stdin: string,
+): Promise<{ stdout: string; stderr: string; ok: boolean }> {
+  const result = await executeJudge0(sourceCode, languageId, { stdin });
+  return {
+    stdout: result.stdout.trim(),
+    stderr: `${result.stderr}${result.compile_output}`.trim(),
+    ok: result.status?.id === 3,
+  };
 }

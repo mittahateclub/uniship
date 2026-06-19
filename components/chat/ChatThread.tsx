@@ -5,13 +5,17 @@
 // inbox (asAdmin=true, internal notes visible + postable). Behaviour mirrors the
 // Flutter app's chat_screen / admin_chat_screen / chat_widgets.
 
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+  getDocs,
   onSnapshot,
+  orderBy,
   query,
+  startAfter,
   where,
   limit,
   type DocumentData,
+  type QueryDocumentSnapshot,
 } from 'firebase/firestore';
 import {
   messagesRef,
@@ -20,7 +24,14 @@ import {
   type ChatActor,
 } from '@/lib/chat';
 import { toDate } from '@/lib/college';
-import { Paperclip, Send, Lock, FileText, ImageIcon, FilePdf, Check, CheckCircle2 } from '@/components/icons';
+import Paperclip from '@/components/icons/Paperclip';
+import Send from '@/components/icons/Send';
+import Lock from '@/components/icons/Lock';
+import FileText from '@/components/icons/FileText';
+import ImageIcon from '@/components/icons/ImageIcon';
+import FilePdf from '@/components/icons/FilePdf';
+import Check from '@/components/icons/Check';
+import CheckCircle2 from '@/components/icons/CheckCircle2';
 
 function timeAgo(d: Date | null): string {
   if (!d) return '';
@@ -60,7 +71,7 @@ function AttachmentPreview({ fileUrl, fileName }: { fileUrl: string; fileName: s
       </span>
       <span className="min-w-0">
         <span className="block text-[12px] font-medium text-[var(--text-primary)] truncate">{fileName}</span>
-        <span className="block text-[9.5px] text-[var(--text-faint)] uppercase tracking-wide">{ext} · open</span>
+        <span className="block text-[9.5px] text-[var(--text-faint)] uppercase tracking-[0.07em]">{ext} · open</span>
       </span>
     </a>
   );
@@ -110,6 +121,7 @@ function MessageBubble({ data, mine, seen }: { data: DocumentData; mine: boolean
 }
 
 const ALLOWED = ['pdf', 'doc', 'docx', 'png', 'jpg', 'jpeg'];
+const MESSAGE_PAGE_SIZE = 50;
 
 export function ChatThread({
   chatId,
@@ -129,30 +141,39 @@ export function ChatThread({
   const [internal, setInternal] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(false);
+  const [hasOlder, setHasOlder] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const markScheduled = useRef(false);
+  const oldestVisibleRef = useRef<QueryDocumentSnapshot<DocumentData> | null>(null);
 
   // Live message stream. Students filter internal==false (also enforced by
   // rules); admins see everything. Equality-only query → no composite index.
   useEffect(() => {
+    oldestVisibleRef.current = null;
     markSeen(chatId, { asAdmin }).catch(() => {});
     const q = asAdmin
-      ? query(messagesRef(chatId), limit(300))
-      : query(messagesRef(chatId), where('internal', '==', false), limit(300));
+      ? query(messagesRef(chatId), orderBy('createdAt', 'desc'), limit(MESSAGE_PAGE_SIZE))
+      : query(messagesRef(chatId), where('internal', '==', false), orderBy('createdAt', 'desc'), limit(MESSAGE_PAGE_SIZE));
     const unsub = onSnapshot(
       q,
       (snap) => {
         setError(false);
-        const list = snap.docs.map((d) => ({ id: d.id, data: d.data() }));
-        list.sort((a, b) => {
-          const at = toDate(a.data.createdAt)?.getTime() ?? Number.MAX_SAFE_INTEGER;
-          const bt = toDate(b.data.createdAt)?.getTime() ?? Number.MAX_SAFE_INTEGER;
-          return at - bt;
+        oldestVisibleRef.current = snap.docs.at(-1) ?? null;
+        setHasOlder(snap.size === MESSAGE_PAGE_SIZE);
+        const latest = snap.docs.map((messageDoc) => ({ id: messageDoc.id, data: messageDoc.data() }));
+        setDocs((previous) => {
+          const merged = new Map(previous.map((message) => [message.id, message]));
+          latest.forEach((message) => merged.set(message.id, message));
+          return Array.from(merged.values()).sort((a, b) => {
+            const at = toDate(a.data.createdAt)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+            const bt = toDate(b.data.createdAt)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+            return at - bt;
+          });
         });
-        setDocs(list);
         const seenField = asAdmin ? 'seenByAdmin' : 'seenByStudent';
-        if (list.some((m) => m.data[seenField] === false) && !markScheduled.current) {
+        if (latest.some((m) => m.data[seenField] === false) && !markScheduled.current) {
           markScheduled.current = true;
           requestAnimationFrame(() => {
             markSeen(chatId, { asAdmin }).finally(() => { markScheduled.current = false; });
@@ -163,6 +184,34 @@ export function ChatThread({
     );
     return unsub;
   }, [chatId, asAdmin]);
+
+  const loadOlder = async () => {
+    const cursor = oldestVisibleRef.current;
+    if (!cursor || loadingOlder) return;
+    setLoadingOlder(true);
+    try {
+      const olderQuery = asAdmin
+        ? query(messagesRef(chatId), orderBy('createdAt', 'desc'), startAfter(cursor), limit(MESSAGE_PAGE_SIZE))
+        : query(messagesRef(chatId), where('internal', '==', false), orderBy('createdAt', 'desc'), startAfter(cursor), limit(MESSAGE_PAGE_SIZE));
+      const snapshot = await getDocs(olderQuery);
+      oldestVisibleRef.current = snapshot.docs.at(-1) ?? cursor;
+      setHasOlder(snapshot.size === MESSAGE_PAGE_SIZE);
+      const older = snapshot.docs.map((messageDoc) => ({ id: messageDoc.id, data: messageDoc.data() }));
+      setDocs((previous) => {
+        const merged = new Map(previous.map((message) => [message.id, message]));
+        older.forEach((message) => merged.set(message.id, message));
+        return Array.from(merged.values()).sort((a, b) => {
+          const at = toDate(a.data.createdAt)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+          const bt = toDate(b.data.createdAt)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+          return at - bt;
+        });
+      });
+    } catch {
+      setError(true);
+    } finally {
+      setLoadingOlder(false);
+    }
+  };
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -196,6 +245,13 @@ export function ChatThread({
   return (
     <div className="flex flex-col h-full min-h-0">
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-3.5 py-3">
+        {hasOlder && (
+          <div className="flex justify-center mb-3">
+            <button type="button" onClick={loadOlder} disabled={loadingOlder} className="text-[11px] font-semibold text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-50">
+              {loadingOlder ? 'Loading…' : 'Load older messages'}
+            </button>
+          </div>
+        )}
         {error && docs.length === 0 ? (
           <p className="text-center text-[12px] text-[var(--text-faint)] mt-8">Chat unavailable</p>
         ) : docs.length === 0 ? (

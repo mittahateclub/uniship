@@ -5,14 +5,14 @@ import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { doc, getDoc, updateDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { TestReviewView } from './test-review.view';
+import { TestReviewView, type TestDoc } from './test-review.view';
 
 export default function ReviewGeneratedQuestions() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const { id } = useParams();
   const testId = id as string;
-  const [testData, setTestData] = useState<any>(null);
+  const [testData, setTestData] = useState<TestDoc | null>(null);
   const [fetching, setFetching] = useState(true);
   const [publishing, setPublishing] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -47,7 +47,7 @@ export default function ReviewGeneratedQuestions() {
     try {
       const patch = { approved: true, published: true, publishedAt: new Date().toISOString(), publishedBy: user?.uid };
       await updateDoc(doc(db, 'tests', testId), patch);
-      setTestData((prev: any) => ({ ...prev, ...patch }));
+      setTestData((prev) => ({ ...prev, ...patch }));
       flash('Test approved & published');
     } catch (error) {
       console.error("Error publishing test:", error);
@@ -63,7 +63,7 @@ export default function ReviewGeneratedQuestions() {
     try {
       const patch = { approved: false, published: false };
       await updateDoc(doc(db, 'tests', testId), patch);
-      setTestData((prev: any) => ({ ...prev, ...patch }));
+      setTestData((prev) => ({ ...prev, ...patch }));
       flash('Test unpublished — students can no longer take it');
     } catch (error) {
       console.error('Error unpublishing test:', error);
@@ -79,7 +79,7 @@ export default function ReviewGeneratedQuestions() {
     try {
       const patch = { duration, examStart, examEnd };
       await updateDoc(doc(db, 'tests', testId), patch);
-      setTestData((prev: any) => ({ ...prev, ...patch }));
+      setTestData((prev) => ({ ...prev, ...patch }));
       flash('Schedule updated');
     } catch (error) {
       console.error('Error saving schedule:', error);
@@ -97,7 +97,7 @@ export default function ReviewGeneratedQuestions() {
       // Propagate to existing submissions so prior attempts can (or can't) retake.
       const snap = await getDocs(query(collection(db, 'test_results'), where('testId', '==', testId)));
       await Promise.all(snap.docs.map(d => updateDoc(doc(db, 'test_results', d.id), { reattemptAllowed: value })));
-      setTestData((prev: any) => ({ ...prev, allowReattempts: value }));
+      setTestData((prev) => prev ? { ...prev, allowReattempts: value } : prev);
       flash(value ? 'Reattempts enabled — students can retake' : 'Reattempts disabled');
     } catch (e) {
       console.error('Failed to update reattempts:', e);

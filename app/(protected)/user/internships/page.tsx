@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, getDocs, addDoc, deleteDoc, doc, where } from 'firebase/firestore';
+import { collection, query, getDocs, limit, addDoc, deleteDoc, doc, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { InternshipsView, type CollegeEvent } from './internships.view';
 import {
@@ -32,11 +32,11 @@ export default function CollegeSpacePage() {
         // are scoped to the student's university by the security rules, so the
         // query MUST carry the universityId filter or Firestore rejects it.
         const [eventsSnap, internshipsSnap, savedSnap, applied] = await Promise.all([
-          getDocs(query(collection(db, 'events'))),
+          getDocs(query(collection(db, 'events'), limit(300))),
           universityId
-            ? getDocs(query(collection(db, 'internships'), where('universityId', '==', universityId)))
+            ? getDocs(query(collection(db, 'internships'), where('universityId', '==', universityId), limit(200)))
             : Promise.resolve(null),
-          getDocs(query(collection(db, 'savedEvents'), where('userId', '==', user.uid))),
+          getDocs(query(collection(db, 'savedEvents'), where('userId', '==', user.uid), limit(500))),
           appliedEventIds(user.uid),
         ]);
 

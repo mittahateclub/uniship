@@ -3,36 +3,85 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, limit, query, updateDoc, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { calculateATSScore } from '@/app/(protected)/user/resume/ats-score';
 import Link from 'next/link';
 import { DetailSkeleton } from '@/components/Skeleton';
-import {
-  AlertCircle,
-  ArrowLeft,
-  Award,
-  BadgeCheck,
-  Briefcase,
-  Calendar,
-  ClipboardCheck,
-  Clock3,
-  Code,
-  FileText,
-  FolderKanban,
-  GraduationCap,
-  Mail,
-  MapPin,
-  TrendingUp,
-  BookOpen,
-  Star,
-  Trophy,
-  CheckCircle2,
-  XCircle,
-  X,
-} from '@/components/icons';
+import AlertCircle from '@/components/icons/AlertCircle';
+import ArrowLeft from '@/components/icons/ArrowLeft';
+import Award from '@/components/icons/Award';
+import BadgeCheck from '@/components/icons/BadgeCheck';
+import Briefcase from '@/components/icons/Briefcase';
+import ClipboardCheck from '@/components/icons/ClipboardCheck';
+import Clock3 from '@/components/icons/Clock3';
+import Code from '@/components/icons/Code';
+import FileText from '@/components/icons/FileText';
+import FolderKanban from '@/components/icons/FolderKanban';
+import GraduationCap from '@/components/icons/GraduationCap';
+import Mail from '@/components/icons/Mail';
+import MapPin from '@/components/icons/MapPin';
+import TrendingUp from '@/components/icons/TrendingUp';
+import BookOpen from '@/components/icons/BookOpen';
+import Star from '@/components/icons/Star';
+import Trophy from '@/components/icons/Trophy';
+import CheckCircle2 from '@/components/icons/CheckCircle2';
+import XCircle from '@/components/icons/XCircle';
 import { StatBar } from '@/components/StatBar';
 import { Modal, ModalHeader, ModalBody } from '@/components/Modal';
+
+interface EducationEntry {
+  institution: string;
+  degree: string;
+  fromDate: string;
+  toDate: string;
+  cgpa: string;
+  location: string;
+}
+
+interface ExperienceEntry {
+  company: string;
+  role: string;
+  fromDate: string;
+  toDate: string;
+  description: string;
+  location: string;
+}
+
+interface ProjectEntry {
+  title: string;
+  techStack: string;
+  description: string;
+  link: string;
+  fromDate: string;
+  toDate: string;
+  location: string;
+}
+
+interface AchievementEntry {
+  title: string;
+  issuer: string;
+  fromDate: string;
+  toDate: string;
+  location: string;
+}
+
+interface PositionEntry {
+  title: string;
+  organization: string;
+  fromDate: string;
+  toDate: string;
+  location: string;
+}
+
+interface ExtracurricularEntry {
+  activity: string;
+  role: string;
+  description: string;
+  fromDate: string;
+  toDate: string;
+  location: string;
+}
 
 interface StudentData {
   id?: string;
@@ -48,15 +97,15 @@ interface StudentData {
   studentId?: string;
   technicalSkills?: string;
   relevantCoursework?: string;
-  educationEntries?: any[];
-  experienceEntries?: any[];
-  projectEntries?: any[];
-  achievementEntries?: any[];
-  positionEntries?: any[];
-  extracurricularEntries?: any[];
+  educationEntries?: EducationEntry[];
+  experienceEntries?: ExperienceEntry[];
+  projectEntries?: ProjectEntry[];
+  achievementEntries?: AchievementEntry[];
+  positionEntries?: PositionEntry[];
+  extracurricularEntries?: ExtracurricularEntry[];
   profileReviewStatus?: 'verified' | 'resubmission_requested';
   profileReviewNote?: string;
-  profileReviewedAt?: any;
+  profileReviewedAt?: unknown;
   profileReviewedBy?: string;
 }
 
@@ -65,7 +114,15 @@ interface ApplicationItem {
   internshipRole?: string;
   companyName?: string;
   status?: 'pending' | 'shortlisted' | 'selected' | 'rejected';
-  appliedAt?: any;
+  appliedAt?: unknown;
+}
+
+interface ResultSection {
+  sectionName?: string;
+  name?: string;
+  percentage?: number;
+  totalQuestions?: number;
+  score?: number;
 }
 
 interface ResultItem {
@@ -75,7 +132,9 @@ interface ResultItem {
   attemptedQuestions?: number;
   totalQuestions?: number;
   percentage?: number;
-  submittedAt?: any;
+  submittedAt?: unknown;
+  sectionResults?: ResultSection[];
+  sections?: ResultSection[];
   proctoring?: {
     totalViolations?: number;
     violationPoints?: number;
@@ -106,7 +165,7 @@ interface ResumeItem {
   uploadedFileUrl?: string;
   uploadedFileName?: string;
   uploadedFileType?: string;
-  updatedAt?: any;
+  updatedAt?: unknown;
   keywords?: string[];
   education?: string;
   experience?: string;
@@ -134,11 +193,16 @@ function formatDateRange(from: string, to: string): string {
   return '';
 }
 
-function toDateLabel(value: any): string {
+function toDateLabel(value: unknown): string {
   if (!value) return 'N/A';
-  if (typeof value?.toDate === 'function') return value.toDate().toLocaleDateString();
-  const d = new Date(value);
+  const timestampDate = (value as { toDate?: () => Date }).toDate?.();
+  if (timestampDate) return timestampDate.toLocaleDateString();
+  const d = new Date(value as string | number | Date);
   return Number.isNaN(d.getTime()) ? 'N/A' : d.toLocaleDateString();
+}
+
+function toMillis(value: unknown): number {
+  return (value as { toMillis?: () => number } | undefined)?.toMillis?.() ?? 0;
 }
 
 function safePercentage(result: ResultItem): number {
@@ -149,26 +213,35 @@ function safePercentage(result: ResultItem): number {
 }
 
 function getResultSections(result: ResultItem): Array<{ name: string; percentage: number }> {
-  const sectionSource = (result as any)?.sectionResults || (result as any)?.sections || [];
+  const sectionSource = result.sectionResults || result.sections || [];
   if (!Array.isArray(sectionSource)) return [];
 
   return sectionSource
-    .map((section: any) => {
-      const name = section?.sectionName || section?.name || 'Section';
-      const percentage = typeof section?.percentage === 'number'
+    .map((section) => {
+      const name = section.sectionName || section.name || 'Section';
+      const percentage = typeof section.percentage === 'number'
         ? section.percentage
-        : (section?.totalQuestions > 0 ? ((section?.score || 0) / section.totalQuestions) * 100 : 0);
+        : ((section.totalQuestions || 0) > 0 ? ((section.score || 0) / (section.totalQuestions || 1)) * 100 : 0);
 
       return { name, percentage };
     })
     .filter((section: { name: string; percentage: number }) => Number.isFinite(section.percentage));
 }
 
-function SectionHeader({ icon: Icon, title }: { icon: React.ComponentType<any>; title: string }) {
+function SectionHeader({ icon: Icon, title }: { icon: React.ComponentType<{ size?: number; className?: string }>; title: string }) {
   return (
     <div className="flex items-center gap-2 mb-3 mt-5 first:mt-0">
       <Icon size={15} className="text-[var(--type-event)]" />
       <h2 className="text-[13px] font-semibold uppercase tracking-[0.07em] text-[var(--text-primary)]">{title}</h2>
+    </div>
+  );
+}
+
+function ResumeSectionTitle({ title }: { title: string }) {
+  return (
+    <div className="mt-4 mb-1">
+      <h2 className="text-[12px] font-semibold tracking-[0.07em] uppercase" style={{ fontVariant: 'small-caps' }}>{title}</h2>
+      <hr className="border-t border-black mt-0.5" />
     </div>
   );
 }
@@ -311,13 +384,6 @@ function AdminResumePreview({ data }: { data: ResumeItem }) {
     </div>
   );
 
-  const SectionTitle = ({ title }: { title: string }) => (
-    <div className="mt-4 mb-1">
-      <h2 className="text-[12px] font-semibold tracking-[0.07em] uppercase" style={{ fontVariant: 'small-caps' }}>{title}</h2>
-      <hr className="border-t border-black mt-0.5" />
-    </div>
-  );
-
   const contactItems = [
     data.website,
     data.email || data.userEmail,
@@ -343,13 +409,13 @@ function AdminResumePreview({ data }: { data: ResumeItem }) {
         </div>
       )}
 
-      {hasContent(data.education) && <><SectionTitle title="Education" />{parseEducation(data.education)}</>}
-      {hasContent(data.experience) && <><SectionTitle title="Experience" />{parseExperience(data.experience)}</>}
-      {hasContent(data.projects) && <><SectionTitle title="Projects" />{parseProjects(data.projects)}</>}
-      {hasContent(data.coursework) && <><SectionTitle title="Relevant Coursework" /><p className="text-[11px] leading-relaxed">{data.coursework}</p></>}
-      {hasContent(data.skills) && <><SectionTitle title="Technical Skills" />{renderSkills(data.skills)}</>}
-      {hasContent(data.extracurriculars) && <><SectionTitle title="Extracurriculars / Activities" />{parseExtracurriculars(data.extracurriculars)}</>}
-      {hasContent(data.achievements) && <><SectionTitle title="Achievements & Certifications" />{parseAchievements(data.achievements)}</>}
+      {hasContent(data.education) && <><ResumeSectionTitle title="Education" />{parseEducation(data.education)}</>}
+      {hasContent(data.experience) && <><ResumeSectionTitle title="Experience" />{parseExperience(data.experience)}</>}
+      {hasContent(data.projects) && <><ResumeSectionTitle title="Projects" />{parseProjects(data.projects)}</>}
+      {hasContent(data.coursework) && <><ResumeSectionTitle title="Relevant Coursework" /><p className="text-[11px] leading-relaxed">{data.coursework}</p></>}
+      {hasContent(data.skills) && <><ResumeSectionTitle title="Technical Skills" />{renderSkills(data.skills)}</>}
+      {hasContent(data.extracurriculars) && <><ResumeSectionTitle title="Extracurriculars / Activities" />{parseExtracurriculars(data.extracurriculars)}</>}
+      {hasContent(data.achievements) && <><ResumeSectionTitle title="Achievements & Certifications" />{parseAchievements(data.achievements)}</>}
 
       {!hasContent(data.education) && !hasContent(data.experience) && !hasContent(data.projects) && !hasContent(data.coursework) && !hasContent(data.skills) && !hasContent(data.extracurriculars) && !hasContent(data.achievements) && (
         <p className="text-[12px] text-[#666]">No structured resume fields are available for this record.</p>
@@ -392,37 +458,37 @@ export default function StudentViewPage({ studentId }: { studentId?: string }) {
         setStudent(studentData);
 
         const [applicationSnap, modernResultsSnap, legacyResultsSnap, resumesSnap] = await Promise.all([
-          getDocs(query(collection(db, 'applications'), where('userId', '==', id))).catch(() => ({ docs: [] } as any)),
-          getDocs(query(collection(db, 'test_results'), where('userId', '==', id))).catch(() => ({ docs: [] } as any)),
-          getDocs(query(collection(db, 'testResults'), where('userId', '==', id))).catch(() => ({ docs: [] } as any)),
+          getDocs(query(collection(db, 'applications'), where('userId', '==', id), limit(200))).catch(() => null),
+          getDocs(query(collection(db, 'test_results'), where('userId', '==', id), limit(200))).catch(() => null),
+          getDocs(query(collection(db, 'testResults'), where('userId', '==', id), limit(200))).catch(() => null),
           studentData.email
-            ? getDocs(query(collection(db, 'resumes'), where('userEmail', '==', studentData.email))).catch(() => ({ docs: [] } as any))
-            : Promise.resolve({ docs: [] } as any),
+            ? getDocs(query(collection(db, 'resumes'), where('userEmail', '==', studentData.email), limit(50))).catch(() => null)
+            : Promise.resolve(null),
         ]);
 
-        const appRows = applicationSnap.docs.map((d: any) => ({ id: d.id, ...d.data() } as ApplicationItem));
+        const appRows = (applicationSnap?.docs ?? []).map((d) => ({ id: d.id, ...d.data() } as ApplicationItem));
         appRows.sort((a: ApplicationItem, b: ApplicationItem) => {
-          const at = typeof a.appliedAt?.toMillis === 'function' ? a.appliedAt.toMillis() : 0;
-          const bt = typeof b.appliedAt?.toMillis === 'function' ? b.appliedAt.toMillis() : 0;
+          const at = toMillis(a.appliedAt);
+          const bt = toMillis(b.appliedAt);
           return bt - at;
         });
         setApplications(appRows);
 
         const resultRows = [
-          ...modernResultsSnap.docs.map((d: any) => ({ id: `modern-${d.id}`, ...d.data() } as ResultItem)),
-          ...legacyResultsSnap.docs.map((d: any) => ({ id: `legacy-${d.id}`, ...d.data() } as ResultItem)),
+          ...(modernResultsSnap?.docs ?? []).map((d) => ({ id: `modern-${d.id}`, ...d.data() } as ResultItem)),
+          ...(legacyResultsSnap?.docs ?? []).map((d) => ({ id: `legacy-${d.id}`, ...d.data() } as ResultItem)),
         ];
         resultRows.sort((a: ResultItem, b: ResultItem) => {
-          const at = typeof a.submittedAt?.toMillis === 'function' ? a.submittedAt.toMillis() : 0;
-          const bt = typeof b.submittedAt?.toMillis === 'function' ? b.submittedAt.toMillis() : 0;
+          const at = toMillis(a.submittedAt);
+          const bt = toMillis(b.submittedAt);
           return bt - at;
         });
         setResults(resultRows);
 
-        const resumeRows = resumesSnap.docs.map((d: any) => ({ id: d.id, ...d.data() } as ResumeItem));
+        const resumeRows = (resumesSnap?.docs ?? []).map((d) => ({ id: d.id, ...d.data() } as ResumeItem));
         resumeRows.sort((a: ResumeItem, b: ResumeItem) => {
-          const at = typeof a.updatedAt?.toMillis === 'function' ? a.updatedAt.toMillis() : 0;
-          const bt = typeof b.updatedAt?.toMillis === 'function' ? b.updatedAt.toMillis() : 0;
+          const at = toMillis(a.updatedAt);
+          const bt = toMillis(b.updatedAt);
           return bt - at;
         });
         setResumes(resumeRows);
@@ -528,9 +594,6 @@ export default function StudentViewPage({ studentId }: { studentId?: string }) {
     return breakdown.total;
   };
 
-  const latestResumeAts = resumes.length > 0 ? getResumeAts(resumes[0]) : null;
-  const bestResumeAts = resumes.length > 0 ? Math.max(...resumes.map(getResumeAts)) : null;
-
   const sectionBuckets: Record<string, { sum: number; count: number }> = {};
   results.forEach((result) => {
     getResultSections(result).forEach((section) => {
@@ -566,6 +629,7 @@ export default function StudentViewPage({ studentId }: { studentId?: string }) {
         <aside className="window p-5 lg:col-span-1 h-fit">
           <div className="flex flex-col items-center text-center">
             {student.photoURL ? (
+              // eslint-disable-next-line @next/next/no-img-element -- profile photos can come from arbitrary user-configured hosts.
               <img src={student.photoURL} alt={student.name || 'Student'} className="w-24 h-24 rounded-full object-cover border-2 border-[var(--border-subtle)]" />
             ) : (
               <div className="w-24 h-24 rounded-full bg-[var(--type-event)]/10 flex items-center justify-center text-[var(--type-event)] text-3xl font-semibold">
@@ -746,7 +810,7 @@ export default function StudentViewPage({ studentId }: { studentId?: string }) {
                   <div className="window p-4">
                     <SectionHeader icon={GraduationCap} title="Education" />
                     <div className="space-y-3">
-                      {eduEntries.map((e: any, i: number) => (
+                      {eduEntries.map((e, i) => (
                         <div key={i} className="border-l-2 border-[var(--type-event)]/30 pl-3">
                           <div className="flex justify-between items-baseline">
                             <h3 className="text-[13px] font-semibold text-[var(--text-primary)]">{e.institution}</h3>
@@ -767,7 +831,7 @@ export default function StudentViewPage({ studentId }: { studentId?: string }) {
                   <div className="window p-4">
                     <SectionHeader icon={Briefcase} title="Experience" />
                     <div className="space-y-3">
-                      {expEntries.map((e: any, i: number) => (
+                      {expEntries.map((e, i) => (
                         <div key={i} className="border-l-2 border-[var(--type-internship)]/30 pl-3">
                           <div className="flex justify-between items-baseline">
                             <h3 className="text-[13px] font-semibold text-[var(--text-primary)]">{e.role}</h3>
@@ -785,7 +849,7 @@ export default function StudentViewPage({ studentId }: { studentId?: string }) {
                   <div className="window p-4">
                     <SectionHeader icon={FolderKanban} title="Projects" />
                     <div className="space-y-3">
-                      {projEntries.map((p: any, i: number) => (
+                      {projEntries.map((p, i) => (
                         <div key={i} className="border-l-2 border-[var(--accent-orange)]/30 pl-3">
                           <div className="flex justify-between items-baseline">
                             <h3 className="text-[13px] font-semibold text-[var(--text-primary)]">{p.title}</h3>
@@ -803,7 +867,7 @@ export default function StudentViewPage({ studentId }: { studentId?: string }) {
                   <div className="window p-4">
                     <SectionHeader icon={Trophy} title="Achievements" />
                     <div className="space-y-2">
-                      {achEntries.map((a: any, i: number) => (
+                      {achEntries.map((a, i) => (
                         <div key={i} className="text-[12px]">
                           <span className="font-semibold text-[var(--text-primary)]">{a.title}</span>
                           {a.issuer && <span className="text-[var(--text-muted)]"> - {a.issuer}</span>}
@@ -817,7 +881,7 @@ export default function StudentViewPage({ studentId }: { studentId?: string }) {
                   <div className="window p-4">
                     <SectionHeader icon={Star} title="Positions of Responsibility" />
                     <div className="space-y-2">
-                      {posEntries.map((p: any, i: number) => (
+                      {posEntries.map((p, i) => (
                         <div key={i} className="text-[12px]">
                           <span className="font-semibold text-[var(--text-primary)]">{p.title}</span>
                           <span className="text-[var(--text-muted)]"> - {p.organization}</span>
@@ -831,7 +895,7 @@ export default function StudentViewPage({ studentId }: { studentId?: string }) {
                   <div className="window p-4">
                     <SectionHeader icon={Award} title="Extracurriculars" />
                     <div className="space-y-2">
-                      {extraEntries.map((e: any, i: number) => (
+                      {extraEntries.map((e, i) => (
                         <div key={i} className="text-[12px]">
                           <span className="font-semibold text-[var(--text-primary)]">{e.activity}</span>
                           {e.role && <span className="text-[var(--text-muted)]"> - {e.role}</span>}

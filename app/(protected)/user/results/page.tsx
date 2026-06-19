@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import {
+  collection, query, where, getDocs, limit, doc, getDoc, documentId,
+  orderBy, startAfter, type DocumentData, type QueryDocumentSnapshot,
+} from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { ResultsView, type TestResult, type AnalysisDetails } from './results.view';
 
@@ -20,13 +23,17 @@ export default function ResultsPage() {
   const [activeResult, setActiveResult] = useState<TestResult | null>(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [analysisError, setAnalysisError] = useState('');
+  const [currentCursor, setCurrentCursor] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [legacyCursor, setLegacyCursor] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [analysis, setAnalysis] = useState<AnalysisDetails | null>(null);
 
-  const toMillis = (value: any) => {
+  const toMillis = (value: unknown) => {
     if (!value) return 0;
-    if (typeof value?.toMillis === 'function') return value.toMillis();
-    if (typeof value?.toDate === 'function') return value.toDate().getTime();
-    const parsed = new Date(value).getTime();
+    if (typeof (value as { toMillis?: unknown }).toMillis === 'function') return (value as { toMillis: () => number }).toMillis();
+    if (typeof (value as { toDate?: unknown }).toDate === 'function') return (value as { toDate: () => Date }).toDate().getTime();
+    const parsed = new Date(value as string | number | Date).getTime();
     return Number.isNaN(parsed) ? 0 : parsed;
   };
 
@@ -64,7 +71,7 @@ export default function ResultsPage() {
       }
 
       const [peersSnapshot, testSnap] = await Promise.all([
-        getDocs(query(collection(db, 'test_results'), where('testId', '==', result.testId))),
+        getDocs(query(collection(db, 'test_results'), where('testId', '==', result.testId), limit(1000))),
         getDoc(doc(db, 'tests', result.testId)),
       ]);
 
@@ -172,8 +179,8 @@ export default function ResultsPage() {
         board,
         questionStats,
       });
-    } catch (error: any) {
-      setAnalysisError(error?.message || 'Failed to load detailed analysis.');
+    } catch (error) {
+      setAnalysisError(error instanceof Error ? error.message : 'Failed to load detailed analysis.');
     } finally {
       setAnalysisLoading(false);
     }
@@ -191,12 +198,16 @@ export default function ResultsPage() {
       try {
         const currentResultsQ = query(
           collection(db, 'test_results'),
-          where('userId', '==', user.uid)
+          where('userId', '==', user.uid),
+          orderBy(documentId()),
+          limit(50),
         );
 
         const legacyResultsQ = query(
           collection(db, 'testResults'),
-          where('userId', '==', user.uid)
+          where('userId', '==', user.uid),
+          orderBy(documentId()),
+          limit(50),
         );
 
         const [currentSnapshot, legacySnapshot] = await Promise.all([
@@ -211,6 +222,9 @@ export default function ResultsPage() {
 
         combined.sort((a, b) => toMillis(b.submittedAt) - toMillis(a.submittedAt));
         setResults(combined);
+        setCurrentCursor(currentSnapshot.docs.at(-1) ?? null);
+        setLegacyCursor(legacySnapshot.docs.at(-1) ?? null);
+        setHasMore(currentSnapshot.size === 50 || legacySnapshot.size === 50);
       } catch (error) {
         console.error("Error fetching results:", error);
       } finally {
@@ -222,6 +236,35 @@ export default function ResultsPage() {
       fetchResults();
     }
   }, [user, authLoading]);
+
+  const loadMore = async () => {
+    if (!user || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const [currentSnapshot, legacySnapshot] = await Promise.all([
+        currentCursor
+          ? getDocs(query(collection(db, 'test_results'), where('userId', '==', user.uid), orderBy(documentId()), startAfter(currentCursor), limit(50)))
+          : Promise.resolve(null),
+        legacyCursor
+          ? getDocs(query(collection(db, 'testResults'), where('userId', '==', user.uid), orderBy(documentId()), startAfter(legacyCursor), limit(50)))
+          : Promise.resolve(null),
+      ]);
+      const added = [
+        ...(currentSnapshot?.docs ?? []).map((resultDoc) => ({ id: resultDoc.id, ...resultDoc.data() } as TestResult)),
+        ...(legacySnapshot?.docs ?? []).map((resultDoc) => ({ id: resultDoc.id, ...resultDoc.data() } as TestResult)),
+      ];
+      setResults((previous) => {
+        const merged = new Map(previous.map((result) => [result.id, result]));
+        added.forEach((result) => merged.set(result.id, result));
+        return Array.from(merged.values()).sort((a, b) => toMillis(b.submittedAt) - toMillis(a.submittedAt));
+      });
+      setCurrentCursor(currentSnapshot?.docs.at(-1) ?? null);
+      setLegacyCursor(legacySnapshot?.docs.at(-1) ?? null);
+      setHasMore((currentSnapshot?.size ?? 0) === 50 || (legacySnapshot?.size ?? 0) === 50);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   return (
     <ResultsView
@@ -235,6 +278,9 @@ export default function ResultsPage() {
       getPercentage={getPercentage}
       onViewAnalysis={loadAnalysis}
       onCloseAnalysis={closeAnalysis}
+      hasMore={hasMore}
+      loadingMore={loadingMore}
+      onLoadMore={loadMore}
     />
   );
 }

@@ -48,7 +48,7 @@ const DEFAULT_META: UserMeta = { role: 'user', universityId: null, universityNam
 
 /// First parseable CGPA from a user profile's education entries — mirrors the
 /// app's cgpaFromProfile so both clients target events identically.
-function cgpaFromProfile(data: Record<string, any>): number | null {
+function cgpaFromProfile(data: Record<string, unknown>): number | null {
   const entries = Array.isArray(data.educationEntries) ? data.educationEntries : [];
   for (const entry of entries) {
     if (entry && entry.cgpa != null) {

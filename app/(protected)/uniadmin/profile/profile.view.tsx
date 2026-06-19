@@ -1,12 +1,29 @@
 'use client';
 
 import Link from 'next/link';
-import { Pencil, X, Shield, User, Phone, Mail, Hash, Users, UserPlus, FileText, ChevronRight } from '@/components/icons';
+import Pencil from '@/components/icons/Pencil';
+import X from '@/components/icons/X';
+import Shield from '@/components/icons/Shield';
+import User from '@/components/icons/User';
+import Phone from '@/components/icons/Phone';
+import Mail from '@/components/icons/Mail';
+import Hash from '@/components/icons/Hash';
+import Users from '@/components/icons/Users';
+import UserPlus from '@/components/icons/UserPlus';
+import FileText from '@/components/icons/FileText';
+import ChevronRight from '@/components/icons/ChevronRight';
 import { ProfileSkeleton } from '@/components/Skeleton';
+
+export interface UniadminProfile {
+  name?: string;
+  email?: string;
+  phone?: string;
+  universityId?: string;
+}
 
 export interface UniadminProfileViewProps {
   loading: boolean;
-  profileData: any;
+  profileData: UniadminProfile | null;
   isEditing: boolean;
   formData: { name: string; phone: string };
   message: string;

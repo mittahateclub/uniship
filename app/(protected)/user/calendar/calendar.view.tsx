@@ -2,15 +2,21 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, getDocs, where } from 'firebase/firestore';
+import { collection, query, getDocs, limit, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Calendar, MapPin, Clock, ChevronLeft, ChevronRight, Briefcase, X } from '@/components/icons';
+import Calendar from '@/components/icons/Calendar';
+import MapPin from '@/components/icons/MapPin';
+import Clock from '@/components/icons/Clock';
+import ChevronLeft from '@/components/icons/ChevronLeft';
+import ChevronRight from '@/components/icons/ChevronRight';
+import Briefcase from '@/components/icons/Briefcase';
+import X from '@/components/icons/X';
 import { CalendarSkeleton } from '@/components/Skeleton';
 
 interface CalendarEvent {
   id: string;
   title: string;
-  date: any;
+  date: unknown;
   type: string;
   description: string;
   location?: string;
@@ -20,15 +26,19 @@ interface CalendarEvent {
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAY_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-function toDate(d: any): Date | null {
+function toDate(d: unknown): Date | null {
   if (!d) return null;
-  if (typeof d.toDate === 'function') return d.toDate();
+  if (typeof (d as { toDate?: unknown }).toDate === 'function') return (d as { toDate: () => Date }).toDate();
   if (d instanceof Date) return d;
-  return new Date(d);
+  return new Date(d as string | number);
 }
 
 function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function dateKey(date: Date): string {
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 }
 
 const TYPE_CONFIG: Record<string, { dot: string; chip: string; label: string; text: string }> = {
@@ -51,7 +61,7 @@ export default function CalendarPage() {
       if (!user) return;
       try {
         const savedSnap = await getDocs(
-          query(collection(db, 'savedEvents'), where('userId', '==', user.uid))
+          query(collection(db, 'savedEvents'), where('userId', '==', user.uid), limit(500))
         );
 
         const calEvents: CalendarEvent[] = savedSnap.docs.map(d => {
@@ -114,25 +124,55 @@ export default function CalendarPage() {
     return { weeks, eventsInMonth };
   }, [currentMonth, events]);
 
-  const getEventsForDate = (date: Date) => events.filter(e => { const d = toDate(e.date); return d && sameDay(d, date); });
+  const eventsByDate = useMemo(() => {
+    const map = new Map<string, CalendarEvent[]>();
+    for (const event of events) {
+      const date = toDate(event.date);
+      if (!date) continue;
+      const key = dateKey(date);
+      const list = map.get(key);
+      if (list) list.push(event);
+      else map.set(key, [event]);
+    }
+    return map;
+  }, [events]);
 
-  const today = new Date();
-  const isToday = (date: Date) => sameDay(date, today);
+  const getEventsForDate = (date: Date) => eventsByDate.get(dateKey(date)) ?? [];
+
+  const [todayParts] = useState(() => {
+    const today = new Date();
+    return {
+      timestamp: today.getTime(),
+      year: today.getFullYear(),
+      month: today.getMonth(),
+      date: today.getDate(),
+    };
+  });
+  const isToday = (date: Date) =>
+    date.getFullYear() === todayParts.year
+    && date.getMonth() === todayParts.month
+    && date.getDate() === todayParts.date;
 
   const prevMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
   const nextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
-  const goToday = () => { setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1)); setSelectedDate(today); };
+  const goToday = () => {
+    setCurrentMonth(new Date(todayParts.year, todayParts.month, 1));
+    setSelectedDate(new Date(todayParts.timestamp));
+  };
 
   const selectedEvents = selectedDate ? getEventsForDate(selectedDate) : [];
 
   // Upcoming events (next 30 days)
   const upcoming = useMemo(() => {
-    const cutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 30);
+    const cutoff = new Date(todayParts.year, todayParts.month, todayParts.date + 30);
     return events
-      .filter(e => { const d = toDate(e.date); return d && d >= today && d <= cutoff; })
+      .filter(e => {
+        const d = toDate(e.date);
+        return d && d.getTime() >= todayParts.timestamp && d <= cutoff;
+      })
       .sort((a, b) => (toDate(a.date)?.getTime() || 0) - (toDate(b.date)?.getTime() || 0))
       .slice(0, 6);
-  }, [events, today]);
+  }, [events, todayParts]);
 
   if (loading || authLoading) {
     return <CalendarSkeleton />;

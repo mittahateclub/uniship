@@ -1,10 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-import {
-  ClipboardCheck, UserPlus, CalendarPlus, Database, Settings, PlusCircle,
-  ArrowUpRight, Users, FileText, Monitor, AlertTriangle, Clock, Calendar, CheckCircle2,
-} from '@/components/icons';
+import ClipboardCheck from '@/components/icons/ClipboardCheck';
+import UserPlus from '@/components/icons/UserPlus';
+import CalendarPlus from '@/components/icons/CalendarPlus';
+import Database from '@/components/icons/Database';
+import Settings from '@/components/icons/Settings';
+import PlusCircle from '@/components/icons/PlusCircle';
+import ArrowUpRight from '@/components/icons/ArrowUpRight';
+import Users from '@/components/icons/Users';
+import FileText from '@/components/icons/FileText';
+import Monitor from '@/components/icons/Monitor';
+import AlertTriangle from '@/components/icons/AlertTriangle';
+import Clock from '@/components/icons/Clock';
+import Calendar from '@/components/icons/Calendar';
+import CheckCircle2 from '@/components/icons/CheckCircle2';
 import { CardGridSkeleton } from '@/components/Skeleton';
 
 export interface DashStats {
@@ -135,7 +145,7 @@ export function UniAdminDashboardView({
                   <span className="w-9 h-9 rounded-[8px] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center group-hover:border-[var(--border-active)] transition-colors">
                     <item.icon size={16} className="text-[var(--text-tertiary)] group-hover:text-[var(--accent-orange)] transition-colors" />
                   </span>
-                  <ArrowUpRight size={15} className="text-[var(--text-faint)] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                  <ArrowUpRight size={15} className="text-[var(--text-faint)] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition" />
                 </div>
                 <h3 className="text-[13.5px] font-semibold text-[var(--text-primary)] tracking-[-0.01em]">{item.title}</h3>
                 <p className="text-[12px] text-[var(--text-muted)] mt-1 leading-relaxed">{item.desc}</p>

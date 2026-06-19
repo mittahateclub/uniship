@@ -2,14 +2,32 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { collection, addDoc, serverTimestamp, doc, getDoc, getDocs, query, where, updateDoc, deleteDoc, Timestamp } from 'firebase/firestore';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import {
+  collection, addDoc, serverTimestamp, doc, getDoc, getDocs, limit, query,
+  where, updateDoc, deleteDoc, Timestamp, documentId, orderBy, startAfter,
+  type DocumentData, type QueryDocumentSnapshot,
+} from 'firebase/firestore';
 import Link from 'next/link';
 import { db } from '@/lib/firebase';
-import {
-  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Calendar, CalendarDays, CalendarClock, Clock,
-  Trash2, Pencil, Users, X, Plus, Sparkles, CheckCircle2, AlertCircle, Loader2, MapPin,
-} from '@/components/icons';
+import ChevronLeft from '@/components/icons/ChevronLeft';
+import ChevronRight from '@/components/icons/ChevronRight';
+import ChevronDown from '@/components/icons/ChevronDown';
+import ChevronUp from '@/components/icons/ChevronUp';
+import Calendar from '@/components/icons/Calendar';
+import CalendarDays from '@/components/icons/CalendarDays';
+import CalendarClock from '@/components/icons/CalendarClock';
+import Clock from '@/components/icons/Clock';
+import Trash2 from '@/components/icons/Trash2';
+import Pencil from '@/components/icons/Pencil';
+import Users from '@/components/icons/Users';
+import X from '@/components/icons/X';
+import Plus from '@/components/icons/Plus';
+import Sparkles from '@/components/icons/Sparkles';
+import CheckCircle2 from '@/components/icons/CheckCircle2';
+import AlertCircle from '@/components/icons/AlertCircle';
+import Loader2 from '@/components/icons/Loader2';
+import MapPin from '@/components/icons/MapPin';
 import { StatBar } from '@/components/StatBar';
 import { kBranches, kGpaCutoffs } from '@/lib/college';
 import { scrapeEvent } from '@/app/actions/scrape-event';
@@ -18,7 +36,7 @@ interface ExistingEvent {
   id: string;
   title: string;
   type: string;
-  date: any;
+  date: unknown;
   location: string;
   description: string;
 }
@@ -43,6 +61,11 @@ const MONTH_NAMES = ['January','February','March','April','May','June','July','A
 const DAY_LABELS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
 const microLabel = 'text-[10.5px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]';
 const fieldLabel = 'block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5';
+
+function eventDate(value: unknown): Date {
+  return (value as { toDate?: () => Date } | undefined)?.toDate?.()
+    ?? new Date(value as string | number | Date);
+}
 const inputClass = 'w-full px-3.5 py-2.5 text-[13px] placeholder:text-[var(--text-faint)]';
 
 function DateTimePicker({ value, onChange }: { value: string; onChange: (val: string) => void }) {
@@ -165,7 +188,7 @@ function DateTimePicker({ value, onChange }: { value: string; onChange: (val: st
                 <p className="text-[9px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)] mb-1.5 text-center">Hour</p>
                 <div className="max-h-[180px] overflow-y-auto space-y-0.5 scrollbar-thin">
                   {Array.from({ length: 24 }, (_, i) => (
-                    <button key={i} type="button" onClick={() => setTime(i, selectedMinute)} className={`w-full py-1 text-[12px] font-medium rounded transition-colors ${selectedHour === i ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'}`}>
+                    <button key={i} type="button" onClick={() => setTime(i, selectedMinute)} className={`w-full py-1 text-[12px] font-medium rounded-[8px] transition-colors ${selectedHour === i ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'}`}>
                       {String(i).padStart(2, '0')}
                     </button>
                   ))}
@@ -175,7 +198,7 @@ function DateTimePicker({ value, onChange }: { value: string; onChange: (val: st
                 <p className="text-[9px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)] mb-1.5 text-center">Min</p>
                 <div className="max-h-[180px] overflow-y-auto space-y-0.5 scrollbar-thin">
                   {[0,5,10,15,20,25,30,35,40,45,50,55].map(m => (
-                    <button key={m} type="button" onClick={() => setTime(selectedHour, m)} className={`w-full py-1 text-[12px] font-medium rounded transition-colors ${selectedMinute === m ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'}`}>
+                    <button key={m} type="button" onClick={() => setTime(selectedHour, m)} className={`w-full py-1 text-[12px] font-medium rounded-[8px] transition-colors ${selectedMinute === m ? 'bg-[var(--type-event)] text-white' : 'text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'}`}>
                       {String(m).padStart(2, '0')}
                     </button>
                   ))}
@@ -210,8 +233,17 @@ export default function CreateEventPage() {
   // Existing events
   const [events, setEvents] = useState<ExistingEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
+  const [lastEventDoc, setLastEventDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [hasMoreEvents, setHasMoreEvents] = useState(false);
+  const [loadingMoreEvents, setLoadingMoreEvents] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editType, setEditType] = useState('');
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const clock = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(clock);
+  }, []);
 
   useEffect(() => {
     async function getAdminProfile() {
@@ -227,25 +259,56 @@ export default function CreateEventPage() {
     if (!loading && !user) router.push('/');
   }, [user, loading, router]);
 
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     if (!adminUnivId) return;
     try {
-      const snap = await getDocs(query(collection(db, 'events'), where('universityId', '==', adminUnivId)));
+      const snap = await getDocs(query(
+        collection(db, 'events'),
+        where('universityId', '==', adminUnivId),
+        orderBy(documentId()),
+        limit(50),
+      ));
       const list: ExistingEvent[] = snap.docs.map(d => ({ id: d.id, ...d.data() } as ExistingEvent));
       list.sort((a, b) => {
-        const da = a.date?.toDate?.() || new Date(a.date);
-        const db_ = b.date?.toDate?.() || new Date(b.date);
+        const da = eventDate(a.date);
+        const db_ = eventDate(b.date);
         return db_.getTime() - da.getTime();
       });
       setEvents(list);
+      setLastEventDoc(snap.docs.at(-1) ?? null);
+      setHasMoreEvents(snap.size === 50);
     } catch (e) {
       console.error('Error fetching events:', e);
     } finally {
       setLoadingEvents(false);
     }
+  }, [adminUnivId]);
+
+  const loadMoreEvents = async () => {
+    if (!adminUnivId || !lastEventDoc || loadingMoreEvents) return;
+    setLoadingMoreEvents(true);
+    try {
+      const snapshot = await getDocs(query(
+        collection(db, 'events'),
+        where('universityId', '==', adminUnivId),
+        orderBy(documentId()),
+        startAfter(lastEventDoc),
+        limit(50),
+      ));
+      const next = snapshot.docs.map((eventDoc) => ({ id: eventDoc.id, ...eventDoc.data() } as ExistingEvent));
+      setEvents((previous) => [...previous, ...next].sort((a, b) => eventDate(b.date).getTime() - eventDate(a.date).getTime()));
+      setLastEventDoc(snapshot.docs.at(-1) ?? lastEventDoc);
+      setHasMoreEvents(snapshot.size === 50);
+    } finally {
+      setLoadingMoreEvents(false);
+    }
   };
 
-  useEffect(() => { if (adminUnivId) fetchEvents(); }, [adminUnivId]);
+  useEffect(() => {
+    if (!adminUnivId) return;
+    const start = window.setTimeout(() => void fetchEvents(), 0);
+    return () => window.clearTimeout(start);
+  }, [adminUnivId, fetchEvents]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -312,8 +375,8 @@ export default function CreateEventPage() {
       setScrapedImageUrl(null);
       setScrapeNote(null);
       fetchEvents();
-    } catch (error: any) {
-      setMessage({ type: 'error', text: `Permission Denied: ${error.message}` });
+    } catch (error) {
+      setMessage({ type: 'error', text: `Permission Denied: ${error instanceof Error ? error.message : 'Unknown error'}` });
     } finally {
       setSubmitting(false);
     }
@@ -345,8 +408,7 @@ export default function CreateEventPage() {
     </div>
   );
 
-  const now = Date.now();
-  const tsOf = (ev: ExistingEvent) => (ev.date?.toDate?.() || new Date(ev.date)).getTime();
+  const tsOf = (ev: ExistingEvent) => eventDate(ev.date).getTime();
   const upcomingCount = events.filter(e => tsOf(e) >= now).length;
 
   return (
@@ -503,7 +565,7 @@ export default function CreateEventPage() {
       ) : (
         <div className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
           {events.map(ev => {
-            const d = ev.date?.toDate?.() || new Date(ev.date);
+            const d = eventDate(ev.date);
             const typeColor = TYPE_COLORS[ev.type] || TYPE_COLORS.event;
             const typeLabel = TYPE_OPTIONS.find(t => t.value === ev.type)?.label || ev.type || 'Event';
             const isPast = d.getTime() < now;
@@ -546,6 +608,13 @@ export default function CreateEventPage() {
               </div>
             );
           })}
+          {hasMoreEvents && (
+            <div className="flex justify-center p-3 border-t border-[var(--border-subtle)]">
+              <button type="button" onClick={loadMoreEvents} disabled={loadingMoreEvents} className="btn-secondary !rounded-[10px] text-[12px] disabled:opacity-50">
+                {loadingMoreEvents ? 'Loading…' : 'Load more events'}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

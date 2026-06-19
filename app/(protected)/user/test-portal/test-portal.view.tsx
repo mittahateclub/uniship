@@ -1,7 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { FileText, Clock, HelpCircle, Tag, ArrowRight, Calendar } from '@/components/icons';
+import FileText from '@/components/icons/FileText';
+import Clock from '@/components/icons/Clock';
+import HelpCircle from '@/components/icons/HelpCircle';
+import Tag from '@/components/icons/Tag';
+import ArrowRight from '@/components/icons/ArrowRight';
+import Calendar from '@/components/icons/Calendar';
 import { ListSkeleton } from '@/components/Skeleton';
 
 export interface Test {

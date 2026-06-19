@@ -3,9 +3,23 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { collection, getDocs, query, where, doc, updateDoc } from 'firebase/firestore';
+import {
+  collection, getDocs, query, where, doc, updateDoc, documentId,
+  limit as queryLimit, orderBy, startAfter, type DocumentData,
+  type QueryDocumentSnapshot,
+} from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Mail, Building2, Hash, Phone, CheckCircle, XCircle, Save, Search, Users, User, Pencil } from '@/components/icons';
+import Mail from '@/components/icons/Mail';
+import Building2 from '@/components/icons/Building2';
+import Hash from '@/components/icons/Hash';
+import Phone from '@/components/icons/Phone';
+import CheckCircle from '@/components/icons/CheckCircle';
+import XCircle from '@/components/icons/XCircle';
+import Save from '@/components/icons/Save';
+import Search from '@/components/icons/Search';
+import Users from '@/components/icons/Users';
+import User from '@/components/icons/User';
+import Pencil from '@/components/icons/Pencil';
 import { StatBar } from '@/components/StatBar';
 import { Modal, ModalHeader, ModalBody } from '@/components/Modal';
 
@@ -18,7 +32,7 @@ interface StudentData {
   universityName?: string;
   universityId?: string;
   verified?: boolean;
-  createdAt?: any;
+  createdAt?: unknown;
 }
 
 interface University {
@@ -30,6 +44,7 @@ interface University {
 
 const ghostBtn = 'px-2.5 py-1.5 rounded-[8px] text-[11px] font-semibold border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-active)] hover:text-[var(--text-primary)] transition-colors';
 const fieldLabel = 'block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5';
+const PAGE_SIZE = 50;
 
 export default function ManageStudentsPage() {
   const { user, loading } = useAuth();
@@ -49,6 +64,9 @@ export default function ManageStudentsPage() {
     universityId: '',
     verified: false,
   });
+  const [lastStudentDoc, setLastStudentDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.push('/');
@@ -58,7 +76,7 @@ export default function ManageStudentsPage() {
     async function fetchData() {
       try {
         const [studentsSnap, universitiesSnap] = await Promise.all([
-          getDocs(query(collection(db, 'users'), where('role', '==', 'student'))),
+          getDocs(query(collection(db, 'users'), where('role', '==', 'student'), orderBy(documentId()), queryLimit(PAGE_SIZE))),
           getDocs(collection(db, 'universities')),
         ]);
 
@@ -66,6 +84,8 @@ export default function ManageStudentsPage() {
         const universityList: University[] = universitiesSnap.docs.map((d) => ({ id: d.id, ...d.data() } as University));
 
         setStudents(studentList);
+        setLastStudentDoc(studentsSnap.docs.at(-1) ?? null);
+        setHasMore(studentsSnap.size === PAGE_SIZE);
         setUniversities(universityList);
       } catch (error) {
         console.error('Error fetching students:', error);
@@ -77,11 +97,35 @@ export default function ManageStudentsPage() {
     if (user) fetchData();
   }, [user]);
 
-  const formatDate = (value: any) => {
+  const loadMore = async () => {
+    if (!lastStudentDoc || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const snapshot = await getDocs(query(
+        collection(db, 'users'),
+        where('role', '==', 'student'),
+        orderBy(documentId()),
+        startAfter(lastStudentDoc),
+        queryLimit(PAGE_SIZE),
+      ));
+      setStudents((prev) => [
+        ...prev,
+        ...snapshot.docs.map((studentDoc) => ({ id: studentDoc.id, ...studentDoc.data() } as StudentData)),
+      ]);
+      setLastStudentDoc(snapshot.docs.at(-1) ?? lastStudentDoc);
+      setHasMore(snapshot.size === PAGE_SIZE);
+    } catch (error) {
+      console.error('Error loading more students:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const formatDate = (value: unknown) => {
     try {
       if (!value) return 'N/A';
-      if (typeof value?.toDate === 'function') return value.toDate().toLocaleString();
-      return new Date(value).toLocaleString();
+      if (typeof (value as { toDate?: unknown }).toDate === 'function') return (value as { toDate: () => Date }).toDate().toLocaleString();
+      return new Date(value as string | number | Date).toLocaleString();
     } catch {
       return 'N/A';
     }
@@ -243,6 +287,13 @@ export default function ManageStudentsPage() {
               </div>
             </div>
           ))}
+          {hasMore && !searchQuery && (
+            <div className="flex justify-center p-3 border-t border-[var(--border-subtle)]">
+              <button type="button" onClick={loadMore} disabled={loadingMore} className="btn-secondary !rounded-[10px] text-[12px] disabled:opacity-50">
+                {loadingMore ? 'Loading…' : 'Load more students'}
+              </button>
+            </div>
+          )}
         </div>
       )}
 

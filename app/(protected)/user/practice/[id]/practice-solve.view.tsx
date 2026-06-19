@@ -5,11 +5,19 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useParams, useRouter } from 'next/navigation';
 import { authHeaders } from '@/lib/auth-client';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, addDoc, collection, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
-import {
-  Play, CloudUpload, ChevronDown, Clock, CheckCircle2, XCircle,
-  BookOpen, AlertTriangle, Loader2, RotateCcw, ArrowLeft, Trophy,
-} from '@/components/icons';import dynamic from 'next/dynamic';
+import { doc, getDoc, addDoc, collection, getDocs, limit, query, where, serverTimestamp } from 'firebase/firestore';
+import Play from '@/components/icons/Play';
+import CloudUpload from '@/components/icons/CloudUpload';
+import ChevronDown from '@/components/icons/ChevronDown';
+import Clock from '@/components/icons/Clock';
+import CheckCircle2 from '@/components/icons/CheckCircle2';
+import XCircle from '@/components/icons/XCircle';
+import BookOpen from '@/components/icons/BookOpen';
+import AlertTriangle from '@/components/icons/AlertTriangle';
+import Loader2 from '@/components/icons/Loader2';
+import RotateCcw from '@/components/icons/RotateCcw';
+import ArrowLeft from '@/components/icons/ArrowLeft';
+import Trophy from '@/components/icons/Trophy';import dynamic from 'next/dynamic';
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
 
@@ -32,12 +40,6 @@ const LANG_IDS: Record<string, number> = {
 };
 
 const SUPPORTED_LANGS = ['Python3', 'JavaScript', 'Java', 'C++', 'C'];
-
-const DIFFICULTY_COLORS: Record<string, string> = {
-  Easy: 'text-[var(--status-success)]',
-  Medium: 'text-[var(--status-warning)]',
-  Hard: 'text-[var(--status-danger)]',
-};
 
 const DEFAULT_STARTER: Record<string, (fn: string) => string> = {
   'Python3': (fn) => `class Solution:\n    def ${fn}(self):\n        pass\n`,
@@ -104,8 +106,12 @@ export default function PracticeSolvePage() {
   } | null>(null);
   const [showVerdictModal, setShowVerdictModal] = useState(false);
   const [isAlreadySolved, setIsAlreadySolved] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
 
-
+  useEffect(() => {
+    const clock = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(clock);
+  }, []);
 
   // Load problem
   useEffect(() => {
@@ -129,13 +135,14 @@ export default function PracticeSolvePage() {
             where('userId', '==', user.uid),
             where('problemId', '==', snap.id),
             where('verdict', '==', 'AC'),
+            limit(1),
           ));
           setIsAlreadySolved(!subsSnap.empty);
         }
       }
       setLoading(false);
     })();
-  }, [id]);
+  }, [id, user]);
 
   // Close lang dropdown on outside click
   useEffect(() => {
@@ -267,7 +274,7 @@ export default function PracticeSolvePage() {
 
   const visibleTestCases = problem.testCases.filter(tc => !tc.isHidden);
 
-  const msLeft = problem.visibleUntil ? problem.visibleUntil.seconds * 1000 - Date.now() : null;
+  const msLeft = problem.visibleUntil ? problem.visibleUntil.seconds * 1000 - now : null;
   const daysLeft = msLeft !== null && msLeft > 0 ? Math.ceil(msLeft / 86400000) : null;
   const showExpiry = daysLeft !== null && daysLeft <= 3;
 
@@ -284,7 +291,7 @@ export default function PracticeSolvePage() {
       {/* Verdict Modal */}
       {showVerdictModal && submitVerdict && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-8 flex flex-col items-center gap-6">
+          <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-[14px] shadow-2xl w-full max-w-sm mx-4 p-8 flex flex-col items-center gap-6">
             {submitVerdict.verdict === 'AC' ? (
               <div className="flex flex-col items-center gap-3">
                 <div className="w-20 h-20 rounded-full bg-[var(--status-success)]/10 flex items-center justify-center">
@@ -311,7 +318,7 @@ export default function PracticeSolvePage() {
               </div>
               <div className="w-full bg-[var(--bg-elevated)] rounded-full h-2.5">
                 <div
-                  className={`h-2.5 rounded-full transition-all duration-700 ${submitVerdict.verdict === 'AC' ? 'bg-[var(--status-success)]' : 'bg-[var(--status-danger)]'}`}
+                  className={`h-2.5 rounded-full transition-[width,background-color] duration-700 ${submitVerdict.verdict === 'AC' ? 'bg-[var(--status-success)]' : 'bg-[var(--status-danger)]'}`}
                   style={{ width: `${(submitVerdict.passed / submitVerdict.total) * 100}%` }}
                 />
               </div>
@@ -343,7 +350,7 @@ export default function PracticeSolvePage() {
       {/* Main Split */}
       <div className="flex flex-1 overflow-hidden p-3 gap-3">
         {/* Left: Problem */}
-        <div className="flex flex-col w-[45%] bg-[var(--bg-surface)] rounded-xl overflow-hidden border border-[var(--border-subtle)]">
+        <div className="flex flex-col w-[45%] bg-[var(--bg-surface)] rounded-[var(--radius)] overflow-hidden border border-[var(--border-subtle)]">
           <div className="flex bg-[var(--bg-elevated)] px-4 text-[13px] font-medium border-b border-[var(--border-subtle)] items-center justify-between">
             <div className="px-4 py-2.5 border-b-2 border-[var(--accent-orange)] text-[var(--text-primary)] flex items-center gap-2">
               <BookOpen size={14} /> Question
@@ -395,7 +402,7 @@ export default function PracticeSolvePage() {
                 <div className="mt-6 space-y-4">
                   <h3 className="text-[13px] font-semibold text-[var(--text-primary)]">Examples</h3>
                   {visibleTestCases.map((tc, i) => (
-                    <div key={i} className="border border-[var(--border-subtle)] rounded-lg overflow-hidden">
+                    <div key={i} className="border border-[var(--border-subtle)] rounded-[var(--radius)] overflow-hidden">
                       <div className="px-3 py-1.5 bg-[var(--bg-elevated)] border-b border-[var(--border-subtle)]">
                         <p className="text-[11px] font-semibold text-[var(--text-faint)]">Example {i + 1}</p>
                       </div>
@@ -420,19 +427,19 @@ export default function PracticeSolvePage() {
         {/* Right: Editor + Console */}
         <div className="flex flex-col w-[55%] gap-3">
           {/* Code Editor */}
-          <div className="flex flex-col flex-1 bg-[var(--bg-surface)] rounded-xl overflow-hidden border border-[var(--border-subtle)]">
+          <div className="flex flex-col flex-1 bg-[var(--bg-surface)] rounded-[var(--radius)] overflow-hidden border border-[var(--border-subtle)]">
             <div className="flex items-center justify-between px-4 py-2.5 bg-[var(--bg-elevated)] border-b border-[var(--border-subtle)]">
               {/* Language Dropdown */}
               <div className="relative" ref={langRef}>
                 <button
                   onClick={() => setIsLangOpen(!isLangOpen)}
-                  className="flex items-center gap-2 text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-surface)] px-3 py-1.5 rounded-lg border border-[var(--border-subtle)] transition-colors"
+                  className="flex items-center gap-2 text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-surface)] px-3 py-1.5 rounded-[8px] border border-[var(--border-subtle)] transition-colors"
                 >
                   <span className="font-medium">{language}</span>
                   <ChevronDown size={13} className={`transition-transform ${isLangOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {isLangOpen && (
-                  <div className="absolute top-full left-0 mt-1.5 w-44 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl shadow-xl z-50 py-1.5 overflow-hidden">
+                  <div className="absolute top-full left-0 mt-1.5 w-44 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-[var(--radius)] shadow-xl z-50 py-1.5 overflow-hidden">
                     {SUPPORTED_LANGS.map(lang => (
                       <button
                         key={lang}
@@ -499,7 +506,7 @@ export default function PracticeSolvePage() {
           </div>
 
           {/* Console */}
-          <div className="h-64 bg-[var(--bg-surface)] rounded-xl overflow-hidden border border-[var(--border-subtle)] flex flex-col shrink-0">
+          <div className="h-64 bg-[var(--bg-surface)] rounded-[var(--radius)] overflow-hidden border border-[var(--border-subtle)] flex flex-col shrink-0">
             <div className="flex bg-[var(--bg-elevated)] px-3 text-[13px] font-medium border-b border-[var(--border-subtle)]">
               <button
                 onClick={() => setConsoleTab('testcases')}
@@ -531,7 +538,7 @@ export default function PracticeSolvePage() {
                     <button
                       key={i}
                       onClick={() => setActiveTestCase(i)}
-                      className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all flex items-center gap-1.5 ${
+                      className={`px-3 py-1.5 rounded-[8px] text-[12px] font-medium transition flex items-center gap-1.5 ${
                         activeTestCase === i
                           ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-sm'
                           : 'text-[var(--text-faint)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)]/50'
@@ -556,13 +563,13 @@ export default function PracticeSolvePage() {
                     <>
                       <div>
                         <p className="text-[11px] text-[var(--text-faint)] font-semibold mb-1.5">Input</p>
-                        <pre className="bg-[var(--bg-elevated)] p-3 rounded-lg font-mono text-[12px] text-[var(--text-primary)] whitespace-pre-wrap">
+                        <pre className="bg-[var(--bg-elevated)] p-3 rounded-[10px] font-mono text-[12px] text-[var(--text-primary)] whitespace-pre-wrap">
                           {visibleTestCases[activeTestCase].input}
                         </pre>
                       </div>
                       <div>
                         <p className="text-[11px] text-[var(--text-faint)] font-semibold mb-1.5">Expected Output</p>
-                        <pre className="bg-[var(--bg-elevated)] p-3 rounded-lg font-mono text-[12px] text-[var(--status-success)] whitespace-pre-wrap">
+                        <pre className="bg-[var(--bg-elevated)] p-3 rounded-[10px] font-mono text-[12px] text-[var(--status-success)] whitespace-pre-wrap">
                           {visibleTestCases[activeTestCase].expectedOutput}
                         </pre>
                       </div>
@@ -594,7 +601,7 @@ export default function PracticeSolvePage() {
                     {results[activeTestCase] && (
                       <div className="space-y-3">
                         {results[activeTestCase].stderr ? (
-                          <div className="p-3 bg-[var(--status-danger)]/5 text-[var(--status-danger)] rounded-lg text-[12px] font-mono border border-[var(--status-danger)]/20 whitespace-pre-wrap">
+                          <div className="p-3 bg-[var(--status-danger)]/5 text-[var(--status-danger)] rounded-[10px] text-[12px] font-mono border border-[var(--status-danger)]/20 whitespace-pre-wrap">
                             {results[activeTestCase].stderr}
                           </div>
                         ) : results[activeTestCase].isHidden ? (
@@ -604,20 +611,20 @@ export default function PracticeSolvePage() {
                             {results[activeTestCase].inputPreview && (
                               <div>
                                 <p className="text-[11px] text-[var(--text-faint)] font-semibold mb-1.5">Input</p>
-                                <pre className="bg-[var(--bg-elevated)] p-3 rounded-lg font-mono text-[12px] text-[var(--text-primary)] whitespace-pre-wrap">
+                                <pre className="bg-[var(--bg-elevated)] p-3 rounded-[10px] font-mono text-[12px] text-[var(--text-primary)] whitespace-pre-wrap">
                                   {results[activeTestCase].inputPreview}
                                 </pre>
                               </div>
                             )}
                             <div>
                               <p className="text-[11px] text-[var(--text-faint)] font-semibold mb-1.5">Output</p>
-                              <pre className="bg-[var(--bg-elevated)] p-3 rounded-lg font-mono text-[12px] text-[var(--text-primary)] whitespace-pre-wrap">
+                              <pre className="bg-[var(--bg-elevated)] p-3 rounded-[10px] font-mono text-[12px] text-[var(--text-primary)] whitespace-pre-wrap">
                                 {results[activeTestCase].stdout || '(no output)'}
                               </pre>
                             </div>
                             <div>
                               <p className="text-[11px] text-[var(--text-faint)] font-semibold mb-1.5">Expected</p>
-                              <pre className="bg-[var(--bg-elevated)] p-3 rounded-lg font-mono text-[12px] text-[var(--status-success)] whitespace-pre-wrap">
+                              <pre className="bg-[var(--bg-elevated)] p-3 rounded-[10px] font-mono text-[12px] text-[var(--status-success)] whitespace-pre-wrap">
                                 {results[activeTestCase].expectedOutput}
                               </pre>
                             </div>

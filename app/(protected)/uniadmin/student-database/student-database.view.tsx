@@ -2,11 +2,22 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, getDoc, deleteDoc } from 'firebase/firestore';
+import {
+  collection, query, where, getDocs, doc, getDoc, deleteDoc, documentId,
+  limit as queryLimit, orderBy, startAfter, type DocumentData,
+  type QueryConstraint, type QueryDocumentSnapshot,
+} from 'firebase/firestore';
 import Link from 'next/link';
-import { Trash2, UserPlus, Search, Users, GraduationCap, Briefcase, ArrowLeft, ChevronRight } from '@/components/icons';
+import Trash2 from '@/components/icons/Trash2';
+import UserPlus from '@/components/icons/UserPlus';
+import Search from '@/components/icons/Search';
+import Users from '@/components/icons/Users';
+import GraduationCap from '@/components/icons/GraduationCap';
+import Briefcase from '@/components/icons/Briefcase';
+import ArrowLeft from '@/components/icons/ArrowLeft';
+import ChevronRight from '@/components/icons/ChevronRight';
 import { ListSkeleton } from '@/components/Skeleton';
 import { StatBar } from '@/components/StatBar';
 import StudentProfileView from '@/app/(protected)/uniadmin/students/view/[id]/student-view.view';
@@ -31,12 +42,14 @@ interface StudentRecord {
   technicalSkills?: string;
   educationEntries?: EducationEntry[];
   experienceEntries?: ExperienceEntry[];
-  projectEntries?: any[];
-  achievementEntries?: any[];
-  positionEntries?: any[];
-  extracurricularEntries?: any[];
+  projectEntries?: unknown[];
+  achievementEntries?: unknown[];
+  positionEntries?: unknown[];
+  extracurricularEntries?: unknown[];
   photoURL?: string;
 }
+
+const PAGE_SIZE = 50;
 
 function parseSkills(raw?: string): string[] {
   if (!raw) return [];
@@ -80,30 +93,69 @@ export default function StudentDatabasePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [minCgpa, setMinCgpa] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [lastStudentDoc, setLastStudentDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.push('/');
   }, [user, loading, router]);
 
-  async function fetchStudents() {
+  const fetchStudents = useCallback(async () => {
     if (!user) return;
     try {
       const adminDoc = await getDoc(doc(db, 'users', user.uid));
       const univId = adminDoc.data()?.universityId;
       setAdminUnivId(univId);
       if (univId) {
-        const q = query(collection(db, 'users'), where('role', '==', 'student'), where('universityId', '==', univId));
+        const q = query(
+          collection(db, 'users'),
+          where('role', '==', 'student'),
+          where('universityId', '==', univId),
+          orderBy(documentId()),
+          queryLimit(PAGE_SIZE),
+        );
         const querySnapshot = await getDocs(q);
         setStudents(querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as StudentRecord));
+        setLastStudentDoc(querySnapshot.docs.at(-1) ?? null);
+        setHasMore(querySnapshot.size === PAGE_SIZE);
       }
     } catch (error) {
       console.error("Error fetching students:", error);
     } finally {
       setFetching(false);
     }
-  }
+  }, [user]);
 
-  useEffect(() => { fetchStudents(); }, [user]);
+  const loadMore = async () => {
+    if (!adminUnivId || !lastStudentDoc || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const constraints: QueryConstraint[] = [
+        where('role', '==', 'student'),
+        where('universityId', '==', adminUnivId),
+        orderBy(documentId()),
+        startAfter(lastStudentDoc),
+        queryLimit(PAGE_SIZE),
+      ];
+      const snapshot = await getDocs(query(collection(db, 'users'), ...constraints));
+      setStudents((prev) => [
+        ...prev,
+        ...snapshot.docs.map((studentDoc) => ({ id: studentDoc.id, ...studentDoc.data() }) as StudentRecord),
+      ]);
+      setLastStudentDoc(snapshot.docs.at(-1) ?? lastStudentDoc);
+      setHasMore(snapshot.size === PAGE_SIZE);
+    } catch (error) {
+      console.error('Error loading more students:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  useEffect(() => {
+    const start = window.setTimeout(() => void fetchStudents(), 0);
+    return () => window.clearTimeout(start);
+  }, [fetchStudents]);
 
   const handleDeleteStudent = async (studentId: string, studentName: string) => {
     if (!window.confirm(`Are you sure you want to delete ${studentName}?`)) return;
@@ -276,6 +328,7 @@ export default function StudentDatabasePage() {
                       <td className="px-4 sm:px-5 py-3.5">
                         <div className="flex items-center gap-2.5 min-w-0">
                           {student.photoURL ? (
+                            // eslint-disable-next-line @next/next/no-img-element -- student profile photos can use arbitrary user-provided hosts.
                             <img src={student.photoURL} alt={student.name || 'Student'} className="w-8 h-8 rounded-full object-cover border border-[var(--border-subtle)] shrink-0" />
                           ) : (
                             <div className="w-8 h-8 rounded-full bg-[var(--type-event)]/12 flex items-center justify-center text-[var(--type-event)] text-[12px] font-semibold shrink-0">
@@ -323,6 +376,13 @@ export default function StudentDatabasePage() {
               </tbody>
             </table>
           </div>
+          {hasMore && !hasFilters && (
+            <div className="flex justify-center p-3 border-t border-[var(--border-subtle)]">
+              <button type="button" onClick={loadMore} disabled={loadingMore} className="btn-secondary !rounded-[10px] text-[12px] disabled:opacity-50">
+                {loadingMore ? 'Loading…' : 'Load more students'}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

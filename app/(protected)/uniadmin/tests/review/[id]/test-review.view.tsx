@@ -3,9 +3,15 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import {
-  CheckCircle2, ArrowLeft, Calendar, Clock, Copy, Pencil, Trash2, Save, HelpCircle,
-} from '@/components/icons';
+import CheckCircle2 from '@/components/icons/CheckCircle2';
+import ArrowLeft from '@/components/icons/ArrowLeft';
+import Calendar from '@/components/icons/Calendar';
+import Clock from '@/components/icons/Clock';
+import Copy from '@/components/icons/Copy';
+import Pencil from '@/components/icons/Pencil';
+import Trash2 from '@/components/icons/Trash2';
+import Save from '@/components/icons/Save';
+import HelpCircle from '@/components/icons/HelpCircle';
 import { ReviewSkeleton } from '@/components/Skeleton';
 import { Toggle } from '@/components/Toggle';
 import { MiniCalendar, TimeField, buildISOString, from24Hour, formatSchedule, type AmPm } from '@/components/SchedulePicker';
@@ -22,10 +28,40 @@ const dangerBtn = 'inline-flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 te
 const primaryBtn = 'btn-primary !rounded-[8px] !px-4 !py-2 text-[12.5px] inline-flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed';
 const microLabel = 'text-[10.5px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]';
 
+export interface TestQuestion {
+  questionDescription?: string;
+  questionText?: string;
+  options?: string[];
+  correctAnswer?: string | null;
+  constraints?: string[];
+  difficulty?: string;
+  sampleTestCases?: { input?: string; output?: string }[];
+  hiddenTestCases?: { input?: string; output?: string }[];
+  [k: string]: unknown;
+}
+export interface TestSection {
+  title?: string;
+  type?: string;
+  questions?: TestQuestion[];
+}
+export interface TestDoc {
+  title?: string;
+  sourceFileName?: string;
+  sections?: TestSection[];
+  problems?: TestQuestion[];
+  published?: boolean;
+  approved?: boolean;
+  allowReattempts?: boolean;
+  examStart?: string;
+  examEnd?: string;
+  duration?: number;
+  [k: string]: unknown;
+}
+
 export interface TestReviewViewProps {
   loading: boolean;
   testId: string;
-  testData: any;
+  testData: TestDoc | null;
   publishing: boolean;
   deleting: boolean;
   savingSchedule: boolean;
@@ -55,6 +91,9 @@ export function TestReviewView({
   const [editCalMonth, setEditCalMonth] = useState(new Date().getMonth());
   const [editCalYear, setEditCalYear] = useState(new Date().getFullYear());
   const [mounted, setMounted] = useState(false);
+  // One-time client mount flag for SSR-safe portal rendering (createPortal needs `document`);
+  // rendering null on both server and first client paint avoids a hydration mismatch.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
 
   if (loading) return <ReviewSkeleton />;
@@ -69,8 +108,8 @@ export function TestReviewView({
     </div>
   );
 
-  const sections: any[] = testData.sections || [];
-  const hasOnlyCodingProblems = sections.length === 0 && testData.problems?.length > 0;
+  const sections: TestSection[] = testData.sections || [];
+  const hasOnlyCodingProblems = sections.length === 0 && (testData.problems?.length ?? 0) > 0;
   let totalQuestions = 0;
   for (const s of sections) totalQuestions += (s.questions || []).length;
   if (totalQuestions === 0) totalQuestions = testData.problems?.length || 0;
@@ -216,17 +255,17 @@ export function TestReviewView({
       {/* Questions */}
       <h2 className={`${microLabel} mb-4`}>Questions</h2>
       <div className="space-y-6">
-        {sections.map((section: any, sIdx: number) => (
+        {sections.map((section: TestSection, sIdx: number) => (
           <div key={sIdx}>
             <div className="flex items-center gap-2 mb-3">
               <h3 className="text-[14px] font-semibold text-[var(--text-primary)]">
-                {section.title || `Section ${sIdx + 1} — ${sectionLabel[section.type] || 'Questions'}`}
+                {section.title || `Section ${sIdx + 1} — ${sectionLabel[section.type ?? ''] || 'Questions'}`}
               </h3>
               <span className="text-[11px] text-[var(--text-faint)]">{(section.questions || []).length} questions</span>
             </div>
 
             <div className="space-y-3">
-              {(section.questions || []).map((q: any, qIdx: number) => (
+              {(section.questions || []).map((q: TestQuestion, qIdx: number) => (
                 <div key={qIdx} className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5">
                   <div className="flex items-center gap-2 mb-3">
                     <span className={`text-[10px] font-semibold uppercase tracking-[0.07em] px-2 py-0.5 rounded-full ${
@@ -294,7 +333,7 @@ export function TestReviewView({
                             Hidden Test Cases ({q.hiddenTestCases.length}):
                           </p>
                           <div className="space-y-1">
-                            {q.hiddenTestCases.map((tc: any, tci: number) => (
+                            {q.hiddenTestCases.map((tc, tci: number) => (
                               <pre key={tci} className="bg-[var(--bg-elevated)] border border-[var(--type-event)]/20 p-3 rounded-[8px] text-[12px] text-[var(--type-event)] font-mono">
 {`[${tci + 1}] Input:  ${tc.input}\n      Output: ${tc.output}`}
                               </pre>
@@ -314,10 +353,10 @@ export function TestReviewView({
           <div>
             <div className="flex items-center gap-2 mb-3">
               <h3 className="text-[14px] font-semibold text-[var(--text-primary)]">Coding Problems</h3>
-              <span className="text-[11px] text-[var(--text-faint)]">{testData.problems.length} questions</span>
+              <span className="text-[11px] text-[var(--text-faint)]">{testData.problems?.length ?? 0} questions</span>
             </div>
             <div className="space-y-3">
-              {testData.problems.map((q: any, index: number) => (
+              {(testData.problems || []).map((q: TestQuestion, index: number) => (
                 <div key={index} className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--type-event)] bg-[var(--type-event)]/10 px-2 py-0.5 rounded-full">

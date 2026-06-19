@@ -1,6 +1,14 @@
 'use client';
 
-import { Code2, Search, CheckCircle2, ArrowRight, Pin, Clock, RotateCcw, Trophy, Target } from '@/components/icons';
+import Code2 from '@/components/icons/Code2';
+import Search from '@/components/icons/Search';
+import CheckCircle2 from '@/components/icons/CheckCircle2';
+import ArrowRight from '@/components/icons/ArrowRight';
+import Pin from '@/components/icons/Pin';
+import Clock from '@/components/icons/Clock';
+import RotateCcw from '@/components/icons/RotateCcw';
+import Trophy from '@/components/icons/Trophy';
+import Target from '@/components/icons/Target';
 import { ListSkeleton } from '@/components/Skeleton';
 
 export interface PracticeProblem {
@@ -25,6 +33,7 @@ export interface PracticeViewProps {
   onDifficultyFilterChange: (d: string) => void;
   onTogglePin: (e: React.MouseEvent, problemId: string) => void;
   onOpenProblem: (problemId: string) => void;
+  now: number;
 }
 
 const DIFFICULTY_COLORS: Record<string, string> = {
@@ -45,6 +54,7 @@ export function PracticeView({
   onDifficultyFilterChange,
   onTogglePin,
   onOpenProblem,
+  now,
 }: PracticeViewProps) {
   if (loading) {
     return <ListSkeleton withStats rows={6} />;
@@ -126,8 +136,8 @@ export function PracticeView({
           {filtered.map((p) => {
             const isSolved = solvedIds.has(p.id);
             const isPinned = pinnedIds.has(p.id);
-            const isExpired = !!(p.visibleUntil && p.visibleUntil.seconds * 1000 < Date.now());
-            const msLeft = p.visibleUntil ? p.visibleUntil.seconds * 1000 - Date.now() : null;
+            const isExpired = !!(p.visibleUntil && p.visibleUntil.seconds * 1000 < now);
+            const msLeft = p.visibleUntil ? p.visibleUntil.seconds * 1000 - now : null;
             const daysLeft = msLeft !== null && msLeft > 0 ? Math.ceil(msLeft / 86400000) : null;
             const showExpiry = daysLeft !== null && daysLeft <= 3;
             return (

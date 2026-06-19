@@ -1,6 +1,13 @@
 'use client';
 
-import { ClipboardCheck, Building2, CalendarDays, Clock, BadgeCheck, CheckCircle2, XCircle, Briefcase } from '@/components/icons';
+import ClipboardCheck from '@/components/icons/ClipboardCheck';
+import Building2 from '@/components/icons/Building2';
+import CalendarDays from '@/components/icons/CalendarDays';
+import Clock from '@/components/icons/Clock';
+import BadgeCheck from '@/components/icons/BadgeCheck';
+import CheckCircle2 from '@/components/icons/CheckCircle2';
+import XCircle from '@/components/icons/XCircle';
+import Briefcase from '@/components/icons/Briefcase';
 import { ListSkeleton } from '@/components/Skeleton';
 
 export interface Application {
@@ -8,24 +15,27 @@ export interface Application {
   internshipRole: string;
   companyName: string;
   status: 'pending' | 'shortlisted' | 'selected' | 'rejected';
-  appliedAt: any;
+  appliedAt: unknown;
 }
 
 export interface ApplicationsViewProps {
   loading: boolean;
   applications: Application[];
+  hasMore: boolean;
+  loadingMore: boolean;
+  onLoadMore: () => void;
 }
 
 type StatusKey = Application['status'];
 
-const STATUS_CONFIG: Record<StatusKey, { label: string; pill: string; chip: string; icon: React.ComponentType<any> }> = {
+const STATUS_CONFIG: Record<StatusKey, { label: string; pill: string; chip: string; icon: React.ComponentType<{ size?: number; className?: string }> }> = {
   pending:     { label: 'Pending',     pill: 'bg-[var(--status-warning)]/10 text-[var(--status-warning)]', chip: 'bg-[var(--status-warning)]/10 text-[var(--status-warning)]', icon: Clock },
   shortlisted: { label: 'Shortlisted', pill: 'bg-[var(--type-event)]/12 text-[var(--type-event)]', chip: 'bg-[var(--type-event)]/12 text-[var(--type-event)]', icon: BadgeCheck },
   selected:    { label: 'Selected',    pill: 'bg-[var(--status-success)]/10 text-[var(--status-success)]', chip: 'bg-[var(--status-success)]/10 text-[var(--status-success)]', icon: CheckCircle2 },
   rejected:    { label: 'Rejected',    pill: 'bg-[var(--status-danger)]/10 text-[var(--status-danger)]',   chip: 'bg-[var(--status-danger)]/10 text-[var(--status-danger)]',   icon: XCircle },
 };
 
-export function ApplicationsView({ loading, applications }: ApplicationsViewProps) {
+export function ApplicationsView({ loading, applications, hasMore, loadingMore, onLoadMore }: ApplicationsViewProps) {
   if (loading) {
     return <ListSkeleton withStats rows={4} />;
   }
@@ -92,7 +102,7 @@ export function ApplicationsView({ loading, applications }: ApplicationsViewProp
                     <h2 className="text-[14px] font-semibold text-[var(--text-primary)] tracking-[-0.01em] truncate">{app.internshipRole}</h2>
                     <div className="flex items-center gap-1.5 text-[11.5px] text-[var(--text-faint)] mt-0.5">
                       <CalendarDays size={10} />
-                      <span>Applied {app.appliedAt?.toDate?.().toLocaleDateString() || '—'}</span>
+                      <span>Applied {(app.appliedAt as { toDate?: () => Date } | undefined)?.toDate?.().toLocaleDateString() || '—'}</span>
                     </div>
                   </div>
 
@@ -104,6 +114,13 @@ export function ApplicationsView({ loading, applications }: ApplicationsViewProp
                 </div>
               );
             })}
+            {hasMore && (
+              <div className="flex justify-center p-3 border-t border-[var(--border-subtle)]">
+                <button type="button" onClick={onLoadMore} disabled={loadingMore} className="btn-secondary !rounded-[10px] text-[12px] disabled:opacity-50">
+                  {loadingMore ? 'Loading…' : 'Load more applications'}
+                </button>
+              </div>
+            )}
           </div>
         </>
       )}

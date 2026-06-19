@@ -2,10 +2,30 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  collection, getDocs, getCountFromServer, addDoc, updateDoc, deleteDoc,
+  doc, query, serverTimestamp, where,
+} from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { UniversitiesView, type University } from './universities.view';
+
+async function populateMemberCounts(universities: University[]): Promise<void> {
+  let nextIndex = 0;
+  const workers = Array.from({ length: Math.min(4, universities.length) }, async () => {
+    while (nextIndex < universities.length) {
+      const university = universities[nextIndex++];
+      const users = collection(db, 'users');
+      const [adminCount, studentCount] = await Promise.all([
+        getCountFromServer(query(users, where('universityId', '==', university.code), where('role', '==', 'university_admin'))),
+        getCountFromServer(query(users, where('universityId', '==', university.code), where('role', '==', 'student'))),
+      ]);
+      university.adminCount = adminCount.data().count;
+      university.studentCount = studentCount.data().count;
+    }
+  });
+  await Promise.all(workers);
+}
 
 export default function ManageUniversitiesPage() {
   const { user, loading } = useAuth();
@@ -22,26 +42,12 @@ export default function ManageUniversitiesPage() {
     if (!loading && !user) router.push('/');
   }, [user, loading, router]);
 
-  async function fetchUniversities() {
+  const fetchUniversities = useCallback(async () => {
     try {
       const snapshot = await getDocs(collection(db, 'universities'));
       const unis: University[] = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as University));
 
-      const usersSnap = await getDocs(collection(db, 'users'));
-      const adminCounts: Record<string, number> = {};
-      const studentCounts: Record<string, number> = {};
-      usersSnap.forEach(d => {
-        const data = d.data();
-        const uid = data.universityId;
-        if (!uid) return;
-        if (data.role === 'university_admin') adminCounts[uid] = (adminCounts[uid] || 0) + 1;
-        if (data.role === 'student') studentCounts[uid] = (studentCounts[uid] || 0) + 1;
-      });
-
-      unis.forEach(u => {
-        u.adminCount = adminCounts[u.code] || 0;
-        u.studentCount = studentCounts[u.code] || 0;
-      });
+      await populateMemberCounts(unis);
 
       setUniversities(unis);
     } catch (err) {
@@ -49,9 +55,13 @@ export default function ManageUniversitiesPage() {
     } finally {
       setLoadingData(false);
     }
-  }
+  }, []);
 
-  useEffect(() => { if (user) fetchUniversities(); }, [user]);
+  useEffect(() => {
+    if (!user) return;
+    const start = window.setTimeout(() => void fetchUniversities(), 0);
+    return () => window.clearTimeout(start);
+  }, [user, fetchUniversities]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();

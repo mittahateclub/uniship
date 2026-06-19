@@ -55,12 +55,33 @@ export async function GET(req: NextRequest) {
     return new NextResponse('Not an image', { status: 415 });
   }
 
-  const buf = await upstream.arrayBuffer();
-  if (buf.byteLength > MAX_BYTES) {
+  const contentLength = Number(upstream.headers.get('content-length') ?? 0);
+  if (contentLength > MAX_BYTES) {
     return new NextResponse('Image too large', { status: 413 });
   }
 
-  return new NextResponse(buf, {
+  if (!upstream.body) return new NextResponse('Empty image', { status: 502 });
+  const reader = upstream.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > MAX_BYTES) {
+      await reader.cancel();
+      return new NextResponse('Image too large', { status: 413 });
+    }
+    chunks.push(value);
+  }
+  const image = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    image.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  return new NextResponse(image, {
     status: 200,
     headers: {
       'Content-Type': contentType,

@@ -28,6 +28,11 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Tree-shake the icon barrel so only the glyphs actually used are bundled
+  // (faster builds, smaller client JS).
+  experimental: {
+    optimizePackageImports: ['@phosphor-icons/react'],
+  },
   images: {
     remotePatterns: [
       {

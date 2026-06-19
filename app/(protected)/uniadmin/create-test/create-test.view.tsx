@@ -1,20 +1,47 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { collection, doc, getDoc, getDocs, query, where, addDoc, serverTimestamp } from 'firebase/firestore';
-import { processTestDocument } from '@/app/actions/process-test';
-import Link from 'next/link';
 import {
-  Upload, FileText, Clock, Type, AlignLeft, Calendar, ChevronRight,
-  CheckCircle, Tag, ChevronDown, ChevronUp, Copy, Check, HelpCircle, ExternalLink,
-} from '@/components/icons';
+  collection, doc, getDoc, getDocs, limit, onSnapshot, query, where,
+  documentId, orderBy, startAfter, type DocumentData, type QueryDocumentSnapshot,
+} from 'firebase/firestore';
+import { queueTestDocument } from '@/app/actions/test-processing-jobs';
+import { authHeaders, getIdToken } from '@/lib/auth-client';
+import Link from 'next/link';
+import Upload from '@/components/icons/Upload';
+import FileText from '@/components/icons/FileText';
+import Clock from '@/components/icons/Clock';
+import Type from '@/components/icons/Type';
+import AlignLeft from '@/components/icons/AlignLeft';
+import Calendar from '@/components/icons/Calendar';
+import ChevronRight from '@/components/icons/ChevronRight';
+import CheckCircle from '@/components/icons/CheckCircle';
+import Tag from '@/components/icons/Tag';
+import ChevronDown from '@/components/icons/ChevronDown';
+import ChevronUp from '@/components/icons/ChevronUp';
+import Copy from '@/components/icons/Copy';
+import Check from '@/components/icons/Check';
+import HelpCircle from '@/components/icons/HelpCircle';
+import ExternalLink from '@/components/icons/ExternalLink';
 import { ListSkeleton } from '@/components/Skeleton';
 import { StatBar } from '@/components/StatBar';
 import { Toggle } from '@/components/Toggle';
 import { MiniCalendar, TimeField, buildISOString, formatSchedule, type AmPm } from '@/components/SchedulePicker';
+
+interface TestUpload {
+  id: string;
+  title: string;
+  approved: boolean;
+  questionCount: number;
+  examStart?: string;
+  examEnd?: string;
+  category?: string;
+  duration?: number;
+  [key: string]: unknown;
+}
 
 export default function TestsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -40,11 +67,21 @@ export default function TestsPage() {
   const [allowReattempts, setAllowReattempts] = useState(false);
   const [createdTestId, setCreatedTestId] = useState<string | null>(null);
   const [showUploadForm, setShowUploadForm] = useState(false);
+  const [processingJobId, setProcessingJobId] = useState<string | null>(null);
 
   // Tests list state
-  const [testUploads, setTestUploads] = useState<any[]>([]);
+  const [testUploads, setTestUploads] = useState<TestUpload[]>([]);
   const [fetching, setFetching] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  const [lastTestDoc, setLastTestDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [hasMoreTests, setHasMoreTests] = useState(false);
+  const [loadingMoreTests, setLoadingMoreTests] = useState(false);
+
+  useEffect(() => {
+    const clock = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(clock);
+  }, []);
 
   const copyLink = (testId: string) => {
     const link = `${window.location.origin}/user/test-portal/${testId}`;
@@ -80,13 +117,18 @@ export default function TestsPage() {
   }, [user]);
 
   // Load tests
-  async function loadTests() {
+  const loadTests = useCallback(async () => {
     if (!user) return;
     try {
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       const univId = userDoc.data()?.universityId;
       if (univId) {
-        const q = query(collection(db, 'tests'), where('universityId', '==', univId));
+        const q = query(
+          collection(db, 'tests'),
+          where('universityId', '==', univId),
+          orderBy(documentId()),
+          limit(50),
+        );
         const snapshot = await getDocs(q);
         setTestUploads(snapshot.docs.map(d => {
           const data = d.data();
@@ -102,21 +144,100 @@ export default function TestsPage() {
             title: data.title || data.sourceFileName || 'Untitled Test',
             approved: data.approved ?? false,
             questionCount: totalQ,
-          };
+          } as TestUpload;
         }));
+        setLastTestDoc(snapshot.docs.at(-1) ?? null);
+        setHasMoreTests(snapshot.size === 50);
       }
     } catch (err) {
       console.error("Failed to load tests:", err);
     } finally {
       setFetching(false);
     }
-  }
+  }, [user]);
 
-  useEffect(() => { loadTests(); }, [user]);
+  const loadMoreTests = async () => {
+    if (!universityId || !lastTestDoc || loadingMoreTests) return;
+    setLoadingMoreTests(true);
+    try {
+      const snapshot = await getDocs(query(
+        collection(db, 'tests'),
+        where('universityId', '==', universityId),
+        orderBy(documentId()),
+        startAfter(lastTestDoc),
+        limit(50),
+      ));
+      const next = snapshot.docs.map((testDoc) => {
+        const data = testDoc.data();
+        const questionCount = Array.isArray(data.sections)
+          ? data.sections.reduce((total: number, section: { questions?: unknown[] }) => total + (section.questions?.length ?? 0), 0)
+          : (data.problems?.length || 0);
+        return {
+          id: testDoc.id,
+          ...data,
+          title: data.title || data.sourceFileName || 'Untitled Test',
+          approved: data.approved ?? false,
+          questionCount,
+        } as TestUpload;
+      });
+      setTestUploads((previous) => [...previous, ...next]);
+      setLastTestDoc(snapshot.docs.at(-1) ?? lastTestDoc);
+      setHasMoreTests(snapshot.size === 50);
+    } finally {
+      setLoadingMoreTests(false);
+    }
+  };
+
+  useEffect(() => {
+    const start = window.setTimeout(() => void loadTests(), 0);
+    return () => window.clearTimeout(start);
+  }, [loadTests]);
+
+  useEffect(() => {
+    if (!processingJobId) return;
+    const unsubscribe = onSnapshot(doc(db, 'test_processing_jobs', processingJobId), (snapshot) => {
+      const job = snapshot.data();
+      if (!job) return;
+      if (job.status === 'queued') {
+        setStatus({ type: 'info', message: 'Document queued. Processing will begin shortly…' });
+      } else if (job.status === 'processing') {
+        setStatus({ type: 'info', message: 'Extracting questions and generating coding test cases…' });
+      } else if (job.status === 'completed') {
+        setStatus({ type: 'success', message: `Uploaded successfully — ${job.totalQuestionCount ?? 0} questions extracted. Please approve the test.` });
+        setCreatedTestId(job.testId as string);
+        setFile(null);
+        setTitle('');
+        setDescription('');
+        setDuration(60);
+        setExamDate(null);
+        setAllowReattempts(false);
+        setProcessingJobId(null);
+        setIsParsing(false);
+        void loadTests();
+      } else if (job.status === 'failed') {
+        setStatus({ type: 'error', message: job.error || 'Document processing failed.' });
+        setCreatedTestId(null);
+        setProcessingJobId(null);
+        setIsParsing(false);
+      }
+    }, () => {
+      setStatus({ type: 'error', message: 'Could not monitor the processing job.' });
+      setProcessingJobId(null);
+      setIsParsing(false);
+    });
+    return unsubscribe;
+  }, [processingJobId, loadTests]);
 
   const handleQuestionsFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selected = e.target.files[0];
+      if (selected.size > 10 * 1024 * 1024) {
+        e.target.value = '';
+        setFile(null);
+        setStatus({ type: 'error', message: 'Document must be 10 MB or smaller.' });
+        return;
+      }
+      setFile(selected);
       setStatus({ type: '', message: '' });
       setCreatedTestId(null);
     }
@@ -136,55 +257,43 @@ export default function TestsPage() {
     if (!user || !universityId || !examDate || !file) return;
 
     setIsParsing(true);
-    setStatus({ type: 'info', message: 'Generating test...' });
+    setStatus({ type: 'info', message: 'Uploading document to the processing queue…' });
 
     try {
       const examStart = buildISOString(examDate, startHour, startMinute, startAmPm);
       const examEnd = buildISOString(examDate, endHour, endMinute, endAmPm);
+      const idToken = await getIdToken();
+      if (!idToken) throw new Error('Your session expired. Please sign in again.');
 
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('idToken', idToken);
+      formData.append('universityId', universityId);
+      formData.append('title', title);
+      formData.append('description', description);
+      formData.append('duration', String(duration));
+      formData.append('examStart', examStart);
+      formData.append('examEnd', examEnd);
+      formData.append('allowReattempts', String(allowReattempts));
 
-      const result = await processTestDocument(formData);
+      const result = await queueTestDocument(formData);
 
-      if (result.success) {
-        // Save to Firestore from client (where user is authenticated)
-        const docRef = await addDoc(collection(db, 'tests'), {
-          title: title.trim() || result.sourceFileName?.replace(/\.pdf$/i, '') || 'Untitled Test',
-          description: description.trim(),
-          duration,
-          category: 'General',
-          totalQuestions: result.totalQuestionCount,
-          examStart,
-          examEnd,
-          metadata: result.metadata,
-          sections: result.sections,
-          problems: result.codingProblems,
-          universityId,
-          createdBy: user.uid,
-          createdAt: serverTimestamp(),
-          sourceFileName: result.sourceFileName,
-          approved: false,
-          allowReattempts,
-        });
-
-        setStatus({ type: 'success', message: `Uploaded successfully — ${result.totalQuestionCount} questions extracted. Please approve the test.` });
-        setCreatedTestId(docRef.id);
-        setFile(null);
-        setTitle('');
-        setDescription('');
-        setDuration(60);
-        setExamDate(null);
-        setAllowReattempts(false);
-        loadTests();
+      if (result.success && result.jobId) {
+        setProcessingJobId(result.jobId);
+        setStatus({ type: 'info', message: 'Document queued. You can leave this page; processing will continue.' });
+        void fetch('/api/jobs/process-tests', {
+          method: 'POST',
+          headers: await authHeaders(),
+          body: JSON.stringify({ jobId: result.jobId }),
+        }).catch(() => {});
       } else {
-        setStatus({ type: 'error', message: result.error });
+        setStatus({ type: 'error', message: result.error || 'Failed to process the document.' });
         setCreatedTestId(null);
+        setIsParsing(false);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'An error occurred';
       setStatus({ type: 'error', message: msg });
-    } finally {
       setIsParsing(false);
     }
   };
@@ -201,7 +310,7 @@ export default function TestsPage() {
 
   const approvedCount = testUploads.filter(t => t.approved).length;
   const pendingCount = testUploads.length - approvedCount;
-  const scheduledCount = testUploads.filter(t => t.examStart && new Date(t.examEnd || t.examStart).getTime() >= Date.now()).length;
+  const scheduledCount = testUploads.filter(t => t.examStart && new Date(t.examEnd || t.examStart).getTime() >= now).length;
 
   return (
     <div className="max-w-[1200px] mx-auto animate-fade-in">
@@ -369,10 +478,17 @@ export default function TestsPage() {
                   <span className={`w-1.5 h-1.5 rounded-full ${test.approved ? 'bg-[var(--status-success)]' : 'bg-[var(--text-faint)]'}`} />
                   <span className={test.approved ? 'text-[var(--status-success)]' : 'text-[var(--text-faint)]'}>{test.approved ? 'Approved' : 'Pending'}</span>
                 </span>
-                <ChevronRight size={15} className="text-[var(--text-faint)] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all shrink-0" />
+                <ChevronRight size={15} className="text-[var(--text-faint)] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition shrink-0" />
               </Link>
             );
           })}
+          {hasMoreTests && (
+            <div className="flex justify-center p-3 border-t border-[var(--border-subtle)]">
+              <button type="button" onClick={loadMoreTests} disabled={loadingMoreTests} className="btn-secondary !rounded-[10px] text-[12px] disabled:opacity-50">
+                {loadingMoreTests ? 'Loading…' : 'Load more tests'}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

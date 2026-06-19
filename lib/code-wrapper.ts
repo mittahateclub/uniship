@@ -471,22 +471,6 @@ function extractJavaReturnType(code: string, methodName: string): string {
   return match ? match[1] : 'void';
 }
 
-function javaParseExpr(type: string, varName: string): string {
-  const t = type.replace(/\s/g, '');
-  if (t === 'int' || t === 'Integer') return `Integer.parseInt(${varName}.trim())`;
-  if (t === 'long' || t === 'Long') return `Long.parseLong(${varName}.trim())`;
-  if (t === 'double' || t === 'Double') return `Double.parseDouble(${varName}.trim())`;
-  if (t === 'boolean' || t === 'Boolean') return `Boolean.parseBoolean(${varName}.trim().toLowerCase().replace("true","true").replace("false","false"))`;
-  if (t === 'String') return `${varName}.trim().replaceAll("^\\"|\\"$","")`;
-  if (t === 'int[]' || t === 'Integer[]') return `_parseIntArr(${varName})`;
-  if (t === 'int[][]') return `_parseInt2D(${varName})`;
-  if (t === 'String[]') return `_parseStrArr(${varName})`;
-  if (t.startsWith('List<Integer>') || t === 'List<Integer>') return `_parseIntList(${varName})`;
-  if (t.startsWith('List<List<Integer>>')) return `_parseInt2DList(${varName})`;
-  if (t.startsWith('List<String>')) return `_parseStrList(${varName})`;
-  return `${varName}.trim()`;
-}
-
 function javaFormatExpr(type: string, varName: string): string {
   const t = type.replace(/\s/g, '');
   if (t === 'int[]' || t === 'Integer[]') return `java.util.Arrays.toString(${varName})`;
@@ -686,7 +670,7 @@ function buildCppWrapper(studentCode: string, functionName: string, languageId: 
     : `${functionName}(${argList})`;
 
   if (isC) {
-    return buildCWrapper(strippedCode, functionName, paramTypes, returnType, callExpr, paramCount);
+    return buildCWrapper(strippedCode, functionName, paramTypes, returnType);
   }
 
   // Generate parsing code for each param using _lines[_idx++]
@@ -795,9 +779,7 @@ function buildCWrapper(
   strippedCode: string,
   functionName: string,
   paramTypes: string[],
-  returnType: string,
-  _callExpr: string,
-  paramCount: number
+  returnType: string
 ): string {
   // Normalize types
   const normTypes = paramTypes.map(t =>

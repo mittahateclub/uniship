@@ -15,7 +15,13 @@ import {
   computeAlerts, untilLong, untilShort, postedTitle,
   type AppAlert, type AlertCategory,
 } from '@/lib/alerts';
-import { Bell, FileText, Calendar, Briefcase, Clock, Code, X } from '@/components/icons';
+import Bell from '@/components/icons/Bell';
+import FileText from '@/components/icons/FileText';
+import Calendar from '@/components/icons/Calendar';
+import Briefcase from '@/components/icons/Briefcase';
+import Clock from '@/components/icons/Clock';
+import Code from '@/components/icons/Code';
+import X from '@/components/icons/X';
 
 const CATEGORY_STYLE: Record<AlertCategory, { color: string; Icon: React.ComponentType<{ size?: number }> }> = {
   test:       { color: 'var(--status-warning)',   Icon: FileText },
@@ -165,7 +171,7 @@ export default function NotificationCenter() {
           {/* Header */}
           <div className="flex items-center justify-between px-4 h-12 border-b border-[var(--border-subtle)]">
             <span className="text-[13px] font-semibold text-[var(--text-primary)]">Notifications</span>
-            <button onClick={() => setOpen(false)} className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors">
+            <button onClick={() => setOpen(false)} className="p-1 rounded-[8px] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors">
               <X size={15} />
             </button>
           </div>

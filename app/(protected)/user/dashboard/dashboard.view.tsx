@@ -5,10 +5,23 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { EventComments } from '@/components/EventComments';
 import { buildResumePrefill, setResumePrefill } from '@/lib/resume-prefill';
-import {
-  MessageCircle, Bookmark, BookmarkCheck, MapPin, Clock, Calendar, Briefcase,
-  Code, FlaskConical, Presentation, Check, ExternalLink, Send, Sparkles, ArrowRight, FileText, TrendingUp,
-} from '@/components/icons';
+import MessageCircle from '@/components/icons/MessageCircle';
+import Bookmark from '@/components/icons/Bookmark';
+import BookmarkCheck from '@/components/icons/BookmarkCheck';
+import MapPin from '@/components/icons/MapPin';
+import Clock from '@/components/icons/Clock';
+import Calendar from '@/components/icons/Calendar';
+import Briefcase from '@/components/icons/Briefcase';
+import Code from '@/components/icons/Code';
+import FlaskConical from '@/components/icons/FlaskConical';
+import Presentation from '@/components/icons/Presentation';
+import Check from '@/components/icons/Check';
+import ExternalLink from '@/components/icons/ExternalLink';
+import Send from '@/components/icons/Send';
+import Sparkles from '@/components/icons/Sparkles';
+import ArrowRight from '@/components/icons/ArrowRight';
+import FileText from '@/components/icons/FileText';
+import TrendingUp from '@/components/icons/TrendingUp';
 import { FeedSkeleton } from '@/components/Skeleton';
 
 export interface FeedPost {
@@ -69,7 +82,7 @@ function proxiedImage(url: string): string {
   return url;
 }
 
-const TYPE_CONFIG: Record<string, { chip: string; dot: string; icon: React.ComponentType<any>; label: string }> = {
+const TYPE_CONFIG: Record<string, { chip: string; dot: string; icon: React.ComponentType<{ size?: number; className?: string }>; label: string }> = {
   event:      { chip: 'bg-[var(--type-event)]/12 text-[var(--type-event)]',           dot: 'bg-[var(--type-event)]',      icon: Calendar, label: 'Event' },
   internship: { chip: 'bg-[var(--type-internship)]/12 text-[var(--type-internship)]', dot: 'bg-[var(--type-internship)]', icon: Briefcase, label: 'Internship' },
   hackathon:  { chip: 'bg-[var(--type-hackathon)]/12 text-[var(--type-hackathon)]',   dot: 'bg-[var(--type-hackathon)]',  icon: Code, label: 'Hackathon' },
@@ -99,9 +112,7 @@ function PostCard({
     if (!el || expanded) return; // overflow is only measurable while clamped
     const measure = () => setOverflowing(el.scrollHeight > el.clientHeight + 1);
     const raf = requestAnimationFrame(measure);
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => { cancelAnimationFrame(raf); ro.disconnect(); };
+    return () => cancelAnimationFrame(raf);
   }, [post.description, expanded]);
 
   const generateResume = () => {
@@ -155,7 +166,11 @@ function PostCard({
           src={proxiedImage(post.imageUrl)}
           alt={post.title}
           referrerPolicy="no-referrer"
-          className="w-full max-h-[360px] object-cover border-y border-[var(--border-subtle)]"
+          loading="lazy"
+          decoding="async"
+          width={1200}
+          height={675}
+          className="w-full aspect-video max-h-[360px] object-cover border-y border-[var(--border-subtle)]"
           onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
         />
       )}

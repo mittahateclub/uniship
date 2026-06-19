@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { doc, getDoc, collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { InternshipDetailView, type Internship } from './internship-detail.view';
 
@@ -28,7 +28,8 @@ export default function InternshipDetail({ params }: { params: Promise<{ id: str
             const q = query(
               collection(db, 'applications'),
               where('internshipId', '==', id),
-              where('userId', '==', user.uid)
+              where('userId', '==', user.uid),
+              limit(1),
             );
             const appSnap = await getDocs(q);
             if (!appSnap.empty) setHasApplied(true);

@@ -1,18 +1,30 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, use } from 'react';
+import { useState, useEffect, useCallback, useRef, use, type ComponentType } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { doc, getDoc, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, setDoc, getDocs, where, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, setDoc, getDocs, where, updateDoc, limit } from 'firebase/firestore';
 import { authHeaders } from '@/lib/auth-client';
 import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import Editor from '@monaco-editor/react';
-import {
-  Shield, AlertTriangle, Maximize, Eye, Clock,
-  Wifi, CheckCircle2, XCircle, Monitor, Lock,
-  MessageCircle, Send, ShieldCheck, MonitorPlay,
-  Play, Terminal, Loader2, ChevronDown,
-} from '@/components/icons';
+import Shield from '@/components/icons/Shield';
+import AlertTriangle from '@/components/icons/AlertTriangle';
+import Maximize from '@/components/icons/Maximize';
+import Eye from '@/components/icons/Eye';
+import Clock from '@/components/icons/Clock';
+import Wifi from '@/components/icons/Wifi';
+import CheckCircle2 from '@/components/icons/CheckCircle2';
+import XCircle from '@/components/icons/XCircle';
+import Monitor from '@/components/icons/Monitor';
+import Lock from '@/components/icons/Lock';
+import MessageCircle from '@/components/icons/MessageCircle';
+import Send from '@/components/icons/Send';
+import ShieldCheck from '@/components/icons/ShieldCheck';
+import MonitorPlay from '@/components/icons/MonitorPlay';
+import Play from '@/components/icons/Play';
+import Terminal from '@/components/icons/Terminal';
+import Loader2 from '@/components/icons/Loader2';
+import ChevronDown from '@/components/icons/ChevronDown';
 
 // ── Interfaces ──
 interface Problem {
@@ -71,6 +83,64 @@ interface ChatMessage {
   timestamp: string;
 }
 
+interface KeyboardApi {
+  lock?: (keys?: string[]) => Promise<void>;
+  unlock?: () => void;
+}
+
+interface NavigatorWithKeyboard extends Navigator {
+  keyboard?: KeyboardApi;
+}
+
+interface ExamDisplayMediaOptions extends DisplayMediaStreamOptions {
+  video?: boolean | (MediaTrackConstraints & { displaySurface?: 'monitor' });
+  preferCurrentTab?: boolean;
+  selfBrowserSurface?: 'include' | 'exclude';
+  surfaceSwitching?: 'include' | 'exclude';
+}
+
+interface JudgeCaseResponse {
+  caseNumber: number;
+  statusCode: string;
+  status: string;
+  stderr?: string | null;
+}
+
+function withoutHiddenCases(problem: Problem): Problem {
+  const sanitized = { ...problem };
+  delete sanitized.hiddenTestCases;
+  return sanitized;
+}
+
+function PreflightCheckRow({
+  label,
+  icon: Icon,
+  status,
+}: {
+  label: string;
+  icon: ComponentType<{ size?: number; className?: string }>;
+  status: string;
+}) {
+  return (
+    <div className="flex items-center justify-between py-3 border-b border-[var(--border-subtle)] last:border-0">
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-[8px] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center">
+          <Icon size={15} className="text-[var(--text-faint)]" />
+        </div>
+        <span className="text-[13px] font-medium text-[var(--text-primary)]">{label}</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        {status === 'pending' && <span className="text-[11px] text-[var(--text-faint)]">Waiting...</span>}
+        {status === 'checking' && <div className="loading-dots" style={{ transform: 'scale(0.5)' }}><span /><span /><span /></div>}
+        {status === 'pass' && <><CheckCircle2 size={14} className="text-[var(--status-success)]" /><span className="text-[11px] font-semibold text-[var(--status-success)]">Ready</span></>}
+        {status === 'slow' && <><AlertTriangle size={14} className="text-[var(--status-warning)]" /><span className="text-[11px] font-semibold text-[var(--status-warning)]">Slow</span></>}
+        {status === 'fail' && <><XCircle size={14} className="text-[var(--status-danger)]" /><span className="text-[11px] font-semibold text-[var(--status-danger)]">Failed</span></>}
+        {status === 'fail_surface' && <><XCircle size={14} className="text-[var(--status-danger)]" /><span className="text-[11px] font-semibold text-[var(--status-danger)]">Entire Screen Required</span></>}
+      </div>
+    </div>
+  );
+}
+
 // ── Constants ──
 const MAX_VIOLATIONS = 10;
 const HIGH_SEVERITY_LIMIT = 3;
@@ -125,7 +195,75 @@ const SEVERITY_CONFIG = {
   high:   { label: 'High',   color: 'var(--status-danger)', points: 3 },
 };
 
-const normalizeJudgeText = (value: string) => value.trim().replace(/\r\n/g, '\n').replace(/\s+/g, ' ').toLowerCase();
+function formatCountdown(seconds: number): string {
+  return `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
+}
+
+function ExamCountdown({
+  endsAt,
+  onExpire,
+  submitted = false,
+  chatOpen = false,
+  newMsgCount = 0,
+  onToggleChat,
+}: {
+  endsAt: number;
+  onExpire?: () => void;
+  submitted?: boolean;
+  chatOpen?: boolean;
+  newMsgCount?: number;
+  onToggleChat?: () => void;
+}) {
+  const [seconds, setSeconds] = useState(() => Math.max(0, Math.ceil((endsAt - Date.now()) / 1000)));
+  const onExpireRef = useRef(onExpire);
+  const expiredRef = useRef(false);
+
+  useEffect(() => {
+    onExpireRef.current = onExpire;
+  }, [onExpire]);
+
+  useEffect(() => {
+    expiredRef.current = false;
+    const update = () => {
+      const next = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+      setSeconds(next);
+      if (next === 0 && !expiredRef.current) {
+        expiredRef.current = true;
+        onExpireRef.current?.();
+      }
+    };
+    update();
+    const timer = window.setInterval(update, 1000);
+    return () => window.clearInterval(timer);
+  }, [endsAt]);
+
+  if (submitted) {
+    if (seconds <= 0 || !onToggleChat) return null;
+    return (
+      <div className="mt-6">
+        <p className="text-[11px] text-[var(--text-faint)] mb-2">
+          Chat with proctor available for {formatCountdown(seconds)}
+        </p>
+        <button onClick={onToggleChat} className="inline-flex items-center gap-2 text-[12px] font-semibold text-[var(--type-event)] hover:opacity-80 transition">
+          <MessageCircle size={14} />
+          {chatOpen ? 'Close Chat' : 'Open Chat'}
+          {newMsgCount > 0 && (
+            <span className="w-4 h-4 rounded-full bg-[var(--status-danger)] text-white text-[8px] font-semibold flex items-center justify-center">
+              {newMsgCount}
+            </span>
+          )}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <span className={`flex items-center gap-1 text-[12px] font-semibold tabular-nums ${seconds <= 60 ? 'text-[var(--status-danger)] animate-pulse' : seconds <= 300 ? 'text-[var(--accent-orange)]' : 'text-[var(--text-primary)]'}`}>
+      <Clock size={12} />
+      {formatCountdown(seconds)}
+    </span>
+  );
+}
 
 // ── Phase type ──
 type Phase = 'loading' | 'preflight' | 'rules' | 'active' | 'frozen' | 'submitted';
@@ -141,7 +279,8 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   const [alreadyAttempted, setAlreadyAttempted] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [durationSeconds, setDurationSeconds] = useState<number | null>(null);
+  const [examEndsAt, setExamEndsAt] = useState<number | null>(null);
   const [submitReason, setSubmitReason] = useState<SubmitReason | ''>('');
   const [resultSummary, setResultSummary] = useState<{
     score: number;
@@ -169,7 +308,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   const violationPointsRef = useRef(0);
   const highViolationsRef = useRef(0);
   const savedThemeRef = useRef<string | null>(null);
-  const sessionIdRef = useRef(crypto.randomUUID());
+  const [sessionId] = useState(() => crypto.randomUUID());
   const screenStreamRef = useRef<MediaStream | null>(null);
   const chatOpenRef = useRef(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -242,15 +381,15 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           // Build sanitized TestData (strip hidden cases from problems too)
           const sanitized: TestData = {
             ...data,
-            problems: (data.problems || []).map(({ hiddenTestCases: _h, ...rest }) => rest),
+            problems: (data.problems || []).map(withoutHiddenCases),
             sections: data.sections?.map(s => ({
               ...s,
-              questions: s.questions.map(({ hiddenTestCases: _h, ...rest }) => rest),
+              questions: s.questions.map(withoutHiddenCases),
             })),
           };
           setTest(sanitized);
           setFlatQuestions(flat);
-          if (data.duration) setTimeLeft(data.duration * 60);
+          if (data.duration) setDurationSeconds(data.duration * 60);
 
           // Check if student already attempted this test
           if (user) {
@@ -259,6 +398,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                 collection(db, 'test_results'),
                 where('testId', '==', id),
                 where('userId', '==', user.uid),
+                limit(1),
               ));
               if (!existingResults.empty) {
                 // Check if any result does NOT have reattemptAllowed flag
@@ -273,13 +413,11 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       } catch (error) {
         console.error('Error fetching test:', error);
       } finally {
-        if (!test) {
-          setPhase(prev => prev === 'loading' ? 'preflight' : prev);
-        }
+        setPhase(prev => prev === 'loading' ? 'preflight' : prev);
       }
     }
     fetchTestData();
-  }, [id]);
+  }, [id, user]);
 
   // ── Submit handler ──
   const doSubmit = useCallback(async (reason: SubmitReason, options?: { violationsSnapshot?: Violation[] }) => {
@@ -291,8 +429,9 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
     try {
       // Unlock keyboard before exiting fullscreen
-      if ('keyboard' in navigator && typeof (navigator as any).keyboard?.unlock === 'function') {
-        try { (navigator as any).keyboard.unlock(); } catch { /* ok */ }
+      const keyboard = (navigator as NavigatorWithKeyboard).keyboard;
+      if (typeof keyboard?.unlock === 'function') {
+        try { keyboard.unlock(); } catch { /* ok */ }
       }
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
       const attemptedQuestions = Object.keys(answers).filter((k) => (answers[Number(k)] || '').trim().length > 0).length;
@@ -309,6 +448,13 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         passed: number;
         total: number;
         failedCase: number | null;
+        usedHiddenCases: boolean;
+      }> = [];
+      const codingTasks: Array<{
+        index: number;
+        source_code: string;
+        language_id: number;
+        testCases: Array<{ input: string; expectedOutput: string; isHidden: boolean }>;
         usedHiddenCases: boolean;
       }> = [];
 
@@ -392,60 +538,65 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         }
 
         gradable += 1;
+        codingTasks.push({
+          index,
+          source_code: answer,
+          language_id: questionLanguages[index] || 71,
+          testCases: casesForScoring,
+          usedHiddenCases: hiddenCases.length > 0,
+        });
+      }
 
+      if (codingTasks.length > 0) {
         try {
-          const compileRes = await fetch('/api/compile', {
+          const compileResponse = await fetch('/api/compile', {
             method: 'POST',
             headers: await authHeaders(),
             body: JSON.stringify({
-              mode: 'submit',
-              source_code: answer,
-              language_id: questionLanguages[index] || 71,
-              testCases: casesForScoring,
-              memoryLimitKb: 262144,
+              mode: 'batch',
+              submissions: codingTasks.map((task) => ({
+                id: task.index,
+                source_code: task.source_code,
+                language_id: task.language_id,
+                testCases: task.testCases,
+                memoryLimitKb: 262144,
+              })),
             }),
           });
-
-          const compileData = await compileRes.json();
-          if (!compileRes.ok || compileData.error) {
+          const compileData = await compileResponse.json();
+          if (!compileResponse.ok || compileData.error) throw new Error(compileData.error || 'Batch grading failed');
+          const byId = new Map<number, { summary?: { verdict?: string; passed?: number; total?: number; failedCase?: number | null } }>(
+            (compileData.submissions || []).map((submission: { id: number; summary?: { verdict?: string; passed?: number; total?: number; failedCase?: number | null } }) => [Number(submission.id), submission]),
+          );
+          for (const task of codingTasks) {
+            const graded = byId.get(task.index);
+            const verdict = (graded?.summary?.verdict || 'RE') as QuestionVerdict;
+            if (verdict === 'AC') score += 1;
             questionEvaluations.push({
-              index,
+              index: task.index,
               sectionType: 'coding',
-              verdict: 'RE',
-              passed: 0,
-              total: casesForScoring.length,
-              failedCase: null,
-              usedHiddenCases: hiddenCases.length > 0,
+              verdict,
+              passed: graded?.summary?.passed ?? 0,
+              total: graded?.summary?.total ?? task.testCases.length,
+              failedCase: graded?.summary?.failedCase ?? null,
+              usedHiddenCases: task.usedHiddenCases,
             });
-            continue;
           }
-
-          const verdict = (compileData.summary?.verdict || 'RE') as QuestionVerdict;
-          if (verdict === 'AC') {
-            score += 1;
-          }
-
-          questionEvaluations.push({
-            index,
-            sectionType: 'coding',
-            verdict,
-            passed: compileData.summary?.passed ?? 0,
-            total: compileData.summary?.total ?? casesForScoring.length,
-            failedCase: compileData.summary?.failedCase ?? null,
-            usedHiddenCases: hiddenCases.length > 0,
-          });
         } catch {
+          for (const task of codingTasks) {
           questionEvaluations.push({
-            index,
+            index: task.index,
             sectionType: 'coding',
             verdict: 'RE',
             passed: 0,
-            total: casesForScoring.length,
+            total: task.testCases.length,
             failedCase: null,
-            usedHiddenCases: hiddenCases.length > 0,
+            usedHiddenCases: task.usedHiddenCases,
           });
+          }
         }
       }
+      questionEvaluations.sort((a, b) => a.index - b.index);
 
       const mode: 'auto' | 'attempted' = gradable > 0 ? 'auto' : 'attempted';
       const finalScore = mode === 'auto' ? score : attemptedQuestions;
@@ -493,7 +644,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         questionSnapshots,
         submittedAt: serverTimestamp(),
         universityId: test.universityId,
-        sessionId: sessionIdRef.current,
+        sessionId,
         flagged: flaggedByViolation,
         reattemptAllowed: false,
         proctoring: {
@@ -514,7 +665,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       });
       setSubmitReason(reason);
       setPhase('submitted');
-      setDoc(doc(db, 'exam_sessions', sessionIdRef.current), {
+      setDoc(doc(db, 'exam_sessions', sessionId), {
         status: 'submitted',
         submittedAt: serverTimestamp(),
         lastHeartbeat: serverTimestamp(),
@@ -527,7 +678,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       console.error('Error submitting test:', error);
       submittedRef.current = false;
     }
-  }, [test, user, answers, id, questionLanguages, flatQuestions]);
+  }, [test, user, answers, id, questionLanguages, flatQuestions, sessionId]);
 
   // ── Add violation ──
   const addViolation = useCallback((
@@ -593,15 +744,16 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
     // Screen sharing — require entire screen (monitor), reject tab/window
     setChecks(c => ({ ...c, screen: 'checking' }));
     try {
-      const screenStream = await navigator.mediaDevices.getDisplayMedia({
-        video: { width: 1920, height: 1080, displaySurface: 'monitor' } as any,
+      const displayMediaOptions: ExamDisplayMediaOptions = {
+        video: { width: 1920, height: 1080, displaySurface: 'monitor' },
         preferCurrentTab: false,
         selfBrowserSurface: 'exclude',
         surfaceSwitching: 'exclude',
-      } as any);
+      };
+      const screenStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
       // Verify the user actually selected the entire screen
       const videoTrack = screenStream.getVideoTracks()[0];
-      const settings = videoTrack?.getSettings() as any;
+      const settings = videoTrack?.getSettings() as MediaTrackSettings & { displaySurface?: string };
       if (settings?.displaySurface && settings.displaySurface !== 'monitor') {
         // User selected a tab or window instead of entire screen
         screenStream.getTracks().forEach(t => t.stop());
@@ -616,25 +768,16 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   }, []);
 
   useEffect(() => {
-    if (phase === 'preflight') runPreflight();
+    if (phase !== 'preflight') return;
+    const start = window.setTimeout(() => void runPreflight(), 0);
+    return () => window.clearTimeout(start);
   }, [phase, runPreflight]);
-
-  // ── Timer ──
-  useEffect(() => {
-    if ((phase !== 'active' && phase !== 'submitted') || timeLeft === null) return;
-    if (timeLeft <= 0) {
-      if (phase === 'active') doSubmit('time_up');
-      return;
-    }
-    const t = setInterval(() => setTimeLeft(v => (v !== null ? v - 1 : null)), 1000);
-    return () => clearInterval(t);
-  }, [phase, timeLeft, doSubmit]);
 
   // ── Heartbeat for active attempt detection ──
   useEffect(() => {
     if (phase !== 'active') return;
     const touchSession = () => {
-      setDoc(doc(db, 'exam_sessions', sessionIdRef.current), {
+      setDoc(doc(db, 'exam_sessions', sessionId), {
         status: 'active',
         isAttempting: true,
         lastHeartbeat: serverTimestamp(),
@@ -643,7 +786,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
     touchSession();
     const heartbeat = setInterval(touchSession, HEARTBEAT_INTERVAL_MS);
     return () => clearInterval(heartbeat);
-  }, [phase]);
+  }, [phase, sessionId]);
 
   // ── Fullscreen enforcement ──
   useEffect(() => {
@@ -654,8 +797,9 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         document.documentElement.requestFullscreen()
           .then(() => {
             // Re-lock ESC key after re-entering fullscreen
-            if ('keyboard' in navigator && typeof (navigator as any).keyboard?.lock === 'function') {
-              (navigator as any).keyboard.lock(['Escape']).catch(() => {});
+            const keyboard = (navigator as NavigatorWithKeyboard).keyboard;
+            if (typeof keyboard?.lock === 'function') {
+              keyboard.lock(['Escape']).catch(() => {});
             }
           })
           .catch(() => {});
@@ -762,7 +906,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
   // ── Live support chat listener ──
   useEffect(() => {
     if (phase !== 'active' && phase !== 'frozen' && phase !== 'submitted') return;
-    const messagesRef = collection(db, 'exam_sessions', sessionIdRef.current, 'messages');
+    const messagesRef = collection(db, 'exam_sessions', sessionId, 'messages');
     const q = query(messagesRef, orderBy('timestamp', 'asc'));
     const unsub = onSnapshot(q, (snapshot) => {
       const msgs: ChatMessage[] = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ChatMessage));
@@ -773,7 +917,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       }
     }, (error) => { console.error('Chat listener error:', error); });
     return () => unsub();
-  }, [phase]);
+  }, [phase, sessionId]);
 
   // ── Auto-scroll chat ──
   useEffect(() => {
@@ -798,7 +942,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
     document.documentElement.setAttribute('data-theme', 'light');
     // Create secure exam session
     try {
-      await setDoc(doc(db, 'exam_sessions', sessionIdRef.current), {
+      await setDoc(doc(db, 'exam_sessions', sessionId), {
         testId: id,
         testTitle: test?.title || test?.sourceFileName || 'Unknown',
         universityId: test?.universityId,
@@ -815,10 +959,12 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
     try {
       await document.documentElement.requestFullscreen();
       // Lock ESC key in fullscreen so the browser doesn't exit fullscreen on first press
-      if ('keyboard' in navigator && typeof (navigator as any).keyboard?.lock === 'function') {
-        try { await (navigator as any).keyboard.lock(['Escape']); } catch { /* not supported or denied */ }
+      const keyboard = (navigator as NavigatorWithKeyboard).keyboard;
+      if (typeof keyboard?.lock === 'function') {
+        try { await keyboard.lock(['Escape']); } catch { /* not supported or denied */ }
       }
     } catch { /* ok */ }
+    if (durationSeconds) setExamEndsAt(Date.now() + durationSeconds * 1000);
     setPhase('active');
   };
 
@@ -837,13 +983,18 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
     const msg = chatInput.trim();
     setChatInput('');
     try {
-      await addDoc(collection(db, 'exam_sessions', sessionIdRef.current, 'messages'), {
+      await addDoc(collection(db, 'exam_sessions', sessionId, 'messages'), {
         sender: 'student',
         senderId: user.uid,
         message: msg,
         timestamp: serverTimestamp(),
         userEmail: user.email,
       });
+      await setDoc(doc(db, 'exam_sessions', sessionId), {
+        lastMessageAt: serverTimestamp(),
+        lastMessageSender: 'student',
+        lastMessageText: msg.slice(0, 160),
+      }, { merge: true });
     } catch (e) { console.error('Failed to send message:', e); }
   };
 
@@ -906,7 +1057,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
     const question = flatQuestions[currentQuestion];
     if (question._sectionType !== 'coding') return;
 
-    let hiddenCases = (hiddenCasesRef.current[currentQuestion] || []).map((tc) => ({
+    const hiddenCases = (hiddenCasesRef.current[currentQuestion] || []).map((tc) => ({
       input: tc.input,
       expectedOutput: tc.output,
       isHidden: true,
@@ -967,7 +1118,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
         setCodeError(data.error || `Server error (${res.status})`);
       } else {
         setJudgeSummary(data.summary || null);
-        setJudgeCaseResults((data.cases || []).map((c: any) => ({
+        setJudgeCaseResults((data.cases || []).map((c: JudgeCaseResponse) => ({
           caseNumber: c.caseNumber,
           statusCode: c.statusCode,
           status: c.status,
@@ -981,17 +1132,19 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
     }
   };
 
-  const handleNext = () => { if (flatQuestions.length > 0 && currentQuestion < flatQuestions.length - 1) setCurrentQuestion(p => p + 1); };
-  const handlePrevious = () => { if (currentQuestion > 0) setCurrentQuestion(p => p - 1); };
-  const formatTime = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
-
-  useEffect(() => {
-    setSelectedLang(questionLanguages[currentQuestion] || 71);
+  const selectQuestion = (index: number) => {
+    setCurrentQuestion(index);
+    setSelectedLang(questionLanguages[index] || 71);
     setCodeStdin('');
     setCodeOutput(null);
     setCodeError(null);
-  }, [currentQuestion]); // eslint-disable-line react-hooks/exhaustive-deps
-
+  };
+  const handleNext = () => {
+    if (flatQuestions.length > 0 && currentQuestion < flatQuestions.length - 1) selectQuestion(currentQuestion + 1);
+  };
+  const handlePrevious = () => {
+    if (currentQuestion > 0) selectQuestion(currentQuestion - 1);
+  };
   const allChecksPassed = (checks.internet === 'pass' || checks.internet === 'slow') && checks.screen === 'pass';
 
   // ─────────── RENDER ───────────
@@ -1053,7 +1206,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           )}
 
           {resultSummary && (
-            <div className="mb-6 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4 text-left">
+            <div className="mb-6 rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4 text-left">
               <p className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)] mb-2">Exam Result</p>
               <div className="flex items-center justify-between">
                 <span className="text-[13px] text-[var(--text-tertiary)]">Score</span>
@@ -1094,26 +1247,19 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
           </div>
 
           {/* Post-submission chat — available until test duration ends */}
-          {timeLeft !== null && timeLeft > 0 && (
-            <div className="mt-6">
-              <p className="text-[11px] text-[var(--text-faint)] mb-2">
-                Chat with proctor available for {formatTime(timeLeft)}
-              </p>
-              <button onClick={toggleChat} className="inline-flex items-center gap-2 text-[12px] font-semibold text-[var(--type-event)] hover:text-[#4C5ABF] transition-colors">
-                <MessageCircle size={14} />
-                {chatOpen ? 'Close Chat' : 'Open Chat'}
-                {newMsgCount > 0 && (
-                  <span className="w-4 h-4 rounded-full bg-[var(--status-danger)] text-white text-[8px] font-semibold flex items-center justify-center">
-                    {newMsgCount}
-                  </span>
-                )}
-              </button>
-            </div>
+          {examEndsAt !== null && (
+            <ExamCountdown
+              endsAt={examEndsAt}
+              submitted
+              chatOpen={chatOpen}
+              newMsgCount={newMsgCount}
+              onToggleChat={toggleChat}
+            />
           )}
 
           {/* Chat panel on submitted screen */}
           {chatOpen && (
-            <div className="mt-4 mx-auto w-full max-w-sm rounded-lg border border-[var(--border-subtle)] shadow-xl bg-[var(--bg-primary)] flex flex-col overflow-hidden" style={{ height: '320px' }}>
+            <div className="mt-4 mx-auto w-full max-w-sm rounded-[14px] border border-[var(--border-subtle)] shadow-xl bg-[var(--bg-primary)] flex flex-col overflow-hidden" style={{ height: '320px' }}>
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
                 <div className="flex items-center gap-2">
                   <MessageCircle size={14} className="text-[var(--type-event)]" />
@@ -1132,7 +1278,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                 )}
                 {chatMessages.map(msg => (
                   <div key={msg.id} className={`flex ${msg.sender === 'student' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] px-3 py-1.5 rounded-lg text-[12px] ${
+                    <div className={`max-w-[80%] px-3 py-1.5 rounded-[var(--radius)] text-[12px] ${
                       msg.sender === 'student'
                         ? 'bg-[var(--type-event)] text-white rounded-br-none'
                         : 'bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-bl-none'
@@ -1150,9 +1296,9 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                   onChange={e => setChatInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
                   placeholder="Type a message..."
-                  className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-1.5 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--type-event)]"
+                  className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-[var(--radius)] px-3 py-1.5 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--type-event)]"
                 />
-                <button onClick={sendChatMessage} disabled={!chatInput.trim()} className="p-1.5 rounded bg-[var(--type-event)] text-white disabled:opacity-40 transition-opacity">
+                <button onClick={sendChatMessage} disabled={!chatInput.trim()} className="p-1.5 rounded-[8px] bg-[var(--type-event)] text-white disabled:opacity-40 transition-opacity">
                   <Send size={14} />
                 </button>
               </div>
@@ -1183,30 +1329,11 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
   // ── Preflight: System Readiness ──
   if (phase === 'preflight') {
-    const CheckRow = ({ label, icon: Icon, status }: { label: string; icon: typeof Monitor; status: string }) => (
-      <div className="flex items-center justify-between py-3 border-b border-[var(--border-subtle)] last:border-0">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center">
-            <Icon size={15} className="text-[var(--text-faint)]" />
-          </div>
-          <span className="text-[13px] font-medium text-[var(--text-primary)]">{label}</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          {status === 'pending' && <span className="text-[11px] text-[var(--text-faint)]">Waiting...</span>}
-          {status === 'checking' && <div className="loading-dots" style={{ transform: 'scale(0.5)' }}><span /><span /><span /></div>}
-          {status === 'pass' && <><CheckCircle2 size={14} className="text-[var(--status-success)]" /><span className="text-[11px] font-semibold text-[var(--status-success)]">Ready</span></>}
-          {status === 'slow' && <><AlertTriangle size={14} className="text-[var(--status-warning)]" /><span className="text-[11px] font-semibold text-[var(--status-warning)]">Slow</span></>}
-          {status === 'fail' && <><XCircle size={14} className="text-[var(--status-danger)]" /><span className="text-[11px] font-semibold text-[var(--status-danger)]">Failed</span></>}
-          {status === 'fail_surface' && <><XCircle size={14} className="text-[var(--status-danger)]" /><span className="text-[11px] font-semibold text-[var(--status-danger)]">Entire Screen Required</span></>}
-        </div>
-      </div>
-    );
-
     return (
       <div className="max-w-lg mx-auto animate-fade-in py-12">
         <div className="window p-8">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-lg bg-[var(--type-event)]/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-[8px] bg-[var(--type-event)]/10 flex items-center justify-center">
               <Monitor size={20} className="text-[var(--type-event)]" />
             </div>
             <div>
@@ -1217,15 +1344,15 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
           {/* Checklist */}
           <div className="mb-6">
-            <CheckRow label="Internet Connection" icon={Wifi} status={checks.internet} />
-            <CheckRow label="Screen Sharing" icon={MonitorPlay} status={checks.screen} />
+            <PreflightCheckRow label="Internet Connection" icon={Wifi} status={checks.internet} />
+            <PreflightCheckRow label="Screen Sharing" icon={MonitorPlay} status={checks.screen} />
           </div>
 
           {/* Security indicators */}
-          <div className="bg-[var(--status-success)]/5 border border-[var(--status-success)]/20 rounded-lg p-4 mb-6">
+          <div className="bg-[var(--status-success)]/5 border border-[var(--status-success)]/20 rounded-[var(--radius)] p-4 mb-6">
             <div className="flex items-center gap-2 mb-2">
               <ShieldCheck size={14} className="text-[var(--status-success)]" />
-              <span className="text-[11px] font-semibold text-[var(--status-success)] uppercase tracking-wider">Secure Connection</span>
+              <span className="text-[11px] font-semibold text-[var(--status-success)] uppercase tracking-[0.07em]">Secure Connection</span>
             </div>
             <div className="space-y-1.5 text-[11px] text-[var(--text-tertiary)]">
               <div className="flex items-center gap-2">
@@ -1234,7 +1361,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               </div>
               <div className="flex items-center gap-2">
                 <Shield size={10} className="text-[var(--text-faint)]" />
-                <span>Session: <span className="font-mono text-[var(--text-primary)]">{sessionIdRef.current.slice(0, 8)}</span></span>
+                <span>Session: <span className="font-mono text-[var(--text-primary)]">{sessionId.slice(0, 8)}</span></span>
               </div>
             </div>
           </div>
@@ -1265,7 +1392,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       <div className="max-w-lg mx-auto animate-fade-in py-12">
         <div className="window p-8">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-lg bg-[var(--accent-orange)]/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-[8px] bg-[var(--accent-orange)]/10 flex items-center justify-center">
               <Shield size={20} className="text-[var(--accent-orange)]" />
             </div>
             <div>
@@ -1279,7 +1406,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
             {test.duration && <span className="flex items-center gap-1.5"><Clock size={14} className="text-[var(--text-faint)]" /> {test.duration} min</span>}
           </div>
 
-          <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg p-5 mb-5">
+          <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-[var(--radius)] p-5 mb-5">
             <p className="text-[10px] font-semibold text-[var(--text-faint)] uppercase tracking-[0.07em] mb-4">Monitoring & Enforcement</p>
             <div className="space-y-3 text-[12px] text-[var(--text-tertiary)]">
               <div className="flex items-start gap-2.5">
@@ -1301,7 +1428,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
             </div>
           </div>
 
-          <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg p-5 mb-6">
+          <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-[var(--radius)] p-5 mb-6">
             <p className="text-[10px] font-semibold text-[var(--text-faint)] uppercase tracking-[0.07em] mb-3">Violation Severity</p>
             <div className="space-y-2">
               {[
@@ -1343,7 +1470,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       {/* Warning toast */}
       {warningVisible && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[9999] max-w-md w-full px-4">
-          <div className="rounded-lg shadow-lg border px-4 py-3 flex items-start gap-3 text-[13px]" style={{
+          <div className="rounded-[var(--radius)] shadow-lg border px-4 py-3 flex items-start gap-3 text-[13px]" style={{
             background: `color-mix(in srgb, ${SEVERITY_CONFIG[warningData.severity as keyof typeof SEVERITY_CONFIG]?.color || 'var(--accent-orange)'} 13%, transparent)`,
             borderColor: `color-mix(in srgb, ${SEVERITY_CONFIG[warningData.severity as keyof typeof SEVERITY_CONFIG]?.color || 'var(--accent-orange)'} 30%, transparent)`,
           }}>
@@ -1362,9 +1489,9 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       <div className="fixed top-0 left-0 right-0 z-50 bg-[var(--bg-primary)]/95 backdrop-blur border-b border-[var(--border-subtle)] px-4 py-2">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5 bg-[var(--status-success)]/10 px-2 py-0.5 rounded">
+                <div className="flex items-center gap-1.5 bg-[var(--status-success)]/10 px-2 py-0.5 rounded-full">
                   <Shield size={11} className="text-[var(--status-success)]" />
-                  <span className="text-[10px] font-semibold text-[var(--status-success)] uppercase tracking-wider">Secure Environment Active</span>
+                  <span className="text-[10px] font-semibold text-[var(--status-success)] uppercase tracking-[0.07em]">Secure Environment Active</span>
                 </div>
                 <span className="w-px h-4 bg-[var(--border-subtle)] hidden sm:block" />
                 <span className="text-[11px] text-[var(--text-faint)] hidden sm:block">Monitoring Enabled</span>
@@ -1389,15 +1516,12 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               </span>
             )}
             {/* Timer */}
-            {timeLeft !== null && (
-              <span className={`flex items-center gap-1 text-[12px] font-semibold tabular-nums ${timeLeft <= 60 ? 'text-[var(--status-danger)] animate-pulse' : timeLeft <= 300 ? 'text-[var(--accent-orange)]' : 'text-[var(--text-primary)]'}`}>
-                <Clock size={12} />
-                {formatTime(timeLeft)}
-              </span>
+            {examEndsAt !== null && (
+              <ExamCountdown endsAt={examEndsAt} onExpire={() => doSubmit('time_up')} />
             )}
                 <span className="w-px h-4 bg-[var(--border-subtle)]" />
                 {/* Live Support */}
-                <button onClick={toggleChat} className="relative flex items-center gap-1 text-[11px] font-semibold text-[var(--type-event)] hover:text-[#4C5ABF] transition-colors">
+                <button onClick={toggleChat} className="relative flex items-center gap-1 text-[11px] font-semibold text-[var(--type-event)] hover:opacity-80 transition">
                   <MessageCircle size={12} />
                   <span className="hidden sm:inline">Support</span>
                   {newMsgCount > 0 && (
@@ -1412,7 +1536,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
       {/* Live Support Chat Panel */}
       {chatOpen && (
-        <div className="fixed top-11 right-4 z-[10000] w-80 h-96 rounded-lg border border-[var(--border-subtle)] shadow-xl bg-[var(--bg-primary)] flex flex-col overflow-hidden">
+        <div className="fixed top-11 right-4 z-[10000] w-80 h-96 rounded-[14px] border border-[var(--border-subtle)] shadow-xl bg-[var(--bg-primary)] flex flex-col overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
             <div className="flex items-center gap-2">
               <MessageCircle size={14} className="text-[var(--type-event)]" />
@@ -1431,7 +1555,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
             )}
             {chatMessages.map(msg => (
               <div key={msg.id} className={`flex ${msg.sender === 'student' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] px-3 py-1.5 rounded-lg text-[12px] ${
+                <div className={`max-w-[80%] px-3 py-1.5 rounded-[var(--radius)] text-[12px] ${
                   msg.sender === 'student'
                     ? 'bg-[var(--type-event)] text-white rounded-br-none'
                     : 'bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-bl-none'
@@ -1449,9 +1573,9 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               onChange={e => setChatInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
               placeholder="Type a message..."
-              className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-1.5 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--type-event)]"
+              className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-[var(--radius)] px-3 py-1.5 text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--type-event)]"
             />
-            <button onClick={sendChatMessage} disabled={!chatInput.trim()} className="p-1.5 rounded bg-[var(--type-event)] text-white disabled:opacity-40 transition-opacity">
+            <button onClick={sendChatMessage} disabled={!chatInput.trim()} className="p-1.5 rounded-[8px] bg-[var(--type-event)] text-white disabled:opacity-40 transition-opacity">
               <Send size={14} />
             </button>
           </div>
@@ -1462,7 +1586,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
       <div className={`${isCoding ? 'max-w-7xl' : 'max-w-4xl'} mx-auto pt-14 pb-8 px-4`}>
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded" style={{ background: `color-mix(in srgb, ${sectionColorMap[currentQ._sectionType]} 18%, transparent)`, color: sectionColorMap[currentQ._sectionType] }}>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.07em] px-2 py-0.5 rounded-full" style={{ background: `color-mix(in srgb, ${sectionColorMap[currentQ._sectionType]} 18%, transparent)`, color: sectionColorMap[currentQ._sectionType] }}>
               {currentQ._sectionTitle}
             </span>
             <p className="text-[var(--text-tertiary)] text-[13px]">
@@ -1479,11 +1603,11 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
             <div className="window p-6 sm:p-8">
               <div className="flex justify-between items-start mb-5">
                 <div className="flex items-center gap-2">
-                  <span className="inline-block text-white px-2.5 py-0.5 text-[11px] font-semibold uppercase rounded" style={{ background: sectionColorMap[currentQ._sectionType] }}>
+                  <span className="inline-block text-white px-2.5 py-0.5 text-[11px] font-semibold uppercase rounded-full" style={{ background: sectionColorMap[currentQ._sectionType] }}>
                     Question {currentQuestion + 1}
                   </span>
                   {currentQ.topic && (
-                    <span className="inline-block bg-[var(--bg-surface)] text-[var(--text-secondary)] px-2.5 py-0.5 text-[11px] font-medium rounded border border-[var(--border-subtle)]">
+                    <span className="inline-block bg-[var(--bg-surface)] text-[var(--text-secondary)] px-2.5 py-0.5 text-[11px] font-medium rounded-full border border-[var(--border-subtle)]">
                       {currentQ.topic}
                     </span>
                   )}
@@ -1497,7 +1621,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               {currentQ.sampleTestCases && currentQ.sampleTestCases.length > 0 && (
                 <div className="mt-5 space-y-2">
                   <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em]">Sample Test Case:</p>
-                  <pre className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-4 rounded text-sm text-[var(--status-success)] overflow-x-auto font-mono">
+                  <pre className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-4 rounded-[8px] text-sm text-[var(--status-success)] overflow-x-auto font-mono">
                     <div className="mb-2"><span className="text-[var(--text-faint)]">Input:</span> {currentQ.sampleTestCases[0].input}</div>
                     <div><span className="text-[var(--text-faint)]">Output:</span> {currentQ.sampleTestCases[0].output}</div>
                   </pre>
@@ -1537,7 +1661,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                         setCodeOutput(null);
                         setCodeError(null);
                       }}
-                      className="appearance-none bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-1.5 pr-7 text-[12px] text-[var(--text-primary)] font-medium focus:outline-none focus:border-[var(--type-event)] cursor-pointer"
+                      className="appearance-none bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-[var(--radius)] px-3 py-1.5 pr-7 text-[12px] text-[var(--text-primary)] font-medium focus:outline-none focus:border-[var(--type-event)] cursor-pointer"
                     >
                       <option value={71}>Python 3</option>
                       <option value={62}>Java</option>
@@ -1549,7 +1673,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                   <button
                     onClick={runCode}
                     disabled={!answers[currentQuestion]?.trim() || compiling}
-                    className="flex items-center gap-1.5 bg-[var(--status-success)] hover:bg-[var(--status-success)] text-white px-3 py-1.5 rounded text-[12px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="flex items-center gap-1.5 bg-[var(--status-success)] hover:brightness-110 text-white px-3 py-1.5 rounded-[8px] text-[12px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition"
                   >
                     {compiling ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
                     {compiling ? 'Running...' : 'Run Code'}
@@ -1557,14 +1681,14 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                   <button
                     onClick={submitCode}
                     disabled={!answers[currentQuestion]?.trim() || judgeSubmitting || compiling}
-                    className="flex items-center gap-1.5 bg-[var(--type-event)] hover:bg-[#4C5ABF] text-white px-3 py-1.5 rounded text-[12px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="flex items-center gap-1.5 bg-[var(--type-event)] hover:brightness-110 text-white px-3 py-1.5 rounded-[8px] text-[12px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition"
                   >
                     {judgeSubmitting ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
                     {judgeSubmitting ? 'Submitting...' : 'Submit Code'}
                   </button>
                 </div>
               </div>
-              <div className="rounded-lg overflow-hidden border border-[var(--border-subtle)]">
+              <div className="rounded-[var(--radius)] overflow-hidden border border-[var(--border-subtle)]">
                 <Editor
                   height="280px"
                   language={LANG_MONACO[selectedLang] || 'plaintext'}
@@ -1597,7 +1721,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                   value={codeStdin}
                   onChange={e => setCodeStdin(e.target.value)}
                   placeholder="Optional: provide input for your program..."
-                  className="w-full h-16 p-3 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded font-mono text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[var(--type-event)] focus:outline-none transition-colors resize-none"
+                  className="w-full h-16 p-3 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-[var(--radius)] font-mono text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:border-[var(--type-event)] focus:outline-none transition-colors resize-none"
                 />
               </div>
 
@@ -1616,7 +1740,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                       </div>
                     )}
                   </div>
-                  <div className="bg-[#0D1117] border border-[var(--border-subtle)] rounded p-4 min-h-[60px] max-h-48 overflow-auto">
+                  <div className="bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-[8px] p-4 min-h-[60px] max-h-48 overflow-auto">
                     {compiling ? (
                       <div className="flex items-center gap-2 text-[var(--text-faint)] text-[12px]">
                         <Loader2 size={14} className="animate-spin" />
@@ -1632,7 +1756,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
               )}
 
               {judgeSummary && (
-                <div className="mt-3 rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                <div className="mt-3 rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[11px] font-semibold text-[var(--text-faint)] uppercase tracking-[0.07em]">Submission Verdict</span>
                     <span className={`text-[12px] font-semibold ${judgeSummary.verdict === 'AC' ? 'text-[var(--status-success)]' : 'text-[var(--status-danger)]'}`}>
@@ -1665,11 +1789,11 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
             <div className="window p-6 sm:p-8 mb-5">
               <div className="flex justify-between items-start mb-5">
                 <div className="flex items-center gap-2">
-                  <span className="inline-block text-white px-2.5 py-0.5 text-[11px] font-semibold uppercase rounded" style={{ background: sectionColorMap[currentQ._sectionType] }}>
+                  <span className="inline-block text-white px-2.5 py-0.5 text-[11px] font-semibold uppercase rounded-full" style={{ background: sectionColorMap[currentQ._sectionType] }}>
                     Question {currentQuestion + 1}
                   </span>
                   {currentQ.topic && (
-                    <span className="inline-block bg-[var(--bg-surface)] text-[var(--text-secondary)] px-2.5 py-0.5 text-[11px] font-medium rounded border border-[var(--border-subtle)]">
+                    <span className="inline-block bg-[var(--bg-surface)] text-[var(--text-secondary)] px-2.5 py-0.5 text-[11px] font-medium rounded-full border border-[var(--border-subtle)]">
                       {currentQ.topic}
                     </span>
                   )}
@@ -1691,7 +1815,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                         key={oIdx}
                         type="button"
                         onClick={() => setAnswers({ ...answers, [currentQuestion]: letter })}
-                        className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-lg border transition-all text-[13px] ${
+                        className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-[var(--radius)] border transition text-[13px] ${
                           selected
                             ? 'border-[var(--type-event)] bg-[var(--type-event)]/10 text-[var(--text-primary)]'
                             : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:border-[var(--border-active)] hover:bg-[var(--bg-surface)]'
@@ -1728,7 +1852,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                   value={answers[currentQuestion] || ''}
                   onChange={e => setAnswers({ ...answers, [currentQuestion]: e.target.value })}
                   placeholder="Type your answer..."
-                  className="w-full px-4 py-3 text-[14px] rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--border-active)] transition-colors"
+                  className="w-full px-4 py-3 text-[14px] rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--border-active)] transition-colors"
                 />
                 <p className="text-xs text-[var(--text-faint)] mt-2">{answers[currentQuestion] ? 'Answer saved' : 'No answer provided yet'}</p>
               </div>
@@ -1773,8 +1897,8 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
             {flatQuestions.map((q, idx) => (
               <button
                 key={idx}
-                onClick={() => setCurrentQuestion(idx)}
-                className={`w-9 h-9 rounded text-xs font-semibold transition-all ${
+                onClick={() => selectQuestion(idx)}
+                className={`w-9 h-9 rounded-[8px] text-xs font-semibold transition ${
                   idx === currentQuestion ? 'text-white'
                   : answers[idx] ? 'bg-[var(--status-success)] text-white'
                   : 'bg-[var(--border-subtle)] text-[var(--text-tertiary)] hover:bg-[var(--border-active)]'
@@ -1799,7 +1923,7 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
 
         {reviewOpen && (
           <div className="fixed inset-0 z-[10001] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="w-full max-w-3xl rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] shadow-xl max-h-[85vh] overflow-hidden">
+            <div className="w-full max-w-3xl rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-primary)] shadow-xl max-h-[85vh] overflow-hidden">
               <div className="px-5 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
                 <div>
                   <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">Review Before Final Submission</h3>
@@ -1825,14 +1949,14 @@ export default function TakeTest({ params }: { params: Promise<{ id: string }> }
                       key={idx}
                       type="button"
                       onClick={() => {
-                        setCurrentQuestion(idx);
+                        selectQuestion(idx);
                         setReviewOpen(false);
                       }}
-                      className="w-full text-left rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3 hover:border-[var(--border-active)] transition-colors"
+                      className="w-full text-left rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3 hover:border-[var(--border-active)] transition-colors"
                     >
                       <div className="flex items-center justify-between gap-3 mb-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ background: `color-mix(in srgb, ${sectionColorMap[q._sectionType]} 18%, transparent)`, color: sectionColorMap[q._sectionType] }}>
+                          <span className="text-[9px] font-semibold uppercase tracking-[0.07em] px-1.5 py-0.5 rounded-full" style={{ background: `color-mix(in srgb, ${sectionColorMap[q._sectionType]} 18%, transparent)`, color: sectionColorMap[q._sectionType] }}>
                             {q._sectionType}
                           </span>
                           <p className="text-[12px] font-semibold text-[var(--text-primary)]">

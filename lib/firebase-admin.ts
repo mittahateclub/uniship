@@ -1,8 +1,12 @@
 import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
 import { getAuth, type Auth } from 'firebase-admin/auth';
+import { getFirestore, type Firestore } from 'firebase-admin/firestore';
+import { getStorage, type Storage } from 'firebase-admin/storage';
 
 let app: App;
 let adminAuth: Auth;
+let adminDb: Firestore;
+let adminStorage: Storage;
 
 function getAdminApp(): App {
   if (!app) {
@@ -13,14 +17,15 @@ function getAdminApp(): App {
       // Use GOOGLE_APPLICATION_CREDENTIALS when available,
       // or fall back to individual env vars for serverless runtimes.
       const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+      const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
       const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
       const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
       if (clientEmail && privateKey && projectId) {
-        app = initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
+        app = initializeApp({ credential: cert({ projectId, clientEmail, privateKey }), storageBucket });
       } else {
         // On Google-managed runtimes, default credentials may be available.
-        app = initializeApp();
+        app = initializeApp({ projectId, storageBucket });
       }
     }
   }
@@ -32,4 +37,14 @@ export function getAdminAuth(): Auth {
     adminAuth = getAuth(getAdminApp());
   }
   return adminAuth;
+}
+
+export function getAdminDb(): Firestore {
+  if (!adminDb) adminDb = getFirestore(getAdminApp());
+  return adminDb;
+}
+
+export function getAdminStorage(): Storage {
+  if (!adminStorage) adminStorage = getStorage(getAdminApp());
+  return adminStorage;
 }

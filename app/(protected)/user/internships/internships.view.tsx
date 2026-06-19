@@ -3,13 +3,27 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { buildResumePrefill, setResumePrefill } from '@/lib/resume-prefill';
-import { Bookmark, BookmarkCheck, MapPin, Clock, Calendar, Briefcase, Code, FlaskConical, Presentation, GraduationCap, Search, Check, ExternalLink, Send, FileText } from '@/components/icons';
+import Bookmark from '@/components/icons/Bookmark';
+import BookmarkCheck from '@/components/icons/BookmarkCheck';
+import MapPin from '@/components/icons/MapPin';
+import Clock from '@/components/icons/Clock';
+import Calendar from '@/components/icons/Calendar';
+import Briefcase from '@/components/icons/Briefcase';
+import Code from '@/components/icons/Code';
+import FlaskConical from '@/components/icons/FlaskConical';
+import Presentation from '@/components/icons/Presentation';
+import GraduationCap from '@/components/icons/GraduationCap';
+import Search from '@/components/icons/Search';
+import Check from '@/components/icons/Check';
+import ExternalLink from '@/components/icons/ExternalLink';
+import Send from '@/components/icons/Send';
+import FileText from '@/components/icons/FileText';
 import { ListSkeleton } from '@/components/Skeleton';
 
 export interface CollegeEvent {
   id: string;
   title: string;
-  date: any;
+  date: unknown;
   type: string;
   description: string;
   location?: string;
@@ -18,7 +32,7 @@ export interface CollegeEvent {
   role?: string;
   stipend?: string;
   duration?: string;
-  deadline?: any;
+  deadline?: unknown;
   // event-specific
   link?: string;
   universityId?: string;
@@ -40,7 +54,7 @@ export interface InternshipsViewProps {
   onApply: (item: CollegeEvent) => void;
 }
 
-const TYPE_CONFIG: Record<string, { chip: string; icon: React.ComponentType<any>; label: string }> = {
+const TYPE_CONFIG: Record<string, { chip: string; icon: React.ComponentType<{ size?: number; className?: string }>; label: string }> = {
   event:      { chip: 'bg-[var(--type-event)]/12 text-[var(--type-event)]',           icon: Calendar, label: 'Event' },
   internship: { chip: 'bg-[var(--type-internship)]/12 text-[var(--type-internship)]', icon: Briefcase, label: 'Internship' },
   hackathon:  { chip: 'bg-[var(--type-hackathon)]/12 text-[var(--type-hackathon)]',   icon: Code, label: 'Hackathon' },
@@ -48,11 +62,11 @@ const TYPE_CONFIG: Record<string, { chip: string; icon: React.ComponentType<any>
   workshop:   { chip: 'bg-[var(--type-workshop)]/12 text-[var(--type-workshop)]',     icon: Presentation, label: 'Workshop' },
 };
 
-function toDate(d: any): Date | null {
+function toDate(d: unknown): Date | null {
   if (!d) return null;
-  if (typeof d.toDate === 'function') return d.toDate();
+  if (typeof (d as { toDate?: unknown }).toDate === 'function') return (d as { toDate: () => Date }).toDate();
   if (d instanceof Date) return d;
-  return new Date(d);
+  return new Date(d as string | number);
 }
 
 export function InternshipsView({

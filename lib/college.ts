@@ -7,6 +7,7 @@ import {
   collection,
   addDoc,
   getDocs,
+  limit,
   query,
   where,
   serverTimestamp,
@@ -30,16 +31,16 @@ export const kBranches = [
 
 export const kGpaCutoffs = [6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0] as const;
 
-export function toDate(d: any): Date | null {
+export function toDate(d: unknown): Date | null {
   if (!d) return null;
-  if (typeof d.toDate === 'function') return d.toDate();
+  if (typeof (d as { toDate?: unknown }).toDate === 'function') return (d as { toDate: () => Date }).toDate();
   if (d instanceof Date) return d;
-  const parsed = new Date(d);
+  const parsed = new Date(d as string | number);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 /// End of the day a listing stops being relevant (apply-by wins over date).
-export function effectiveExpiry(data: Record<string, any>): Date | null {
+export function effectiveExpiry(data: Record<string, unknown>): Date | null {
   const d = toDate(data.expiresAt) ?? toDate(data.date) ?? toDate(data.deadline);
   if (!d) return null;
   return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59);
@@ -49,7 +50,7 @@ export function effectiveExpiry(data: Record<string, any>): Date | null {
 /// event. Missing profile data is inclusive — we never hide an event just
 /// because the student hasn't filled in their branch or CGPA yet.
 export function eventTargetsStudent(
-  event: Record<string, any>,
+  event: Record<string, unknown>,
   { branch, gpa }: { branch?: string | null; gpa?: number | null },
 ): boolean {
   const branches: string[] | undefined = Array.isArray(event.targetBranches)
@@ -106,7 +107,7 @@ export interface ApplicantProfile {
 /// Event ids this student has already applied to in-app.
 export async function appliedEventIds(uid: string): Promise<Set<string>> {
   const snap = await getDocs(
-    query(collection(db, 'eventApplications'), where('userId', '==', uid)),
+    query(collection(db, 'eventApplications'), where('userId', '==', uid), limit(500)),
   );
   return new Set(
     snap.docs.map((d) => (d.data().eventId as string) ?? '').filter(Boolean),
@@ -117,7 +118,7 @@ export async function appliedEventIds(uid: string): Promise<Set<string>> {
 /// One doc per (event, student) in `eventApplications`.
 export async function applyToEvent(
   eventId: string,
-  eventData: Record<string, any>,
+  eventData: Record<string, unknown>,
   profile: ApplicantProfile,
 ): Promise<void> {
   await addDoc(collection(db, 'eventApplications'), {

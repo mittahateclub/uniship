@@ -1,66 +1,21 @@
 'use client';
 
-import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import Image from 'next/image';
 import ThemeToggle from '@/components/ThemeToggle';
-import { Briefcase, ClipboardText, PenNib, Buildings, CodeSimple } from '@phosphor-icons/react';
+import { Briefcase } from '@phosphor-icons/react/Briefcase';
+import { ClipboardText } from '@phosphor-icons/react/ClipboardText';
+import { PenNib } from '@phosphor-icons/react/PenNib';
+import { Buildings } from '@phosphor-icons/react/Buildings';
+import { CodeSimple } from '@phosphor-icons/react/CodeSimple';
+
+const LandingAuthRedirect = dynamic(() => import('@/components/LandingAuthRedirect'), { ssr: false });
 
 export default function Home() {
-  const { user, role, loading } = useAuth();
-  const router = useRouter();
-  // Authenticated users are being redirected — keep the loading screen up
-  const checking = !loading && !!user && !!role;
-
-  // Redirect authenticated users to their dashboard using role from AuthContext
-  // (eliminates a redundant Firestore read on every landing page visit)
-  useEffect(() => {
-    if (loading) return;
-    if (!user || !role) return;
-
-    switch (role) {
-      case 'super_admin':
-        router.push('/superadmin/dashboard');
-        break;
-      case 'university_admin':
-        router.push('/uniadmin/dashboard');
-        break;
-      default:
-        router.push('/user/dashboard');
-    }
-  }, [user, role, loading, router]);
-
-  // Smooth scroll (Lenis) — skipped for reduced motion
-  useEffect(() => {
-    if (loading || checking) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    let lenis: { raf: (t: number) => void; destroy: () => void } | undefined;
-    let raf = 0;
-    let cancelled = false;
-
-    import('lenis').then(({ default: Lenis }) => {
-      if (cancelled) return;
-      lenis = new Lenis({ duration: 1.05, easing: (t: number) => 1 - Math.pow(2, -10 * t) });
-      const loop = (time: number) => {
-        lenis!.raf(time);
-        raf = requestAnimationFrame(loop);
-      };
-      raf = requestAnimationFrame(loop);
-    });
-
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(raf);
-      lenis?.destroy();
-    };
-  }, [loading, checking]);
-
   // In-view observer for quiet fade-up reveals (observes the outer element)
   useEffect(() => {
-    if (loading || checking) return;
     const targets = document.querySelectorAll('.reveal-block');
     const io = new IntersectionObserver(
       (entries) => {
@@ -75,11 +30,10 @@ export default function Home() {
     );
     targets.forEach((t) => io.observe(t));
     return () => io.disconnect();
-  }, [loading, checking]);
+  }, []);
 
   // Interactive app card (subtle tilt + cursor-tracking stat badge)
   useEffect(() => {
-    if (loading || checking) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     const widget = document.getElementById('apWidget') as HTMLElement | null;
@@ -89,19 +43,32 @@ export default function Home() {
     if (!widget || !card || !statBadge) return;
 
     const timeouts: number[] = [];
+    let cardRect = card.getBoundingClientRect();
+    let tiltFrame = 0;
+    let badgeFrame = 0;
+    let pendingTilt: MouseEvent | null = null;
+    let pendingBadge: MouseEvent | null = null;
 
     const applyTilt = (rx: number, ry: number) => {
       card.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
     };
 
     const onMouseMove = (e: MouseEvent) => {
-      const r = card.getBoundingClientRect();
-      const cx = r.left + r.width / 2;
-      const cy = r.top + r.height / 2;
-      const dx = (e.clientX - cx) / (r.width / 2);
-      const dy = (e.clientY - cy) / (r.height / 2);
-      applyTilt(-dy * 2.5, dx * 2.5);
+      pendingTilt = e;
+      if (tiltFrame) return;
+      tiltFrame = requestAnimationFrame(() => {
+        tiltFrame = 0;
+        const event = pendingTilt;
+        if (!event) return;
+        const cx = cardRect.left + cardRect.width / 2;
+        const cy = cardRect.top + cardRect.height / 2;
+        const dx = (event.clientX - cx) / (cardRect.width / 2);
+        const dy = (event.clientY - cy) / (cardRect.height / 2);
+        applyTilt(-dy * 2.5, dx * 2.5);
+      });
     };
+
+    const refreshCardRect = () => { cardRect = card.getBoundingClientRect(); };
 
     const onMouseLeave = () => {
       card.style.transition = 'transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)';
@@ -140,30 +107,43 @@ export default function Home() {
     };
 
     const onDocMouseMove = (e: MouseEvent) => {
-      const wx = window.innerWidth / 2;
-      const wy = window.innerHeight / 2;
-      const dx = (e.clientX - wx) / wx;
-      const dy = (e.clientY - wy) / wy;
-      statBadge.style.transform = `translate(${-dx * 5}px, ${-dy * 5}px)`;
+      pendingBadge = e;
+      if (badgeFrame) return;
+      badgeFrame = requestAnimationFrame(() => {
+        badgeFrame = 0;
+        const event = pendingBadge;
+        if (!event) return;
+        const wx = window.innerWidth / 2;
+        const wy = window.innerHeight / 2;
+        const dx = (event.clientX - wx) / wx;
+        const dy = (event.clientY - wy) / wy;
+        statBadge.style.transform = `translate(${-dx * 5}px, ${-dy * 5}px)`;
+      });
     };
 
+    widget.addEventListener('mouseenter', refreshCardRect);
     widget.addEventListener('mousemove', onMouseMove);
     widget.addEventListener('mouseleave', onMouseLeave);
     card.addEventListener('touchstart', onTouchStart, { passive: true });
     card.addEventListener('touchmove', onTouchMove, { passive: true });
     card.addEventListener('touchend', onTouchEnd);
     document.addEventListener('mousemove', onDocMouseMove);
+    window.addEventListener('resize', refreshCardRect, { passive: true });
 
     return () => {
       timeouts.forEach((id) => window.clearTimeout(id));
+      cancelAnimationFrame(tiltFrame);
+      cancelAnimationFrame(badgeFrame);
+      widget.removeEventListener('mouseenter', refreshCardRect);
       widget.removeEventListener('mousemove', onMouseMove);
       widget.removeEventListener('mouseleave', onMouseLeave);
       card.removeEventListener('touchstart', onTouchStart);
       card.removeEventListener('touchmove', onTouchMove);
       card.removeEventListener('touchend', onTouchEnd);
       document.removeEventListener('mousemove', onDocMouseMove);
+      window.removeEventListener('resize', refreshCardRect);
     };
-  }, [loading, checking]);
+  }, []);
 
   const scrollToId = (id: string) => {
     const el = document.getElementById(id);
@@ -171,16 +151,9 @@ export default function Home() {
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  if (loading || checking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)]">
-        <div className="loading-dots"><span /><span /><span /></div>
-      </div>
-    );
-  }
-
   return (
     <div className="landing-root" id="main-content">
+      <LandingAuthRedirect />
       <nav aria-label="Main">
         <div className="nav-inner">
           <div className="nav-left">

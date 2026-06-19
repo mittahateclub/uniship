@@ -506,7 +506,7 @@ function CategoryBar({ label, score, max }: { label: string; score: number; max:
         <span className="text-[10px] font-semibold tabular-nums" style={{ color }}>{score}/{max}</span>
       </div>
       <div className="h-1.5 rounded-full bg-[var(--border-subtle)] overflow-hidden">
-        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: color }} />
+        <div className="h-full rounded-full transition-[width,background] duration-500" style={{ width: `${pct}%`, background: color }} />
       </div>
     </div>
   );
@@ -542,7 +542,7 @@ function SkillChips({ skills, kind }: { skills: ATSSkill[]; kind: 'matched' | 'm
       <span className="text-[10px] text-[var(--text-muted)]">{kind === 'matched' ? 'Matched' : 'Missing'} ({skills.length}):</span>
       <div className="flex flex-wrap gap-1 mt-1">
         {skills.map((s) => (
-          <span key={s.key} className={`px-1.5 py-0.5 rounded text-[9.5px] font-semibold border ${cls}`}>
+          <span key={s.key} className={`px-1.5 py-0.5 rounded-full text-[9.5px] font-semibold border ${cls}`}>
             {s.label}{kind === 'missing' && s.freq > 1 ? ` ·${s.freq}` : ''}
           </span>
         ))}
@@ -593,7 +593,7 @@ export default function ATSScorePanel({ data, keywords = [], jobDescription = ''
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h3 className="text-sm font-semibold text-[var(--text-primary)]">ATS Score</h3>
-            <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded"
+            <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full"
               style={{ background: `color-mix(in srgb, ${gradeColor} 13%, transparent)`, color: gradeColor }}>
               {breakdown.grade}
             </span>

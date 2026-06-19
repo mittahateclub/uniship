@@ -3,11 +3,24 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, addDoc, deleteDoc } from 'firebase/firestore';
+import {
+  collection, query, where, getDocs, limit, doc, updateDoc, serverTimestamp,
+  addDoc, deleteDoc, documentId, orderBy, startAfter, type DocumentData,
+  type QueryDocumentSnapshot,
+} from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { db, storage } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+import { storage } from '@/lib/firebase-storage';
 import Link from 'next/link';
-import { FileText, ArrowLeft, Download, Pencil, X, Save, Upload, ExternalLink, Trash2 } from '@/components/icons';
+import FileText from '@/components/icons/FileText';
+import ArrowLeft from '@/components/icons/ArrowLeft';
+import Download from '@/components/icons/Download';
+import Pencil from '@/components/icons/Pencil';
+import X from '@/components/icons/X';
+import Save from '@/components/icons/Save';
+import Upload from '@/components/icons/Upload';
+import ExternalLink from '@/components/icons/ExternalLink';
+import Trash2 from '@/components/icons/Trash2';
 import ATSScorePanel from '../ats-score';
 import { ListSkeleton } from '@/components/Skeleton';
 
@@ -33,7 +46,27 @@ interface ResumeData {
   uploadedFileName?: string;
   uploadedFileType?: string;
   keywords?: string[];
-  updatedAt?: any;
+  updatedAt?: unknown;
+}
+
+function getTimestampSeconds(value: unknown): number {
+  return (value as { seconds?: number } | undefined)?.seconds ?? 0;
+}
+
+function getErrorCode(error: unknown): string {
+  const code = (error as { code?: unknown } | null)?.code;
+  return code ? String(code) : '';
+}
+
+function ResumeSectionHeader({ title }: { title: string }) {
+  return (
+    <div className="mt-4 mb-1">
+      <h2 className="text-[12px] font-semibold tracking-[0.07em] uppercase" style={{ fontVariant: 'small-caps' }}>
+        {title}
+      </h2>
+      <hr className="border-t border-black mt-0.5" />
+    </div>
+  );
 }
 
 // ─── ResumePreview ────────────────────────────────────────────────────────────
@@ -185,15 +218,6 @@ function ResumePreview({ data }: { data: ResumeData }) {
     </div>
   );
 
-  const SectionHeader = ({ title }: { title: string }) => (
-    <div className="mt-4 mb-1">
-      <h2 className="text-[12px] font-semibold tracking-[0.07em] uppercase" style={{ fontVariant: 'small-caps' }}>
-        {title}
-      </h2>
-      <hr className="border-t border-black mt-0.5" />
-    </div>
-  );
-
   const contactItems = [
     data.website,
     data.email,
@@ -224,20 +248,34 @@ function ResumePreview({ data }: { data: ResumeData }) {
         </div>
       )}
 
-      {hasContent(data.education)       && <><SectionHeader title="Education" />{parseEducation(data.education)}</>}
-      {hasContent(data.experience)      && <><SectionHeader title="Experience" />{parseExperience(data.experience)}</>}
-      {hasContent(data.projects)        && <><SectionHeader title="Projects" />{parseProjects(data.projects)}</>}
-      {hasContent(data.coursework)      && <><SectionHeader title="Relevant Coursework" /><p className="text-[11px] leading-relaxed">{data.coursework}</p></>}
-      {hasContent(data.skills)          && <><SectionHeader title="Technical Skills" />{renderSkills(data.skills)}</>}
-      {hasContent(data.extracurriculars)&& <><SectionHeader title="Extracurriculars / Activities" />{parseExtracurriculars(data.extracurriculars)}</>}
-      {hasContent(data.achievements)    && <><SectionHeader title="Achievements & Certifications" />{parseAchievements(data.achievements)}</>}
+      {hasContent(data.education)       && <><ResumeSectionHeader title="Education" />{parseEducation(data.education)}</>}
+      {hasContent(data.experience)      && <><ResumeSectionHeader title="Experience" />{parseExperience(data.experience)}</>}
+      {hasContent(data.projects)        && <><ResumeSectionHeader title="Projects" />{parseProjects(data.projects)}</>}
+      {hasContent(data.coursework)      && <><ResumeSectionHeader title="Relevant Coursework" /><p className="text-[11px] leading-relaxed">{data.coursework}</p></>}
+      {hasContent(data.skills)          && <><ResumeSectionHeader title="Technical Skills" />{renderSkills(data.skills)}</>}
+      {hasContent(data.extracurriculars)&& <><ResumeSectionHeader title="Extracurriculars / Activities" />{parseExtracurriculars(data.extracurriculars)}</>}
+      {hasContent(data.achievements)    && <><ResumeSectionHeader title="Achievements & Certifications" />{parseAchievements(data.achievements)}</>}
     </div>
   );
 }
 
 // ─── Inline Editor Panel ──────────────────────────────────────────────────────
 
-type EditKey = keyof Omit<ResumeData, 'id' | 'updatedAt'>;
+type EditKey =
+  | 'fullName'
+  | 'phone'
+  | 'email'
+  | 'website'
+  | 'github'
+  | 'linkedin'
+  | 'education'
+  | 'experience'
+  | 'skills'
+  | 'projects'
+  | 'coursework'
+  | 'extracurriculars'
+  | 'achievements'
+  | 'targetCompany';
 
 const EDITOR_FIELDS: { key: EditKey; label: string; multiline?: boolean; rows?: number }[] = [
   { key: 'fullName',        label: 'Full Name' },
@@ -281,7 +319,7 @@ function EditorPanel({ draft, saving, onChange, onSave, onClose }: EditorPanelPr
           </button>
           <button
             onClick={onClose}
-            className="p-1.5 hover:bg-[var(--border-subtle)] transition rounded"
+            className="p-1.5 hover:bg-[var(--border-subtle)] transition rounded-[8px]"
             title="Close editor"
           >
             <X size={18} />
@@ -298,17 +336,17 @@ function EditorPanel({ draft, saving, onChange, onSave, onClose }: EditorPanelPr
             </label>
             {multiline ? (
               <textarea
-                value={(draft as any)[key] || ''}
+                value={draft[key] || ''}
                 onChange={e => onChange(key, e.target.value)}
                 rows={rows || 4}
-                className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-2 text-xs text-[var(--text-primary)] font-mono outline-none resize-y focus:border-[var(--accent-orange)] transition-colors"
+                className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-[var(--radius)] px-3 py-2 text-xs text-[var(--text-primary)] font-mono outline-none resize-y focus:border-[var(--accent-orange)] transition-colors"
               />
             ) : (
               <input
                 type="text"
-                value={(draft as any)[key] || ''}
+                value={draft[key] || ''}
                 onChange={e => onChange(key, e.target.value)}
-                className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded px-3 py-2 text-xs text-[var(--text-primary)] font-mono outline-none focus:border-[var(--accent-orange)] transition-colors"
+                className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-[var(--radius)] px-3 py-2 text-xs text-[var(--text-primary)] font-mono outline-none focus:border-[var(--accent-orange)] transition-colors"
               />
             )}
           </div>
@@ -331,6 +369,9 @@ export default function DownloadResume() {
   const [uploadError, setUploadError]       = useState('');
   const [resumes, setResumes]               = useState<ResumeData[]>([]);
   const [selectedResume, setSelectedResume] = useState<ResumeData | null>(null);
+  const [lastResumeDoc, setLastResumeDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [hasMoreResumes, setHasMoreResumes] = useState(false);
+  const [loadingMoreResumes, setLoadingMoreResumes] = useState(false);
 
   // Draft = live editable copy; selectedResume = original from Firestore
   const [draft, setDraft]       = useState<ResumeData | null>(null);
@@ -340,7 +381,12 @@ export default function DownloadResume() {
     async function fetchResumes() {
       if (!user) return;
       try {
-        const q = query(collection(db, 'resumes'), where('userEmail', '==', user.email));
+        const q = query(
+          collection(db, 'resumes'),
+          where('userEmail', '==', user.email),
+          orderBy(documentId()),
+          limit(25),
+        );
         const snap = await getDocs(q);
         const fetched = snap.docs.map(docSnap => ({
           id: docSnap.id,
@@ -350,8 +396,10 @@ export default function DownloadResume() {
           ...docSnap.data(),
         })) as ResumeData[];
 
-        fetched.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
+        fetched.sort((a, b) => getTimestampSeconds(b.updatedAt) - getTimestampSeconds(a.updatedAt));
         setResumes(fetched);
+        setLastResumeDoc(snap.docs.at(-1) ?? null);
+        setHasMoreResumes(snap.size === 25);
       } catch (err) {
         console.error('Error fetching resumes:', err);
       } finally {
@@ -360,6 +408,32 @@ export default function DownloadResume() {
     }
     fetchResumes();
   }, [user]);
+
+  const loadMoreResumes = async () => {
+    if (!user?.email || !lastResumeDoc || loadingMoreResumes) return;
+    setLoadingMoreResumes(true);
+    try {
+      const snapshot = await getDocs(query(
+        collection(db, 'resumes'),
+        where('userEmail', '==', user.email),
+        orderBy(documentId()),
+        startAfter(lastResumeDoc),
+        limit(25),
+      ));
+      const fetched = snapshot.docs.map((resumeDoc) => ({
+        id: resumeDoc.id,
+        fullName: '', phone: '', email: '', website: '',
+        github: '', linkedin: '', education: '', experience: '',
+        skills: '', projects: '', coursework: '', extracurriculars: '', achievements: '',
+        ...resumeDoc.data(),
+      })) as ResumeData[];
+      setResumes((previous) => [...previous, ...fetched].sort((a, b) => getTimestampSeconds(b.updatedAt) - getTimestampSeconds(a.updatedAt)));
+      setLastResumeDoc(snapshot.docs.at(-1) ?? lastResumeDoc);
+      setHasMoreResumes(snapshot.size === 25);
+    } finally {
+      setLoadingMoreResumes(false);
+    }
+  };
 
   // When a resume is selected, initialise the draft
   const handleSelect = (resume: ResumeData) => {
@@ -376,7 +450,7 @@ export default function DownloadResume() {
     if (!draft?.id) return;
     setIsSaving(true);
     try {
-      const { id, updatedAt, ...fields } = draft;
+      const { id, ...fields } = draft;
       await updateDoc(doc(db, 'resumes', id), {
         ...fields,
         updatedAt: serverTimestamp(),
@@ -458,7 +532,7 @@ export default function DownloadResume() {
       setResumes(prev => [newItem, ...prev]);
     } catch (err) {
       console.error('Upload failed:', err);
-      const code = (err as any)?.code ? String((err as any).code) : '';
+      const code = getErrorCode(err);
       if (code.includes('permission-denied') || code.includes('unauthorized')) {
         setUploadError(`Upload blocked by Firebase rules (${code || 'unknown'}).`);
       } else {
@@ -505,8 +579,8 @@ export default function DownloadResume() {
       if (resume.uploadedFileUrl) {
         try {
           await deleteObject(ref(storage, resume.uploadedFileUrl));
-        } catch (storageErr: any) {
-          const code = String(storageErr?.code || '');
+        } catch (storageErr) {
+          const code = getErrorCode(storageErr);
           // Never block resume deletion because of storage cleanup failures.
           if (!code.includes('object-not-found')) {
             storageDeleteWarning = code || 'storage-delete-failed';
@@ -529,7 +603,7 @@ export default function DownloadResume() {
       }
     } catch (err) {
       console.error('Error deleting resume:', err);
-      const code = String((err as any)?.code || '');
+      const code = getErrorCode(err);
       alert(`Failed to delete resume${code ? ` (${code})` : ''}. Please try again.`);
     } finally {
       setIsDeleting(null);
@@ -623,7 +697,7 @@ export default function DownloadResume() {
                     <p className="text-[12px] text-[var(--text-muted)] truncate mt-0.5">
                       {resume.fullName || resume.uploadedFileName || 'General resume'}
                       {' · '}
-                      <span className="text-[var(--text-faint)] tabular-nums">{resume.updatedAt ? new Date(resume.updatedAt.seconds * 1000).toLocaleDateString() : 'Draft'}</span>
+                      <span className="text-[var(--text-faint)] tabular-nums">{getTimestampSeconds(resume.updatedAt) ? new Date(getTimestampSeconds(resume.updatedAt) * 1000).toLocaleDateString() : 'Draft'}</span>
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
@@ -651,6 +725,13 @@ export default function DownloadResume() {
                 </div>
               );
             })}
+            {hasMoreResumes && (
+              <div className="flex justify-center p-3 border-t border-[var(--border-subtle)]">
+                <button type="button" onClick={loadMoreResumes} disabled={loadingMoreResumes} className="btn-secondary !rounded-[10px] text-[12px] disabled:opacity-50">
+                  {loadingMoreResumes ? 'Loading…' : 'Load more resumes'}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

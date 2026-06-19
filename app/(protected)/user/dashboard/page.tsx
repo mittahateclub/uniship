@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { collection, query, where, getDocs, getCountFromServer, addDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, getCountFromServer, limit, addDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { DashboardView, type FeedPost, type SidebarEvent, type Suggestion } from './dashboard.view';
 import { toDate, effectiveExpiry, eventTargetsStudent, appliedEventIds, applyToEvent, recencyPoints, urgencyPoints } from '@/lib/college';
@@ -32,18 +32,25 @@ export default function UserDashboard() {
       if (!user) return;
       try {
         const [eventsSnap, internshipsSnap, savedSnap, applied] = await Promise.all([
-          getDocs(query(collection(db, 'events'))),
+          getDocs(query(collection(db, 'events'), limit(300))),
           universityId
-            ? getDocs(query(collection(db, 'internships'), where('universityId', '==', universityId)))
+            ? getDocs(query(collection(db, 'internships'), where('universityId', '==', universityId), limit(200)))
             : Promise.resolve(null),
-          getDocs(query(collection(db, 'savedEvents'), where('userId', '==', user.uid))),
+          getDocs(query(collection(db, 'savedEvents'), where('userId', '==', user.uid), limit(500))),
           appliedEventIds(user.uid),
         ]);
 
         const now = new Date();
         // Each feed item carries the metadata needed to score its priority —
         // engagement + recency + deadline urgency, mirroring the app's home feed.
-        type Ranked = { post: FeedPost; createdAt: Date | null; expiry: Date | null; engagement: number; score: number };
+        type Ranked = {
+          post: FeedPost;
+          createdAt: Date | null;
+          expiry: Date | null;
+          engagement: number;
+          score: number;
+          needsCommentCount: boolean;
+        };
         const ranked: Ranked[] = [];
         const upcomingList: SidebarEvent[] = [];
 
@@ -68,7 +75,16 @@ export default function UserDashboard() {
             universityId: data.universityId || undefined,
           };
           const attendees = Array.isArray(data.attendees) ? data.attendees.length : 0;
-          ranked.push({ post, createdAt, expiry: exp, engagement: attendees, score: 0 });
+          const hasStoredCommentCount = typeof data.commentsCount === 'number';
+          const comments = hasStoredCommentCount ? data.commentsCount : 0;
+          ranked.push({
+            post,
+            createdAt,
+            expiry: exp,
+            engagement: attendees + comments * 2,
+            score: 0,
+            needsCommentCount: !hasStoredCommentCount,
+          });
           if (date && date >= now) upcomingList.push({ id: d.id, title: data.title || 'Untitled', type: data.type || 'event', date });
         });
 
@@ -94,19 +110,17 @@ export default function UserDashboard() {
             link: (data.link as string)?.trim() || undefined,
             universityId: data.universityId || undefined,
           };
-          ranked.push({ post, createdAt, expiry: exp, engagement: 0, score: 0 });
+          ranked.push({ post, createdAt, expiry: exp, engagement: 0, score: 0, needsCommentCount: false });
         });
 
-        // Engagement = RSVPs + comments·2, for the 25 most-recent posts (the only
-        // ones that can realistically trend). Counted server-side so no read
-        // access to individual comments is needed.
+        // Engagement is stored with each event, avoiding one aggregate request
+        // per recent post on every dashboard load.
         ranked.sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0));
-        await Promise.all(ranked.slice(0, 25).map(async (r) => {
-          if (r.post.source === 'internship') return; // no comments subcollection
+        await Promise.all(ranked.filter((r) => r.needsCommentCount).slice(0, 5).map(async (r) => {
           try {
-            const agg = await getCountFromServer(collection(db, 'events', r.post.id, 'comments'));
-            r.engagement += (agg.data().count ?? 0) * 2;
-          } catch { /* count unavailable — leave engagement at RSVP count */ }
+            const aggregate = await getCountFromServer(collection(db, 'events', r.post.id, 'comments'));
+            r.engagement += aggregate.data().count * 2;
+          } catch { /* best-effort fallback for events created before commentsCount */ }
         }));
 
         // Trending score = engagement + freshness + deadline urgency.

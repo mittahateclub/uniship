@@ -1,7 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { UserPlus, ShieldCheck, Users, ArrowUpRight, Building2 } from '@/components/icons';
+import UserPlus from '@/components/icons/UserPlus';
+import ShieldCheck from '@/components/icons/ShieldCheck';
+import Users from '@/components/icons/Users';
+import ArrowUpRight from '@/components/icons/ArrowUpRight';
+import Building2 from '@/components/icons/Building2';
 
 export interface SuperadminDashboardStats {
   totalUniadmins: number;
@@ -69,7 +73,7 @@ export function SuperadminDashboardView({ loading, userEmail, stats }: Superadmi
               <span className="w-9 h-9 rounded-[8px] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-tertiary)] group-hover:text-[var(--accent-orange)] transition-colors">
                 <item.icon size={16} />
               </span>
-              <ArrowUpRight size={15} className="text-[var(--text-faint)] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
+              <ArrowUpRight size={15} className="text-[var(--text-faint)] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition duration-200" />
             </div>
             <h3 className="text-[14px] font-semibold text-[var(--text-primary)]">{item.title}</h3>
             <p className="text-[12px] text-[var(--text-tertiary)] mt-0.5">{item.desc}</p>

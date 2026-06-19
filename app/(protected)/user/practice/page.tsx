@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import {
   collection, doc, getDoc, getDocs, query, where,
-  setDoc, deleteDoc, serverTimestamp,
+  setDoc, deleteDoc, limit, serverTimestamp,
 } from 'firebase/firestore';
 import { PracticeView, type PracticeProblem } from './practice.view';
 
@@ -19,6 +19,12 @@ export default function PracticeListPage() {
   const [difficultyFilter, setDifficultyFilter] = useState<string>('All');
   const [solvedIds, setSolvedIds] = useState<Set<string>>(new Set());
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const clock = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(clock);
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -28,9 +34,9 @@ export default function PracticeListPage() {
       const universityId = userDoc.data().universityId;
 
       const [problemsSnap, subsSnap, pinsSnap] = await Promise.all([
-        getDocs(query(collection(db, 'practice_problems'), where('universityId', '==', universityId))),
-        getDocs(query(collection(db, 'practice_submissions'), where('userId', '==', user.uid), where('verdict', '==', 'AC'))),
-        getDocs(query(collection(db, 'practice_pins'), where('userId', '==', user.uid))),
+        getDocs(query(collection(db, 'practice_problems'), where('universityId', '==', universityId), limit(200))),
+        getDocs(query(collection(db, 'practice_submissions'), where('userId', '==', user.uid), where('verdict', '==', 'AC'), limit(500))),
+        getDocs(query(collection(db, 'practice_pins'), where('userId', '==', user.uid), limit(500))),
       ]);
 
       const items = problemsSnap.docs.map(d => ({ id: d.id, ...d.data() } as PracticeProblem));
@@ -56,7 +62,7 @@ export default function PracticeListPage() {
   };
 
   const filtered = problems.filter(p => {
-    const isExpired = p.visibleUntil && p.visibleUntil.seconds * 1000 < Date.now();
+    const isExpired = p.visibleUntil && p.visibleUntil.seconds * 1000 < now;
     const isPinned = pinnedIds.has(p.id);
     if (isExpired && !isPinned) return false;
     if (difficultyFilter !== 'All' && p.difficulty !== difficultyFilter) return false;
@@ -77,6 +83,7 @@ export default function PracticeListPage() {
       onDifficultyFilterChange={setDifficultyFilter}
       onTogglePin={togglePin}
       onOpenProblem={(id) => router.push(`/user/practice/${id}`)}
+      now={now}
     />
   );
 }

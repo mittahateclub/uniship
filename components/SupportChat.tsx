@@ -10,7 +10,8 @@ import { onSnapshot } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 import { chatRef, ensureChat, reopen, type ChatActor } from '@/lib/chat';
 import { ChatThread } from '@/components/chat/ChatThread';
-import { MessageCircle, X } from '@/components/icons';
+import MessageCircle from '@/components/icons/MessageCircle';
+import X from '@/components/icons/X';
 
 export default function SupportChat() {
   const { user, role, userName, universityId, loading } = useAuth();
@@ -105,7 +106,7 @@ export default function SupportChat() {
           </div>
           <div className="flex-1 min-h-0">
             {ready ? (
-              <ChatThread chatId={actor.uid} actor={actor} asAdmin={false} onBeforeSend={onBeforeSend} />
+              <ChatThread key={actor.uid} chatId={actor.uid} actor={actor} asAdmin={false} onBeforeSend={onBeforeSend} />
             ) : (
               <div className="flex items-center justify-center h-full">
                 <div className="loading-dots"><span /><span /><span /></div>

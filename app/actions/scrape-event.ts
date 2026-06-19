@@ -143,15 +143,15 @@ Use null for anything not present in the text. Do not invent details.`;
   }
   if (!content) return { ok: false, error: 'No response from AI.', imageUrl };
 
-  let parsed: Record<string, any>;
+  let parsed: Record<string, unknown>;
   try {
     parsed = JSON.parse(content.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '').trim());
   } catch {
     return { ok: false, error: 'Could not parse the AI response.', imageUrl };
   }
 
-  const str = (v: any): string | null => {
-    const s = v?.toString().trim();
+  const str = (v: unknown): string | null => {
+    const s = (v as { toString?: () => string } | null | undefined)?.toString?.().trim();
     return !s || s === 'null' ? null : s;
   };
   const type = str(parsed.eventType)?.toLowerCase();

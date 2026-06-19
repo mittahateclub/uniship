@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, getDocs, where, doc, getDoc } from 'firebase/firestore';
+import { collection, query, getDocs, limit, where, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { TestPortalView, type Test } from './test-portal.view';
 
@@ -27,21 +27,23 @@ export default function TestPortal() {
             collection(db, 'tests'),
             where('universityId', '==', universityId),
             where('approved', '==', true),
-          )).catch(() => ({ docs: [] } as any)),
+            limit(100),
+          )).catch(() => ({ docs: [] })),
           getDocs(query(
             collection(db, 'tests'),
             where('universityId', '==', universityId),
             where('published', '==', true),
-          )).catch(() => ({ docs: [] } as any)),
+            limit(100),
+          )).catch(() => ({ docs: [] })),
         ]);
 
         const merged = new Map<string, Test>();
 
-        approvedSnapshot.docs.forEach((docSnap: any) => {
+        approvedSnapshot.docs.forEach((docSnap) => {
           merged.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as Test);
         });
 
-        publishedSnapshot.docs.forEach((docSnap: any) => {
+        publishedSnapshot.docs.forEach((docSnap) => {
           merged.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as Test);
         });
 

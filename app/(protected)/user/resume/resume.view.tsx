@@ -143,7 +143,7 @@ function ResumePreview({ data, keywords }: { data: ResumeData; keywords: string[
     if (!keywords.length) return text;
     const escaped = keywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
     const pattern = new RegExp(`(${escaped.join('|')})`, 'gi');
-    return text.replace(pattern, '<mark class="bg-yellow-200/70 text-black px-0.5 rounded-sm">$1</mark>');
+    return text.replace(pattern, '<mark class="bg-[var(--accent-orange)]/25 px-0.5 rounded-[3px]">$1</mark>');
   };
 
   // Converts **text** → <strong>text</strong>, then highlights keywords
@@ -390,11 +390,18 @@ export default function ResumeBuilder() {
   useEffect(() => {
     const prefill = takeResumePrefill();
     if (!prefill) return;
-    setCompanyName(prefill.company);
-    setJobDescription(prefill.jobDescription);
+    const applyPrefill = window.setTimeout(() => {
+      setCompanyName(prefill.company);
+      setJobDescription(prefill.jobDescription);
+    }, 0);
     const scroll = () => document.getElementById('ai-tailor')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setTimeout(scroll, 300);
-    setTimeout(scroll, 900);
+    const firstScroll = window.setTimeout(scroll, 300);
+    const secondScroll = window.setTimeout(scroll, 900);
+    return () => {
+      window.clearTimeout(applyPrefill);
+      window.clearTimeout(firstScroll);
+      window.clearTimeout(secondScroll);
+    };
   }, []);
 
   // Scale the A4 live preview to fill the preview width. The page scroll owns overflow.
@@ -642,7 +649,7 @@ export default function ResumeBuilder() {
                 <p className="text-[10px] text-[var(--text-faint)] mb-3">These keywords from the JD are highlighted in your resume preview.</p>
                 <div className="flex flex-wrap gap-1.5">
                   {keywords.map((kw, i) => (
-                    <span key={i} className="px-2.5 py-[3px] rounded-full text-[10px] font-medium bg-yellow-200/60 text-yellow-900">
+                    <span key={i} className="px-2.5 py-[3px] rounded-full text-[10px] font-medium bg-[var(--accent-orange)]/15 text-[var(--accent-orange)]">
                       {kw}
                     </span>
                   ))}

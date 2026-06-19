@@ -20,8 +20,8 @@ export function Toggle({ checked, onChange, disabled, label }: {
       }`}
     >
       <span
-        className={`absolute top-1/2 -translate-y-1/2 h-[14px] w-[14px] rounded-full bg-white shadow-sm transition-all duration-150 ${
-          checked ? 'left-[17px]' : 'left-[3px]'
+        className={`absolute top-1/2 left-[3px] -translate-y-1/2 h-[14px] w-[14px] rounded-full bg-white shadow-sm transition-transform duration-150 ${
+          checked ? 'translate-x-[14px]' : 'translate-x-0'
         }`}
       />
     </button>
