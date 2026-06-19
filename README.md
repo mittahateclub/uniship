@@ -34,7 +34,7 @@ proctoring, internships, event management, and career tools in one application.
    cd uniship
    ```
 
-1. Install dependencies.
+2. Install dependencies.
 
    Node.js 22 LTS is required. See `.nvmrc`.
 
@@ -42,7 +42,7 @@ proctoring, internships, event management, and career tools in one application.
    npm ci
    ```
 
-1. Create `.env.local` in the project root.
+3. Create `.env.local` in the project root.
 
    ```env
    NEXT_PUBLIC_FIREBASE_API_KEY=your_key
@@ -61,13 +61,13 @@ proctoring, internships, event management, and career tools in one application.
    CRON_SECRET=your_random_secret
    ```
 
-1. Start the development server.
+4. Start the development server.
 
    ```bash
    npm run dev
    ```
 
-1. Run all verification checks.
+5. Run all verification checks.
 
    ```bash
    npm run ci
@@ -94,11 +94,11 @@ $bytes = New-Object byte[] 32
 Then:
 
 1. Copy the generated value.
-1. Open the project in the Vercel dashboard.
-1. Go to **Settings**, then **Environment Variables**.
-1. Add `CRON_SECRET` with the generated value.
-1. Enable it for **Production**. You may also enable Preview and Development.
-1. Redeploy the project.
+2. Open the project in the Vercel dashboard.
+3. Go to **Settings**, then **Environment Variables**.
+4. Add `CRON_SECRET` with the generated value.
+5. Enable it for **Production**. You may also enable Preview and Development.
+6. Redeploy the project.
 
 For local testing, add the same variable to `.env.local`. Do not put the actual
 secret in this README or commit it to Git.
@@ -152,6 +152,7 @@ events for LCP, INP, CLS, FCP, and TTFB.
 │   └── api/             # API routes, workers, and metrics
 ├── components/          # Shared UI components
 ├── contexts/            # Authentication context
+├── firebase/            # Firestore and Storage rules and indexes
 ├── lib/                 # Firebase, AI, compiler, and domain utilities
 ├── scripts/             # Build and performance checks
 └── public/              # Static assets
