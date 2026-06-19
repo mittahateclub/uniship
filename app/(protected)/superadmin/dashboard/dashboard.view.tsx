@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { UserPlus, ShieldCheck, Users, GraduationCap, ArrowUpRight, Building2 } from '@/components/icons';
+import { UserPlus, ShieldCheck, Users, ArrowUpRight, Building2 } from '@/components/icons';
 
 export interface SuperadminDashboardStats {
   totalUniadmins: number;
@@ -22,53 +22,57 @@ export function SuperadminDashboardView({ loading, userEmail, stats }: Superadmi
     </div>
   );
 
+  const metrics = [
+    { label: 'Universities', value: stats.totalUniversities, note: 'Registered', icon: Building2 },
+    { label: 'Uni Admins', value: stats.totalUniadmins, note: 'Across campuses', icon: ShieldCheck },
+    { label: 'Students', value: stats.totalStudents, note: 'Enrolled', icon: Users },
+  ];
+
   const menuItems = [
-    { title: 'Create Uni Admin', desc: 'Add a new university admin.', href: '/superadmin/create-uniadmin', icon: UserPlus },
-    { title: 'Manage Admins', desc: 'View & manage all admins.', href: '/superadmin/manage-uniadmins', icon: ShieldCheck },
-    { title: 'Manage Students', desc: 'Edit and assign students to universities.', href: '/superadmin/manage-students', icon: Users },
-    { title: 'Universities', desc: 'Register & verify universities.', href: '/superadmin/universities', icon: Building2 },
+    { title: 'Create Uni Admin', desc: 'Add a new university admin', href: '/superadmin/create-uniadmin', icon: UserPlus },
+    { title: 'Manage Admins', desc: 'View & manage all admins', href: '/superadmin/manage-uniadmins', icon: ShieldCheck },
+    { title: 'Manage Students', desc: 'Edit & assign students to universities', href: '/superadmin/manage-students', icon: Users },
+    { title: 'Universities', desc: 'Register & verify universities', href: '/superadmin/universities', icon: Building2 },
   ];
 
   return (
-    <div className="max-w-[1100px] mx-auto animate-fade-in">
-      <div className="mb-8">
-        <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Superadmin Dashboard</h1>
-        <p className="text-[var(--text-tertiary)] text-[13px] mt-1">Welcome back, <span className="text-[var(--text-primary)]">{userEmail?.split('@')[0]}</span></p>
+    <div className="max-w-[1200px] mx-auto animate-fade-in">
+      <div className="pt-8 mb-7">
+        <h1 className="text-[26px] font-semibold text-[var(--text-primary)] tracking-[-0.025em]">Superadmin Dashboard</h1>
+        <p className="text-[var(--text-tertiary)] text-[13.5px] mt-1.5">Welcome back, <span className="text-[var(--text-primary)]">{userEmail?.split('@')[0]}</span></p>
       </div>
 
-      <div id="stats" className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-        {[
-          { label: 'Total Universities', value: stats.totalUniversities, icon: GraduationCap },
-          { label: 'Uni Admins', value: stats.totalUniadmins, icon: ShieldCheck },
-          { label: 'Total Students', value: stats.totalStudents, icon: Users },
-        ].map((s, i) => (
-          <div key={i} className="window p-5 hover:border-[var(--border-active)] transition-colors duration-150">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-semibold text-[var(--text-faint)] uppercase tracking-[0.07em]">{s.label}</span>
-              <div className="w-7 h-7 rounded-lg bg-[#00A8E1]/10 flex items-center justify-center">
-                <s.icon size={14} className="text-[#00A8E1]" />
-              </div>
+      {/* ── Overview ── */}
+      <div id="stats" className="grid grid-cols-1 sm:grid-cols-3 rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden mb-7">
+        {metrics.map((m, i) => (
+          <div key={m.label} className={`p-5 ${i < 2 ? 'border-b sm:border-b-0 sm:border-r border-[var(--border-subtle)]' : ''}`}>
+            <div className="flex items-center justify-between mb-2.5">
+              <span className="text-[10.5px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]">{m.label}</span>
+              <m.icon size={14} className="text-[var(--text-faint)]" />
             </div>
-            <p className="text-2xl font-semibold text-[var(--text-primary)] tabular-nums">{s.value}</p>
+            <p className="text-[27px] font-semibold text-[var(--text-primary)] tabular-nums tracking-[-0.03em] leading-none">{m.value}</p>
+            <p className="text-[11.5px] text-[var(--text-faint)] mt-1.5">{m.note}</p>
           </div>
         ))}
       </div>
 
-      <div className="divider-dashed my-6" />
-
+      {/* ── Quick actions ── */}
+      <p className="text-[10.5px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)] mb-3">Quick actions</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {menuItems.map((item) => (
-          <Link key={item.href} href={item.href} className="group window p-4 hover:border-[var(--border-active)] transition-all duration-150">
-            <div className="w-8 h-8 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded flex items-center justify-center mb-3">
-              <item.icon size={15} className="text-[#00A8E1]" />
+          <Link
+            key={item.href}
+            href={item.href}
+            className="group rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 hover:border-[var(--border-active)] transition-colors"
+          >
+            <div className="flex items-start justify-between mb-3">
+              <span className="w-9 h-9 rounded-[8px] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-tertiary)] group-hover:text-[var(--accent-orange)] transition-colors">
+                <item.icon size={16} />
+              </span>
+              <ArrowUpRight size={15} className="text-[var(--text-faint)] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
             </div>
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-[13px] font-medium text-[var(--text-primary)] mb-0.5">{item.title}</h3>
-                <p className="text-[var(--text-muted)] text-[11px]">{item.desc}</p>
-              </div>
-              <ArrowUpRight size={12} className="text-[var(--text-faint)] group-hover:text-[#00A8E1] transition-colors duration-150 mt-0.5 shrink-0" />
-            </div>
+            <h3 className="text-[14px] font-semibold text-[var(--text-primary)]">{item.title}</h3>
+            <p className="text-[12px] text-[var(--text-tertiary)] mt-0.5">{item.desc}</p>
           </Link>
         ))}
       </div>

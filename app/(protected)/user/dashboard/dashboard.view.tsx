@@ -115,23 +115,31 @@ function PostCard({
     <article className="rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
       {/* Trending strip — surfaces high-priority posts, mirroring the app */}
       {trending && (
-        <div className="flex items-center gap-1.5 px-4 pt-3 -mb-1">
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10.5px] font-bold rounded-full bg-[var(--type-workshop)] text-white">
+        <div className="flex items-center gap-1.5 px-4 pt-3.5 -mb-1.5">
+          <span className="inline-flex items-center gap-1 px-2 py-[3px] text-[10.5px] font-semibold rounded-full bg-[var(--type-workshop)]/12 text-[var(--type-workshop)]">
             <TrendingUp size={11} /> Trending
           </span>
         </div>
       )}
-      {/* Header */}
+      {/* Header — internships lead with the company; events lead with a type
+          avatar + meta so the title shows once, in the body (no duplication). */}
       <div className="flex items-center gap-3 px-4 py-3">
-        <span className="w-9 h-9 rounded-full bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] flex items-center justify-center text-[14px] font-bold shrink-0">
-          {initial}
-        </span>
+        {post.company ? (
+          <span className="w-9 h-9 rounded-full bg-[var(--accent-orange)]/15 text-[var(--accent-orange)] flex items-center justify-center text-[14px] font-bold shrink-0">
+            {initial}
+          </span>
+        ) : (
+          <span className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${cfg.chip}`}>
+            <TypeIcon size={16} />
+          </span>
+        )}
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-semibold text-[var(--text-primary)] truncate">{post.company || post.title}</p>
+          {post.company && <p className="text-[13px] font-semibold text-[var(--text-primary)] truncate">{post.company}</p>}
           <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)]">
-            {post.location && <span className="flex items-center gap-0.5 truncate"><MapPin size={10} />{post.location}</span>}
-            {post.date && <span className="flex items-center gap-0.5"><Clock size={10} />{isInternship ? 'Apply by ' : ''}{post.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>}
+            {post.location && <span className="flex items-center gap-0.5 truncate min-w-0"><MapPin size={10} className="shrink-0" />{post.location}</span>}
+            {post.date && <span className="flex items-center gap-0.5 shrink-0"><Clock size={10} />{isInternship ? 'Apply by ' : ''}{post.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>}
             {isInternship && post.stipend && <span className="truncate">· {post.stipend}</span>}
+            {!post.location && !post.date && !isInternship && <span className="text-[var(--text-faint)]">{cfg.label}</span>}
           </div>
         </div>
         <span className={`inline-flex items-center gap-1 px-2 py-[3px] text-[10.5px] font-medium rounded-full shrink-0 ${cfg.chip}`}>

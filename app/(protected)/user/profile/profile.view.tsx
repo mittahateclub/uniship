@@ -7,7 +7,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { app } from '@/lib/firebase';
-import { Camera, User, X } from '@/components/icons';
+import { Camera, User, X, GraduationCap } from '@/components/icons';
 import { ProfileSkeleton } from '@/components/Skeleton';
 
 // Field names match exactly what is stored in Firebase
@@ -193,6 +193,210 @@ function AccordionPanel({
   );
 }
 
+// Read-only live preview of the profile — mirrors how the assembled profile
+// reads, so the student can see what each section produces while editing.
+function PreviewBlock({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)] mb-2">{label}</p>
+      {children}
+    </div>
+  );
+}
+
+function ProfilePreview({
+  profile, education, experience, projects, achievements, positions, extracurriculars, detailed,
+}: {
+  profile: UserProfile | null;
+  education: EducationEntry[];
+  experience: ExperienceEntry[];
+  projects: ProjectEntry[];
+  achievements: AchievementEntry[];
+  positions: PositionEntry[];
+  extracurriculars: ExtracurricularEntry[];
+  detailed: boolean;
+}) {
+  const skills = (profile?.technicalSkills || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const courses = (profile?.relevantCoursework || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const edu = education.filter((e) => e.institution || e.degree);
+  const exp = experience.filter((e) => e.company || e.role);
+  const proj = projects.filter((e) => e.title);
+  const ach = achievements.filter((e) => e.title);
+  const pos = positions.filter((e) => e.title);
+  const extra = extracurriculars.filter((e) => e.activity);
+
+  // Identity (photo/name/title/roll/links) lives in the page header — the preview
+  // shows only the portfolio content so the two don't duplicate each other.
+  const anyContent = !!(
+    profile?.bio || skills.length || courses.length || edu.length ||
+    exp.length || proj.length || ach.length || pos.length || extra.length
+  );
+
+  const chip = 'text-[11px] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-secondary)] px-2 py-0.5 rounded-full';
+  const join = (...parts: (string | false | undefined)[]) => parts.filter(Boolean).join(' · ');
+
+  // Summary mode surfaces the few headline facts a reviewer skims first.
+  const primaryEdu = edu[0];
+  // Pull just the score (e.g. "8.7 / 10") out of whatever the user typed.
+  const cgpaValue = primaryEdu?.cgpa
+    ? (primaryEdu.cgpa.match(/[\d.]+\s*(?:\/\s*[\d.]+)?/)?.[0] ?? primaryEdu.cgpa)
+    : undefined;
+
+  return (
+    <div className="space-y-5">
+      {detailed && profile?.bio && (
+        <p className="text-[12.5px] text-[var(--text-secondary)] leading-relaxed whitespace-pre-line">{profile.bio}</p>
+      )}
+
+      {/* ── Summary mode — only the headline facts ── */}
+      {anyContent && !detailed && (
+        <>
+          {primaryEdu && (primaryEdu.institution || primaryEdu.degree || cgpaValue) && (
+            <div className="rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/40 px-3.5 py-3">
+              {primaryEdu.institution && (
+                <p className="text-[12.5px] font-semibold text-[var(--text-primary)] leading-snug">{primaryEdu.institution}</p>
+              )}
+              {primaryEdu.degree && (
+                <p className="text-[11.5px] text-[var(--text-tertiary)] mt-0.5">{primaryEdu.degree}</p>
+              )}
+              {cgpaValue && (
+                <div className="mt-2.5 pt-2.5 border-t border-[var(--border-subtle)] flex items-baseline gap-2">
+                  <span className="text-[19px] font-bold text-[var(--accent-orange)] tracking-[-0.01em] leading-none">{cgpaValue}</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--text-faint)]">CGPA</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {skills.length > 0 && (
+            <PreviewBlock label="Top Skills">
+              <div className="flex flex-wrap gap-1.5">
+                {skills.slice(0, 6).map((s, i) => <span key={i} className={chip}>{s}</span>)}
+                {skills.length > 6 && <span className={chip}>+{skills.length - 6}</span>}
+              </div>
+            </PreviewBlock>
+          )}
+        </>
+      )}
+
+      {/* ── Detailed mode — full render of every section ── */}
+      {detailed && (
+        <>
+          {skills.length > 0 && (
+            <PreviewBlock label="Technical Skills">
+              <div className="flex flex-wrap gap-1.5">{skills.map((s, i) => <span key={i} className={chip}>{s}</span>)}</div>
+            </PreviewBlock>
+          )}
+
+      {edu.length > 0 && (
+        <PreviewBlock label="Education">
+          <div className="space-y-2.5">
+            {edu.map((e, i) => (
+              <div key={i}>
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-[12.5px] font-semibold text-[var(--text-primary)] truncate">{e.institution || 'Institution'}</span>
+                  <span className="text-[10.5px] text-[var(--text-faint)] shrink-0">{formatDateRange(e.fromDate, e.toDate)}</span>
+                </div>
+                {join(e.degree, e.cgpa && (/gpa/i.test(e.cgpa) ? e.cgpa : `CGPA ${e.cgpa}`), e.location) && (
+                  <p className="text-[11.5px] text-[var(--text-tertiary)]">{join(e.degree, e.cgpa && (/gpa/i.test(e.cgpa) ? e.cgpa : `CGPA ${e.cgpa}`), e.location)}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </PreviewBlock>
+      )}
+
+      {exp.length > 0 && (
+        <PreviewBlock label="Experience">
+          <div className="space-y-3">
+            {exp.map((e, i) => (
+              <div key={i}>
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-[12.5px] font-semibold text-[var(--text-primary)] truncate">{join(e.role, e.company) || 'Role'}</span>
+                  <span className="text-[10.5px] text-[var(--text-faint)] shrink-0">{formatDateRange(e.fromDate, e.toDate)}</span>
+                </div>
+                {e.location && <p className="text-[11px] text-[var(--text-faint)]">{e.location}</p>}
+                {e.description && <p className="text-[11.5px] text-[var(--text-tertiary)] mt-0.5 whitespace-pre-line">{e.description}</p>}
+              </div>
+            ))}
+          </div>
+        </PreviewBlock>
+      )}
+
+      {proj.length > 0 && (
+        <PreviewBlock label="Projects">
+          <div className="space-y-3">
+            {proj.map((e, i) => (
+              <div key={i}>
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-[12.5px] font-semibold text-[var(--text-primary)] truncate">{e.title}</span>
+                  <span className="text-[10.5px] text-[var(--text-faint)] shrink-0">{formatDateRange(e.fromDate, e.toDate)}</span>
+                </div>
+                {e.techStack && <p className="text-[11px] text-[var(--accent-orange)]">{e.techStack}</p>}
+                {e.description && <p className="text-[11.5px] text-[var(--text-tertiary)] mt-0.5 whitespace-pre-line">{e.description}</p>}
+              </div>
+            ))}
+          </div>
+        </PreviewBlock>
+      )}
+
+      {ach.length > 0 && (
+        <PreviewBlock label="Achievements">
+          <div className="space-y-1.5">
+            {ach.map((e, i) => (
+              <div key={i} className="flex items-baseline justify-between gap-2">
+                <span className="text-[12px] text-[var(--text-primary)] truncate">{join(e.title, e.issuer)}</span>
+                <span className="text-[10.5px] text-[var(--text-faint)] shrink-0">{formatDateRange(e.fromDate, e.toDate)}</span>
+              </div>
+            ))}
+          </div>
+        </PreviewBlock>
+      )}
+
+      {pos.length > 0 && (
+        <PreviewBlock label="Positions of Responsibility">
+          <div className="space-y-1.5">
+            {pos.map((e, i) => (
+              <div key={i} className="flex items-baseline justify-between gap-2">
+                <span className="text-[12px] text-[var(--text-primary)] truncate">{join(e.title, e.organization)}</span>
+                <span className="text-[10.5px] text-[var(--text-faint)] shrink-0">{formatDateRange(e.fromDate, e.toDate)}</span>
+              </div>
+            ))}
+          </div>
+        </PreviewBlock>
+      )}
+
+      {courses.length > 0 && (
+        <PreviewBlock label="Relevant Coursework">
+          <div className="flex flex-wrap gap-1.5">{courses.map((c, i) => <span key={i} className={chip}>{c}</span>)}</div>
+        </PreviewBlock>
+      )}
+
+      {extra.length > 0 && (
+        <PreviewBlock label="Extracurriculars">
+          <div className="space-y-1.5">
+            {extra.map((e, i) => (
+              <div key={i} className="flex items-baseline justify-between gap-2">
+                <span className="text-[12px] text-[var(--text-primary)] truncate">{join(e.activity, e.role)}</span>
+                <span className="text-[10.5px] text-[var(--text-faint)] shrink-0">{formatDateRange(e.fromDate, e.toDate)}</span>
+              </div>
+            ))}
+          </div>
+        </PreviewBlock>
+      )}
+        </>
+      )}
+
+      {!anyContent && (
+        <div className="text-center py-12">
+          <p className="text-[12.5px] font-medium text-[var(--text-primary)]">Nothing to preview yet</p>
+          <p className="text-[11.5px] text-[var(--text-faint)] mt-1">Fill in the sections and they’ll appear here live.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function StudentProfile() {
   const { user, loading: authLoading } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -202,6 +406,7 @@ export default function StudentProfile() {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [openSections, setOpenSections] = useState<Set<string>>(new Set());
+  const [mode, setMode] = useState<'edit' | 'preview'>('edit');
 
   // Structured entry states
   const [educationEntries, setEducationEntries] = useState<EducationEntry[]>([]);
@@ -369,14 +574,33 @@ export default function StudentProfile() {
     return Math.round((signals.filter(Boolean).length / signals.length) * 100);
   })();
 
+  // Headline CGPA for the identity band — pulled from the first education entry that has one.
+  const bandCgpa = (() => {
+    const e = educationEntries.find((x) => x.cgpa);
+    if (!e?.cgpa) return undefined;
+    return e.cgpa.match(/[\d.]+\s*(?:\/\s*[\d.]+)?/)?.[0] ?? e.cgpa;
+  })();
+
   return (
     <div className="animate-fade-in">
       <div className="max-w-[1200px] mx-auto">
-        <div className="pt-8 mb-6">
-          <h1 className="text-[26px] font-semibold tracking-[-0.025em] text-[var(--text-primary)]">Student Profile</h1>
-          <p className="text-[var(--text-tertiary)] text-[13.5px] mt-1.5">
-            Manage your academic identity, portfolio, and resume details.
-          </p>
+        <div className="pt-8 mb-6 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-[26px] font-semibold tracking-[-0.025em] text-[var(--text-primary)]">Student Profile</h1>
+            <p className="text-[var(--text-tertiary)] text-[13.5px] mt-1.5">
+              Manage your academic identity, portfolio, and resume details.
+            </p>
+          </div>
+          <div className="inline-flex items-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-0.5 text-[12.5px] font-medium shrink-0">
+            <button
+              type="button" onClick={() => setMode('edit')}
+              className={`px-4 py-1.5 rounded-full transition-colors ${mode === 'edit' ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)]' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'}`}
+            >Edit</button>
+            <button
+              type="button" onClick={() => setMode('preview')}
+              className={`px-4 py-1.5 rounded-full transition-colors ${mode === 'preview' ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)]' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'}`}
+            >Preview</button>
+          </div>
         </div>
 
         {/* ── Identity band ── */}
@@ -455,6 +679,13 @@ export default function StudentProfile() {
                   <GitHubIcon />
                 </a>
               )}
+              {bandCgpa && (
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium bg-[var(--bg-elevated)] border border-[var(--border-subtle)] px-2.5 py-1 rounded-full">
+                  <GraduationCap size={13} className="text-[var(--text-faint)]" />
+                  <span className="font-mono text-[var(--text-primary)]">{bandCgpa}</span>
+                  <span className="text-[10px] uppercase tracking-[0.06em] text-[var(--text-faint)]">CGPA</span>
+                </span>
+              )}
             </div>
           </div>
 
@@ -470,7 +701,8 @@ export default function StudentProfile() {
           </div>
         </div>
 
-        <form onSubmit={handleUpdate} className="space-y-5">
+        {mode === 'edit' ? (
+          <form onSubmit={handleUpdate} className="space-y-5">
 
               {/* Personal Details */}
               <div className="window p-6" id="personal-details">
@@ -845,6 +1077,20 @@ export default function StudentProfile() {
                 {updating ? 'Saving...' : 'Save Profile Changes'}
               </button>
             </form>
+        ) : (
+          <div className="rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 sm:p-8 lg:p-10 animate-fade-in">
+            <ProfilePreview
+              detailed
+              profile={profile}
+              education={educationEntries}
+              experience={experienceEntries}
+              projects={projectEntries}
+              achievements={achievementEntries}
+              positions={positionEntries}
+              extracurriculars={extracurricularEntries}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -208,20 +208,36 @@ export default function Home() {
               Your Career <em>Launchpad</em> Starts Here
             </h1>
 
-            <p className="hero-sub reveal-block" style={{ '--reveal-delay': '90ms' } as React.CSSProperties}>
-              Uniship connects students with placement opportunities, internships, and full-time roles - matched to your skills, your college, your future.
+            <p className="hero-sub reveal-block" style={{ '--reveal-delay': '120ms' } as React.CSSProperties}>
+              Uniship connects students with placement opportunities, internships, and full-time roles — matched to your skills, your college, your future.
             </p>
 
             <div className="hero-actions reveal-block" style={{ '--reveal-delay': '180ms' } as React.CSSProperties}>
-              <Link href="/login" className="btn-solid">Sign In -&gt;</Link>
+              <Link href="/login" className="btn-solid">Get started -&gt;</Link>
+              <a href="#how" className="btn-ghost">See how it works</a>
+            </div>
+
+            <div className="hero-meta reveal-block" style={{ '--reveal-delay': '240ms' } as React.CSSProperties}>
+              <span>Company listings</span><i />
+              <span>Mock assessments</span><i />
+              <span>AI resume builder</span><i />
+              <span>Live proctoring</span>
             </div>
           </div>
 
-          <div className="hero-visual reveal-block" style={{ '--reveal-delay': '260ms' } as React.CSSProperties}>
+          <div className="hero-visual reveal-block" style={{ '--reveal-delay': '300ms' } as React.CSSProperties}>
             <div className="ap-widget" id="apWidget">
               <div className="ap-stat-badge" id="apStatBadge">
                 <div className="ap-stat-num">3</div>
                 <div className="ap-stat-label">Shortlisted</div>
+              </div>
+
+              <div className="ap-float ap-float-ats">
+                <div className="ap-float-ring">92</div>
+                <div className="ap-float-body">
+                  <div className="ap-float-title">Resume ATS</div>
+                  <div className="ap-float-sub">Optimized</div>
+                </div>
               </div>
 
               <div className="ap-card" id="apCard">
@@ -235,9 +251,9 @@ export default function Home() {
 
                 <div className="ap-card-inner">
                   <div className="ap-submitting-row">
-                    <div className="ap-job-logo" style={{ background: '#1A56DB' }}>GS</div>
+                    <div className="ap-job-logo" style={{ background: '#1A56DB' }}>NC</div>
                     <div className="ap-submitting-body">
-                      <div className="ap-submitting-title">Goldman Sachs — Analyst</div>
+                      <div className="ap-submitting-title">Northwind Capital — Analyst</div>
                       <div className="ap-submitting-label">Submitting application…</div>
                       <div className="ap-bar-track"><div className="ap-bar-fill" /></div>
                     </div>
@@ -245,33 +261,33 @@ export default function Home() {
 
                   <div className="ap-job-list">
                     <div className="ap-job-row">
-                      <div className="ap-job-logo-sm" style={{ background: '#0052CC' }}>MS</div>
+                      <div className="ap-job-logo-sm" style={{ background: '#0052CC' }}>ML</div>
                       <div className="ap-job-info">
-                        <div className="ap-job-title">Microsoft — SDE Intern</div>
+                        <div className="ap-job-title">Meridian Labs — SDE Intern</div>
                         <div className="ap-job-meta">₹85,000/mo · Hyderabad</div>
                       </div>
                       <span className="ap-status ap-s-short">Shortlisted ✓</span>
                     </div>
                     <div className="ap-job-row">
-                      <div className="ap-job-logo-sm" style={{ background: '#C75300' }}>AM</div>
+                      <div className="ap-job-logo-sm" style={{ background: '#C75300' }}>VS</div>
                       <div className="ap-job-info">
-                        <div className="ap-job-title">Amazon — SDE Intern</div>
+                        <div className="ap-job-title">Vertex Systems — SDE Intern</div>
                         <div className="ap-job-meta">₹90,000/mo · Bangalore</div>
                       </div>
                       <span className="ap-status ap-s-review">Under Review</span>
                     </div>
                     <div className="ap-job-row">
-                      <div className="ap-job-logo-sm" style={{ background: '#1A73E8' }}>GO</div>
+                      <div className="ap-job-logo-sm" style={{ background: '#1A73E8' }}>LA</div>
                       <div className="ap-job-info">
-                        <div className="ap-job-title">Google — STEP Intern</div>
+                        <div className="ap-job-title">Lumen AI — STEP Intern</div>
                         <div className="ap-job-meta">₹1,20,000/mo · Remote</div>
                       </div>
                       <span className="ap-status ap-s-applied">Applied</span>
                     </div>
                     <div className="ap-job-row">
-                      <div className="ap-job-logo-sm" style={{ background: '#26282B' }}>UB</div>
+                      <div className="ap-job-logo-sm" style={{ background: '#26282B' }}>CM</div>
                       <div className="ap-job-info">
-                        <div className="ap-job-title">Uber — Backend Engineer</div>
+                        <div className="ap-job-title">Cobalt Mobility — Backend Engineer</div>
                         <div className="ap-job-meta">₹70,000/mo · Pune</div>
                       </div>
                       <span className="ap-status ap-s-new">New</span>
@@ -295,6 +311,19 @@ export default function Home() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="hero-logos reveal-block" style={{ '--reveal-delay': '360ms' } as React.CSSProperties}>
+          <p className="hero-logos-label">Opportunities across every track</p>
+          <div className="hero-logos-row">
+            <span className="hero-cat">Software Engineering</span>
+            <span className="hero-cat">Data &amp; AI</span>
+            <span className="hero-cat">Product</span>
+            <span className="hero-cat">Consulting</span>
+            <span className="hero-cat">Finance</span>
+            <span className="hero-cat">Core Engineering</span>
+            <span className="hero-cat">Design</span>
           </div>
         </div>
       </section>
@@ -627,8 +656,14 @@ export default function Home() {
         /* ── Hero: copy left, compact app card right ── */
         .landing-root .hero {
           position: relative;
-          padding: 150px 0 36px;
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          gap: 52px;
+          padding: 104px 0 48px;
           overflow: hidden;
+          box-sizing: border-box;
         }
 
         .landing-root .hero::before {
@@ -652,7 +687,7 @@ export default function Home() {
         }
 
         .landing-root .hero-h1 {
-          font-size: clamp(2.3rem, 3.9vw, 3.4rem);
+          font-size: clamp(2.6rem, 4.7vw, 4.1rem);
           font-weight: 560;
           font-variation-settings: 'wght' 560;
           letter-spacing: -0.025em;
@@ -696,6 +731,122 @@ export default function Home() {
         .landing-root .btn-solid:hover {
           background: var(--l-btn-bg-hover);
           transform: translateY(-1px);
+        }
+
+        .landing-root .btn-ghost {
+          display: inline-flex;
+          align-items: center;
+          height: 40px;
+          padding: 0 18px;
+          border-radius: 999px;
+          border: 1px solid var(--l-border-strong);
+          background: transparent;
+          color: var(--l-heading);
+          font-size: 14px;
+          font-weight: 600;
+          text-decoration: none;
+          transition: background 0.15s ease, border-color 0.15s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .landing-root .btn-ghost:hover {
+          background: var(--l-card);
+          border-color: var(--l-stroke);
+          transform: translateY(-1px);
+        }
+
+        /* ── Hero capability line ── */
+        .landing-root .hero-meta {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 9px 14px;
+          margin-top: 30px;
+          font-size: 13px;
+          color: var(--l-dim);
+        }
+
+        .landing-root .hero-meta i {
+          width: 3px;
+          height: 3px;
+          border-radius: 50%;
+          background: var(--l-stroke);
+          display: inline-block;
+        }
+
+        /* ── Hero floating chip (Resume ATS) ── */
+        .landing-root .ap-float {
+          position: absolute;
+          z-index: 3;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 9px 14px 9px 9px;
+          background: var(--l-panel);
+          border: 1px solid var(--l-border);
+          border-radius: 13px;
+          box-shadow: var(--l-shadow-badge);
+        }
+
+        .landing-root .ap-float-ats {
+          left: -26px;
+          bottom: 42px;
+        }
+
+        .landing-root .ap-float-ring {
+          width: 34px;
+          height: 34px;
+          border-radius: 50%;
+          display: grid;
+          place-items: center;
+          font-size: 12px;
+          font-weight: 700;
+          color: var(--l-accent);
+          background: color-mix(in srgb, var(--l-accent) 12%, transparent);
+          border: 1.5px solid color-mix(in srgb, var(--l-accent) 35%, transparent);
+        }
+
+        .landing-root .ap-float-title { font-size: 12px; font-weight: 600; color: var(--l-heading); }
+        .landing-root .ap-float-sub { font-size: 10.5px; color: var(--l-dim); margin-top: 1px; }
+
+        /* ── Hero company strip ── */
+        .landing-root .hero-logos {
+          width: 100%;
+          padding: 0 24px;
+          text-align: center;
+        }
+
+        .landing-root .hero-logos-label {
+          font-size: 11.5px;
+          font-weight: 500;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: var(--l-dim);
+          margin: 0 0 18px;
+        }
+
+        .landing-root .hero-logos-row {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          align-items: center;
+          gap: 10px 12px;
+        }
+
+        .landing-root .hero-cat {
+          font-size: 13px;
+          font-weight: 500;
+          letter-spacing: -0.005em;
+          color: var(--l-text);
+          padding: 7px 15px;
+          border: 1px solid var(--l-border);
+          border-radius: 999px;
+          background: var(--l-card);
+          transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+        }
+
+        .landing-root .hero-cat:hover {
+          color: var(--l-heading);
+          border-color: var(--l-border-strong);
         }
 
         /* ── Compact application card ── */
@@ -1202,12 +1353,13 @@ export default function Home() {
         @media (max-width: 768px) {
           .landing-root .nav-links { display: none; }
           .landing-root nav { top: 10px; }
-          .landing-root .hero { padding-top: 118px; }
+          .landing-root .hero { padding-top: 118px; justify-content: flex-start; gap: 40px; }
           .landing-root .hero-h1 { font-size: clamp(2.1rem, 9vw, 2.9rem); }
           .landing-root .about-shell { padding-top: 96px; }
           .landing-root .feat-section,
           .landing-root .how-section { padding-top: 80px; }
           .landing-root .ap-stat-badge { right: 0; top: -34px; }
+          .landing-root .ap-float-ats { left: -6px; bottom: 28px; transform: scale(0.94); }
           .landing-root .footer-inner {
             flex-direction: column;
             align-items: flex-start;
