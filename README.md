@@ -123,7 +123,7 @@ The queue, notification summaries, chat pagination, and aggregate queries need
 the repository's current Firestore and Storage rules and indexes.
 
 ```bash
-firebase deploy --only firestore:rules,firestore:indexes,storage
+firebase deploy --only "firestore,storage" --project uniship-4c1a1
 ```
 
 ## Verification and performance budgets
