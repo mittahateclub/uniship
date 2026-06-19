@@ -39,7 +39,7 @@ firebase-debug.log*
 
 # firebase emulator / deploy artifacts
 .firebase/
-*-debug.log
+x*-debug.log
 
 # Claude screenshot/browser artifacts
 .claude/shots/out/

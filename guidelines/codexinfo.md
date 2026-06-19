@@ -269,24 +269,24 @@ The homepage Lighthouse audit also identified:
 
 ## Recommended next performance changes
 
-These changes were diagnosed but not implemented during the production audit:
+Status after the June 19, 2026 public-route performance pass:
 
-1. Move landing and login styles out of client-component `styled-jsx` blocks
-   and into statically loaded CSS modules or route CSS.
-2. Dynamically import Firebase Authentication and Firestore inside the login
-   submit handler.
-3. Reconsider the automatic authenticated-user redirect on the public landing
-   page. Prefer a lightweight session signal or load Firebase Auth after the
-   initial page becomes interactive.
-4. Render above-fold hero content visible immediately. Keep reveal effects for
-   below-fold sections only.
-5. Convert the local TTF files to WOFF2.
-6. Avoid loading both Space Mono weights on routes that do not use them.
+1. **Completed:** landing and login styles moved to statically loaded
+   `app/landing.css` and `app/login/login.css`.
+2. **Completed:** login dynamically imports Firebase Authentication and
+   Firestore only after form submission.
+3. **Completed:** landing uses a lightweight local session hint and performs
+   Firebase verification during browser idle time only when that hint exists.
+4. **Completed:** above-fold hero content renders visible immediately.
+5. **Completed:** local TTF files were converted to WOFF2 and removed.
+6. **Completed:** Space Mono is scoped to protected routes and is not loaded
+   by anonymous landing or login pages.
 7. Add an application favicon.
 8. Fix footer contrast, heading order, and the missing semantic `<main>`.
 
-Measure before and after each change. The largest likely win is removing
-Firebase Auth and its iframe from the anonymous landing-page path.
+Fresh anonymous browser checks now make zero Firebase or Google API requests
+on both public routes. Local mobile checks reported CLS 0 for landing and
+login. Full `npm run ci` passes.
 
 ## Firebase rules and indexes
 
@@ -405,9 +405,9 @@ At the time of this handoff:
 - Performance budgets: `scripts/check-performance-budgets.mjs`
 - CI workflow: `.github/workflows/ci.yml`
 - Vercel cron: `vercel.json`
-- Firestore indexes: `firestore.indexes.json`
-- Firestore rules: `firestore.rules`
-- Storage rules: `storage.rules`
+- Firestore indexes: `firebase/firestore.indexes.json`
+- Firestore rules: `firebase/firestore.rules`
+- Storage rules: `firebase/storage.rules`
 
 ## Workspace constraints and cautions
 
@@ -429,12 +429,19 @@ At the time of this handoff:
 
 ## Latest Codex note
 
-The application is deployed and functional. Edge response time and desktop
-performance are strong. The most valuable remaining work is improving the
-anonymous landing and login paths by delaying Firebase, loading route styling
-statically, reducing font payload, and fixing the intermittent login layout
-shift. No production-performance fixes were applied after the audit; those
-items remain available for the next agent.
+On June 19, 2026, Codex completed the six requested public-route performance
+improvements. Verification results:
+
+- `npm run ci` passed: lint, typecheck, audit, production build, and budgets.
+- Landing bundle: 222.1 KB gzip, down from 224.6 KB.
+- Login initial assets: 216.7 KB gzip with zero initial Firebase chunks.
+- Landing initial assets contain zero Firebase chunks.
+- Fresh mobile checks: CLS 0 on landing and login.
+- Public routes preload only Geist WOFF2; Space Mono remains protected-route
+  only.
+- Font files dropped from 358.1 KB of TTF to 139.8 KB of WOFF2.
+
+The remaining audit items are the favicon and small accessibility fixes.
 
 ## Counterpart reconciliation
 

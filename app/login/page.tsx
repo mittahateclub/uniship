@@ -1,11 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { LoginView } from './login.view';
+import { setAuthSessionHint } from '@/lib/auth-session';
+import './login.css';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -19,12 +18,24 @@ export default function LoginPage() {
     setIsLoading(true);
     setError('');
     try {
+      const [
+        { getAuth, signInWithEmailAndPassword },
+        { doc, getDoc, getFirestore },
+        { firebaseApp },
+      ] = await Promise.all([
+        import('firebase/auth'),
+        import('firebase/firestore'),
+        import('@/lib/firebase-app'),
+      ]);
+      const auth = getAuth(firebaseApp);
+      const db = getFirestore(firebaseApp);
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
       const userDoc = await getDoc(doc(db, 'users', user.uid));
 
       if (userDoc.exists()) {
+        setAuthSessionHint(true);
         const userData = userDoc.data();
         const role = userData.role;
 

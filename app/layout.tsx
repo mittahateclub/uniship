@@ -3,18 +3,9 @@ import localFont from "next/font/local";
 import WebVitalsReporter from "@/components/WebVitalsReporter";
 
 const geist = localFont({
-  src: "./fonts/Geist-Variable.ttf",
+  src: "./fonts/Geist-Variable.woff2",
   weight: "100 900",
   variable: "--font-geist",
-  display: "swap",
-});
-
-const spaceMono = localFont({
-  src: [
-    { path: "./fonts/SpaceMono-Regular.ttf", weight: "400", style: "normal" },
-    { path: "./fonts/SpaceMono-Bold.ttf", weight: "700", style: "normal" },
-  ],
-  variable: "--font-space-mono",
   display: "swap",
 });
 
@@ -29,7 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${geist.variable} ${spaceMono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={geist.variable} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{

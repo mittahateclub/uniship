@@ -115,8 +115,10 @@ edit the ESLint/TS config to silence a rule — fix the code.
 | Dashboard | 450 KB |
 | Proctoring | 450 KB |
 
-The **landing page is near budget (~5 KB headroom)** — treat any new client-side dependency on
-the anonymous path with care. Core Web Vitals are reported to `/api/metrics/web-vitals`
+The **landing page is near budget (~8 KB headroom after the June 2026 public-route pass)** —
+treat any new client-side dependency on the anonymous path with care. Public landing and login
+routes must not eagerly load Firebase Auth or Firestore. Core Web Vitals are reported to
+`/api/metrics/web-vitals`
 (`components/WebVitalsReporter.tsx`) as structured `web_vital` events (LCP, INP, CLS, FCP, TTFB).
 
 ## 8. Verification

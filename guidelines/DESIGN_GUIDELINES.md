@@ -62,8 +62,9 @@ dashboard/internships/calendar already reference these. **Do not reintroduce the
 
 ## 3. Typography
 
-- **Fonts:** Geist Variable (`--font-geist`) is the global sans. Space Mono (`--font-space-mono`)
-  for monospace/numeric accents. Bricolage is loaded but unused — do not add it to new UI.
+- **Fonts:** Geist Variable WOFF2 (`--font-geist`) is the global sans. Space Mono WOFF2
+  (`--font-space-mono`) is scoped to the protected application layout for monospace/numeric
+  accents; public landing and login routes do not load it. Bricolage is not loaded.
 - **Max weight 600 for UI text.** A mechanical sweep normalized `font-bold`→`font-semibold`,
   `font-extrabold`→`font-bold`. `font-bold` is intentionally reserved for: avatar initials,
   unread-conversation emphasis, badge counts, and the resume-document heading.
@@ -166,13 +167,16 @@ radius scale is intentionally restored.
 
 ## 9. Landing & login (scoped exception)
 
-- The landing (`app/landing-page.tsx`) and login (`app/login/login.view.tsx`) use their own
-  `--l-*` scoped tokens in `<style jsx>` blocks (dark `#08090A` / light `#fcfcfd`, accent
-  `#0082be` in light). **Literal hex is legitimate only here.** Login is a filled split-panel
-  (a lone centered card reads "empty" — keep layouts filled).
+- The landing and login use their own `--l-*` scoped tokens in statically loaded route CSS:
+  `app/landing.css` and `app/login/login.css`. Keeping these styles out of client-injected
+  `styled-jsx` prevents layout shifts. Dark is `#08090A`, light is `#fcfcfd`, and the light accent
+  is `#0082be`. **Literal hex is legitimate only in these route styles.** Login is a filled
+  split-panel (a lone centered card reads "empty" — keep layouts filled).
 - The landing is full-viewport hero, dual-CTA, capability meta line, an "My Applications" demo
   card with floating chips, and a role-track strip — **company names must stay fictional/generic**
   (real firm names were removed for legal reasons; do not re-add them).
+- Above-fold landing content renders visible immediately. Apply `.reveal-block` only below the
+  first viewport so Intersection Observer timing cannot delay LCP.
 - **Lenis smooth-scroll was removed** for landing-bundle performance — do not re-add it.
 - `ThemeToggle` always lives in the page's top chrome (glass nav / login chrome / protected top
   bar). There is no floating fixed toggle — the owner rejected bottom-right placement.
