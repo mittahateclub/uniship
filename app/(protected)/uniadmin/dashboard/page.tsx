@@ -1,19 +1,23 @@
 'use client';
+import { useTransitionRouter } from 'next-view-transitions';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { collection, query, where, getDocs, getCountFromServer, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { UniAdminDashboardView, type DashStats, type UpcomingTest } from './dashboard.view';
+import { getCache, setCache } from '@/lib/page-cache';
+
+type CachedUniDash = { stats: DashStats; upcoming: UpcomingTest[] };
 
 export default function UniAdminDashboard() {
   const { user, loading, universityId, userName } = useAuth();
-  const router = useRouter();
-  const [stats, setStats] = useState<DashStats | null>(null);
-  const [upcoming, setUpcoming] = useState<UpcomingTest[]>([]);
+  const router = useTransitionRouter();
+  const cacheKey = universityId ? `uniadmin-dash:${universityId}` : '';
+  const [stats, setStats] = useState<DashStats | null>(() => (cacheKey ? getCache<CachedUniDash>(cacheKey)?.stats : undefined) ?? null);
+  const [upcoming, setUpcoming] = useState<UpcomingTest[]>(() => (cacheKey ? getCache<CachedUniDash>(cacheKey)?.upcoming : undefined) ?? []);
   const [liveSessions, setLiveSessions] = useState(0);
-  const [dataLoading, setDataLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(() => !(cacheKey && getCache<CachedUniDash>(cacheKey)));
 
   useEffect(() => {
     if (!loading && !user) router.push('/');
@@ -24,7 +28,7 @@ export default function UniAdminDashboard() {
     if (!universityId) return;
     let cancelled = false;
     (async () => {
-      setDataLoading(true);
+      if (!(cacheKey && getCache<CachedUniDash>(cacheKey))) setDataLoading(true);
       try {
         const countByUniv = (c: string) =>
           getCountFromServer(query(collection(db, c), where('universityId', '==', universityId))).catch(() => null);
@@ -63,20 +67,22 @@ export default function UniAdminDashboard() {
           .sort((a, b) => new Date(a.examStart).getTime() - new Date(b.examStart).getTime())
           .slice(0, 5);
 
-        setStats({
+        const statsObj: DashStats = {
           students: studentsCount?.data().count ?? 0,
           tests: totalTests,
           events: eventsCount?.data().count ?? 0,
           pendingApproval,
           flagged: flaggedCount?.data().count ?? 0,
-        });
+        };
+        setStats(statsObj);
         setUpcoming(up);
+        if (cacheKey) setCache<CachedUniDash>(cacheKey, { stats: statsObj, upcoming: up });
       } finally {
         if (!cancelled) setDataLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [universityId]);
+  }, [universityId, cacheKey]);
 
   // Live exam sessions for this university.
   useEffect(() => {

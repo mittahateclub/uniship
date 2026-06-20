@@ -1,11 +1,11 @@
 'use client';
+import { useTransitionRouter } from 'next-view-transitions';
 
 import { useState, useEffect, useCallback, useRef, use, type ComponentType } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { doc, getDoc, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, setDoc, getDocs, where, updateDoc, limit } from 'firebase/firestore';
 import { authHeaders } from '@/lib/auth-client';
 import { db } from '@/lib/firebase';
-import { useRouter } from 'next/navigation';
 import Editor from '@monaco-editor/react';
 import Shield from '@/components/icons/Shield';
 import AlertTriangle from '@/components/icons/AlertTriangle';
@@ -271,7 +271,7 @@ type Phase = 'loading' | 'preflight' | 'rules' | 'active' | 'frozen' | 'submitte
 export default function TakeTest({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { user } = useAuth();
-  const router = useRouter();
+  const router = useTransitionRouter();
 
   // Core state
   const [test, setTest] = useState<TestData | null>(null);

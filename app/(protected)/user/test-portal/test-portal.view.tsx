@@ -1,6 +1,6 @@
 'use client';
+import { Link } from 'next-view-transitions';
 
-import Link from 'next/link';
 import FileText from '@/components/icons/FileText';
 import Clock from '@/components/icons/Clock';
 import HelpCircle from '@/components/icons/HelpCircle';

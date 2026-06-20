@@ -1,7 +1,7 @@
 'use client';
+import { useTransitionRouter } from 'next-view-transitions';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import {
   collection, getDocs, getCountFromServer, addDoc, updateDoc, deleteDoc,
@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { UniversitiesView, type University } from './universities.view';
+import { getCache, setCache } from '@/lib/page-cache';
 
 async function populateMemberCounts(universities: University[]): Promise<void> {
   let nextIndex = 0;
@@ -29,9 +30,10 @@ async function populateMemberCounts(universities: University[]): Promise<void> {
 
 export default function ManageUniversitiesPage() {
   const { user, loading } = useAuth();
-  const router = useRouter();
-  const [universities, setUniversities] = useState<University[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
+  const router = useTransitionRouter();
+  const cacheKey = user ? `superadmin-unis:${user.uid}` : '';
+  const [universities, setUniversities] = useState<University[]>(() => (cacheKey ? getCache<University[]>(cacheKey) : undefined) ?? []);
+  const [loadingData, setLoadingData] = useState(() => !(cacheKey && getCache<University[]>(cacheKey)));
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -50,12 +52,13 @@ export default function ManageUniversitiesPage() {
       await populateMemberCounts(unis);
 
       setUniversities(unis);
+      if (cacheKey) setCache<University[]>(cacheKey, unis);
     } catch (err) {
       console.error('Error fetching universities:', err);
     } finally {
       setLoadingData(false);
     }
-  }, []);
+  }, [cacheKey]);
 
   useEffect(() => {
     if (!user) return;

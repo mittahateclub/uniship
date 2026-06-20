@@ -1,10 +1,10 @@
 'use client';
+import { Link } from 'next-view-transitions';
 
 import React from "react";
 import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import ThemeToggle from "@/components/ThemeToggle";
-import Link from "next/link";
 import Image from "next/image";
 import Search from '@/components/icons/Search';
 import Menu from '@/components/icons/Menu';

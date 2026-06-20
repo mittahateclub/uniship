@@ -1,4 +1,5 @@
 'use client';
+import { Link } from 'next-view-transitions';
 
 // Students who applied to an event in-app (events posted without an external
 // link). Backed by the `eventApplications` collection — mirrors the Flutter
@@ -6,7 +7,6 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
 import { collection, query, where, limit, getDocs, type DocumentData } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { toDate } from '@/lib/college';

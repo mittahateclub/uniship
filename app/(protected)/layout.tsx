@@ -1,4 +1,5 @@
 import localFont from 'next/font/local';
+import { ViewTransitions } from 'next-view-transitions';
 import ProtectedLayoutClient from './protected-layout-client';
 
 const spaceMono = localFont({
@@ -17,8 +18,10 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className={spaceMono.variable}>
-      <ProtectedLayoutClient>{children}</ProtectedLayoutClient>
-    </div>
+    <ViewTransitions>
+      <div className={spaceMono.variable}>
+        <ProtectedLayoutClient>{children}</ProtectedLayoutClient>
+      </div>
+    </ViewTransitions>
   );
 }

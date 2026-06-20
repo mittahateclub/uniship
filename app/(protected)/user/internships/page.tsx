@@ -4,7 +4,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { collection, query, getDocs, limit, addDoc, deleteDoc, doc, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { getCache, setCache } from '@/lib/page-cache';
 import { InternshipsView, type CollegeEvent } from './internships.view';
+
+type CachedInternships = { items: CollegeEvent[]; saved: [string, string][]; applied: string[] };
 import {
   toDate,
   effectiveExpiry,
@@ -15,11 +18,12 @@ import {
 
 export default function CollegeSpacePage() {
   const { user, universityId, userName, branch, gpa, loading: authLoading } = useAuth();
-  const [items, setItems] = useState<CollegeEvent[]>([]);
-  const [savedIds, setSavedIds] = useState<Map<string, string>>(new Map());
-  const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
+  const cacheKey = user ? `internships:${user.uid}:${universityId ?? ''}` : '';
+  const [items, setItems] = useState<CollegeEvent[]>(() => (cacheKey ? getCache<CachedInternships>(cacheKey)?.items : undefined) ?? []);
+  const [savedIds, setSavedIds] = useState<Map<string, string>>(() => new Map((cacheKey ? getCache<CachedInternships>(cacheKey)?.saved : undefined) ?? []));
+  const [appliedIds, setAppliedIds] = useState<Set<string>>(() => new Set((cacheKey ? getCache<CachedInternships>(cacheKey)?.applied : undefined) ?? []));
   const [applyingIds, setApplyingIds] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !(cacheKey && getCache<CachedInternships>(cacheKey)));
   const [searchQuery, setSearchQuery] = useState('');
   const [showSaved, setShowSaved] = useState(false);
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
@@ -94,6 +98,7 @@ export default function CollegeSpacePage() {
         });
         setSavedIds(map);
         setAppliedIds(applied);
+        if (cacheKey) setCache<CachedInternships>(cacheKey, { items: all, saved: [...map], applied: [...applied] });
       } catch (error) {
         console.error('Error fetching college space:', error);
       } finally {
@@ -101,7 +106,7 @@ export default function CollegeSpacePage() {
       }
     }
     if (!authLoading) fetchAll();
-  }, [user, universityId, branch, gpa, authLoading]);
+  }, [user, universityId, branch, gpa, authLoading, cacheKey]);
 
   const toggleSave = async (item: CollegeEvent) => {
     if (!user) return;

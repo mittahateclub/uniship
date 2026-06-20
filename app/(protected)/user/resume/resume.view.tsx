@@ -1,5 +1,6 @@
 // app/(protected)/user/resume/page.tsx
 'use client';
+import { Link } from 'next-view-transitions';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,8 +8,8 @@ import { collection, addDoc, serverTimestamp, getDoc, doc } from 'firebase/fires
 import { db } from '@/lib/firebase';
 import { generateTailoredResume } from './actions';
 import ATSScorePanel from './ats-score';
-import Link from 'next/link';
 import { takeResumePrefill } from '@/lib/resume-prefill';
+import { getCache, setCache } from '@/lib/page-cache';
 import { ResumeSkeleton } from '@/components/Skeleton';
 
 interface ResumeData {
@@ -65,6 +66,16 @@ type UserProfile = {
   positionEntries?: ProfileEntry[];
   extracurricularEntries?: ProfileEntry[];
 };
+
+// Module-scope so it's a stable reference (safe to read inside effects/initializers
+// without re-triggering them) and shared between the seed and the cache write.
+const EMPTY_RESUME_FORM: ResumeData = {
+  fullName: '', phone: '', email: '', website: '',
+  github: '', linkedin: '', education: '', experience: '',
+  skills: '', projects: '', coursework: '', extracurriculars: '', achievements: '',
+};
+
+type CachedResume = { baseProfileData: UserProfile | null; formData: ResumeData };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -368,22 +379,18 @@ function ResumePreview({ data, keywords }: { data: ResumeData; keywords: string[
 
 export default function ResumeBuilder() {
   const { user } = useAuth();
-  const [loading, setLoading]       = useState(true);
+  const cacheKey = user ? `resume:${user.uid}` : '';
+  const cached = cacheKey ? getCache<CachedResume>(cacheKey) : undefined;
+  const [loading, setLoading]       = useState(!cached);
   const [saving, setSaving]         = useState(false);
   const [generating, setGenerating] = useState(false);
 
   const [companyName, setCompanyName]           = useState('');
   const [jobDescription, setJobDescription]     = useState('');
-  const [baseProfileData, setBaseProfileData]   = useState<UserProfile | null>(null);
+  const [baseProfileData, setBaseProfileData]   = useState<UserProfile | null>(cached?.baseProfileData ?? null);
   const [keywords, setKeywords]                 = useState<string[]>([]);
 
-  const emptyForm: ResumeData = {
-    fullName: '', phone: '', email: '', website: '',
-    github: '', linkedin: '', education: '', experience: '',
-    skills: '', projects: '', coursework: '', extracurriculars: '', achievements: '',
-  };
-
-  const [formData, setFormData] = useState<ResumeData>(emptyForm);
+  const [formData, setFormData] = useState<ResumeData>(cached?.formData ?? EMPTY_RESUME_FORM);
 
   // One-shot handoff from a College Space / feed "Resume" button: prefill the
   // AI-tailor fields with the posting's company + description, then jump to it.
@@ -433,8 +440,10 @@ export default function ResumeBuilder() {
         const profileSnap = await getDoc(doc(db, 'users', user.uid));
         if (profileSnap.exists()) {
           const profileData = profileSnap.data();
+          const mapped = mapProfileToResumeData(profileData);
           setBaseProfileData(profileData);
-          setFormData(prev => ({ ...prev, ...mapProfileToResumeData(profileData) }));
+          setFormData(prev => ({ ...prev, ...mapped }));
+          if (cacheKey) setCache<CachedResume>(cacheKey, { baseProfileData: profileData, formData: { ...EMPTY_RESUME_FORM, ...mapped } });
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -443,7 +452,7 @@ export default function ResumeBuilder() {
       }
     }
     fetchData();
-  }, [user]);
+  }, [user, cacheKey]);
 
   // Count profile completeness
   const profileStats = useMemo(() => {

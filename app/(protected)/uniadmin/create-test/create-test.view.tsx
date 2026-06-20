@@ -1,8 +1,8 @@
 'use client';
+import { Link, useTransitionRouter } from 'next-view-transitions';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import {
   collection, doc, getDoc, getDocs, limit, onSnapshot, query, where,
@@ -10,7 +10,7 @@ import {
 } from 'firebase/firestore';
 import { queueTestDocument } from '@/app/actions/test-processing-jobs';
 import { authHeaders, getIdToken } from '@/lib/auth-client';
-import Link from 'next/link';
+import { getCache, setCache } from '@/lib/page-cache';
 import Upload from '@/components/icons/Upload';
 import FileText from '@/components/icons/FileText';
 import Clock from '@/components/icons/Clock';
@@ -45,7 +45,7 @@ interface TestUpload {
 
 export default function TestsPage() {
   const { user, loading: authLoading } = useAuth();
-  const router = useRouter();
+  const router = useTransitionRouter();
 
   // Upload form state
   const [file, setFile] = useState<File | null>(null);
@@ -70,12 +70,14 @@ export default function TestsPage() {
   const [processingJobId, setProcessingJobId] = useState<string | null>(null);
 
   // Tests list state
-  const [testUploads, setTestUploads] = useState<TestUpload[]>([]);
-  const [fetching, setFetching] = useState(true);
+  const cacheKey = user ? `unitestlist:${user.uid}` : '';
+  const cachedTests = cacheKey ? getCache<{ testUploads: TestUpload[]; hasMoreTests: boolean }>(cacheKey) : undefined;
+  const [testUploads, setTestUploads] = useState<TestUpload[]>(cachedTests?.testUploads ?? []);
+  const [fetching, setFetching] = useState(!cachedTests);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [lastTestDoc, setLastTestDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
-  const [hasMoreTests, setHasMoreTests] = useState(false);
+  const [hasMoreTests, setHasMoreTests] = useState(cachedTests?.hasMoreTests ?? false);
   const [loadingMoreTests, setLoadingMoreTests] = useState(false);
 
   useEffect(() => {
@@ -130,7 +132,7 @@ export default function TestsPage() {
           limit(50),
         );
         const snapshot = await getDocs(q);
-        setTestUploads(snapshot.docs.map(d => {
+        const mapped = snapshot.docs.map(d => {
           const data = d.data();
           // Count total questions from sections
           let totalQ = 0;
@@ -145,16 +147,18 @@ export default function TestsPage() {
             approved: data.approved ?? false,
             questionCount: totalQ,
           } as TestUpload;
-        }));
+        });
+        setTestUploads(mapped);
         setLastTestDoc(snapshot.docs.at(-1) ?? null);
         setHasMoreTests(snapshot.size === 50);
+        if (cacheKey) setCache(cacheKey, { testUploads: mapped, hasMoreTests: snapshot.size === 50 });
       }
     } catch (err) {
       console.error("Failed to load tests:", err);
     } finally {
       setFetching(false);
     }
-  }, [user]);
+  }, [user, cacheKey]);
 
   const loadMoreTests = async () => {
     if (!universityId || !lastTestDoc || loadingMoreTests) return;

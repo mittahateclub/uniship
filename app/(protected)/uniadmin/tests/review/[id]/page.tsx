@@ -1,7 +1,8 @@
 'use client';
+import { useTransitionRouter } from 'next-view-transitions';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { doc, getDoc, updateDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -9,7 +10,7 @@ import { TestReviewView, type TestDoc } from './test-review.view';
 
 export default function ReviewGeneratedQuestions() {
   const { user, loading } = useAuth();
-  const router = useRouter();
+  const router = useTransitionRouter();
   const { id } = useParams();
   const testId = id as string;
   const [testData, setTestData] = useState<TestDoc | null>(null);

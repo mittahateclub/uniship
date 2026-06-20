@@ -1,24 +1,28 @@
 'use client';
+import { useTransitionRouter } from 'next-view-transitions';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import {
   collection, doc, getDoc, getDocs, query, where,
   setDoc, deleteDoc, limit, serverTimestamp,
 } from 'firebase/firestore';
+import { getCache, setCache } from '@/lib/page-cache';
 import { PracticeView, type PracticeProblem } from './practice.view';
+
+type CachedPractice = { problems: PracticeProblem[]; solved: string[]; pinned: string[] };
 
 export default function PracticeListPage() {
   const { user, loading: authLoading } = useAuth();
-  const router = useRouter();
-  const [problems, setProblems] = useState<PracticeProblem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const router = useTransitionRouter();
+  const cacheKey = user ? `practice:${user.uid}` : '';
+  const [problems, setProblems] = useState<PracticeProblem[]>(() => (cacheKey ? getCache<CachedPractice>(cacheKey)?.problems : undefined) ?? []);
+  const [loading, setLoading] = useState(() => !(cacheKey && getCache<CachedPractice>(cacheKey)));
   const [searchQuery, setSearchQuery] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState<string>('All');
-  const [solvedIds, setSolvedIds] = useState<Set<string>>(new Set());
-  const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
+  const [solvedIds, setSolvedIds] = useState<Set<string>>(() => new Set((cacheKey ? getCache<CachedPractice>(cacheKey)?.solved : undefined) ?? []));
+  const [pinnedIds, setPinnedIds] = useState<Set<string>>(() => new Set((cacheKey ? getCache<CachedPractice>(cacheKey)?.pinned : undefined) ?? []));
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -41,12 +45,15 @@ export default function PracticeListPage() {
 
       const items = problemsSnap.docs.map(d => ({ id: d.id, ...d.data() } as PracticeProblem));
       items.sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
+      const solved = subsSnap.docs.map(d => d.data().problemId as string);
+      const pinned = pinsSnap.docs.map(d => d.data().problemId as string);
       setProblems(items);
-      setSolvedIds(new Set(subsSnap.docs.map(d => d.data().problemId as string)));
-      setPinnedIds(new Set(pinsSnap.docs.map(d => d.data().problemId as string)));
+      setSolvedIds(new Set(solved));
+      setPinnedIds(new Set(pinned));
+      if (cacheKey) setCache<CachedPractice>(cacheKey, { problems: items, solved, pinned });
       setLoading(false);
     })();
-  }, [user]);
+  }, [user, cacheKey]);
 
   const togglePin = async (e: React.MouseEvent, problemId: string) => {
     e.stopPropagation();

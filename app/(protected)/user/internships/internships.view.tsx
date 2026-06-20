@@ -1,7 +1,6 @@
 'use client';
+import { Link, useTransitionRouter } from 'next-view-transitions';
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { buildResumePrefill, setResumePrefill } from '@/lib/resume-prefill';
 import Bookmark from '@/components/icons/Bookmark';
 import BookmarkCheck from '@/components/icons/BookmarkCheck';
@@ -83,7 +82,7 @@ export function InternshipsView({
   applyingIds,
   onApply,
 }: InternshipsViewProps) {
-  const router = useRouter();
+  const router = useTransitionRouter();
   const generateResume = (item: CollegeEvent) => {
     setResumePrefill(buildResumePrefill({
       title: item.title, company: item.companyName, location: item.location, description: item.description,
@@ -150,7 +149,7 @@ export function InternshipsView({
             const TypeIcon = cfg.icon;
 
             return (
-              <div key={key} className="group flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 px-4 sm:px-5 py-4 border-b border-[var(--border-subtle)] last:border-b-0 transition-colors duration-150 hover:bg-[var(--bg-elevated)]">
+              <div key={key} data-internship-card className="group flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 px-4 sm:px-5 py-4 border-b border-[var(--border-subtle)] last:border-b-0 transition-colors duration-150 hover:bg-[var(--bg-elevated)]">
                 {/* Date block */}
                 {d && (
                   <div className="hidden sm:flex flex-col items-center justify-center w-11 shrink-0 pt-0.5">
@@ -179,7 +178,7 @@ export function InternshipsView({
                     )}
                   </div>
 
-                  <h2 className="text-[14px] font-semibold text-[var(--text-primary)] tracking-[-0.01em] mb-1">{item.title}</h2>
+                  <h2 data-internship-title className="text-[14px] font-semibold text-[var(--text-primary)] tracking-[-0.01em] mb-1">{item.title}</h2>
                   <p className="text-[12.5px] text-[var(--text-muted)] line-clamp-2 mb-2 leading-relaxed">{item.description}</p>
 
                   <div className="flex flex-wrap gap-3 text-[11.5px] text-[var(--text-faint)]">
@@ -222,6 +221,14 @@ export function InternshipsView({
                   {item.source === 'internship' && (
                     <Link
                       href={`/user/internships/${item.id}`}
+                      onClick={(e) => {
+                        // Tag the clicked card's title so it morphs into the
+                        // detail page <h1> during the view transition. Set just
+                        // before navigation so only this one element is named.
+                        const card = e.currentTarget.closest('[data-internship-card]');
+                        const title = card?.querySelector('[data-internship-title]');
+                        if (title instanceof HTMLElement) title.style.viewTransitionName = 'internship-hero';
+                      }}
                       className="btn-primary !rounded-[10px] text-[11.5px] !px-3.5 !py-1.5"
                     >
                       Details

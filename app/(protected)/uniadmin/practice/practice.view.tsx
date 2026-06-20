@@ -7,6 +7,7 @@ import {
   addDoc, collection, doc, getDoc, getDocs, query, where, deleteDoc, updateDoc, serverTimestamp,
 } from 'firebase/firestore';
 import { generatePracticeProblem } from '@/app/actions/generate-practice-problem';
+import { getCache, setCache } from '@/lib/page-cache';
 import Sparkles from '@/components/icons/Sparkles';
 import Plus from '@/components/icons/Plus';
 import Trash2 from '@/components/icons/Trash2';
@@ -129,9 +130,11 @@ function emptyProblem() {
 
 export default function AdminPracticePage() {
   const { user, loading: authLoading } = useAuth();
-  const [universityId, setUniversityId] = useState<string | null>(null);
-  const [problems, setProblems] = useState<PracticeProblem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cacheKey = user ? `unipractice:${user.uid}` : '';
+  const cached = cacheKey ? getCache<{ universityId: string | null; problems: PracticeProblem[] }>(cacheKey) : undefined;
+  const [universityId, setUniversityId] = useState<string | null>(cached?.universityId ?? null);
+  const [problems, setProblems] = useState<PracticeProblem[]>(cached?.problems ?? []);
+  const [loading, setLoading] = useState(!cached);
 
   // Creation mode
   const [mode, setMode] = useState<'list' | 'create' | 'edit'>('list');
@@ -169,10 +172,11 @@ export default function AdminPracticePage() {
         const items = qs.docs.map(d => ({ id: d.id, ...d.data() } as PracticeProblem));
         items.sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
         setProblems(items);
+        if (cacheKey) setCache(cacheKey, { universityId: uid, problems: items });
       }
       setLoading(false);
     })();
-  }, [user]);
+  }, [user, cacheKey]);
 
   const handleAIGenerate = async () => {
     if (!aiTopic.trim()) return;

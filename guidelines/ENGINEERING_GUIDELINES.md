@@ -11,6 +11,8 @@ reference**. For current deployment state, the performance audit, and Firebase i
 - **Firebase** Authentication, Firestore, Cloud Storage. **Firebase Admin** server-side.
 - **Groq SDK** + **LlamaParse** for AI test generation/parsing. **Judge0** for code execution.
 - **Monaco** editor for coding assessments.
+- **`next-view-transitions`** — App Router route crossfades / shared-element morphs (Design
+  Guidelines §5).
 - Node.js 22 (`.nvmrc`); npm. Firebase project `uniship-4c1a1`.
 
 ## 2. Architecture
@@ -49,6 +51,27 @@ the cron secret.** The expected env vars are documented in the root `README.md`.
 - **Listeners.** The closed chat UI uses a lightweight unread listener; the full inbox loads only
   when opened; chat loads the newest 50 then paginates older. Proctoring favors session metadata
   over per-session listeners. Follow this "load detail on demand" pattern.
+- **Client revisit cache.** Controllers fetch on mount with `loading = true`, so without a cache
+  every revisit refetches and flashes a skeleton. `lib/page-cache.ts` is a module-scoped in-memory
+  **stale-while-revalidate** store (persists across client nav, resets on full reload). Pattern:
+  seed state from `getCache<T>(key)` inside `useState` lazy initializers (keeps it `purity`-safe),
+  call `setCache(key, data)` after the fetch, and add `cacheKey` (e.g. `feature:uid:…`) to the
+  effect deps. If a fetch effect re-sets `loading = true` at its *start* (e.g. the uniadmin
+  dashboard), guard it (`if (!getCache(cacheKey)) setLoading(true)`) or the skeleton still flashes.
+  A revisit must **never** re-show a skeleton for data that is already loaded — seed the cached
+  state and keep `loading = false`; the skeleton is only for the genuine first load.
+  Cached: student dashboard/internships/applications/practice/results/calendar/**test-portal**/
+  **resume (AI builder)**/**resume/download (export)**/**profile**; uniadmin
+  dashboard + student-database + **create-test (the "Tests" list)** + **practice** + **profile**;
+  superadmin dashboard + universities + manage-students + manage-uniadmins.
+- **Realtime pages may seed their first paint from the last snapshot.** `proctoring` keeps its
+  `onSnapshot` listeners as the source of truth but writes each snapshot into `lib/page-cache.ts`
+  (merge-write helper) and seeds the displayed state (`universityId`, `sessions`, `recentResults`,
+  `upcomingTests`, `studentInfoMap`) from it, so a revisit paints instantly (no skeleton gated on
+  `universityId`) while the listeners revalidate live. Do **not** treat the cache as truth for these
+  pages — never block a write on it, and never cache a page (like `inbox`) where a stale first
+  paint would be misleading rather than merely early. Pure form pages (`create-event`) have no
+  list to cache.
 - Firebase policy files live in `firebase/`: indexes in `firebase/firestore.indexes.json`, rules
   in `firebase/firestore.rules`, storage rules in `firebase/storage.rules` (paths are wired in the
   root `firebase.json`). **Do not delete remote indexes** just because the CLI says they are not in
@@ -104,6 +127,14 @@ edit the ESLint/TS config to silence a rule — fix the code.
 
 - Icons from `components/icons/` per-file modules — **never** `lucide-react`, never a re-added
   barrel (see Design Guidelines §7).
+- Navigation in protected routes: `Link` + `useTransitionRouter` from `next-view-transitions`
+  (not `next/link` / `next/navigation`) so route changes use the View Transition crossfade. Public
+  routes (landing/login) and `RoleGuard` stay on `next/*` — they're outside the provider (Design
+  Guidelines §5).
+- **Logout** uses `window.location.assign('/')` (a hard navigation), **not** the transition router:
+  signing out flips auth to null and the cross-layout jump to landing stalls the View Transition on
+  the old snapshot. The hard nav is snappy (landing is prerendered) and cleanly tears down auth
+  listeners + the in-memory page cache.
 
 ## 7. Performance budgets
 

@@ -1,7 +1,7 @@
 'use client';
+import { useTransitionRouter } from 'next-view-transitions';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
   collection, getDocs, query, where, doc, updateDoc, documentId,
@@ -22,6 +22,7 @@ import User from '@/components/icons/User';
 import Pencil from '@/components/icons/Pencil';
 import { StatBar } from '@/components/StatBar';
 import { Modal, ModalHeader, ModalBody } from '@/components/Modal';
+import { getCache, setCache } from '@/lib/page-cache';
 
 interface StudentData {
   id: string;
@@ -42,16 +43,19 @@ interface University {
   verified: boolean;
 }
 
+type CachedStudents = { students: StudentData[]; universities: University[] };
+
 const ghostBtn = 'px-2.5 py-1.5 rounded-[8px] text-[11px] font-semibold border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-active)] hover:text-[var(--text-primary)] transition-colors';
 const fieldLabel = 'block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5';
 const PAGE_SIZE = 50;
 
 export default function ManageStudentsPage() {
   const { user, loading } = useAuth();
-  const router = useRouter();
-  const [students, setStudents] = useState<StudentData[]>([]);
-  const [universities, setUniversities] = useState<University[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
+  const router = useTransitionRouter();
+  const cacheKey = user ? `superadmin-students:${user.uid}` : '';
+  const [students, setStudents] = useState<StudentData[]>(() => (cacheKey ? getCache<CachedStudents>(cacheKey)?.students : undefined) ?? []);
+  const [universities, setUniversities] = useState<University[]>(() => (cacheKey ? getCache<CachedStudents>(cacheKey)?.universities : undefined) ?? []);
+  const [loadingData, setLoadingData] = useState(() => !(cacheKey && getCache<CachedStudents>(cacheKey)));
   const [searchQuery, setSearchQuery] = useState('');
   const [viewingStudent, setViewingStudent] = useState<StudentData | null>(null);
   const [editingStudent, setEditingStudent] = useState<StudentData | null>(null);
@@ -87,6 +91,7 @@ export default function ManageStudentsPage() {
         setLastStudentDoc(studentsSnap.docs.at(-1) ?? null);
         setHasMore(studentsSnap.size === PAGE_SIZE);
         setUniversities(universityList);
+        if (cacheKey) setCache<CachedStudents>(cacheKey, { students: studentList, universities: universityList });
       } catch (error) {
         console.error('Error fetching students:', error);
       } finally {
@@ -95,7 +100,7 @@ export default function ManageStudentsPage() {
     }
 
     if (user) fetchData();
-  }, [user]);
+  }, [user, cacheKey]);
 
   const loadMore = async () => {
     if (!lastStudentDoc || loadingMore) return;

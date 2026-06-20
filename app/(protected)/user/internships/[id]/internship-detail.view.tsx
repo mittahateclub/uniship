@@ -1,6 +1,6 @@
 'use client';
+import { Link } from 'next-view-transitions';
 
-import Link from 'next/link';
 import ArrowLeft from '@/components/icons/ArrowLeft';
 import MapPin from '@/components/icons/MapPin';
 import CalendarDays from '@/components/icons/CalendarDays';
@@ -60,7 +60,7 @@ export function InternshipDetailView({ loading, internship, hasApplied, isApplyi
               <Building2 size={14} className="text-[var(--accent-orange)]" />
               <span className="text-[12.5px] font-medium text-[var(--accent-orange)]">{internship.companyName}</span>
             </div>
-            <h1 className="text-[26px] font-semibold tracking-[-0.025em] text-[var(--text-primary)] leading-tight">{internship.role}</h1>
+            <h1 style={{ viewTransitionName: 'internship-hero' }} className="text-[26px] font-semibold tracking-[-0.025em] text-[var(--text-primary)] leading-tight">{internship.role}</h1>
             <p className="text-[var(--text-tertiary)] mt-1.5 text-[13.5px] flex items-center gap-1.5">
               <MapPin size={13} className="text-[var(--text-faint)]" />{internship.location}
             </p>

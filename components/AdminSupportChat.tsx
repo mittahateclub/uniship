@@ -121,7 +121,9 @@ export default function AdminSupportChat() {
       )}
 
       {open && (
-        <div className="fixed bottom-5 right-5 z-40 w-[min(390px,calc(100vw-2rem))] h-[min(580px,calc(100vh-6rem))] flex flex-col rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-2xl shadow-black/40 overflow-hidden animate-fade-in">
+        <>
+        <div className="popover-scrim backdrop-blur-[3px] z-40" onClick={() => setOpen(false)} aria-hidden="true" />
+        <div className="fixed bottom-5 right-5 z-50 w-[min(390px,calc(100vw-2rem))] h-[min(580px,calc(100vh-6rem))] flex flex-col rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-[0_24px_64px_-16px_rgba(0,0,0,0.6)] overflow-hidden popover-in-br">
           {selected ? (
             /* ── Thread mode ── */
             <>
@@ -237,6 +239,7 @@ export default function AdminSupportChat() {
             </>
           )}
         </div>
+        </>
       )}
     </>
   );

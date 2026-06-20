@@ -1,8 +1,7 @@
 'use client';
+import { Link, useTransitionRouter } from 'next-view-transitions';
 
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { EventComments } from '@/components/EventComments';
 import { buildResumePrefill, setResumePrefill } from '@/lib/resume-prefill';
 import MessageCircle from '@/components/icons/MessageCircle';
@@ -99,7 +98,7 @@ function PostCard({
   const [expanded, setExpanded] = useState(false);
   const [overflowing, setOverflowing] = useState(false);
   const descRef = useRef<HTMLParagraphElement>(null);
-  const router = useRouter();
+  const router = useTransitionRouter();
   const source = post.source ?? 'event';
   const isInternship = source === 'internship';
   const cfg = TYPE_CONFIG[post.type] || TYPE_CONFIG.event;

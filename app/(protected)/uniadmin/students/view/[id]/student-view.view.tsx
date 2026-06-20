@@ -1,12 +1,12 @@
 'use client';
+import { Link, useTransitionRouter } from 'next-view-transitions';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { collection, doc, getDoc, getDocs, limit, query, updateDoc, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { calculateATSScore } from '@/app/(protected)/user/resume/ats-score';
-import Link from 'next/link';
 import { DetailSkeleton } from '@/components/Skeleton';
 import AlertCircle from '@/components/icons/AlertCircle';
 import ArrowLeft from '@/components/icons/ArrowLeft';
@@ -426,7 +426,7 @@ function AdminResumePreview({ data }: { data: ResumeItem }) {
 
 export default function StudentViewPage({ studentId }: { studentId?: string }) {
   const { user, loading } = useAuth();
-  const router = useRouter();
+  const router = useTransitionRouter();
   const params = useParams<{ id: string }>();
   const id = studentId ?? params?.id;
   // Embedded (in-page, inside the Students tab) vs standalone route.

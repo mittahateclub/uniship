@@ -1,6 +1,6 @@
 'use client';
+import { Link } from 'next-view-transitions';
 
-import Link from 'next/link';
 import ClipboardCheck from '@/components/icons/ClipboardCheck';
 import UserPlus from '@/components/icons/UserPlus';
 import CalendarPlus from '@/components/icons/CalendarPlus';

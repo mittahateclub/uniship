@@ -1,18 +1,21 @@
 'use client';
+import { useTransitionRouter } from 'next-view-transitions';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { getCache, setCache } from '@/lib/page-cache';
 import { UniadminProfileView, type UniadminProfile } from './profile.view';
 
 export default function UniadminProfilePage() {
   const { user, loading } = useAuth();
-  const router = useRouter();
-  const [profileData, setProfileData] = useState<UniadminProfile | null>(null);
+  const router = useTransitionRouter();
+  const cacheKey = user ? `uniprofile:${user.uid}` : '';
+  const cached = cacheKey ? getCache<UniadminProfile>(cacheKey) : undefined;
+  const [profileData, setProfileData] = useState<UniadminProfile | null>(() => cached ?? null);
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({ name: '', phone: '' });
+  const [formData, setFormData] = useState({ name: cached?.name || '', phone: cached?.phone || '' });
   const [message, setMessage] = useState('');
 
   useEffect(() => {
@@ -28,11 +31,12 @@ export default function UniadminProfilePage() {
           const data = docSnap.data();
           setProfileData(data);
           setFormData({ name: data.name || '', phone: data.phone || '' });
+          if (cacheKey) setCache<UniadminProfile>(cacheKey, data);
         }
       }
     }
     fetchProfile();
-  }, [user]);
+  }, [user, cacheKey]);
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();

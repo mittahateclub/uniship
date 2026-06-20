@@ -1,6 +1,6 @@
 'use client';
+import { Link } from 'next-view-transitions';
 
-import Link from 'next/link';
 import Pencil from '@/components/icons/Pencil';
 import X from '@/components/icons/X';
 import Shield from '@/components/icons/Shield';

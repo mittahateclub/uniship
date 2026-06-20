@@ -1,16 +1,16 @@
 'use client';
+import { useTransitionRouter } from 'next-view-transitions';
 
 import { useState, useEffect, use } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { useRouter } from 'next/navigation';
 import { ResultReviewView, type ResultDoc } from './result-review.view';
 
 export default function ReviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { user } = useAuth();
-  const router = useRouter();
+  const router = useTransitionRouter();
   const [result, setResult] = useState<ResultDoc | null>(null);
   const [loading, setLoading] = useState(true);
 

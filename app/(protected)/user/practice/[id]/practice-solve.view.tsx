@@ -1,8 +1,9 @@
 'use client';
+import { useTransitionRouter } from 'next-view-transitions';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { authHeaders } from '@/lib/auth-client';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, addDoc, collection, getDocs, limit, query, where, serverTimestamp } from 'firebase/firestore';
@@ -84,7 +85,7 @@ interface RunResult {
 export default function PracticeSolvePage() {
   const { user, loading: authLoading } = useAuth();
   const { id } = useParams();
-  const router = useRouter();
+  const router = useTransitionRouter();
 
   const [problem, setProblem] = useState<Problem | null>(null);
   const [loading, setLoading] = useState(true);

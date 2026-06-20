@@ -7,12 +7,14 @@ import {
   type DocumentData, type QueryDocumentSnapshot,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { getCache, setCache } from '@/lib/page-cache';
 import { ApplicationsView, type Application } from './applications.view';
 
 export default function ApplicationsPage() {
   const { user, loading: authLoading } = useAuth();
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cacheKey = user ? `applications:${user.uid}` : '';
+  const [applications, setApplications] = useState<Application[]>(() => (cacheKey ? getCache<Application[]>(cacheKey) : undefined) ?? []);
+  const [loading, setLoading] = useState(() => !(cacheKey && getCache<Application[]>(cacheKey)));
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -35,6 +37,7 @@ export default function ApplicationsPage() {
         setApplications(fetched);
         setLastDoc(querySnapshot.docs.at(-1) ?? null);
         setHasMore(querySnapshot.size === 50);
+        if (cacheKey) setCache<Application[]>(cacheKey, fetched);
       } catch (error) {
         console.error("Error fetching applications:", error);
       } finally {
@@ -45,7 +48,7 @@ export default function ApplicationsPage() {
     if (!authLoading) {
       fetchApplications();
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, cacheKey]);
 
   const loadMore = async () => {
     if (!user || !lastDoc || loadingMore) return;

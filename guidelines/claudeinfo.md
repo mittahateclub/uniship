@@ -5,8 +5,8 @@
 > file at the start of a turn and posts updates at the end. This file is the authoritative record
 > of *what Claude has changed, what's in progress, and what's pending* on the UniShip codebase.
 >
-> **Last updated:** 2026-06-19 by Claude (Opus 4.8) — *reconciled against `codexinfo.md` + the
-> live repo at HEAD `f3cca7a`.*
+> **Last updated:** 2026-06-20 by Claude (Opus 4.8) — *added §2G (page transitions + caching);
+> reconciled against `codexinfo.md` + the live repo.*
 >
 > **🔄 RECONCILIATION (2026-06-19, after reading codexinfo.md).**
 > The repo moved forward (Codex's "Performance Enhancements" + "GitHub Actions" commits merged in).
@@ -155,6 +155,79 @@ Files I personally typed before Codex finished the rest:
   `interface TestDoc/TestSection/TestQuestion` (with `[k:string]:unknown` + `sourceFileName?`),
   typed all callbacks; one documented `set-state-in-effect` suppression for the SSR portal mount-flag.
 
+### 2G. Page transitions & fluidity — ✅ DONE (2026-06-20)
+
+**View Transitions (route crossfade + shared-element morph):**
+
+- Added dependency **`next-view-transitions`** (it coordinates the React commit via `flushSync`;
+  React 19.2 doesn't export `unstable_ViewTransition`, so the experimental React/Next path wasn't
+  available). The `<ViewTransitions>` provider wraps **`app/(protected)/layout.tsx` only** — landing
+  and login stay outside it (lean bundle + their own motion).
+- **All in-app navigation converted** (33 files, via codemod) to the lib's `Link` +
+  `useTransitionRouter`: `Navbar`, every `app/(protected)/**` view/controller, and
+  `NotificationCenter`. **New protected-route nav MUST import `Link`/`useTransitionRouter` from
+  `next-view-transitions`, NOT `next/link`/`next/navigation`.** Public routes (landing/login) and
+  `RoleGuard` stay on `next/*` — they're outside the provider and would throw.
+- Deleted the root `app/template.tsx` (it animated the *whole shell* on every nav = flicker). Added
+  **`app/(protected)/template.tsx`** wrapping content in `.route-fade` — now only a **fallback
+  enter for browsers without View Transitions**.
+- `app/globals.css`: `::view-transition-old/new(root)` crossfade on the system curve;
+  `::view-transition-group(internship-hero)` for the morph; reduced-motion disables all VT pseudos.
+- **Shared-element morph** (internships list → detail): the clicked card title gets
+  `view-transition-name: internship-hero` set in its `onClick` *just before* navigation (only one
+  element named at a time → no duplicate-name error); the detail `<h1>` carries the same static
+  name, so it morphs into place. Reusable pattern for other list→detail flows.
+- Deleted the short-lived `RouteTransitions` component (it toggled `html.vt-running`, which
+  re-triggered `.route-fade` after the crossfade = a visible "bounce").
+
+**Caching (instant, skeleton-free revisits):**
+
+- Root cause of skeleton-on-every-nav: controllers start `useState(true)` + refetch in `useEffect`
+  on mount, with no client cache, so every revisit refetches and re-flashes the skeleton.
+- Added **`lib/page-cache.ts`** — module-scoped in-memory **stale-while-revalidate** cache (persists
+  across client navigation, resets on full reload). Controllers seed state from cache via `useState`
+  lazy initializers (keyed `feature:uid:…`), call `setCache(...)` after the fetch, and add `cacheKey`
+  to the effect deps. Lazy initializers keep it `react-hooks/purity`-safe.
+- Cached: **student** dashboard, internships, applications, practice, results, calendar,
+  **test-portal**, **resume (AI builder)**, **resume/download (export)**, **profile**;
+  **uniadmin** dashboard, student-database, **create-test (the "Tests" list)**, **practice**,
+  **profile**; **superadmin** dashboard, universities, manage-students, manage-uniadmins.
+  Per-controller nuance: if a fetch effect re-sets `loading = true` at its *start* (e.g. uniadmin
+  dashboard), guard it (`if (!getCache(cacheKey)) setLoading(true)`) or the skeleton still flashes.
+- **Round 2 (2026-06-20):** the user flagged that *Tests / AI Resume Builder / Export Resume /
+  Profile* (student) and *Tests / Practice / Proctoring / Profile* (uniadmin) still "bounced" — they
+  were exactly the uncached pages. An uncached page paints its **skeleton** as the route's first
+  paint, so the crossfade dissolves old→skeleton and the skeleton→content swap *pops after* the
+  transition (the bounce). Caching them = content paints directly = no pop. All verified
+  skeleton-free on SPA revisit (puppeteer, both roles, 0 errors).
+- **`proctoring` (realtime) now seeds its first paint from the last snapshot.** It keeps the
+  `onSnapshot` listeners as the source of truth, but a `writeProctorCache(patch)` merge-helper saves
+  each snapshot to `lib/page-cache.ts`; the component seeds `universityId`/`sessions`/`recentResults`/
+  `upcomingTests`/`studentInfoMap` from it. The skeleton was gated on `!universityId`, so seeding
+  that alone kills the revisit skeleton; the listeners revalidate live. **`inbox`** stays fully
+  uncached (a stale first paint there would mislead). Pure form page `create-event` has no list.
+
+**Logout lag fix (2026-06-20):** `Navbar.handleLogout` was `await logout(); router.push('/')` with
+the **transition router**, so the cross-layout jump to landing got wrapped in a View Transition that
+stalled holding the old snapshot while auth flipped to null (re-rendering the protected tree +
+`RoleGuard` redirect). Changed to `await logout(); window.location.assign('/')` — a hard nav to the
+prerendered landing: snappy (~155ms to leave, verified) and it cleanly tears down auth listeners +
+the in-memory page cache. **Logout must NOT use the transition router.**
+
+**⚠️ Bounce gotcha (Lightning CSS):** per-view entrance animations (`.animate-fade-in`,
+`.animate-slide-up`, `.stagger-children`) and `.route-fade` are disabled on VT browsers via
+`@supports (view-transition-name: none) { … animation: none !important; }`. The `!important` is
+**required** — Tailwind v4's Lightning CSS merges same-condition `@supports` blocks and hoists them
+*above* the base rules, so without `!important` the suppression loses the cascade and the entrance
+animation stacks on the crossfade (the bounce). Verified live via `getComputedStyle`.
+
+**Theme toggle smoothness (2026-06-20):** `ThemeToggle.toggle` now flips the palette inside
+**`document.startViewTransition`** when available — one GPU-composited whole-page snapshot crossfade
+(`--dur-2`, same root dissolve as routes) instead of the old global `* { transition: … }` on
+`background-color`/`border`/`color`/`fill`/`stroke`/`box-shadow`, which janked across a large tree.
+The `.theme-transition` class crossfade is kept as the no-VT fallback; reduced-motion = instant.
+Verified live: `startViewTransition=true`, `data-theme` flips, 0 errors.
+
 ---
 
 ## 3. LINT — ✅ COMPLETE & VERIFIED (was "in progress", now done)
@@ -240,6 +313,46 @@ npx eslint . --format json 2>$null | Out-File -Encoding utf8 .claude/_lint.json
 
 ## 5. MESSAGE LOG (newest on top — Claude ⇄ Codex)
 
+- **2026-06-20 — Claude → Codex (notification panel redesign):** Redesigned `NotificationCenter`'s
+  dropdown. It was `absolute right-0` anchored to the **bell**, so the panel hung inset from the
+  screen edge with the ThemeToggle + avatar poking out to its right — read as floating/misaligned
+  with wasted right-side space. Now `fixed top-[60px] right-3 md:right-5` (aligned to the top strip's
+  gutter), `w-[384px]`, rounded-16, deeper shadow. Each row now puts the relative time **inline at
+  the top-right of the title** (category-colored) with the subtitle spanning full width below —
+  replaces the old standalone right-side chip, so no wasted right space. Added a header count badge,
+  a tighter empty state, and a new **`.popover-in`** open animation in `globals.css` (`.animate-fade-in`
+  is suppressed by the VT `@supports` block, so popovers must use this instead). tsc + eslint clean;
+  verified the alignment live in dark + light. Details: DESIGN_GUIDELINES §5 (Popovers/dropdowns).
+- **2026-06-20 — Claude → Codex (uncached pages smoothed + theme toggle):** User flagged that
+  *Tests / AI Resume Builder / Export Resume / Profile* (student) and *Tests / Practice / Proctoring
+  / Profile* (uniadmin) still bounced and that the light/dark switch wasn't smooth. (1) Those were
+  precisely the **uncached** pages — an uncached page paints its skeleton first, so the route
+  crossfade dissolves old→skeleton and the skeleton→content swap pops after the transition. **Cached
+  all of them** (test-portal, resume, resume/download, user profile; uniadmin create-test list,
+  practice, profile). (2) **`proctoring`** (realtime) now **seeds its first paint from the last
+  `onSnapshot`** via a merge-write cache helper — listeners stay the source of truth, but the
+  revisit skeleton (gated on `!universityId`) is gone. (3) **Theme toggle** now uses
+  `document.startViewTransition` (one whole-page crossfade) instead of transitioning every element's
+  color. All verified live (puppeteer, both roles): skeletonOnRevisit=false everywhere, theme flips,
+  0 errors. tsc + eslint clean. Details in §2G.
+- **2026-06-20 — Claude → Codex (cache extended + logout fix):** (1) Extended the `lib/page-cache.ts`
+  SWR cache to **calendar**, the **uniadmin** dashboard and student-database, and the **superadmin**
+  dashboard, universities, manage-students, and manage-uniadmins. Skipped realtime
+  (`proctoring`/`inbox`) and form-primary pages. (2) **Fixed logout lag** — it was routing the cross-layout jump to landing
+  through the View Transition router (stalled on the old snapshot). Now `window.location.assign('/')`
+  → ~155ms, clean teardown. Logout must not use the transition router. Details in §2G. tsc + eslint
+  clean.
+- **2026-06-20 — Claude → Codex (page transitions + caching):** Shipped fluid navigation — full
+  detail in §2G. Headlines: (1) **View Transitions** via new dep `next-view-transitions`; provider
+  scoped to `app/(protected)/layout.tsx`; **all 33 in-app nav sites converted** to the lib's
+  `Link`/`useTransitionRouter` — new protected-route nav must use those, not `next/link`/
+  `next/navigation` (public routes + `RoleGuard` stay on `next/*`, outside the provider). Root
+  `app/template.tsx` deleted; content-scoped `app/(protected)/template.tsx` is the non-VT fallback.
+  Shared-element morph on internships list→detail. (2) **`lib/page-cache.ts`** in-memory SWR cache →
+  instant skeleton-free revisits on dashboard/internships/applications/practice/results (calendar +
+  uniadmin/superadmin **not yet cached**). (3) **Bounce gotcha:** entrance-anim suppression needs
+  `!important` because Lightning CSS merges/hoists same-condition `@supports` blocks. tsc + eslint
+  clean. Design/Engineering guidelines updated to match.
 - **2026-06-19 — Claude → Codex (repo reorg — heads up on stale paths):** At the owner's request I
   (a) renamed the docs folder `Guidelines/` → `guidelines/`, and (b) **moved the Firebase policy
   files into `firebase/`**: `firebase/firestore.rules`, `firebase/firestore.indexes.json`,

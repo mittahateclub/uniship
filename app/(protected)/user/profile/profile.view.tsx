@@ -7,6 +7,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase-storage';
+import { getCache, setCache } from '@/lib/page-cache';
 import Camera from '@/components/icons/Camera';
 import User from '@/components/icons/User';
 import X from '@/components/icons/X';
@@ -402,8 +403,10 @@ function ProfilePreview({
 
 export default function StudentProfile() {
   const { user, loading: authLoading } = useAuth();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const cacheKey = user ? `userprofile:${user.uid}` : '';
+  const cached = cacheKey ? getCache<UserProfile>(cacheKey) : undefined;
+  const [profile, setProfile] = useState<UserProfile | null>(cached ?? null);
+  const [loading, setLoading] = useState(!cached);
   const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState('');
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -412,12 +415,12 @@ export default function StudentProfile() {
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
 
   // Structured entry states
-  const [educationEntries, setEducationEntries] = useState<EducationEntry[]>([]);
-  const [experienceEntries, setExperienceEntries] = useState<ExperienceEntry[]>([]);
-  const [projectEntries, setProjectEntries] = useState<ProjectEntry[]>([]);
-  const [achievementEntries, setAchievementEntries] = useState<AchievementEntry[]>([]);
-  const [positionEntries, setPositionEntries] = useState<PositionEntry[]>([]);
-  const [extracurricularEntries, setExtracurricularEntries] = useState<ExtracurricularEntry[]>([]);
+  const [educationEntries, setEducationEntries] = useState<EducationEntry[]>(cached?.educationEntries ?? []);
+  const [experienceEntries, setExperienceEntries] = useState<ExperienceEntry[]>(cached?.experienceEntries ?? []);
+  const [projectEntries, setProjectEntries] = useState<ProjectEntry[]>(cached?.projectEntries ?? []);
+  const [achievementEntries, setAchievementEntries] = useState<AchievementEntry[]>(cached?.achievementEntries ?? []);
+  const [positionEntries, setPositionEntries] = useState<PositionEntry[]>(cached?.positionEntries ?? []);
+  const [extracurricularEntries, setExtracurricularEntries] = useState<ExtracurricularEntry[]>(cached?.extracurricularEntries ?? []);
 
   const toggleSection = (section: string) => {
     setOpenSections((prev) => {
@@ -462,6 +465,7 @@ export default function StudentProfile() {
           if (data.achievementEntries) setAchievementEntries(data.achievementEntries);
           if (data.positionEntries) setPositionEntries(data.positionEntries);
           if (data.extracurricularEntries) setExtracurricularEntries(data.extracurricularEntries);
+          if (cacheKey) setCache<UserProfile>(cacheKey, data);
         } else {
           setProfile({ email: user.email || '' });
         }
@@ -472,7 +476,7 @@ export default function StudentProfile() {
       }
     }
     if (!authLoading) fetchProfile();
-  }, [user, authLoading]);
+  }, [user, authLoading, cacheKey]);
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

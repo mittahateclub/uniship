@@ -221,13 +221,51 @@ h1, h2, h3, h4, h5, h6 {
   transition-delay: var(--reveal-delay, 0ms);
 }
 
-/* Route-level transition (applied by app/template.tsx) */
-@keyframes pageEnter {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+/* Route-level content transition (applied by app/(protected)/template.tsx).
+   Scoped to the page content inside the persistent shell, so only the
+   workspace swaps on navigation — the sidebar and top bar stay put.
+   GPU-only (opacity + translate3d); transform is transient (no fill mode)
+   so position:fixed descendants are never reparented mid-animation. */
+@keyframes routeEnter {
+  from { opacity: 0; transform: translate3d(0, 10px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
 }
-.page-enter {
-  animation: pageEnter var(--dur-2) var(--ease);
+.route-fade {
+  animation: routeEnter var(--dur-2) var(--ease);
+  will-change: transform, opacity;
+}
+/* Where the View Transitions API is supported, every in-app navigation already
+   cross-fades (next-view-transitions), so the per-mount enter is redundant —
+   and re-running it after the transition would cause a visible double "bounce".
+   Disable it there; keep it only as the fallback for browsers without VT. */
+@supports (view-transition-name: none) {
+  /* The View Transition crossfade IS the route transition, so the per-mount
+     enter is redundant and re-running it would double up ("bounce").
+     !important so it wins regardless of CSS-bundler rule ordering/merging. */
+  .route-fade { animation: none !important; }
+}
+
+/* Route cross-fade via the View Transitions API (coordinated by
+   next-view-transitions on Navbar/⌘K navigation). The shell is identical across
+   navigations, so its crossfade is imperceptible — only the workspace content
+   dissolves. Pure opacity (the UA default) keeps the static chrome from shifting. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--dur-2);
+  animation-timing-function: var(--ease);
+}
+/* Shared-element morph (e.g. an internship card title → its detail-page <h1>).
+   The clicked element is tagged `view-transition-name: internship-hero` just
+   before navigation, and the matching detail element carries the same name, so
+   the browser morphs its position/size across the route change. */
+::view-transition-group(internship-hero) {
+  animation-duration: var(--dur-2);
+  animation-timing-function: var(--ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation: none !important; }
 }
 
 /* ── Animations (legacy class contract, system curve) ── */
@@ -267,6 +305,57 @@ h1, h2, h3, h4, h5, h6 {
 .stagger-children > *:nth-child(6) { animation-delay: 0.24s; }
 .stagger-children > *:nth-child(7) { animation-delay: 0.28s; }
 .stagger-children > *:nth-child(8) { animation-delay: 0.32s; }
+
+/* Where View Transitions drive route changes, these per-view mount-entrance
+   animations are redundant and would stack on the crossfade (the residual
+   "bounce"). This block sits AFTER the definitions above so it wins the cascade;
+   the staggered children get opacity reset so they stay visible. Kept as the
+   fallback on browsers without View Transitions. */
+@supports (view-transition-name: none) {
+  .animate-fade-in,
+  .animate-slide-up { animation: none !important; }
+  .stagger-children > * { animation: none !important; opacity: 1 !important; }
+}
+
+/* Popover / dropdown open (notification panel, chat, menus). Component-scoped — it
+   only runs when a user opens the popover, never on route navigation, so it is
+   exempt from the VT bounce-suppression above and animates on every browser. */
+@keyframes popoverIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.popover-in {
+  animation: popoverIn var(--dur-1) var(--ease);
+  transform-origin: top right;
+}
+/* Bottom-anchored variant (floating chat widgets that grow up from bottom-right). */
+@keyframes popoverInBr {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.popover-in-br {
+  animation: popoverInBr var(--dur-2) var(--ease);
+  transform-origin: bottom right;
+}
+/* Soft scrim behind a popover so it reads as an intentional layer instead of a
+   card pasted on the content. Lighter than the cmdk modal overlay (these are
+   side panels, not centered dialogs), plus a small blur to push the page back. */
+@keyframes scrimIn { from { opacity: 0; } to { opacity: 1; } }
+.popover-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  animation: scrimIn var(--dur-1) var(--ease);
+}
+[data-theme="light"] .popover-scrim {
+  background: rgba(22, 24, 29, 0.25);
+}
+/* NB: the blur is applied with the Tailwind `backdrop-blur-*` utility on the
+   element, NOT `backdrop-filter` here — Lightning CSS (Tailwind v4) strips a raw
+   `backdrop-filter` declaration from this file, but keeps its own utility. */
+@media (prefers-reduced-motion: reduce) {
+  .popover-in, .popover-in-br, .popover-scrim { animation: none; }
+}
 
 /* Skeleton shimmer */
 @keyframes shimmer {

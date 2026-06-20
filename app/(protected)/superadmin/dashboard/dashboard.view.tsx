@@ -1,6 +1,6 @@
 'use client';
+import { Link } from 'next-view-transitions';
 
-import Link from 'next/link';
 import UserPlus from '@/components/icons/UserPlus';
 import ShieldCheck from '@/components/icons/ShieldCheck';
 import Users from '@/components/icons/Users';

@@ -99,6 +99,71 @@ radius scale is intentionally restored.
   compositor. Toggles animate `translate-x`, not `left`.
 - Respect `prefers-reduced-motion` (landing has a static fallback).
 
+### Route transitions (View Transitions API)
+
+The authenticated app cross-fades between pages with the **View Transitions API**, driven by the
+`next-view-transitions` library (its `<ViewTransitions>` provider wraps `app/(protected)/layout.tsx`
+only — landing/login are excluded).
+
+- **All in-app navigation uses the library** so every route change cross-fades. In any
+  protected-route component, import `Link` and `useTransitionRouter` from `next-view-transitions`,
+  **not** `next/link` / `next/navigation`. (Public routes — landing, login — and `RoleGuard` stay on
+  `next/*`; they live outside the provider and would throw otherwise.)
+- The crossfade is whole-page (`::view-transition-old/new(root)`), but the shell is identical across
+  pages so only the workspace content visibly dissolves. Tuned to the system `--ease`/`--dur-2`.
+- **`app/(protected)/template.tsx`** wraps content in `.route-fade` as a **fallback enter for
+  browsers without View Transitions only** (Firefox/Safari today). Do not add a root `template.tsx`
+  (it animates the whole shell = flicker).
+- **Shared-element morph (list → detail):** set `view-transition-name` on the clicked element in its
+  `onClick` *just before* navigation (only one element named at a time, or you get a duplicate-name
+  error), and give the destination element the same static name. Reference: internships card title →
+  detail `<h1>`, name `internship-hero` (`::view-transition-group(internship-hero)`).
+- **⚠️ Bounce gotcha:** per-view entrance animations (`.animate-fade-in`, `.animate-slide-up`,
+  `.stagger-children`) and `.route-fade` are disabled on VT browsers via
+  `@supports (view-transition-name: none) { … animation: none !important; }`. The `!important` is
+  **required** — Tailwind v4's Lightning CSS merges same-condition `@supports` blocks and hoists them
+  above the base rules, so without it the entrance animation stacks on the crossfade (a visible
+  double "bounce"). Don't drop the `!important`.
+- **Why the flagged pages used to "bounce":** an *uncached* page paints its **skeleton** first, so
+  the crossfade dissolves old→skeleton and then the skeleton→content swap pops *after* the
+  transition with no motion — that pop reads as a bounce. The fix is the page cache (Engineering
+  Guidelines §4): a cached revisit paints content directly, so the crossfade is the only motion.
+  Keep new data pages cached so they match the smooth ones.
+
+### Theme toggle (light ↔ dark)
+
+- `ThemeToggle` switches the palette inside **`document.startViewTransition`** when available — one
+  GPU-composited crossfade of the whole-page snapshot (the same root dissolve routes use, `--dur-2`).
+  Do **not** go back to transitioning every element's color: a global `* { transition: … }` on
+  `background-color`/`border`/`color`/`fill`/`stroke`/`box-shadow` janks across a large tree.
+- Fallback (browsers without View Transitions): the `.theme-transition` class adds that scoped color
+  transition for ~380ms, with a forced reflow so it commits before the palette flips. Reduced-motion
+  users get an instant switch (no transition either way).
+
+### Popovers / dropdowns
+
+- Open animation uses **`.popover-in`** (`@keyframes popoverIn`, `transform-origin: top right`) for
+  top-anchored panels and **`.popover-in-br`** (origin bottom-right) for the bottom-right floating chat
+  widgets — **not** `.animate-fade-in`, which is killed by the VT bounce-suppression `@supports` block.
+  These are component-scoped (only run on user open, never on route nav) so they're exempt and animate on
+  every browser; reduced-motion disables them.
+- **Scrim behind every popover.** Floating panels (notification, both support chats) render a
+  **`.popover-scrim`** sibling first (`fixed inset-0`, soft dark/﻿light dim, `z-40`, click closes) with the
+  panel above it at `z-50`. Without it an opaque card floating over the page content reads as "pasted on"
+  and looks off; the scrim makes it an intentional layer. Keep it lighter than the cmdk modal overlay —
+  these are side panels, not centered dialogs.
+- **⚠️ Lightning CSS strips a raw `backdrop-filter` from `globals.css`** (Tailwind v4 engine drops the
+  declaration — confirmed via the compiled `cssRules`). Apply the blur with the **Tailwind
+  `backdrop-blur-[3px]` utility on the element instead** (the engine keeps its own utility). `.popover-scrim`
+  therefore carries only the dim/position; the blur lives in the className. The blur is what gives
+  separation in **dark** mode — a dark dim over the near-black canvas is nearly invisible on its own.
+- **Anchor floating panels to the chrome's right gutter, not to the trigger.** The notification panel is
+  `fixed top-[60px] right-3 md:right-5` (matching the top strip's `px-3 md:px-5`), `w-[340px]`, so its right
+  edge lines up with the avatar/screen edge. Anchoring it `absolute right-0` to the bell left the
+  ThemeToggle + avatar poking out to its right — it read as floating/misaligned with wasted space. The
+  outside-click handler still works because the `fixed` panel is a DOM descendant of the trigger's `ref`
+  wrapper; the scrim also closes on click.
+
 ## 6. Component & layout patterns
 
 - **App shell.** Linear-app frame: `--bg-canvas` outer field, transparent borderless sidebar

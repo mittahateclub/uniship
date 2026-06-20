@@ -1,14 +1,13 @@
 'use client';
+import { Link, useTransitionRouter } from 'next-view-transitions';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   collection, addDoc, serverTimestamp, doc, getDoc, getDocs, limit, query,
   where, updateDoc, deleteDoc, Timestamp, documentId, orderBy, startAfter,
   type DocumentData, type QueryDocumentSnapshot,
 } from 'firebase/firestore';
-import Link from 'next/link';
 import { db } from '@/lib/firebase';
 import ChevronLeft from '@/components/icons/ChevronLeft';
 import ChevronRight from '@/components/icons/ChevronRight';
@@ -214,7 +213,7 @@ function DateTimePicker({ value, onChange }: { value: string; onChange: (val: st
 
 export default function CreateEventPage() {
   const { user, loading } = useAuth();
-  const router = useRouter();
+  const router = useTransitionRouter();
   const [adminUnivId, setAdminUnivId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({

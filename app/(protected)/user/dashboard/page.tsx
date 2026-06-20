@@ -1,27 +1,31 @@
 // app/(protected)/user/dashboard/page.tsx
 'use client';
+import { useTransitionRouter } from 'next-view-transitions';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
 import { collection, query, where, getDocs, getCountFromServer, limit, addDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { DashboardView, type FeedPost, type SidebarEvent, type Suggestion } from './dashboard.view';
 import { toDate, effectiveExpiry, eventTargetsStudent, appliedEventIds, applyToEvent, recencyPoints, urgencyPoints } from '@/lib/college';
+import { getCache, setCache } from '@/lib/page-cache';
+
+type CachedDash = { posts: FeedPost[]; upcoming: SidebarEvent[]; suggestions: Suggestion[]; trending: string[]; saved: [string, string][]; applied: string[] };
 
 export default function UserDashboard() {
   const { user, universityId, userName, userPhotoURL, universityName, branch, gpa, loading } = useAuth();
-  const router = useRouter();
+  const router = useTransitionRouter();
 
-  const [posts, setPosts] = useState<FeedPost[]>([]);
-  const [upcoming, setUpcoming] = useState<SidebarEvent[]>([]);
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [trendingIds, setTrendingIds] = useState<Set<string>>(new Set());
-  const [savedIds, setSavedIds] = useState<Map<string, string>>(new Map());
+  const cacheKey = user ? `dashboard:${user.uid}:${universityId ?? ''}` : '';
+  const [posts, setPosts] = useState<FeedPost[]>(() => (cacheKey ? getCache<CachedDash>(cacheKey)?.posts : undefined) ?? []);
+  const [upcoming, setUpcoming] = useState<SidebarEvent[]>(() => (cacheKey ? getCache<CachedDash>(cacheKey)?.upcoming : undefined) ?? []);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>(() => (cacheKey ? getCache<CachedDash>(cacheKey)?.suggestions : undefined) ?? []);
+  const [trendingIds, setTrendingIds] = useState<Set<string>>(() => new Set((cacheKey ? getCache<CachedDash>(cacheKey)?.trending : undefined) ?? []));
+  const [savedIds, setSavedIds] = useState<Map<string, string>>(() => new Map((cacheKey ? getCache<CachedDash>(cacheKey)?.saved : undefined) ?? []));
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
-  const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
+  const [appliedIds, setAppliedIds] = useState<Set<string>>(() => new Set((cacheKey ? getCache<CachedDash>(cacheKey)?.applied : undefined) ?? []));
   const [applyingIds, setApplyingIds] = useState<Set<string>>(new Set());
-  const [dataLoading, setDataLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(() => !(cacheKey && getCache<CachedDash>(cacheKey)));
 
   useEffect(() => {
     if (!loading && !user) router.push('/');
@@ -154,6 +158,14 @@ export default function UserDashboard() {
         savedSnap.docs.forEach((d) => { const x = d.data(); map.set(`${x.source}-${x.eventId}`, d.id); });
         setSavedIds(map);
         setAppliedIds(applied);
+        if (cacheKey) setCache<CachedDash>(cacheKey, {
+          posts: ranked.map((r) => r.post),
+          upcoming: upcomingList.slice(0, 5),
+          suggestions: sugg,
+          trending: [...trending],
+          saved: [...map],
+          applied: [...applied],
+        });
       } catch (error) {
         console.error('Error fetching feed:', error);
       } finally {
@@ -161,7 +173,7 @@ export default function UserDashboard() {
       }
     }
     if (!loading && user) fetchFeed();
-  }, [user, universityId, branch, gpa, loading]);
+  }, [user, universityId, branch, gpa, loading, cacheKey]);
 
   const onToggleSave = async (post: FeedPost) => {
     if (!user) return;

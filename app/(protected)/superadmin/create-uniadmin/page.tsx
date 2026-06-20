@@ -1,7 +1,7 @@
 'use client';
+import { useTransitionRouter } from 'next-view-transitions';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState, FormEvent } from 'react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, collection, getDocs } from 'firebase/firestore';
@@ -10,7 +10,7 @@ import { CreateUniadminView, type University, type CreateUniadminFormData } from
 
 export default function CreateUniadminPage() {
   const { user, loading } = useAuth();
-  const router = useRouter();
+  const router = useTransitionRouter();
 
   const [universities, setUniversities] = useState<University[]>([]);
   const [loadingUnis, setLoadingUnis] = useState(true);

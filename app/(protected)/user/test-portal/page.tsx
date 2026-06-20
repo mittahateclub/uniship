@@ -4,12 +4,14 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { collection, query, getDocs, limit, where, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { getCache, setCache } from '@/lib/page-cache';
 import { TestPortalView, type Test } from './test-portal.view';
 
 export default function TestPortal() {
   const { user, loading: authLoading } = useAuth();
-  const [tests, setTests] = useState<Test[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cacheKey = user ? `testportal:${user.uid}` : '';
+  const [tests, setTests] = useState<Test[]>(() => (cacheKey ? getCache<Test[]>(cacheKey) : undefined) ?? []);
+  const [loading, setLoading] = useState(() => !(cacheKey && getCache<Test[]>(cacheKey)));
 
   useEffect(() => {
     async function fetchTests() {
@@ -47,7 +49,9 @@ export default function TestPortal() {
           merged.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as Test);
         });
 
-        setTests(Array.from(merged.values()));
+        const all = Array.from(merged.values());
+        setTests(all);
+        if (cacheKey) setCache<Test[]>(cacheKey, all);
       } catch (error) {
         console.error("Error fetching tests:", error);
       } finally {
@@ -58,7 +62,7 @@ export default function TestPortal() {
     if (!authLoading) {
       fetchTests();
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, cacheKey]);
 
   return <TestPortalView loading={loading || authLoading} tests={tests} />;
 }

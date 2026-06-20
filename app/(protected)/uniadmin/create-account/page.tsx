@@ -1,7 +1,7 @@
 'use client';
+import { useTransitionRouter } from 'next-view-transitions';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState, FormEvent } from 'react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
@@ -10,7 +10,7 @@ import { CreateAccountView, type CreateAccountFormData } from './create-account.
 
 export default function CreateStudentPage() {
   const { user, loading } = useAuth();
-  const router = useRouter();
+  const router = useTransitionRouter();
   const [adminUnivId, setAdminUnivId] = useState<string | null>(null);
   const [adminUnivName, setAdminUnivName] = useState<string | null>(null);
 

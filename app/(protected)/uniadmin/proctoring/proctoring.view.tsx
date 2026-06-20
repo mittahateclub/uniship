@@ -1,12 +1,13 @@
 'use client';
+import { useTransitionRouter } from 'next-view-transitions';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
 import {
   doc, getDoc, collection, query, where, onSnapshot, addDoc, serverTimestamp, orderBy, updateDoc, getDocs, limit, documentId,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { getCache, setCache } from '@/lib/page-cache';
 import Shield from '@/components/icons/Shield';
 import Eye from '@/components/icons/Eye';
 import Clock from '@/components/icons/Clock';
@@ -137,25 +138,50 @@ const reassignBtn = 'inline-flex items-center gap-1.5 text-[10.5px] font-semibol
 const reassignedBtn = 'inline-flex items-center gap-1.5 text-[10.5px] font-semibold px-3 py-1.5 rounded-[8px] bg-[var(--status-success)]/10 text-[var(--status-success)] border border-[var(--status-success)]/20 transition-colors disabled:opacity-40';
 const dangerActionBtn = 'inline-flex items-center gap-1.5 text-[10.5px] font-semibold px-3 py-1.5 rounded-[8px] bg-[var(--status-danger)]/10 text-[var(--status-danger)] hover:bg-[var(--status-danger)]/20 transition-colors disabled:opacity-40';
 
+type ProctorCache = {
+  universityId: string | null;
+  sessions: ExamSession[];
+  recentResults: TestResult[];
+  upcomingTests: UpcomingTest[];
+  studentInfoMap: Record<string, StudentInfo>;
+};
+
 export default function ProctorDashboard() {
   const { user, loading: authLoading } = useAuth();
-  const router = useRouter();
-  const [universityId, setUniversityId] = useState<string | null>(null);
-  const [sessions, setSessions] = useState<ExamSession[]>([]);
+  const router = useTransitionRouter();
+  // Realtime page: the onSnapshot listeners are the source of truth, but seeding
+  // the first paint from the last snapshot means a revisit shows the dashboard
+  // instantly (no skeleton flash gated on universityId) while the listeners
+  // immediately revalidate with live data.
+  const cacheKey = user ? `proctoring:${user.uid}` : '';
+  const cachedProctor = cacheKey ? getCache<ProctorCache>(cacheKey) : undefined;
+  const [universityId, setUniversityId] = useState<string | null>(cachedProctor?.universityId ?? null);
+  const [sessions, setSessions] = useState<ExamSession[]>(cachedProctor?.sessions ?? []);
   const [selectedSession, setSelectedSession] = useState<ExamSession | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
-  const [recentResults, setRecentResults] = useState<TestResult[]>([]);
+  const [recentResults, setRecentResults] = useState<TestResult[]>(cachedProctor?.recentResults ?? []);
   const [reattemptLoading, setReattemptLoading] = useState<string | null>(null);
   const [autoSubmitLoading, setAutoSubmitLoading] = useState<string | null>(null);
-  const [upcomingTests, setUpcomingTests] = useState<UpcomingTest[]>([]);
+  const [upcomingTests, setUpcomingTests] = useState<UpcomingTest[]>(cachedProctor?.upcomingTests ?? []);
   const [activeTestId, setActiveTestId] = useState<string | null>(null);
-  const [studentInfoMap, setStudentInfoMap] = useState<Record<string, StudentInfo>>({});
+  const [studentInfoMap, setStudentInfoMap] = useState<Record<string, StudentInfo>>(cachedProctor?.studentInfoMap ?? {});
   const [statsPopup, setStatsPopup] = useState<'live' | 'submissions' | 'flagged' | null>(null);
   const [unreadSessions, setUnreadSessions] = useState<Set<string>>(new Set());
   const [chatNotification, setChatNotification] = useState<{ sessionId: string; email: string; message: string } | null>(null);
   const [actionPopup, setActionPopup] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [activityNow, setActivityNow] = useState(() => Date.now());
+
+  // Merge-write the last snapshot into the page cache so the next visit can seed
+  // its first paint from it (the listeners then revalidate with live data).
+  const writeProctorCache = useCallback((patch: Partial<ProctorCache>) => {
+    if (!cacheKey) return;
+    const prev = getCache<ProctorCache>(cacheKey) ?? {
+      universityId: null, sessions: [], recentResults: [], upcomingTests: [], studentInfoMap: {},
+    };
+    setCache<ProctorCache>(cacheKey, { ...prev, ...patch });
+  }, [cacheKey]);
+
   const chatEndRef = useRef<HTMLDivElement>(null);
   const notificationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastObservedMessageRef = useRef<Record<string, number>>({});
@@ -180,10 +206,12 @@ export default function ProctorDashboard() {
     (async () => {
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       if (userDoc.exists()) {
-        setUniversityId(userDoc.data().universityId);
+        const uid = userDoc.data().universityId;
+        setUniversityId(uid);
+        writeProctorCache({ universityId: uid });
       }
     })();
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, writeProctorCache]);
 
   // Listen to active exam sessions for this university
   useEffect(() => {
@@ -215,9 +243,10 @@ export default function ProctorDashboard() {
       }
       setSessions(data);
       setActivityNow(Date.now());
+      writeProctorCache({ sessions: data });
     });
     return () => unsub();
-  }, [universityId]);
+  }, [universityId, writeProctorCache]);
 
   // Fetch recent submitted results
   useEffect(() => {
@@ -231,6 +260,7 @@ export default function ProctorDashboard() {
     const unsub = onSnapshot(q, (snapshot) => {
       const results = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as TestResult));
       setRecentResults(results);
+      writeProctorCache({ recentResults: results });
 
       const flaggedUserIds = [
         ...new Set(
@@ -241,6 +271,7 @@ export default function ProctorDashboard() {
       ];
       if (flaggedUserIds.length === 0) {
         setStudentInfoMap({});
+        writeProctorCache({ studentInfoMap: {} });
         return;
       }
 
@@ -258,10 +289,11 @@ export default function ProctorDashboard() {
           } catch { /* skip */ }
         }));
         setStudentInfoMap(infoMap);
+        writeProctorCache({ studentInfoMap: infoMap });
       })();
     }, () => { /* index may be missing */ });
     return () => unsub();
-  }, [universityId]);
+  }, [universityId, writeProctorCache]);
 
   // Fetch tests starting within the next 24 hours
   useEffect(() => {
@@ -287,9 +319,10 @@ export default function ProctorDashboard() {
           })
           .sort((a, b) => new Date(a.examStart).getTime() - new Date(b.examStart).getTime());
         setUpcomingTests(upcoming);
+        writeProctorCache({ upcomingTests: upcoming });
       } catch { /* index may be missing */ }
     })();
-  }, [universityId]);
+  }, [universityId, writeProctorCache]);
 
   // Listen to chat messages for selected session
   useEffect(() => {

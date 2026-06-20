@@ -91,7 +91,9 @@ export default function SupportChat() {
 
       {/* Panel */}
       {open && (
-        <div className="fixed bottom-5 right-5 z-40 w-[min(380px,calc(100vw-2rem))] h-[min(560px,calc(100vh-6rem))] flex flex-col rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-2xl shadow-black/40 overflow-hidden animate-fade-in">
+        <>
+        <div className="popover-scrim backdrop-blur-[3px] z-40" onClick={() => setOpen(false)} aria-hidden="true" />
+        <div className="fixed bottom-5 right-5 z-50 w-[min(380px,calc(100vw-2rem))] h-[min(560px,calc(100vh-6rem))] flex flex-col rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-[0_24px_64px_-16px_rgba(0,0,0,0.6)] overflow-hidden popover-in-br">
           <div className="flex items-center justify-between px-4 h-14 border-b border-[var(--border-subtle)] shrink-0">
             <div className="min-w-0">
               <p className="text-[13.5px] font-semibold text-[var(--text-primary)] leading-tight">Placement Support</p>
@@ -114,6 +116,7 @@ export default function SupportChat() {
             )}
           </div>
         </div>
+        </>
       )}
     </>
   );

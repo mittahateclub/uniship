@@ -7,6 +7,7 @@ import {
   orderBy, startAfter, type DocumentData, type QueryDocumentSnapshot,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { getCache, setCache } from '@/lib/page-cache';
 import { ResultsView, type TestResult, type AnalysisDetails } from './results.view';
 
 interface Problem {
@@ -18,8 +19,9 @@ interface Problem {
 
 export default function ResultsPage() {
   const { user, loading: authLoading } = useAuth();
-  const [results, setResults] = useState<TestResult[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cacheKey = user ? `results:${user.uid}` : '';
+  const [results, setResults] = useState<TestResult[]>(() => (cacheKey ? getCache<TestResult[]>(cacheKey) : undefined) ?? []);
+  const [loading, setLoading] = useState(() => !(cacheKey && getCache<TestResult[]>(cacheKey)));
   const [activeResult, setActiveResult] = useState<TestResult | null>(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [analysisError, setAnalysisError] = useState('');
@@ -225,6 +227,7 @@ export default function ResultsPage() {
         setCurrentCursor(currentSnapshot.docs.at(-1) ?? null);
         setLegacyCursor(legacySnapshot.docs.at(-1) ?? null);
         setHasMore(currentSnapshot.size === 50 || legacySnapshot.size === 50);
+        if (cacheKey) setCache<TestResult[]>(cacheKey, combined);
       } catch (error) {
         console.error("Error fetching results:", error);
       } finally {
@@ -235,7 +238,7 @@ export default function ResultsPage() {
     if (!authLoading) {
       fetchResults();
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, cacheKey]);
 
   const loadMore = async () => {
     if (!user || loadingMore) return;

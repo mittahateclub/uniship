@@ -44,9 +44,20 @@ export default function ThemeToggle({ className }: { className?: string }) {
       return;
     }
 
-    // Enable the crossfade, then force a reflow so the transition property is
-    // committed with the *current* colors before we flip the palette — without
-    // this the class-add and value-change coalesce into one paint and snap.
+    // Prefer the View Transitions API: one GPU-composited crossfade of the
+    // whole-page snapshot (the same root dissolve routes use), instead of
+    // transitioning the color of every element — which janks on box-shadow,
+    // fill and stroke across a large tree.
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => void };
+    if (typeof doc.startViewTransition === 'function') {
+      doc.startViewTransition(apply);
+      return;
+    }
+
+    // Fallback (no View Transitions): a class-scoped color crossfade. Force a
+    // reflow so the transition commits with the *current* colors before the
+    // palette flips — otherwise the class-add and value-change coalesce into one
+    // paint and snap.
     root.classList.add('theme-transition');
     void root.offsetWidth;
     apply();

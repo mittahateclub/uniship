@@ -12,6 +12,7 @@ import ChevronRight from '@/components/icons/ChevronRight';
 import Briefcase from '@/components/icons/Briefcase';
 import X from '@/components/icons/X';
 import { CalendarSkeleton } from '@/components/Skeleton';
+import { getCache, setCache } from '@/lib/page-cache';
 
 interface CalendarEvent {
   id: string;
@@ -51,8 +52,9 @@ const TYPE_CONFIG: Record<string, { dot: string; chip: string; label: string; te
 
 export default function CalendarPage() {
   const { user, loading: authLoading } = useAuth();
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cacheKey = user ? `calendar:${user.uid}` : '';
+  const [events, setEvents] = useState<CalendarEvent[]>(() => (cacheKey ? getCache<CalendarEvent[]>(cacheKey) : undefined) ?? []);
+  const [loading, setLoading] = useState(() => !(cacheKey && getCache<CalendarEvent[]>(cacheKey)));
   const [currentMonth, setCurrentMonth] = useState(() => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), 1); });
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
@@ -78,6 +80,7 @@ export default function CalendarPage() {
         });
 
         setEvents(calEvents);
+        if (cacheKey) setCache<CalendarEvent[]>(cacheKey, calEvents);
       } catch (error) {
         console.error('Error fetching calendar data:', error);
       } finally {
@@ -85,7 +88,7 @@ export default function CalendarPage() {
       }
     }
     if (!authLoading) fetchAll();
-  }, [user, authLoading]);
+  }, [user, authLoading, cacheKey]);
 
   // Build calendar grid
   const { weeks, eventsInMonth } = useMemo(() => {

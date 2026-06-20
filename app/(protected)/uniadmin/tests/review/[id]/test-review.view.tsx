@@ -1,8 +1,8 @@
 'use client';
+import { Link } from 'next-view-transitions';
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import Link from 'next/link';
 import CheckCircle2 from '@/components/icons/CheckCircle2';
 import ArrowLeft from '@/components/icons/ArrowLeft';
 import Calendar from '@/components/icons/Calendar';

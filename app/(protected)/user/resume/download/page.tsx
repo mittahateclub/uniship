@@ -1,5 +1,6 @@
 // app/(protected)/user/resume/download/page.tsx
 'use client';
+import { Link } from 'next-view-transitions';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,7 +12,6 @@ import {
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db } from '@/lib/firebase';
 import { storage } from '@/lib/firebase-storage';
-import Link from 'next/link';
 import FileText from '@/components/icons/FileText';
 import ArrowLeft from '@/components/icons/ArrowLeft';
 import Download from '@/components/icons/Download';
@@ -23,6 +23,7 @@ import ExternalLink from '@/components/icons/ExternalLink';
 import Trash2 from '@/components/icons/Trash2';
 import ATSScorePanel from '../ats-score';
 import { ListSkeleton } from '@/components/Skeleton';
+import { getCache, setCache } from '@/lib/page-cache';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -360,17 +361,19 @@ function EditorPanel({ draft, saving, onChange, onSave, onClose }: EditorPanelPr
 
 export default function DownloadResume() {
   const { user } = useAuth();
-  const [loading, setLoading]               = useState(true);
+  const cacheKey = user ? `savedresumes:${user.uid}` : '';
+  const cached = cacheKey ? getCache<{ resumes: ResumeData[]; hasMoreResumes: boolean }>(cacheKey) : undefined;
+  const [loading, setLoading]               = useState(!cached);
   const [isDownloading, setIsDownloading]   = useState(false);
   const [isSaving, setIsSaving]             = useState(false);
   const [isUploading, setIsUploading]       = useState(false);
   const [isDeleting, setIsDeleting]         = useState<string | null>(null);
   const [isDragOver, setIsDragOver]         = useState(false);
   const [uploadError, setUploadError]       = useState('');
-  const [resumes, setResumes]               = useState<ResumeData[]>([]);
+  const [resumes, setResumes]               = useState<ResumeData[]>(cached?.resumes ?? []);
   const [selectedResume, setSelectedResume] = useState<ResumeData | null>(null);
   const [lastResumeDoc, setLastResumeDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
-  const [hasMoreResumes, setHasMoreResumes] = useState(false);
+  const [hasMoreResumes, setHasMoreResumes] = useState(cached?.hasMoreResumes ?? false);
   const [loadingMoreResumes, setLoadingMoreResumes] = useState(false);
 
   // Draft = live editable copy; selectedResume = original from Firestore
@@ -400,6 +403,7 @@ export default function DownloadResume() {
         setResumes(fetched);
         setLastResumeDoc(snap.docs.at(-1) ?? null);
         setHasMoreResumes(snap.size === 25);
+        if (cacheKey) setCache(cacheKey, { resumes: fetched, hasMoreResumes: snap.size === 25 });
       } catch (err) {
         console.error('Error fetching resumes:', err);
       } finally {
@@ -407,7 +411,7 @@ export default function DownloadResume() {
       }
     }
     fetchResumes();
-  }, [user]);
+  }, [user, cacheKey]);
 
   const loadMoreResumes = async () => {
     if (!user?.email || !lastResumeDoc || loadingMoreResumes) return;

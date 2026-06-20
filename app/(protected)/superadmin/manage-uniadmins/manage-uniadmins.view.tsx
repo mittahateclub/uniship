@@ -1,7 +1,7 @@
 'use client';
+import { Link, useTransitionRouter } from 'next-view-transitions';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
   collection, query, where, getDocs, doc, updateDoc, documentId,
@@ -9,7 +9,6 @@ import {
   type QueryDocumentSnapshot,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import Link from 'next/link';
 import UserPlus from '@/components/icons/UserPlus';
 import Mail from '@/components/icons/Mail';
 import Building2 from '@/components/icons/Building2';
@@ -23,6 +22,7 @@ import Save from '@/components/icons/Save';
 import Pencil from '@/components/icons/Pencil';
 import { StatBar } from '@/components/StatBar';
 import { Modal, ModalHeader, ModalBody } from '@/components/Modal';
+import { getCache, setCache } from '@/lib/page-cache';
 
 interface UniadminData {
   id: string;
@@ -42,16 +42,19 @@ interface University {
   verified: boolean;
 }
 
+type CachedUniadmins = { uniadmins: UniadminData[]; universities: University[] };
+
 const ghostBtn = 'px-2.5 py-1.5 rounded-[8px] text-[11px] font-semibold border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-active)] hover:text-[var(--text-primary)] transition-colors';
 const fieldLabel = 'block text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.07em] mb-1.5';
 const PAGE_SIZE = 50;
 
 export default function ManageUniadminsPage() {
   const { user, loading } = useAuth();
-  const router = useRouter();
-  const [uniadmins, setUniadmins] = useState<UniadminData[]>([]);
-  const [universities, setUniversities] = useState<University[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
+  const router = useTransitionRouter();
+  const cacheKey = user ? `superadmin-uniadmins:${user.uid}` : '';
+  const [uniadmins, setUniadmins] = useState<UniadminData[]>(() => (cacheKey ? getCache<CachedUniadmins>(cacheKey)?.uniadmins : undefined) ?? []);
+  const [universities, setUniversities] = useState<University[]>(() => (cacheKey ? getCache<CachedUniadmins>(cacheKey)?.universities : undefined) ?? []);
+  const [loadingData, setLoadingData] = useState(() => !(cacheKey && getCache<CachedUniadmins>(cacheKey)));
   const [viewingAdmin, setViewingAdmin] = useState<UniadminData | null>(null);
   const [editingAdmin, setEditingAdmin] = useState<UniadminData | null>(null);
   const [saving, setSaving] = useState(false);
@@ -86,6 +89,7 @@ export default function ManageUniadminsPage() {
         setLastAdminDoc(adminSnap.docs.at(-1) ?? null);
         setHasMore(adminSnap.size === PAGE_SIZE);
         setUniversities(unis);
+        if (cacheKey) setCache<CachedUniadmins>(cacheKey, { uniadmins: admins, universities: unis });
       } catch (error) {
         console.error('Error fetching uniadmins:', error);
       } finally {
@@ -93,7 +97,7 @@ export default function ManageUniadminsPage() {
       }
     }
     if (user) fetchUniadmins();
-  }, [user]);
+  }, [user, cacheKey]);
 
   const loadMore = async () => {
     if (!lastAdminDoc || loadingMore) return;

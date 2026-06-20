@@ -1,7 +1,7 @@
 'use client';
+import { Link, useTransitionRouter } from 'next-view-transitions';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { db } from '@/lib/firebase';
 import {
@@ -9,7 +9,6 @@ import {
   limit as queryLimit, orderBy, startAfter, type DocumentData,
   type QueryConstraint, type QueryDocumentSnapshot,
 } from 'firebase/firestore';
-import Link from 'next/link';
 import Trash2 from '@/components/icons/Trash2';
 import UserPlus from '@/components/icons/UserPlus';
 import Search from '@/components/icons/Search';
@@ -20,6 +19,7 @@ import ArrowLeft from '@/components/icons/ArrowLeft';
 import ChevronRight from '@/components/icons/ChevronRight';
 import { ListSkeleton } from '@/components/Skeleton';
 import { StatBar } from '@/components/StatBar';
+import { getCache, setCache } from '@/lib/page-cache';
 import StudentProfileView from '@/app/(protected)/uniadmin/students/view/[id]/student-view.view';
 
 interface EducationEntry {
@@ -50,6 +50,8 @@ interface StudentRecord {
 }
 
 const PAGE_SIZE = 50;
+
+type CachedDb = { students: StudentRecord[]; univId: string | null };
 
 function parseSkills(raw?: string): string[] {
   if (!raw) return [];
@@ -85,10 +87,11 @@ function internshipCount(student: StudentRecord): number {
 
 export default function StudentDatabasePage() {
   const { user, loading } = useAuth();
-  const router = useRouter();
-  const [students, setStudents] = useState<StudentRecord[]>([]);
-  const [fetching, setFetching] = useState(true);
-  const [adminUnivId, setAdminUnivId] = useState<string | null>(null);
+  const router = useTransitionRouter();
+  const cacheKey = user ? `uniadmin-students:${user.uid}` : '';
+  const [students, setStudents] = useState<StudentRecord[]>(() => (cacheKey ? getCache<CachedDb>(cacheKey)?.students : undefined) ?? []);
+  const [fetching, setFetching] = useState(() => !(cacheKey && getCache<CachedDb>(cacheKey)));
+  const [adminUnivId, setAdminUnivId] = useState<string | null>(() => (cacheKey ? getCache<CachedDb>(cacheKey)?.univId : undefined) ?? null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [minCgpa, setMinCgpa] = useState('');
@@ -116,16 +119,18 @@ export default function StudentDatabasePage() {
           queryLimit(PAGE_SIZE),
         );
         const querySnapshot = await getDocs(q);
-        setStudents(querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as StudentRecord));
+        const list = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as StudentRecord);
+        setStudents(list);
         setLastStudentDoc(querySnapshot.docs.at(-1) ?? null);
         setHasMore(querySnapshot.size === PAGE_SIZE);
+        if (cacheKey) setCache<CachedDb>(cacheKey, { students: list, univId });
       }
     } catch (error) {
       console.error("Error fetching students:", error);
     } finally {
       setFetching(false);
     }
-  }, [user]);
+  }, [user, cacheKey]);
 
   const loadMore = async () => {
     if (!adminUnivId || !lastStudentDoc || loadingMore) return;

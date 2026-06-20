@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Link, useTransitionRouter } from 'next-view-transitions';
 import Image from 'next/image';
 import LayoutDashboard from '@/components/icons/LayoutDashboard';
 import FileText from '@/components/icons/FileText';
@@ -181,7 +181,7 @@ const superadminSearchItems: SearchableItem[] = [
 
 export default function Navbar() {
   const { role, logout } = useAuth();
-  const router = useRouter();
+  const router = useTransitionRouter();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -314,7 +314,13 @@ export default function Navbar() {
   };
 
   const handleLogout = async () => {
-    try { await logout(); router.push('/'); } catch {}
+    // Hard navigation, NOT the View Transition router: logout flips auth to null
+    // (re-rendering the whole protected tree + triggering RoleGuard's redirect),
+    // so wrapping the cross-layout jump to landing in a transition stalls on the
+    // old snapshot. A full load is snappy (landing is prerendered) and cleanly
+    // tears down auth listeners + the in-memory page cache.
+    try { await logout(); } catch { /* sign out best-effort; leave regardless */ }
+    window.location.assign('/');
   };
 
   // Mark only the most specific matching link active so a parent route
