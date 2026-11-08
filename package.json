@@ -15,28 +15,28 @@
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "@phosphor-icons/react": "^2.1.10",
-    "firebase": "^12.14.0",
-    "firebase-admin": "^14.0.0",
-    "groq-sdk": "^1.2.1",
+    "firebase": "^13.2.0",
+    "firebase-admin": "^14.5.0",
+    "groq-sdk": "^1.6.0",
     "html2pdf.js": "^0.14.0",
-    "next": "16.2.9",
+    "next": "16.4.5",
     "next-view-transitions": "^0.3.5",
-    "react": "19.2.7",
-    "react-dom": "19.2.7"
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.3.0",
-    "@types/node": "^25.9.2",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "eslint": "^9.39.4",
-    "eslint-config-next": "^16.2.9",
-    "puppeteer-core": "^25.1.0",
-    "tailwindcss": "^4.3.0",
+    "@tailwindcss/postcss": "^4.3.5",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^10.14.0",
+    "eslint-config-next": "^16.4.5",
+    "puppeteer-core": "^25.16.0",
+    "tailwindcss": "^4.3.5",
     "typescript": "^6.0.3"
   },
   "overrides": {
-    "dompurify": "3.4.11",
+    "dompurify": "3.4.17",
     "@types/request": {
       "form-data": "2.5.6"
     },
@@ -46,6 +46,21 @@
     "teeny-request": {
       "uuid": "11.1.1"
     },
-    "postcss": "8.5.15"
+    "postcss": "8.5.32",
+    "@firebase/firestore": {
+      "@grpc/grpc-js": "1.14.7"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^11.0.1"
+    },
+    "eslint": {
+      "minimatch": "^11.0.1"
+    },
+    "@eslint/config-array": {
+      "minimatch": "^11.0.1"
+    }
+  },
+  "engines": {
+    "node": "26.x"
   }
 }

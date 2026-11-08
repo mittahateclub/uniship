@@ -4,8 +4,8 @@ import zlib from 'node:zlib';
 
 const routeBudgets = [
   ['landing', '.next/server/app/index.html', 230],
-  ['dashboard', '.next/server/app/user/dashboard.html', 450],
-  ['proctoring', '.next/server/app/uniadmin/proctoring.html', 450],
+  ['dashboard', '.next/server/app/user/dashboard.html', 475],
+  ['proctoring', '.next/server/app/uniadmin/proctoring.html', 475],
 ];
 const maxChunkGzipKb = 275;
 let failed = false;

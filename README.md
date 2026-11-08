@@ -36,7 +36,7 @@ proctoring, internships, event management, and career tools in one application.
 
 2. Install dependencies.
 
-   Node.js 22 LTS is required. See `.nvmrc`.
+   Node.js 26 LTS is required. See `.nvmrc`.
 
    ```bash
    npm ci
