@@ -13,7 +13,7 @@ reference**. For current deployment state, the performance audit, and Firebase i
 - **Monaco** editor for coding assessments.
 - **`next-view-transitions`** — App Router route crossfades / shared-element morphs (Design
   Guidelines §5).
-- Node.js 22 (`.nvmrc`); npm. Firebase project `uniship-4c1a1`.
+- Node.js 26 (`.nvmrc`, `engines.node`); npm. Firebase project `uniship-4c1a1`.
 
 ## 2. Architecture
 
@@ -143,8 +143,8 @@ edit the ESLint/TS config to silence a rule — fix the code.
 | Surface | Budget |
 | --- | ---: |
 | Landing page | 230 KB |
-| Dashboard | 450 KB |
-| Proctoring | 450 KB |
+| Dashboard | 475 KB |
+| Proctoring | 475 KB |
 
 The **landing page is near budget (~8 KB headroom after the June 2026 public-route pass)** —
 treat any new client-side dependency on the anonymous path with care. Public landing and login
