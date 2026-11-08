@@ -2,11 +2,12 @@
 import { useTransitionRouter } from 'next-view-transitions';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { collection, query, where, getDocs, getCountFromServer, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { UniAdminDashboardView, type DashStats, type UpcomingTest } from './dashboard.view';
 import { getCache, setCache } from '@/lib/page-cache';
+import { nextSessionExpiry, selectActiveAttempts, uniqueByStudent, type LiveSessionFields } from '@/lib/exam-sessions';
 
 type CachedUniDash = { stats: DashStats; upcoming: UpcomingTest[] };
 
@@ -16,7 +17,12 @@ export default function UniAdminDashboard() {
   const cacheKey = universityId ? `uniadmin-dash:${universityId}` : '';
   const [stats, setStats] = useState<DashStats | null>(() => (cacheKey ? getCache<CachedUniDash>(cacheKey)?.stats : undefined) ?? null);
   const [upcoming, setUpcoming] = useState<UpcomingTest[]>(() => (cacheKey ? getCache<CachedUniDash>(cacheKey)?.upcoming : undefined) ?? []);
-  const [liveSessions, setLiveSessions] = useState(0);
+  const [sessionDocs, setSessionDocs] = useState<LiveSessionFields[]>([]);
+  const [activityNow, setActivityNow] = useState(() => Date.now());
+  const liveSessions = useMemo(
+    () => uniqueByStudent(selectActiveAttempts(sessionDocs, activityNow)).length,
+    [sessionDocs, activityNow],
+  );
   const [dataLoading, setDataLoading] = useState(() => !(cacheKey && getCache<CachedUniDash>(cacheKey)));
 
   useEffect(() => {
@@ -91,10 +97,23 @@ export default function UniAdminDashboard() {
       collection(db, 'exam_sessions'),
       where('universityId', '==', universityId),
       where('status', '==', 'active'),
+      limit(200),
     );
-    const unsub = onSnapshot(q, (snap) => setLiveSessions(snap.size), () => {});
+    const unsub = onSnapshot(q, (snap) => {
+      setSessionDocs(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as LiveSessionFields));
+      setActivityNow(Date.now());
+    }, () => {});
     return () => unsub();
   }, [universityId]);
+
+  // Recount when a session's heartbeat ages out, even if no snapshot arrives.
+  useEffect(() => {
+    const now = Date.now();
+    const nextExpiry = nextSessionExpiry(sessionDocs, now);
+    if (!nextExpiry) return;
+    const timer = window.setTimeout(() => setActivityNow(Date.now()), Math.max(100, nextExpiry - now + 50));
+    return () => window.clearTimeout(timer);
+  }, [sessionDocs, activityNow]);
 
   return (
     <UniAdminDashboardView

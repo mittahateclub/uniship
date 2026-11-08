@@ -8,6 +8,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getCache, setCache } from '@/lib/page-cache';
+import { nextSessionExpiry, selectActiveAttempts, toMillis, uniqueByStudent } from '@/lib/exam-sessions';
 import Shield from '@/components/icons/Shield';
 import Eye from '@/components/icons/Eye';
 import Clock from '@/components/icons/Clock';
@@ -91,18 +92,6 @@ interface UpcomingTest {
   examStart: string;
   examEnd: string;
 }
-
-const ACTIVE_HEARTBEAT_WINDOW_MS = 45000;
-const toMillis = (value: unknown): number => {
-  if (!value) return 0;
-  if (typeof value === 'object' && value !== null) {
-    const candidate = value as { toMillis?: () => number; seconds?: number };
-    if (typeof candidate.toMillis === 'function') return candidate.toMillis();
-    if (typeof candidate.seconds === 'number') return candidate.seconds * 1000;
-  }
-  const parsed = new Date(value as string | number | Date).getTime();
-  return Number.isFinite(parsed) ? parsed : 0;
-};
 
 const getSubmitReasonLabel = (reason?: string): string => {
   switch (reason) {
@@ -340,11 +329,7 @@ export default function ProctorDashboard() {
 
   useEffect(() => {
     const now = Date.now();
-    const nextExpiry = sessions
-      .filter((session) => session.status === 'active' && session.isAttempting !== false)
-      .map((session) => Math.max(toMillis(session.lastHeartbeat), toMillis(session.startedAt)) + ACTIVE_HEARTBEAT_WINDOW_MS)
-      .filter((expiry) => expiry > now)
-      .sort((a, b) => a - b)[0];
+    const nextExpiry = nextSessionExpiry(sessions, now);
     if (!nextExpiry) return;
     const timer = window.setTimeout(() => setActivityNow(Date.now()), Math.max(100, nextExpiry - now + 50));
     return () => window.clearTimeout(timer);
@@ -540,33 +525,9 @@ export default function ProctorDashboard() {
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const activeAttemptSessions = useMemo(() => {
-    return sessions.filter((session) => {
-      if (session.status !== 'active') return false;
-      if (session.isAttempting === false) return false;
-      const lastActivity = Math.max(toMillis(session.lastHeartbeat), toMillis(session.startedAt));
-      if (!lastActivity) return false;
-      return (activityNow - lastActivity) <= ACTIVE_HEARTBEAT_WINDOW_MS;
-    });
-  }, [sessions, activityNow]);
+  const activeAttemptSessions = useMemo(() => selectActiveAttempts(sessions, activityNow), [sessions, activityNow]);
 
-  const uniqueActiveSessions = useMemo(() => {
-    const byUser = new Map<string, ExamSession>();
-    activeAttemptSessions.forEach((session) => {
-      const key = session.userId || session.userEmail || session.id;
-      const current = byUser.get(key);
-      if (!current) {
-        byUser.set(key, session);
-        return;
-      }
-      const currentActivity = Math.max(toMillis(current.lastHeartbeat), toMillis(current.startedAt));
-      const nextActivity = Math.max(toMillis(session.lastHeartbeat), toMillis(session.startedAt));
-      if (nextActivity >= currentActivity) {
-        byUser.set(key, session);
-      }
-    });
-    return Array.from(byUser.values());
-  }, [activeAttemptSessions]);
+  const uniqueActiveSessions = useMemo(() => uniqueByStudent(activeAttemptSessions), [activeAttemptSessions]);
 
   const filteredSessions = useMemo(() => {
     const scoped = (isProctoringMode && activeTestId)
